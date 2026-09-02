@@ -39,6 +39,7 @@ import type {
   updateZapiCredentialsAsSupport,
 } from "../../../domains/crm/services/CrmWhatsappService/manageZapiConnectionAsSupport.js";
 import type { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
+import type { listUazapiInstances } from "../../../domains/crm/services/CrmChannelConnectionService/listUazapiInstances.js";
 import type { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
 import type {
   getZapiConnectionReplacementStatus,
@@ -112,6 +113,10 @@ export type CrmChannelConnectionServices = {
   listCrmChannelConnections: (
     context: ServiceContext,
   ) => Promise<readonly CrmChannelConnection[]>;
+  listUazapiInstances: ContextService<
+    Parameters<typeof listUazapiInstances>[1],
+    Awaited<ReturnType<typeof listUazapiInstances>>
+  >;
   requestZapiPairingCode: ContextService<
     RequestZapiPairingCodeInput,
     { code?: string; requested: boolean }

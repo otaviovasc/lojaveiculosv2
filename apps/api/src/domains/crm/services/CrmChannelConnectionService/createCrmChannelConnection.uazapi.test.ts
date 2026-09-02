@@ -1,82 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
 import { CrmWhatsappConnectionLimitError } from "../../channelConnections/connectionCreation.js";
-import {
-  createContext,
-  createPorts,
-  storeId,
-  tenantId,
-} from "../../testSupportCrmChannelConnectionCreation.js";
-import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
-import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
-import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
+import { createContext } from "../../testSupportCrmChannelConnectionCreation.js";
 import { createCrmChannelConnection } from "./createCrmChannelConnection.js";
+import {
+  createUazapiPorts,
+  uazapiTestAdminToken,
+  whatsappConnectionFixture,
+} from "./createCrmChannelConnection.uazapi.testSupport.js";
 
-type UazapiProvisioning = NonNullable<
-  CrmServicePorts["crmUazapiProvisioningProvider"]
->;
+const adminToken = uazapiTestAdminToken;
 
-function createUazapiPorts(
-  input: {
-    initialConnections?: readonly CrmConnection[];
-    provisioning?: Partial<UazapiProvisioning>;
-  } = {},
-) {
-  const repository = createTestCrmConnectionRepository(
-    input.initialConnections ?? [],
-  );
-  const provisioning: UazapiProvisioning = {
-    createInstance: vi.fn(async ({ name }: { name: string }) => ({
-      baseUrl: "https://free.uazapi.com",
-      instanceId: `inst-${name}`,
-      instanceToken: "instance-token-1",
-    })),
-    deleteInstance: vi.fn(async () => {}),
-    ...input.provisioning,
-  };
-  const ports: CrmServicePorts = {
-    ...createPorts(0, repository),
-    crmUazapiProvisioningProvider: provisioning,
-  };
-  return { ports, provisioning, repository };
-}
-
-function whatsappConnectionFixture(
-  overrides: Partial<CrmConnection> & { id: string },
-): CrmConnection {
-  return {
-    broker: "direct",
-    channel: "whatsapp",
-    credentialsRef: {},
-    displayName: "WhatsApp",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "active",
-    storeId: storeId as never,
-    tenantId: tenantId as never,
-    webhookUrl: null,
-    ...overrides,
-  };
-}
-
-describe("createCrmChannelConnection uazapi provider", () => {
+describe("createCrmChannelConnection uazapi create mode", () => {
   it("provisions and seals a server-created uazapi connection", async () => {
     const { ports, provisioning } = createUazapiPorts();
 
     const result = await createCrmChannelConnection(
       createContext(),
       {
+        adminToken,
         channel: "whatsapp",
         connectionPhoneNumber: "+55 11 99999-0000",
         displayName: "WhatsApp UAZAPI",
+        mode: "create",
         provider: "uazapi",
       },
       ports,
     );
 
     expect(provisioning.createInstance).toHaveBeenCalledWith({
+      adminToken,
       name: expect.stringMatching(/^v2-/) as string,
     });
     expect(result).toMatchObject({
@@ -107,6 +59,7 @@ describe("createCrmChannelConnection uazapi provider", () => {
       string,
       string
     >;
+    expect(stored.adminToken).toBe("sealed:store-admin-token");
     expect(stored.baseUrl).toBe("sealed:https://free.uazapi.com");
     expect(stored.instanceToken).toBe("sealed:instance-token-1");
     expect(stored.webhookSecret).toMatch(/^sealed:/);
@@ -134,8 +87,10 @@ describe("createCrmChannelConnection uazapi provider", () => {
       createCrmChannelConnection(
         createContext(),
         {
+          adminToken,
           channel: "whatsapp",
           displayName: "WhatsApp extra",
+          mode: "create",
           provider: "uazapi",
         },
         ports,
@@ -144,7 +99,7 @@ describe("createCrmChannelConnection uazapi provider", () => {
     expect(provisioning.createInstance).not.toHaveBeenCalled();
   });
 
-  it("compensation-deletes the instance when persistence fails", async () => {
+  it("compensation-deletes the instance when persistence fails in create mode", async () => {
     const { ports, provisioning, repository } = createUazapiPorts();
     repository.createConnection = (() => {
       throw new Error("db unavailable");
@@ -154,14 +109,17 @@ describe("createCrmChannelConnection uazapi provider", () => {
       createCrmChannelConnection(
         createContext(),
         {
+          adminToken,
           channel: "whatsapp",
           displayName: "WhatsApp UAZAPI",
+          mode: "create",
           provider: "uazapi",
         },
         ports,
       ),
     ).rejects.toThrow("db unavailable");
     expect(provisioning.deleteInstance).toHaveBeenCalledWith({
+      adminToken,
       baseUrl: "https://free.uazapi.com",
       instanceId: expect.stringMatching(/^inst-v2-/) as string,
     });
@@ -180,8 +138,10 @@ describe("createCrmChannelConnection uazapi provider", () => {
       createCrmChannelConnection(
         createContext(),
         {
+          adminToken,
           channel: "whatsapp",
           displayName: "WhatsApp UAZAPI",
+          mode: "create",
           provider: "uazapi",
         },
         ports,

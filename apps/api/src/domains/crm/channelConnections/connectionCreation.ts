@@ -27,8 +27,27 @@ export type CreateCrmChannelConnectionInput =
   | {
       channel: "whatsapp";
       displayName: string;
+      /** Write-only BYOK admin token, sealed per connection. */
+      adminToken: string;
+      baseUrl?: string;
       /** Optional phone used for the pair-code connection flow. */
       connectionPhoneNumber?: string;
+      mode: "create";
+      provider: "uazapi";
+      webhookSetupTarget?: {
+        basePath: string;
+        canonicalApiOrigin: string;
+      };
+    }
+  | {
+      channel: "whatsapp";
+      displayName: string;
+      /** Write-only BYOK admin token, sealed per connection. */
+      adminToken: string;
+      baseUrl?: string;
+      /** Existing instance id; its token is resolved server-side. */
+      instanceId: string;
+      mode: "attach";
       provider: "uazapi";
       webhookSetupTarget?: {
         basePath: string;
@@ -144,6 +163,26 @@ export class CrmWhatsappConnectionLimitError extends Error {
       `The store already has ${limit} active WhatsApp connections. Archive one before creating another.`,
     );
     this.name = "CrmWhatsappConnectionLimitError";
+  }
+}
+
+export class CrmUazapiInstanceNotFoundError extends Error {
+  readonly code = "CRM_UAZAPI_INSTANCE_NOT_FOUND" as const;
+  constructor(readonly instanceId: string) {
+    super(
+      "The uazapi instance was not found in the account behind the supplied admin token.",
+    );
+    this.name = "CrmUazapiInstanceNotFoundError";
+  }
+}
+
+export class CrmUazapiConnectionPhoneConflictError extends Error {
+  readonly code = "CRM_UAZAPI_CONNECTION_PHONE_CONFLICT" as const;
+  constructor() {
+    super(
+      "Another connection in this store already uses the phone number exposed by the attached uazapi instance.",
+    );
+    this.name = "CrmUazapiConnectionPhoneConflictError";
   }
 }
 

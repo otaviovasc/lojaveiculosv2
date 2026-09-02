@@ -61,13 +61,20 @@ export function registerCrmChannelConnectionRoutes(
             }
           : input.provider === "uazapi"
             ? {
+                adminToken: input.adminToken,
                 channel: "whatsapp",
-                ...(input.connectionPhoneNumber
-                  ? { connectionPhoneNumber: input.connectionPhoneNumber }
-                  : {}),
+                ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
                 displayName: input.displayName ?? "WhatsApp",
                 provider: "uazapi",
                 webhookSetupTarget: readWebhookRequestBase(context),
+                ...(input.mode === "attach"
+                  ? { instanceId: input.instanceId, mode: "attach" as const }
+                  : {
+                      mode: "create" as const,
+                      ...(input.connectionPhoneNumber
+                        ? { connectionPhoneNumber: input.connectionPhoneNumber }
+                        : {}),
+                    }),
               }
             : {
                 channel: input.channel,

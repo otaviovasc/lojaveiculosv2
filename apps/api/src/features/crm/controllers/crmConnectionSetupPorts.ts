@@ -80,6 +80,8 @@ export function createCrmConnectionSetupPorts(
       createUazapiCrmProvisioningProvider().createInstance(input),
     deleteInstance: (input) =>
       createUazapiCrmProvisioningProvider().deleteInstance(input),
+    listInstances: (input) =>
+      createUazapiCrmProvisioningProvider().listInstances(input),
   };
   const olx: OlxCrmWebhookSetupProvider = {
     configureChat: (input) =>

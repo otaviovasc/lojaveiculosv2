@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import { getCrmConnectionCredentialVault } from "../CrmService/crmConnectionSetupSupport.js";
 import {
+  UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE,
   UAZAPI_BASE_URL_CREDENTIAL_PURPOSE,
   UAZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   UAZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
@@ -9,7 +10,9 @@ import {
 } from "../../ports/crmConnectionSetupProvider.js";
 
 export type UazapiProvisionedCredentials = {
-  baseUrl: string;
+  adminToken: string;
+  /** Sealed only when the caller supplied a custom uazapi host. */
+  baseUrl?: string;
   instanceId: string;
   instanceToken: string;
 };
@@ -24,13 +27,20 @@ export async function sealUazapiCredentials(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   };
-  const [baseUrl, instanceId, instanceToken, webhookSecret] = await Promise.all(
-    [
+  const [adminToken, baseUrl, instanceId, instanceToken, webhookSecret] =
+    await Promise.all([
       vault.seal({
         ...credentialScope,
-        plaintext: input.baseUrl,
-        purpose: UAZAPI_BASE_URL_CREDENTIAL_PURPOSE,
+        plaintext: input.adminToken,
+        purpose: UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE,
       }),
+      input.baseUrl
+        ? vault.seal({
+            ...credentialScope,
+            plaintext: input.baseUrl,
+            purpose: UAZAPI_BASE_URL_CREDENTIAL_PURPOSE,
+          })
+        : undefined,
       vault.seal({
         ...credentialScope,
         plaintext: input.instanceId,
@@ -46,12 +56,12 @@ export async function sealUazapiCredentials(
         plaintext: randomBytes(32).toString("base64url"),
         purpose: UAZAPI_WEBHOOK_SECRET_CREDENTIAL_PURPOSE,
       }),
-    ],
-  );
+    ]);
   return {
     mode: "stored",
     stored: {
-      baseUrl,
+      adminToken,
+      ...(baseUrl ? { baseUrl } : {}),
       instanceId,
       instanceToken,
       webhookSecret,

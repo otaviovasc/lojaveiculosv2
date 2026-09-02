@@ -9,6 +9,7 @@ import type {
   CrmCreateConnectionInput,
   CrmProviderConnection,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiListInstancesInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
@@ -131,6 +132,18 @@ export function useCrmConnections(api: CrmConversationApi) {
       }
     },
     [api, refreshConnections],
+  );
+
+  const listUazapiInstances = useCallback(
+    async (input: CrmUazapiListInstancesInput) => {
+      try {
+        return await api.listUazapiInstances(input);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api],
   );
 
   const requestZapiPairingQr = useCallback(
@@ -606,6 +619,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     ),
     isLoading,
     listConnectionMembers,
+    listUazapiInstances,
     refreshConnections,
     refreshConnectionsAndRead,
     repairZapiConnectionCredentials,

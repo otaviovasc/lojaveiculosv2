@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmProviderConnection } from "./crmConversationTypes";
@@ -74,7 +75,7 @@ describe("readUazapiSetupStep", () => {
 describe("CrmWhatsappUazapiSetup", () => {
   afterEach(cleanup);
 
-  it("provisions a server-owned connection without any credential fields", async () => {
+  it("validates the admin token and provisions a new instance", async () => {
     const handlers = createHandlers();
     const onConnection = vi.fn();
 
@@ -92,9 +93,28 @@ describe("CrmWhatsappUazapiSetup", () => {
     expect(screen.getByText("Etapa 1 de 4 · Provisionamento")).toBeVisible();
     expect(screen.queryByLabelText("ID da instância")).toBeNull();
     expect(screen.queryByLabelText("Client-Token")).toBeNull();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Token admin da uazapi"), {
+      target: { value: " admin-token-123 " },
+    });
+    fireEvent.change(screen.getByLabelText("URL base da uazapi (opcional)"), {
+      target: { value: "https://free.uazapi.com" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Validar e continuar" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onListUazapiInstances).toHaveBeenCalledWith({
+        adminToken: "admin-token-123",
+        baseUrl: "https://free.uazapi.com",
+      }),
+    );
     expect(
-      screen.getByText(/provisiona a instância e o número automaticamente/i),
+      await screen.findByText(/Nenhuma instância foi encontrada/i),
     ).toBeVisible();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText("Nome da conexão"), {
       target: { value: " WhatsApp matriz " },
@@ -106,21 +126,131 @@ describe("CrmWhatsappUazapiSetup", () => {
       },
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Provisionar conexão" }),
+      screen.getByRole("button", { name: "Criar e provisionar conexão" }),
     );
 
     await waitFor(() =>
       expect(handlers.onCreate).toHaveBeenCalledWith({
+        adminToken: "admin-token-123",
+        baseUrl: "https://free.uazapi.com",
         channel: "whatsapp",
         connectionPhoneNumber: "5511999999999",
         displayName: "WhatsApp matriz",
+        mode: "create",
         provider: "uazapi",
       }),
     );
     expect(onConnection).toHaveBeenCalled();
   });
 
-  it("requires a display name before provisioning", () => {
+  it("attaches an existing instance selected from the validated account", async () => {
+    const handlers = createHandlers();
+    handlers.onListUazapiInstances = vi.fn(async () => [
+      {
+        connectedPhone: null,
+        id: "inst-a",
+        name: "Instância A",
+        status: "disconnected",
+      },
+      {
+        connectedPhone: "5511988887777",
+        id: "inst-b",
+        name: "Instância B",
+        status: "connected",
+      },
+    ]);
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair={false}
+        canSetup
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Token admin da uazapi"), {
+      target: { value: "admin-token-123" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Validar e continuar" }),
+    );
+
+    await screen.findByRole("radio", { name: "Usar instância existente" });
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Usar instância existente" }),
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Instância uazapi existente" }),
+    );
+    const listbox = await screen.findByRole("listbox", {
+      name: "Instância uazapi existente: opções",
+    });
+    expect(
+      screen.getByRole("option", {
+        name: /Instância B · conectada · 5511988887777/,
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(listbox).getByRole("option", {
+        name: /Instância A · desconectada/,
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Nome da conexão"), {
+      target: { value: "WhatsApp matriz" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Conectar instância selecionada" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onCreate).toHaveBeenCalledWith({
+        adminToken: "admin-token-123",
+        channel: "whatsapp",
+        displayName: "WhatsApp matriz",
+        instanceId: "inst-a",
+        mode: "attach",
+        provider: "uazapi",
+      }),
+    );
+  });
+
+  it("surfaces an invalid admin token without advancing or provisioning", async () => {
+    const handlers = createHandlers();
+    handlers.onListUazapiInstances = vi.fn(async () => {
+      throw new Error("token inválido");
+    });
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair={false}
+        canSetup
+        connection={null}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Token admin da uazapi"), {
+      target: { value: "token-errado" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Validar e continuar" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "token inválido",
+    );
+    expect(screen.queryByLabelText("Nome da conexão")).toBeNull();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+  });
+
+  it("requires a display name before provisioning", async () => {
     const handlers = createHandlers();
     render(
       <CrmWhatsappUazapiSetup
@@ -133,8 +263,16 @@ describe("CrmWhatsappUazapiSetup", () => {
       />,
     );
 
+    fireEvent.change(screen.getByLabelText("Token admin da uazapi"), {
+      target: { value: "admin-token-123" },
+    });
     fireEvent.click(
-      screen.getByRole("button", { name: "Provisionar conexão" }),
+      screen.getByRole("button", { name: "Validar e continuar" }),
+    );
+    await screen.findByText(/Nenhuma instância foi encontrada/i);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Criar e provisionar conexão" }),
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -159,11 +297,19 @@ describe("CrmWhatsappUazapiSetup", () => {
       />,
     );
 
+    fireEvent.change(screen.getByLabelText("Token admin da uazapi"), {
+      target: { value: "admin-token-123" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Validar e continuar" }),
+    );
+    await screen.findByText(/Nenhuma instância foi encontrada/i);
+
     fireEvent.change(screen.getByLabelText("Nome da conexão"), {
       target: { value: "WhatsApp matriz" },
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "Provisionar conexão" }),
+      screen.getByRole("button", { name: "Criar e provisionar conexão" }),
     );
 
     expect(await screen.findByRole("alert")).toBeVisible();
@@ -268,6 +414,7 @@ function createHandlers(): CrmConnectionSelfServiceHandlers {
     onCompleteComposio: vi.fn(),
     onConfigureZapiWebhooks: vi.fn(),
     onCreate: vi.fn(async () => connection),
+    onListUazapiInstances: vi.fn(async () => []),
     onRefreshConnections: vi.fn(async () => undefined),
     onSelectComposioSender: vi.fn(),
   };

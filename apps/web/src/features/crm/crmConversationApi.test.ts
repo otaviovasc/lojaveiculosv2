@@ -430,9 +430,11 @@ describe("CRM WhatsApp API", () => {
     const api = createCrmConversationApi({ fetch: fake.fetch });
 
     await api.createConnection({
+      adminToken: "admin-token-123",
       channel: "whatsapp",
       connectionPhoneNumber: "5511999999999",
       displayName: "WhatsApp matriz",
+      mode: "create",
       provider: "uazapi",
     });
     await api.configureUazapiWebhooks("connection_3");
@@ -445,9 +447,11 @@ describe("CRM WhatsApp API", () => {
       input: "/api/v1/crm/channel-connections",
       init: {
         body: JSON.stringify({
+          adminToken: "admin-token-123",
           channel: "whatsapp",
           connectionPhoneNumber: "5511999999999",
           displayName: "WhatsApp matriz",
+          mode: "create",
           provider: "uazapi",
         }),
         method: "POST",
@@ -472,6 +476,46 @@ describe("CRM WhatsApp API", () => {
     expect(fake.calls[5]?.input).toBe(
       "/api/v1/crm/channel-connections/connection_3/uazapi/disconnect",
     );
+  });
+
+  it("lists uazapi instances through the validated admin token route", async () => {
+    const fake = createFakeFetch([
+      {
+        instances: [
+          {
+            connectedPhone: null,
+            id: "inst-a",
+            name: "Instância A",
+            status: "disconnected",
+          },
+        ],
+      },
+    ]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+
+    const instances = await api.listUazapiInstances({
+      adminToken: "admin-token-123",
+      baseUrl: "https://free.uazapi.com",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/uazapi/list-instances",
+      init: {
+        body: JSON.stringify({
+          adminToken: "admin-token-123",
+          baseUrl: "https://free.uazapi.com",
+        }),
+        method: "POST",
+      },
+    });
+    expect(instances).toEqual([
+      {
+        connectedPhone: null,
+        id: "inst-a",
+        name: "Instância A",
+        status: "disconnected",
+      },
+    ]);
   });
 
   it("lists, grants, and revokes connection members with parsed payloads", async () => {

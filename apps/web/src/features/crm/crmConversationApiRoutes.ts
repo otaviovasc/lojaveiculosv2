@@ -85,6 +85,11 @@ export const crmConversationRoutes = {
     ),
   // UAZAPI routes mirror the Z-API setup contract exactly; the difference is
   // server-side provisioning, not the pairing/lifecycle surface.
+  uazapiListInstances: (baseUrl?: string) =>
+    createCrmEndpoint(
+      "/crm/channel-connections/uazapi/list-instances",
+      baseUrl,
+    ),
   uazapiPairingCode: (connectionId: CrmConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/pairing/code`,

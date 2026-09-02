@@ -16,6 +16,8 @@ import type {
   CrmProviderConnection,
   CrmSetupProvider,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
@@ -61,6 +63,9 @@ export type CrmConnectionSelfServiceHandlers = {
   onListConnectionMembers?: (
     connectionId: CrmConnectionId,
   ) => Promise<readonly CrmConnectionMember[]>;
+  onListUazapiInstances?: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
   onRevokeConnectionMember?: (
     connectionId: CrmConnectionId,
     userId: string,

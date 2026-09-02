@@ -318,6 +318,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         },
                         onGrantConnectionMember: inbox.grantConnectionMember,
                         onListConnectionMembers: inbox.listConnectionMembers,
+                        onListUazapiInstances: inbox.listUazapiInstances,
                         onRevokeConnectionMember: inbox.revokeConnectionMember,
                         onRefreshConnections: inbox.refreshConnections,
                         onRefreshConnectionsWithPayload:

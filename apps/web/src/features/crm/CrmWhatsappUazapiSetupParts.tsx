@@ -1,7 +1,17 @@
-import { CheckCircle2, Loader2, ServerCog } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  ServerCog,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
 import { useState, type ComponentProps } from "react";
 import { formatBrazilianWhatsappPhone } from "../../lib/masks";
-import type { CrmProviderConnection } from "./crmConversationTypes";
+import type {
+  CrmProviderConnection,
+  CrmUazapiInstanceSummary,
+} from "./crmConversationTypes";
+import { CrmSelect } from "./CrmFormControls";
 import type { BusyState } from "./CrmWhatsappZapiCredentials";
 import type { PairingBlock } from "./CrmWhatsappUazapiSetupTypes";
 import {
@@ -25,12 +35,18 @@ const uazapiStepLabels: ReadonlyArray<WhatsappSetupStepLabel> = [
   { label: "Pronto", step: 4 },
 ];
 
+export type UazapiProvisionMode = "attach" | "create";
+
 export type UazapiProvisionDraft = {
+  adminToken: string;
+  baseUrl: string;
   displayName: string;
   phone: string;
 };
 
 export const emptyUazapiProvisionDraft: UazapiProvisionDraft = {
+  adminToken: "",
+  baseUrl: "",
   displayName: "",
   phone: "",
 };
@@ -68,37 +84,168 @@ export function UazapiSetupProgress({ step }: { step: UazapiSetupStep }) {
   );
 }
 
-export function UazapiProvisionStage({
+export function UazapiAccountStage({
   busy,
   canSubmit,
   draft,
   error,
   onChange,
-  onSave,
+  onValidate,
 }: {
   busy: BusyState | null;
   canSubmit: boolean;
   draft: UazapiProvisionDraft;
   error: string | null;
   onChange: (draft: UazapiProvisionDraft) => void;
-  onSave: () => void;
+  onValidate: () => void;
 }) {
   return (
     <section
-      aria-labelledby="uazapi-provision-title"
+      aria-labelledby="uazapi-account-title"
       className="crm-zapi-credentials"
     >
       <div className="crm-zapi-stage-heading">
         <span>
-          <ServerCog aria-hidden="true" />
+          <ShieldCheck aria-hidden="true" />
         </span>
         <div>
-          <small>Provisionamento automático</small>
-          <h4 id="uazapi-provision-title">Nomeie a conexão da loja</h4>
+          <small>Conta uazapi</small>
+          <h4 id="uazapi-account-title">Conecte a conta uazapi da loja</h4>
           <p>
-            O workspace provisiona a instância e o número automaticamente. Você
-            não cadastra credenciais: elas são criadas e guardadas pelo
-            servidor.
+            O token admin provisiona e gerencia as instâncias de WhatsApp na
+            conta uazapi da sua loja. Ele é armazenado criptografado por conexão
+            e nunca é exibido novamente.
+          </p>
+        </div>
+      </div>
+      <div className="crm-zapi-credential-fields">
+        <div className="crm-connection-field">
+          <label htmlFor="uazapi-admin-token">Token admin da uazapi</label>
+          <input
+            autoComplete="off"
+            disabled={!canSubmit}
+            id="uazapi-admin-token"
+            onChange={(event) =>
+              onChange({ ...draft, adminToken: event.target.value })
+            }
+            placeholder="Cole o token admin da sua conta uazapi"
+            type="password"
+            value={draft.adminToken}
+          />
+          <small>
+            Credencial somente de escrita: o servidor valida e guarda o token,
+            que nunca volta a ser exibido.
+          </small>
+        </div>
+        <div className="crm-connection-field">
+          <label htmlFor="uazapi-base-url">URL base da uazapi (opcional)</label>
+          <input
+            autoComplete="off"
+            disabled={!canSubmit}
+            id="uazapi-base-url"
+            inputMode="url"
+            onChange={(event) =>
+              onChange({ ...draft, baseUrl: event.target.value })
+            }
+            placeholder="https://free.uazapi.com"
+            value={draft.baseUrl}
+          />
+          <small>Preencha apenas se a sua conta usa um endereço próprio.</small>
+        </div>
+      </div>
+      {error ? (
+        <p className="crm-connection-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {!canSubmit ? (
+        <p className="crm-zapi-permission-note">
+          Peça a um administrador da loja para provisionar a conexão.
+        </p>
+      ) : null}
+      <div className="crm-zapi-inline-actions">
+        <button
+          className="crm-connection-save"
+          disabled={busy !== null || !canSubmit}
+          onClick={onValidate}
+          type="button"
+        >
+          {busy === "credentials" ? (
+            <Loader2 aria-hidden="true" className="crm-spin" />
+          ) : (
+            <ShieldCheck aria-hidden="true" />
+          )}
+          {busy === "credentials" ? "Validando" : "Validar e continuar"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function readUazapiInstanceStatusLabel(status: string) {
+  switch (status) {
+    case "connected":
+      return "conectada";
+    case "disconnected":
+      return "desconectada";
+    default:
+      return status;
+  }
+}
+
+export function readUazapiInstanceOptionLabel(
+  instance: CrmUazapiInstanceSummary,
+) {
+  const status = readUazapiInstanceStatusLabel(instance.status);
+  return instance.connectedPhone
+    ? `${instance.name} · ${status} · ${instance.connectedPhone}`
+    : `${instance.name} · ${status}`;
+}
+
+export function UazapiInstanceStage({
+  busy,
+  canSubmit,
+  draft,
+  error,
+  instances,
+  mode,
+  onBack,
+  onChange,
+  onModeChange,
+  onSelectInstance,
+  onSubmit,
+  selectedInstanceId,
+}: {
+  busy: BusyState | null;
+  canSubmit: boolean;
+  draft: UazapiProvisionDraft;
+  error: string | null;
+  instances: readonly CrmUazapiInstanceSummary[];
+  mode: UazapiProvisionMode;
+  onBack: () => void;
+  onChange: (draft: UazapiProvisionDraft) => void;
+  onModeChange: (mode: UazapiProvisionMode) => void;
+  onSelectInstance: (instanceId: string) => void;
+  onSubmit: () => void;
+  selectedInstanceId: string | undefined;
+}) {
+  const hasInstances = instances.length > 0;
+  return (
+    <section
+      aria-labelledby="uazapi-instance-title"
+      className="crm-zapi-credentials"
+    >
+      <div className="crm-zapi-stage-heading">
+        <span>
+          <Smartphone aria-hidden="true" />
+        </span>
+        <div>
+          <small>Instância</small>
+          <h4 id="uazapi-instance-title">Crie ou reutilize uma instância</h4>
+          <p>
+            O WhatsApp da loja roda em uma instância da conta uazapi validada.
+            Crie uma instância nova ou conecte uma instância existente a este
+            canal.
           </p>
         </div>
       </div>
@@ -139,22 +286,76 @@ export function UazapiProvisionStage({
             Usado apenas se você preferir parear por código do telefone.
           </small>
         </div>
+        {hasInstances ? (
+          <fieldset className="crm-connection-field">
+            <legend>Origem da instância</legend>
+            <label>
+              <input
+                checked={mode === "create"}
+                disabled={!canSubmit}
+                name="uazapi-instance-mode"
+                onChange={() => onModeChange("create")}
+                type="radio"
+                value="create"
+              />{" "}
+              Criar nova instância
+            </label>
+            <label>
+              <input
+                checked={mode === "attach"}
+                disabled={!canSubmit}
+                name="uazapi-instance-mode"
+                onChange={() => onModeChange("attach")}
+                type="radio"
+                value="attach"
+              />{" "}
+              Usar instância existente
+            </label>
+          </fieldset>
+        ) : (
+          <p className="crm-zapi-permission-note">
+            Nenhuma instância foi encontrada nesta conta uazapi. Uma nova
+            instância será criada automaticamente.
+          </p>
+        )}
+        {hasInstances && mode === "attach" ? (
+          <div className="crm-connection-field">
+            <CrmSelect
+              ariaLabel="Instância uazapi existente"
+              disabled={!canSubmit}
+              onChange={onSelectInstance}
+              options={instances.map((instance) => ({
+                label: readUazapiInstanceOptionLabel(instance),
+                value: instance.id,
+              }))}
+              placeholder="Selecione a instância"
+              value={selectedInstanceId}
+            />
+            <small>
+              Instâncias já conectadas a um aparelho seguem para a etapa de
+              pronto assim que o servidor confirmar.
+            </small>
+          </div>
+        ) : null}
       </div>
       {error ? (
         <p className="crm-connection-error" role="alert">
           {error}
         </p>
       ) : null}
-      {!canSubmit ? (
-        <p className="crm-zapi-permission-note">
-          Peça a um administrador da loja para provisionar a conexão.
-        </p>
-      ) : null}
       <div className="crm-zapi-inline-actions">
+        <button
+          className="crm-action crm-action-muted"
+          disabled={busy !== null}
+          onClick={onBack}
+          type="button"
+        >
+          Voltar para a conta
+        </button>
         <button
           className="crm-connection-save"
           disabled={busy !== null || !canSubmit}
-          onClick={onSave}
+          onClick={onSubmit}
           type="button"
         >
           {busy === "credentials" ? (
@@ -162,7 +363,11 @@ export function UazapiProvisionStage({
           ) : (
             <ServerCog aria-hidden="true" />
           )}
-          {busy === "credentials" ? "Provisionando" : "Provisionar conexão"}
+          {busy === "credentials"
+            ? "Provisionando"
+            : mode === "attach"
+              ? "Conectar instância selecionada"
+              : "Criar e provisionar conexão"}
         </button>
       </div>
     </section>

@@ -1,6 +1,9 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { whatsappUazapiPairingCodeSchema } from "./crm.channelConnections.schemas.js";
+import {
+  whatsappUazapiListInstancesSchema,
+  whatsappUazapiPairingCodeSchema,
+} from "./crm.channelConnections.schemas.js";
 import { parseCrmMessagingJson } from "./crm.messaging.controller.support.js";
 import { handleCrmMessaging } from "./crm.messaging.errors.js";
 import type { CrmServices } from "./crmServices.js";
@@ -17,6 +20,23 @@ export function registerCrmUazapiConnectionSetupRoutes(
   crmFeature: Hono,
   { createContext, services }: UazapiConnectionSetupRouteOptions,
 ) {
+  crmFeature.post(
+    "/channel-connections/uazapi/list-instances",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const input = await parseCrmMessagingJson(
+          context,
+          whatsappUazapiListInstancesSchema,
+        );
+        const serviceContext = await createContext(context);
+        const result = await services.listUazapiInstances(serviceContext, {
+          adminToken: input.adminToken,
+          ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
+        });
+        return context.json(result);
+      }),
+  );
+
   crmFeature.post(
     "/channel-connections/:connectionId/uazapi/disconnect",
     async (context) =>

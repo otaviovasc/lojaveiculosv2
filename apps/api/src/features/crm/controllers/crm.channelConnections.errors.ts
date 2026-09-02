@@ -6,6 +6,8 @@ import {
 import {
   CrmChannelConnectionCredentialStateError,
   CrmChannelConnectionProviderAlreadyExistsError,
+  CrmUazapiConnectionPhoneConflictError,
+  CrmUazapiInstanceNotFoundError,
   CrmZapiConnectionConflictError,
 } from "../../../domains/crm/channelConnections/connectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
@@ -40,6 +42,23 @@ export function handleCrmMessagingConnectionError(
     return jsonApiError(context, {
       code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
       details: { provider: error.provider },
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof CrmUazapiInstanceNotFoundError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_INSTANCE_NOT_FOUND",
+      details: { reason: "instance_not_found" },
+      error,
+      message: error.message,
+      status: 400,
+    });
+  }
+  if (error instanceof CrmUazapiConnectionPhoneConflictError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_CONNECTION_PHONE_CONFLICT",
       error,
       message: error.message,
       status: 409,

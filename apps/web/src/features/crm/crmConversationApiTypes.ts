@@ -93,6 +93,8 @@ import type {
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
 } from "./crmConversationTypes";
 
 export type CrmConversationApi = {
@@ -127,6 +129,9 @@ export type CrmConversationApi = {
   disconnectUazapiConnection: (
     connectionId: CrmConnectionId,
   ) => Promise<CrmProviderConnection>;
+  listUazapiInstances: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
   grantConnectionMember: (
     connectionId: CrmConnectionId,
     userId: string,

@@ -9,6 +9,7 @@ import type {
   CrmMessageDto,
   CrmMessageSenderOrigin,
   CrmProvider,
+  CrmUazapiInstanceSummary,
 } from "@lojaveiculosv2/shared";
 
 export type {
@@ -17,6 +18,7 @@ export type {
   CrmConversationCycleStatus,
   CrmHumanAttendanceState,
   CrmMessageSenderOrigin,
+  CrmUazapiInstanceSummary,
 };
 
 /** Parsed server cycle plus UI enrichments used by provider setup and tag
@@ -213,15 +215,35 @@ export type CrmCreateConnectionInput =
       provider: "zapi";
     }
   | {
+      adminToken: string;
+      baseUrl?: string;
       channel: "whatsapp";
       connectionPhoneNumber?: string;
       displayName: string;
+      mode: "create";
+      provider: "uazapi";
+    }
+  | {
+      adminToken: string;
+      baseUrl?: string;
+      channel: "whatsapp";
+      displayName: string;
+      instanceId: string;
+      mode: "attach";
       provider: "uazapi";
     }
   | {
       channel: Extract<CrmChannel, "instagram" | "whatsapp">;
       provider: CrmOfficialChannelSetupProvider;
     };
+
+/** Input for POST /crm/channel-connections/uazapi/list-instances. The admin
+ * token is a write-only, store-scoped credential: sent for validation and
+ * instance provisioning, never read back or displayed after entry. */
+export type CrmUazapiListInstancesInput = {
+  adminToken: string;
+  baseUrl?: string;
+};
 
 export type CrmZapiCredentialsInput = {
   clientToken: string;

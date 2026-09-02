@@ -59,6 +59,7 @@ export type ZapiPairingResult =
       kind: "challenge";
     };
 
+export const UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE = "uazapi.admin-token";
 export const UAZAPI_BASE_URL_CREDENTIAL_PURPOSE = "uazapi.base-url";
 export const UAZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE = "uazapi.instance-id";
 export const UAZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE = "uazapi.instance-token";

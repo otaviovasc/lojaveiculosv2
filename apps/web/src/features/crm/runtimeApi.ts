@@ -120,6 +120,10 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).disconnectUazapiConnection(connectionId),
+    listUazapiInstances: async (input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listUazapiInstances(input),
     grantConnectionMember: async (connectionId, userId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

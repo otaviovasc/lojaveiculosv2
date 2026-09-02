@@ -8,6 +8,7 @@ import {
   crmExternalBotTestResultSchema,
   crmMessageListResponseSchema,
   crmRoutingPolicyReadSchema,
+  crmUazapiInstanceListResponseSchema,
 } from "@lojaveiculosv2/shared";
 import { readApiJson } from "../../lib/apiErrors";
 import { createProductCrmHeaders } from "./productCrmApi";
@@ -131,6 +132,14 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.zapiDisconnect(connectionId, baseUrl)),
     disconnectUazapiConnection: (connectionId) =>
       postJson(crmConversationRoutes.uazapiDisconnect(connectionId, baseUrl)),
+    listUazapiInstances: (input) =>
+      postJson<unknown>(
+        crmConversationRoutes.uazapiListInstances(baseUrl),
+        input,
+      ).then(
+        (payload) =>
+          crmUazapiInstanceListResponseSchema.parse(payload).instances,
+      ),
     repairZapiConnectionCredentials: (connectionId, input) =>
       putJson(
         crmConversationRoutes.zapiCredentials(connectionId, baseUrl),

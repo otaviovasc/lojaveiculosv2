@@ -5,10 +5,12 @@ import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
   emptyUazapiProvisionDraft,
   readUazapiSetupStep,
+  UazapiAccountStage,
+  UazapiInstanceStage,
   UazapiPairingStage,
   type UazapiPairingMethod,
-  UazapiProvisionStage,
   type UazapiProvisionDraft,
+  type UazapiProvisionMode,
   UazapiReadyState,
   UazapiSetupProgress,
   UazapiWebhookSetupStatus,
@@ -25,12 +27,16 @@ import {
   type PairingBlock,
   readUazapiConnectionStateKey,
 } from "./CrmWhatsappUazapiSetupTypes";
-import type { CrmCreateConnectionInput } from "./crmConversationTypes";
+import type {
+  CrmCreateConnectionInput,
+  CrmUazapiInstanceSummary,
+} from "./crmConversationTypes";
 
 /**
- * Guided UAZAPI setup. Unlike Z-API there is no credentials stage: the
- * workspace provisions the instance server-side, so the journey starts at
- * provisioning and continues with webhooks and device pairing.
+ * Guided UAZAPI setup. The journey starts by validating the store-owned
+ * uazapi admin token (a write-only credential kept in local wizard state
+ * until the create call), then provisions a new instance or attaches an
+ * existing one, and continues with webhooks and device pairing.
  */
 export function CrmWhatsappUazapiSetup({
   canPair,
@@ -52,6 +58,17 @@ export function CrmWhatsappUazapiSetup({
   const [draft, setDraft] = useState<UazapiProvisionDraft>(
     emptyUazapiProvisionDraft,
   );
+  const [provisionStage, setProvisionStage] = useState<"account" | "instance">(
+    "account",
+  );
+  const [instances, setInstances] = useState<
+    readonly CrmUazapiInstanceSummary[] | null
+  >(null);
+  const [provisionMode, setProvisionMode] =
+    useState<UazapiProvisionMode>("create");
+  const [selectedInstanceId, setSelectedInstanceId] = useState<
+    string | undefined
+  >(undefined);
   const [phone, setPhone] = useState("");
   const [pairAgainForStateRevision, setPairAgainForStateRevision] = useState<
     number | null
@@ -98,6 +115,10 @@ export function CrmWhatsappUazapiSetup({
     setPairingCode(null);
     setQr(null);
     setNow(Date.now());
+    setProvisionStage("account");
+    setInstances(null);
+    setProvisionMode("create");
+    setSelectedInstanceId(undefined);
   }, [connectionStateKey]);
 
   useEffect(() => {
@@ -159,11 +180,56 @@ export function CrmWhatsappUazapiSetup({
     step,
   ]);
 
+  const validateAccount = async () => {
+    const listInstances = handlers.onListUazapiInstances;
+    if (!canSetup || !listInstances) return;
+    const adminToken = draft.adminToken.trim();
+    if (!adminToken) {
+      setError("Informe o token admin da conta uazapi da loja.");
+      return;
+    }
+    const baseUrl = draft.baseUrl.trim();
+    const actionGeneration = beginAction();
+    setBusy("credentials");
+    setError(null);
+    try {
+      const listed = await listInstances({
+        adminToken,
+        ...(baseUrl ? { baseUrl } : {}),
+      });
+      if (!isCurrentAction(actionGeneration)) return;
+      setInstances(listed);
+      setProvisionMode("create");
+      setSelectedInstanceId(undefined);
+      setProvisionStage("instance");
+    } catch (caught) {
+      if (isCurrentAction(actionGeneration)) {
+        setError(
+          formatApiErrorDisplay(
+            caught,
+            "Não foi possível validar o token admin. Nenhuma instância foi listada ou alterada.",
+          ),
+        );
+      }
+    } finally {
+      if (isCurrentAction(actionGeneration)) setBusy(null);
+    }
+  };
+
   const provision = async () => {
     if (!canSetup) return;
     const displayName = draft.displayName.trim();
     if (!displayName) {
       setError("Informe um nome para identificar esta conexão no CRM.");
+      return;
+    }
+    const adminToken = draft.adminToken.trim();
+    if (!adminToken) {
+      setError("Informe o token admin da conta uazapi da loja.");
+      return;
+    }
+    if (provisionMode === "attach" && !selectedInstanceId) {
+      setError("Selecione a instância existente que receberá esta conexão.");
       return;
     }
     const normalizedPhone = draft.phone.replace(/\D/g, "");
@@ -174,16 +240,31 @@ export function CrmWhatsappUazapiSetup({
       setError("Informe um telefone válido com DDI, DDD e número.");
       return;
     }
+    const baseUrl = draft.baseUrl.trim();
     const actionGeneration = beginAction();
     setBusy("credentials");
     setError(null);
     try {
-      const input: CrmCreateConnectionInput = {
-        channel: "whatsapp",
+      const shared = {
+        adminToken,
+        channel: "whatsapp" as const,
         displayName,
-        provider: "uazapi",
-        ...(normalizedPhone ? { connectionPhoneNumber: normalizedPhone } : {}),
+        provider: "uazapi" as const,
+        ...(baseUrl ? { baseUrl } : {}),
       };
+      // The attach contract does not accept connectionPhoneNumber: the
+      // existing instance already owns its number, so the pairing phone is
+      // only sent when a new instance is created.
+      const input: CrmCreateConnectionInput =
+        provisionMode === "attach"
+          ? { ...shared, instanceId: selectedInstanceId ?? "", mode: "attach" }
+          : {
+              ...shared,
+              mode: "create",
+              ...(normalizedPhone
+                ? { connectionPhoneNumber: normalizedPhone }
+                : {}),
+            };
       const created = await handlers.onCreate(input);
       if (!created) {
         throw new Error(
@@ -192,6 +273,10 @@ export function CrmWhatsappUazapiSetup({
       }
       if (!isCurrentAction(actionGeneration)) return;
       setDraft(emptyUazapiProvisionDraft);
+      setInstances(null);
+      setSelectedInstanceId(undefined);
+      setProvisionMode("create");
+      setProvisionStage("account");
       if (created.phoneNumber) setPhone(created.phoneNumber);
       onConnection(created);
     } catch (caught) {
@@ -350,14 +435,33 @@ export function CrmWhatsappUazapiSetup({
     >
       <UazapiSetupProgress step={step} />
       <div className="crm-zapi-stage">
-        {step === 1 && !connection ? (
-          <UazapiProvisionStage
+        {step === 1 && !connection && provisionStage === "account" ? (
+          <UazapiAccountStage
+            busy={busy}
+            canSubmit={canSetup && Boolean(handlers.onListUazapiInstances)}
+            draft={draft}
+            error={error}
+            onChange={setDraft}
+            onValidate={() => void validateAccount()}
+          />
+        ) : null}
+        {step === 1 && !connection && provisionStage === "instance" ? (
+          <UazapiInstanceStage
             busy={busy}
             canSubmit={canSetup}
             draft={draft}
             error={error}
+            instances={instances ?? []}
+            mode={provisionMode}
+            onBack={() => {
+              setProvisionStage("account");
+              setError(null);
+            }}
             onChange={setDraft}
-            onSave={() => void provision()}
+            onModeChange={setProvisionMode}
+            onSelectInstance={setSelectedInstanceId}
+            onSubmit={() => void provision()}
+            selectedInstanceId={selectedInstanceId}
           />
         ) : null}
         {step === 2 && connection ? (

@@ -4,6 +4,7 @@ import {
   updateCrmChannelConnection,
 } from "../../../domains/crm/services/CrmChannelConnectionService/crmChannelConnections.js";
 import { createCrmChannelConnection } from "../../../domains/crm/services/CrmChannelConnectionService/createCrmChannelConnection.js";
+import { listUazapiInstances } from "../../../domains/crm/services/CrmChannelConnectionService/listUazapiInstances.js";
 import {
   authorizeComposioCrmChannelConnection,
   completeComposioCrmChannelConnection,
@@ -67,6 +68,7 @@ type ConnectionBindings = Pick<
   | "listConnectionMembers"
   | "revokeConnectionMember"
   | "listCrmChannelConnections"
+  | "listUazapiInstances"
   | "requestZapiPairingCode"
   | "requestZapiPairingQr"
   | "requestUazapiPairingCode"
@@ -120,6 +122,8 @@ export const createCrmChannelConnectionBindings = (
     revokeConnectionMember(context, input, ports),
   listCrmChannelConnections: (context) =>
     listCrmChannelConnections(context, ports),
+  listUazapiInstances: (context, input) =>
+    listUazapiInstances(context, input, ports),
   requestZapiPairingCode: (context, input) =>
     requestZapiPairingCode(context, input, ports),
   requestZapiPairingQr: (context, input) =>

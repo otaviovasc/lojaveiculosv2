@@ -770,6 +770,7 @@ export function useCrmInbox(
     disconnectUazapiConnection: connections.disconnectUazapiConnection,
     grantConnectionMember: connections.grantConnectionMember,
     listConnectionMembers: connections.listConnectionMembers,
+    listUazapiInstances: connections.listUazapiInstances,
     revokeConnectionMember: connections.revokeConnectionMember,
     refreshConnections: connections.refreshConnections,
     refreshConnectionsAndRead: connections.refreshConnectionsAndRead,

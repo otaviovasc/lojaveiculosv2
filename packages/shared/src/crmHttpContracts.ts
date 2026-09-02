@@ -86,6 +86,32 @@ export type CrmWhatsappZapiSetupState = z.infer<
   typeof crmWhatsappZapiSetupStateSchema
 >;
 
+/**
+ * POST /crm/channel-connections/uazapi/list-instances validates a store-owned
+ * uazapi admin token and answers the instances visible to it. Tokens are
+ * write-only credentials and are never part of the response.
+ */
+export const crmUazapiInstanceSummarySchema = z
+  .object({
+    connectedPhone: nullableString,
+    id: nonEmptyString,
+    name: nonEmptyString,
+    status: nonEmptyString,
+  })
+  .strict();
+export type CrmUazapiInstanceSummary = z.infer<
+  typeof crmUazapiInstanceSummarySchema
+>;
+
+export const crmUazapiInstanceListResponseSchema = z
+  .object({
+    instances: z.array(crmUazapiInstanceSummarySchema),
+  })
+  .strict();
+export type CrmUazapiInstanceListResponse = z.infer<
+  typeof crmUazapiInstanceListResponseSchema
+>;
+
 export const crmConnectionOverviewItemSchema = crmChannelConnectionSchema
   .extend({
     live: crmConnectionLiveStatusSchema.optional(),

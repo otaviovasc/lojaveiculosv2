@@ -9,6 +9,14 @@ export const crmChannelConnectionStateSchema = z.enum([
   "sandbox",
 ]);
 
+const uazapiConnectionBaseFields = {
+  adminToken: z.string().trim().min(1).max(500),
+  baseUrl: z.string().trim().url().max(500).optional(),
+  channel: z.literal("whatsapp"),
+  displayName: z.string().trim().min(1).max(160).optional(),
+  provider: z.literal("uazapi"),
+} as const;
+
 export const crmCreateChannelConnectionSchema = z.union([
   z
     .object({
@@ -22,10 +30,16 @@ export const crmCreateChannelConnectionSchema = z.union([
     .strict(),
   z
     .object({
-      channel: z.literal("whatsapp"),
+      ...uazapiConnectionBaseFields,
       connectionPhoneNumber: z.string().trim().min(8).max(30).optional(),
-      displayName: z.string().trim().min(1).max(160).optional(),
-      provider: z.literal("uazapi"),
+      mode: z.literal("create"),
+    })
+    .strict(),
+  z
+    .object({
+      ...uazapiConnectionBaseFields,
+      instanceId: z.string().trim().min(1).max(191),
+      mode: z.literal("attach"),
     })
     .strict(),
   z
@@ -36,6 +50,13 @@ export const crmCreateChannelConnectionSchema = z.union([
     })
     .strict(),
 ]);
+
+export const whatsappUazapiListInstancesSchema = z
+  .object({
+    adminToken: z.string().trim().min(1).max(500),
+    baseUrl: z.string().trim().url().max(500).optional(),
+  })
+  .strict();
 
 export const whatsappZapiPairingCodeSchema = z
   .object({ phone: z.string().trim().min(8).max(30) })
