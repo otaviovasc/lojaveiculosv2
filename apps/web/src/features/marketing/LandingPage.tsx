@@ -1,3 +1,5 @@
+import "../../styles/marketing.css";
+
 import { HeroSection } from "./LandingHero";
 import { IntegrationsSection } from "./LandingIntegrations";
 import { RacingStripeDivider } from "./LandingMemphisGraphics";
