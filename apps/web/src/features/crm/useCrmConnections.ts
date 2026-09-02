@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { asError } from "./crmConversationHookSupport";
 import type {
@@ -18,6 +19,8 @@ export function useCrmConnections(api: CrmConversationApi) {
     [],
   );
   const [connections, setConnections] = useState<CrmProviderConnection[]>([]);
+  const [connectionAllowance, setConnectionAllowance] =
+    useState<CrmConnectionAllowance | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const requestGenerationRef = useRef(0);
@@ -48,6 +51,7 @@ export function useCrmConnections(api: CrmConversationApi) {
       connectionsRef.current = nextConnections;
       setConnections(nextConnections);
       setAvailableSetups(payload.availableSetups);
+      setConnectionAllowance(payload.allowance);
       setError(null);
     },
     [],
@@ -293,6 +297,32 @@ export function useCrmConnections(api: CrmConversationApi) {
     [api, refreshConnections],
   );
 
+  const applyWebhookSetupResult = useCallback(
+    (
+      connectionId: CrmConnectionId,
+      result: CrmWhatsappZapiWebhookSetupResult,
+    ) => {
+      const currentConnections = connectionsRef.current;
+      const current = currentConnections.find(
+        (candidate) => String(candidate.id) === String(connectionId),
+      );
+      const connection = current
+        ? { ...current, setup: result.setup }
+        : undefined;
+      if (connection) {
+        const configuredConnections = currentConnections.map((candidate) =>
+          String(candidate.id) === String(connectionId)
+            ? connection
+            : candidate,
+        );
+        connectionsRef.current = configuredConnections;
+        setConnections(configuredConnections);
+      }
+      return connection;
+    },
+    [],
+  );
+
   const configureZapiWebhooks = useCallback(
     async (
       connectionId: CrmConnectionId,
@@ -308,22 +338,7 @@ export function useCrmConnections(api: CrmConversationApi) {
         if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
           return result;
         }
-        const currentConnections = connectionsRef.current;
-        const current = currentConnections.find(
-          (candidate) => String(candidate.id) === String(connectionId),
-        );
-        const connection = current
-          ? { ...current, setup: result.setup }
-          : undefined;
-        if (connection) {
-          const configuredConnections = currentConnections.map((candidate) =>
-            String(candidate.id) === String(connectionId)
-              ? connection
-              : candidate,
-          );
-          connectionsRef.current = configuredConnections;
-          setConnections(configuredConnections);
-        }
+        const connection = applyWebhookSetupResult(connectionId, result);
         return {
           ...result,
           ...(connection ? { connection } : {}),
@@ -335,10 +350,165 @@ export function useCrmConnections(api: CrmConversationApi) {
     },
     [
       api,
+      applyWebhookSetupResult,
       beginConnectionMutation,
       isLatestConnectionMutation,
       refreshConnections,
     ],
+  );
+
+  const requestUazapiPairingQr = useCallback(
+    async (connectionId: CrmConnectionId) => {
+      try {
+        return await api.requestUazapiPairingQr(connectionId);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api],
+  );
+
+  const requestUazapiPairingCode = useCallback(
+    async (connectionId: CrmConnectionId, phone: string) => {
+      try {
+        return await api.requestUazapiPairingCode(connectionId, phone);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api],
+  );
+
+  const disconnectUazapiConnection = useCallback(
+    async (connectionId: CrmConnectionId) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
+      try {
+        const connection = await api.disconnectUazapiConnection(connectionId);
+        await refreshConnections();
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return (
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? connection
+          );
+        }
+        return reconcileConnection(connectionId, connection);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
+  );
+
+  const refreshUazapiConnectionStatus = useCallback(
+    async (connectionId: CrmConnectionId) => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
+      try {
+        const connection =
+          await api.refreshUazapiConnectionStatus(connectionId);
+        await refreshConnections();
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return (
+            connectionsRef.current.find(
+              (candidate) => String(candidate.id) === String(connectionId),
+            ) ?? connection
+          );
+        }
+        return reconcileConnection(connectionId, connection);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [
+      api,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      reconcileConnection,
+      refreshConnections,
+    ],
+  );
+
+  const configureUazapiWebhooks = useCallback(
+    async (
+      connectionId: CrmConnectionId,
+    ): Promise<
+      CrmWhatsappZapiWebhookSetupResult & {
+        connection?: CrmProviderConnection;
+      }
+    > => {
+      const mutationGeneration = beginConnectionMutation(connectionId);
+      try {
+        const result = await api.configureUazapiWebhooks(connectionId);
+        await refreshConnections();
+        if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
+          return result;
+        }
+        const connection = applyWebhookSetupResult(connectionId, result);
+        return {
+          ...result,
+          ...(connection ? { connection } : {}),
+        };
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [
+      api,
+      applyWebhookSetupResult,
+      beginConnectionMutation,
+      isLatestConnectionMutation,
+      refreshConnections,
+    ],
+  );
+
+  const listConnectionMembers = useCallback(
+    async (connectionId: CrmConnectionId) => {
+      try {
+        return await api.listConnectionMembers(connectionId);
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api],
+  );
+
+  const grantConnectionMember = useCallback(
+    async (connectionId: CrmConnectionId, userId: string) => {
+      try {
+        await api.grantConnectionMember(connectionId, userId);
+        await refreshConnections();
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, refreshConnections],
+  );
+
+  const revokeConnectionMember = useCallback(
+    async (connectionId: CrmConnectionId, userId: string) => {
+      try {
+        const result = await api.revokeConnectionMember(connectionId, userId);
+        await refreshConnections();
+        return result;
+      } catch (caught) {
+        setError(asError(caught));
+        throw caught;
+      }
+    },
+    [api, refreshConnections],
   );
 
   const authorizeComposio = useCallback(
@@ -394,6 +564,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     connectionsRef.current = [];
     setConnections([]);
     setAvailableSetups([]);
+    setConnectionAllowance(null);
     setIsLoading(true);
     setError(null);
     void loadConnections()
@@ -421,22 +592,31 @@ export function useCrmConnections(api: CrmConversationApi) {
     availableSetups,
     completeComposio,
     configureZapiWebhooks,
+    configureUazapiWebhooks,
+    connectionAllowance,
     connections,
     clearError,
     createConnection,
     disconnectZapiConnection,
+    disconnectUazapiConnection,
     error,
+    grantConnectionMember,
     hasConnectedConnection: connections.some(
       (connection) => connection.readiness?.ready === true,
     ),
     isLoading,
+    listConnectionMembers,
     refreshConnections,
     refreshConnectionsAndRead,
     repairZapiConnectionCredentials,
     replaceZapiConnection,
     requestZapiPairingCode,
     requestZapiPairingQr,
+    requestUazapiPairingCode,
+    requestUazapiPairingQr,
     refreshZapiConnectionStatus,
+    refreshUazapiConnectionStatus,
+    revokeConnectionMember,
     selectComposioSender,
     setConnectionPaused,
   };

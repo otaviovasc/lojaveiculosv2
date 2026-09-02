@@ -4,7 +4,7 @@ import { z } from "zod";
 export const crmChannels = ["whatsapp", "instagram", "olx_chat"] as const;
 export type CrmChannel = (typeof crmChannels)[number];
 
-export const crmProviders = ["meta_cloud", "zapi", "olx"] as const;
+export const crmProviders = ["meta_cloud", "zapi", "uazapi", "olx"] as const;
 export type CrmProvider = (typeof crmProviders)[number];
 
 export const crmCredentialBrokers = ["direct", "composio"] as const;
@@ -78,6 +78,8 @@ export const crmChannelConnectionSchema = z
     readiness: crmConnectionReadinessSchema,
     capabilities: z.array(z.enum(crmConnectionCapabilities)).readonly(),
     isDefault: z.boolean(),
+    phoneNumber: z.string().nullable().optional(),
+    memberUserIds: z.array(z.string()).readonly().optional(),
     purpose: z.enum(crmConnectionPurposes).optional(),
     routingStatus: z.enum(crmConnectionRoutingStatuses).optional(),
   })

@@ -62,7 +62,12 @@ describe("canonical CRM core schema", () => {
       "instagram",
       "olx_chat",
     ]);
-    expect(transportProvider.enumValues).toEqual(["meta_cloud", "zapi", "olx"]);
+    expect(transportProvider.enumValues).toEqual([
+      "meta_cloud",
+      "zapi",
+      "olx",
+      "uazapi",
+    ]);
     expect(credentialBroker.enumValues).toEqual(["composio", "direct"]);
     expect(crmExternalBotActionCommandState.enumValues).toEqual([
       "accepted",

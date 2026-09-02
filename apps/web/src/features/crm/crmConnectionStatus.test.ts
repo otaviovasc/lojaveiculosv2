@@ -100,6 +100,29 @@ describe("readCrmConnectionStatus", () => {
     expect(readCrmProviderLabel("meta_cloud")).toBe("WhatsApp oficial");
     expect(readCrmChannelLabel("instagram")).toBe("Instagram");
   });
+
+  it("labels UAZAPI as a WhatsApp transport without calling it the channel", () => {
+    expect(readCrmProviderLabel("uazapi")).toBe("UAZAPI");
+    expect(readCrmProviderIcon("uazapi")).toBe("whatsapp");
+    expect(
+      readCrmConnectionStatus({
+        connectionError: null,
+        hasConnection: true,
+        isLoading: false,
+        provider: "uazapi",
+        state: "active",
+      }),
+    ).toEqual({ label: "UAZAPI: online", tone: "online" });
+    expect(
+      readCrmConnectionStatus({
+        connectionError: null,
+        hasConnection: false,
+        isLoading: false,
+        provider: "uazapi",
+        state: "disconnected",
+      }),
+    ).toEqual({ label: "UAZAPI: desconectado", tone: "offline" });
+  });
 });
 
 describe("provider and realtime status separation", () => {

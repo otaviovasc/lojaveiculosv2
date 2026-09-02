@@ -10,7 +10,7 @@ import {
   requireCrmMessagingScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { resolveCrmQueueVisibility } from "../../messaging/crmQueueVisibility.js";
+import { resolveCrmConnectionScopedQueueVisibility } from "../../messaging/crmQueueVisibility.js";
 
 export async function resolveScopedConversationCycle(
   context: ServiceContext,
@@ -23,7 +23,10 @@ export async function resolveScopedConversationCycle(
   ).listConversationCycles({
     limit: 1,
     offset: 0,
-    queueVisibility: resolveCrmQueueVisibility(context),
+    queueVisibility: await resolveCrmConnectionScopedQueueVisibility(
+      context,
+      ports,
+    ),
     cycleId: input.cycleId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,

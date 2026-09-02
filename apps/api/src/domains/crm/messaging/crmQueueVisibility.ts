@@ -1,10 +1,14 @@
 import type { UserId } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmQueueVisibility } from "../ports/crmConversationRepository.js";
-import type { CrmRealtimeEvent } from "../ports/crmRealtimePublisher.js";
+import type { CrmConnectionMemberRepository } from "../ports/crmConnectionMemberRepository.js";
 
 const assignPermission = "crm.conversations.assign";
 const readUnassignedPermission = "crm.conversations.read_unassigned";
+
+export type CrmConnectionScopedQueueVisibilityPorts = {
+  crmConnectionMemberRepository?: CrmConnectionMemberRepository;
+};
 
 export function resolveCrmQueueVisibility(
   context: ServiceContext,
@@ -13,18 +17,68 @@ export function resolveCrmQueueVisibility(
     context.permissions.includes(assignPermission) ||
     context.permissions.includes(readUnassignedPermission)
   ) {
-    return { kind: "global" };
+    return { connectionIds: null, kind: "global" };
   }
   if (context.actor.kind === "user") {
-    return { kind: "assigned", userId: context.actor.id as UserId };
+    return {
+      connectionIds: null,
+      kind: "assigned",
+      userId: context.actor.id as UserId,
+    };
   }
-  return { kind: "none" };
+  return { connectionIds: null, kind: "none" };
+}
+
+/**
+ * Extends {@link resolveCrmQueueVisibility} with per-connection member access.
+ * Membership is resolved here (the caller's boundary) so the base resolver
+ * stays synchronous-pure. `connectionIds: null` means unrestricted; an empty
+ * list means the actor sees no connection-scoped queue rows.
+ */
+export async function resolveCrmConnectionScopedQueueVisibility(
+  context: ServiceContext,
+  ports: CrmConnectionScopedQueueVisibilityPorts,
+): Promise<CrmQueueVisibility> {
+  const visibility = resolveCrmQueueVisibility(context);
+  if (visibility.kind !== "assigned") return visibility;
+  if (!context.tenantId || !context.storeId) {
+    return { ...visibility, connectionIds: [] };
+  }
+  if (!ports.crmConnectionMemberRepository) {
+    // Fail-soft until the port is wired into the runtime ports: keep the
+    // legacy connection-unrestricted assigned visibility.
+    context.logger.warn("crm.queue_visibility.connection_scope_unavailable", {
+      actorId: context.actor.id,
+      requestId: context.requestId,
+      storeId: context.storeId,
+      tenantId: context.tenantId,
+    });
+    return visibility;
+  }
+  const connectionIds =
+    await ports.crmConnectionMemberRepository.listConnectionIdsForUser({
+      storeId: context.storeId as never,
+      tenantId: context.tenantId as never,
+      userId: visibility.userId,
+    });
+  return { ...visibility, connectionIds };
+}
+
+export function matchesConnectionScope(
+  visibility: CrmQueueVisibility,
+  connectionId: string | null | undefined,
+) {
+  if (visibility.connectionIds == null) return true;
+  if (connectionId == null) return false;
+  return visibility.connectionIds.includes(connectionId);
 }
 
 export function matchesCrmQueueVisibility(
   visibility: CrmQueueVisibility,
   assignedUserId: string | null,
+  connectionId?: string | null,
 ) {
+  if (!matchesConnectionScope(visibility, connectionId)) return false;
   switch (visibility.kind) {
     case "global":
       return true;
@@ -33,166 +87,4 @@ export function matchesCrmQueueVisibility(
     case "none":
       return false;
   }
-}
-
-export function matchesCrmRealtimeQueueVisibility(
-  visibility: CrmQueueVisibility,
-  event: CrmRealtimeEvent,
-  boundary?: { assignedUserId: string | null },
-) {
-  switch (event.type) {
-    case "message":
-      return matchesCrmQueueVisibility(
-        visibility,
-        boundary
-          ? boundary.assignedUserId
-          : event.conversationCycle.assignedUserId,
-      );
-    case "conversationCycle":
-      return (
-        matchesCrmQueueVisibility(
-          visibility,
-          boundary
-            ? boundary.assignedUserId
-            : event.conversationCycle.assignedUserId,
-        ) ||
-        (visibility.kind === "assigned" &&
-          event.revokedUserId === visibility.userId)
-      );
-    case "message_status":
-      return matchesCrmQueueVisibility(
-        visibility,
-        boundary ? boundary.assignedUserId : event.assignedUserId,
-      );
-    case "presence":
-      return matchesCrmQueueVisibility(
-        visibility,
-        boundary ? boundary.assignedUserId : event.assignedUserId,
-      );
-    case "connection_status":
-      return true;
-  }
-}
-
-export type CrmRealtimeAssignmentBoundary = {
-  assignedUserId: string | null;
-  revision: number | null;
-};
-
-export function readCrmRealtimeConversationCycleBoundary(
-  event: CrmRealtimeEvent,
-): { boundary: CrmRealtimeAssignmentBoundary; cycleKey: string } | null {
-  if (event.type === "message" || event.type === "conversationCycle") {
-    return {
-      boundary: {
-        assignedUserId: event.conversationCycle.assignedUserId,
-        revision: readRevision(event.conversationCycle.revision),
-      },
-      cycleKey: assignmentBoundaryKey(
-        event,
-        String(event.conversationCycle.id),
-      ),
-    };
-  }
-  if (event.type === "message_status" || event.type === "presence") {
-    return {
-      boundary: { assignedUserId: event.assignedUserId, revision: null },
-      cycleKey: assignmentBoundaryKey(event, event.cycleId),
-    };
-  }
-  return null;
-}
-
-export function updateCrmRealtimeAssignmentBoundary(
-  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
-  event: CrmRealtimeEvent,
-) {
-  const observed = readCrmRealtimeConversationCycleBoundary(event);
-  if (!observed) return;
-  const current = boundaries.get(observed.cycleKey);
-  if (
-    current &&
-    current.revision !== null &&
-    observed.boundary.revision !== null &&
-    (observed.boundary.revision < current.revision ||
-      (observed.boundary.revision === current.revision &&
-        observed.boundary.assignedUserId !== current.assignedUserId))
-  ) {
-    return;
-  }
-  if (current?.revision !== undefined && observed.boundary.revision === null) {
-    return;
-  }
-  boundaries.set(observed.cycleKey, observed.boundary);
-}
-
-export function isStaleCrmRealtimeAssignmentEvent(
-  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
-  event: CrmRealtimeEvent,
-) {
-  const observed = readCrmRealtimeConversationCycleBoundary(event);
-  if (!observed || observed.boundary.revision === null) return false;
-  const current = boundaries.get(observed.cycleKey);
-  return Boolean(
-    current?.revision !== null &&
-    current?.revision !== undefined &&
-    (observed.boundary.revision < current.revision ||
-      (observed.boundary.revision === current.revision &&
-        observed.boundary.assignedUserId !== current.assignedUserId)),
-  );
-}
-
-export function filterCrmRealtimeReplayByHistoricalVisibility<
-  T extends { event: CrmRealtimeEvent },
->(
-  history: readonly T[],
-  startIndex: number,
-  visibility: CrmQueueVisibility,
-): T[] {
-  const boundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
-  const visible: T[] = [];
-  history.forEach((item, index) => {
-    const isStale = isStaleCrmRealtimeAssignmentEvent(boundaries, item.event);
-    updateCrmRealtimeAssignmentBoundary(boundaries, item.event);
-    if (index < startIndex) return;
-    if (visibility.kind === "assigned" && isStale) return;
-    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
-    if (
-      matchesCrmRealtimeQueueVisibility(
-        visibility,
-        item.event,
-        observed ? boundaries.get(observed.cycleKey) : undefined,
-      )
-    ) {
-      visible.push(item);
-    }
-  });
-  if (visibility.kind !== "assigned") return visible;
-  const lastRevocationByCycle = new Map<string, number>();
-  visible.forEach((item, index) => {
-    if (
-      item.event.type !== "conversationCycle" ||
-      item.event.revokedUserId !== visibility.userId
-    ) {
-      return;
-    }
-    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
-    if (observed) lastRevocationByCycle.set(observed.cycleKey, index);
-  });
-  return visible.filter((item, index) => {
-    const observed = readCrmRealtimeConversationCycleBoundary(item.event);
-    if (!observed) return true;
-    const lastRevocation = lastRevocationByCycle.get(observed.cycleKey);
-    return lastRevocation === undefined || index >= lastRevocation;
-  });
-}
-
-function assignmentBoundaryKey(event: CrmRealtimeEvent, cycleId: string) {
-  return `${event.tenantId}:${event.storeId}:${cycleId}`;
-}
-
-function readRevision(value: unknown) {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
-    ? value
-    : null;
 }

@@ -19,7 +19,22 @@ export type {
 } from "./crmConversationRepositoryScheduledInputs.js";
 
 export type CrmQueueVisibility =
-  { kind: "assigned"; userId: UserId } | { kind: "global" } | { kind: "none" };
+  | {
+      kind: "assigned";
+      /** `null`/omitted = unrestricted; otherwise visible connection ids. */
+      connectionIds?: readonly string[] | null;
+      userId: UserId;
+    }
+  | {
+      kind: "global";
+      /** `null`/omitted = unrestricted; otherwise visible connection ids. */
+      connectionIds?: readonly string[] | null;
+    }
+  | {
+      kind: "none";
+      /** `null`/omitted = unrestricted; otherwise visible connection ids. */
+      connectionIds?: readonly string[] | null;
+    };
 
 export type CountCrmConversationCyclesInput = {
   assignedUserId?: UserId;

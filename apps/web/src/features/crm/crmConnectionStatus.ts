@@ -104,6 +104,8 @@ function providerStatus(
 
 export function readCrmProviderLabel(provider: string) {
   switch (provider) {
+    case "uazapi":
+      return "UAZAPI";
     case "zapi":
       return "Z-API";
     case "meta_cloud":
@@ -119,7 +121,11 @@ export function readCrmProviderIcon(provider: string) {
   if (provider === "olx") {
     return "olx" as const;
   }
-  if (provider === "zapi" || provider === "meta_cloud") {
+  if (
+    provider === "zapi" ||
+    provider === "uazapi" ||
+    provider === "meta_cloud"
+  ) {
     return "whatsapp" as const;
   }
   return "unknown" as const;

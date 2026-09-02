@@ -2,6 +2,7 @@ import type {
   ComposioCrmOnboardingProvider,
   ComposioInstagramOnboardingProvider,
   CrmConnectionCredentialVault,
+  UazapiConnectionSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../ports/crmConnectionSetupProvider.js";
 import { CrmScopeError, type CrmServicePorts } from "./serviceSupport.js";
@@ -44,6 +45,15 @@ export function getZapiConnectionSetupProvider(
     throw new CrmScopeError("zapiConnectionSetupProvider");
   }
   return ports.zapiConnectionSetupProvider;
+}
+
+export function getUazapiConnectionSetupProvider(
+  ports: CrmServicePorts,
+): UazapiConnectionSetupProvider {
+  if (!ports.uazapiConnectionSetupProvider) {
+    throw new CrmScopeError("uazapiConnectionSetupProvider");
+  }
+  return ports.uazapiConnectionSetupProvider;
 }
 
 export function getCrmZapiSupportAuthorizer(ports: CrmServicePorts) {

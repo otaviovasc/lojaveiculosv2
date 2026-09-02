@@ -15,6 +15,16 @@ import type {
   RequestZapiPairingCodeInput,
   RequestZapiPairingQrInput,
 } from "../../../domains/crm/services/CrmWhatsappService/zapiWhatsappConnectionSetup.js";
+import type { RequestUazapiPairingCodeInput } from "../../../domains/crm/services/CrmWhatsappService/uazapiPairingCode.js";
+import type { RequestUazapiPairingQrInput } from "../../../domains/crm/services/CrmWhatsappService/uazapiPairingQr.js";
+import type {
+  ConfigureUazapiConnectionWebhooksInput,
+  ConfigureUazapiConnectionWebhooksResult,
+} from "../../../domains/crm/services/CrmWhatsappService/configureUazapiConnectionWebhooks.js";
+import type {
+  disconnectUazapiConnection,
+  refreshUazapiConnectionStatus,
+} from "../../../domains/crm/services/CrmWhatsappService/uazapiConnectionLifecycle.js";
 import type {
   disconnectZapiConnection,
   refreshZapiConnectionStatus,
@@ -34,6 +44,13 @@ import type {
   getZapiConnectionReplacementStatus,
   startZapiConnectionReplacement,
 } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnection.js";
+import type { CrmConnectionMember } from "../../../domains/crm/ports/crmConnectionMemberRepository.js";
+import type { GrantConnectionMemberInput } from "../../../domains/crm/services/CrmConnectionMemberService/grantConnectionMember.js";
+import type { ListConnectionMembersInput } from "../../../domains/crm/services/CrmConnectionMemberService/listConnectionMembers.js";
+import type {
+  RevokeConnectionMemberInput,
+  RevokeConnectionMemberResult,
+} from "../../../domains/crm/services/CrmConnectionMemberService/revokeConnectionMember.js";
 
 type ContextService<Input, Output> = (
   context: ServiceContext,
@@ -57,6 +74,10 @@ export type CrmChannelConnectionServices = {
     Parameters<typeof configureZapiWebhooksAsSupport>[1],
     Awaited<ReturnType<typeof configureZapiWebhooksAsSupport>>
   >;
+  configureUazapiConnectionWebhooks: ContextService<
+    ConfigureUazapiConnectionWebhooksInput,
+    ConfigureUazapiConnectionWebhooksResult
+  >;
   createZapiConnectionAsSupport: ContextService<
     Parameters<typeof createZapiConnectionAsSupport>[1],
     Awaited<ReturnType<typeof createZapiConnectionAsSupport>>
@@ -69,12 +90,25 @@ export type CrmChannelConnectionServices = {
     Parameters<typeof disconnectZapiConnection>[1],
     Awaited<ReturnType<typeof disconnectZapiConnection>>
   >;
+  disconnectUazapiConnection: ContextService<
+    Parameters<typeof disconnectUazapiConnection>[1],
+    Awaited<ReturnType<typeof disconnectUazapiConnection>>
+  >;
   getExternalBotConfiguration: (
     context: ServiceContext,
   ) => Promise<CrmExternalBotIntegration>;
   getChannelConnectionOverview: (
     context: ServiceContext,
   ) => Promise<CrmChannelConnectionOverview>;
+  grantConnectionMember: ContextService<GrantConnectionMemberInput, void>;
+  listConnectionMembers: ContextService<
+    ListConnectionMembersInput,
+    readonly CrmConnectionMember[]
+  >;
+  revokeConnectionMember: ContextService<
+    RevokeConnectionMemberInput,
+    RevokeConnectionMemberResult
+  >;
   listCrmChannelConnections: (
     context: ServiceContext,
   ) => Promise<readonly CrmChannelConnection[]>;
@@ -84,6 +118,14 @@ export type CrmChannelConnectionServices = {
   >;
   requestZapiPairingQr: ContextService<
     RequestZapiPairingQrInput,
+    { expiresAt: string; qrCode: string }
+  >;
+  requestUazapiPairingCode: ContextService<
+    RequestUazapiPairingCodeInput,
+    { code?: string; expiresAt: string; requested: boolean }
+  >;
+  requestUazapiPairingQr: ContextService<
+    RequestUazapiPairingQrInput,
     { expiresAt: string; qrCode: string }
   >;
   repairZapiConnectionCredentials: ContextService<
@@ -105,6 +147,10 @@ export type CrmChannelConnectionServices = {
   refreshZapiConnectionStatus: ContextService<
     Parameters<typeof refreshZapiConnectionStatus>[1],
     Awaited<ReturnType<typeof refreshZapiConnectionStatus>>
+  >;
+  refreshUazapiConnectionStatus: ContextService<
+    Parameters<typeof refreshUazapiConnectionStatus>[1],
+    Awaited<ReturnType<typeof refreshUazapiConnectionStatus>>
   >;
   requestZapiPairingCodeAsSupport: ContextService<
     Parameters<typeof requestZapiPairingCodeAsSupport>[1],

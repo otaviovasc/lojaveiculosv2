@@ -113,8 +113,10 @@ export type CrmProviderConnection = {
   id: string;
   isDefault?: boolean;
   live?: CrmConnectionLiveStatus | undefined;
+  memberUserIds?: readonly string[] | undefined;
   metadata?: CrmConnectionMetadata;
   phone?: string | null;
+  phoneNumber?: string | null | undefined;
   provider: CrmProvider;
   purpose?: CrmChannelConnectionDto["purpose"];
   revision?: number | undefined;
@@ -192,9 +194,15 @@ export type CrmWhatsappZapiWebhookSetupResult = {
   setup: CrmWhatsappZapiSetupState;
 };
 
-export type CrmSetupProvider = Extract<CrmProvider, "meta_cloud" | "zapi">;
+export type CrmSetupProvider = Extract<
+  CrmProvider,
+  "meta_cloud" | "uazapi" | "zapi"
+>;
 
-export type CrmOfficialChannelSetupProvider = Exclude<CrmSetupProvider, "zapi">;
+export type CrmOfficialChannelSetupProvider = Exclude<
+  CrmSetupProvider,
+  "uazapi" | "zapi"
+>;
 
 export type CrmCreateConnectionInput =
   | {
@@ -203,6 +211,12 @@ export type CrmCreateConnectionInput =
       instanceId: string;
       instanceToken: string;
       provider: "zapi";
+    }
+  | {
+      channel: "whatsapp";
+      connectionPhoneNumber?: string;
+      displayName: string;
+      provider: "uazapi";
     }
   | {
       channel: Extract<CrmChannel, "instagram" | "whatsapp">;
@@ -236,6 +250,24 @@ export type CrmWhatsappZapiPairingCode = {
   code?: string;
   expiresAt?: string;
   requested: boolean;
+};
+
+/** UAZAPI reuses the WhatsApp pairing/webhook payload shapes; only the
+ * provisioning differs (server-owned instance, no user credentials). */
+export type CrmWhatsappUazapiPairingQr = CrmWhatsappZapiPairingQr;
+export type CrmWhatsappUazapiPairingCode = CrmWhatsappZapiPairingCode;
+export type CrmWhatsappUazapiWebhookSetupResult =
+  CrmWhatsappZapiWebhookSetupResult;
+
+export type CrmConnectionMember = {
+  createdAt: string;
+  grantedBy: string | null;
+  userId: string;
+};
+
+export type CrmConnectionMemberRevokeResult = {
+  activeAssignedConversationCount: number;
+  revoked: boolean;
 };
 
 export type CrmComposioAuthorization = {

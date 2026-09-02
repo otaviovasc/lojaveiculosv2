@@ -1,9 +1,15 @@
-import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type {
+  PermissionKey,
+  StoreId,
+  TenantId,
+  UserId,
+} from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createCrmRealtimeBroker } from "../../../infrastructure/crm/crmRealtimeBroker.js";
 import type { ServiceLogger } from "../../../shared/serviceLogger.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
@@ -70,7 +76,16 @@ describe("CRM realtime logging", () => {
   it("closes an existing stream after conversation read permission is revoked", async () => {
     const broker = createCrmRealtimeBroker();
     const permissions: PermissionKey[] = ["crm.conversations.read"];
+    const memberRepository = createMemoryCrmConnectionMemberRepository();
+    await memberRepository.grantMember({
+      connectionId,
+      grantedBy: null,
+      storeId,
+      tenantId,
+      userId: "02020202-0202-4202-8202-020202020202" as UserId,
+    });
     const app = createTestApp({
+      crmConnectionMemberRepository: memberRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),

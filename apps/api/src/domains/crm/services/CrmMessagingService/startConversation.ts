@@ -5,7 +5,7 @@ import type {
   CrmMessageSenderOrigin,
   CrmMessageSenderType,
 } from "../../ports/crmConversationRepository.js";
-import type { CrmWhatsappSendTemplateInput } from "../../ports/crmMessagingGateway.js";
+import type { CrmWhatsappSendTemplateInput } from "../../ports/crmMessagingGatewayTypes.js";
 import type {
   CrmMessage,
   CrmConversationCycle,

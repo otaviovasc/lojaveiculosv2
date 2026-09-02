@@ -239,6 +239,7 @@ export function CrmConversationWorkspace({
           assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
           canAssign={inbox.permissions.canAssign}
+          canReadUnassigned={inbox.permissions.canReadUnassigned}
           canManageConnections={
             inbox.permissions.canConnectionSetup ||
             inbox.permissions.canConnectionPair

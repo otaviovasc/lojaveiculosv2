@@ -1,12 +1,8 @@
 import type { Context } from "hono";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
-import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
 import { completeZapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsappService/authorizeZapiWebhook.js";
-import {
-  createOlxWebhookSourceFingerprint,
-  createZapiWebhookSourceFingerprint,
-  isOlxWebhookSourceAllowed,
-} from "../../../infrastructure/crm/olxWebhookSecurity.js";
+import { completeUazapiWebhookAuthorization } from "../../../domains/crm/services/CrmWhatsappService/authorizeUazapiWebhook.js";
+import { createZapiWebhookSourceFingerprint } from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import {
   createServiceContext,
@@ -17,11 +13,67 @@ import { CrmMessagingValidationError } from "./crm.messaging.errors.js";
 import { parseWebhookPayload } from "./crm.whatsapp.webhookPayload.js";
 import type { CrmServices } from "./crmServices.js";
 
+type WhatsappWebhookAuthorizationHooks = {
+  authorize: (
+    serviceContext: ServiceContext,
+    input: {
+      connectionId: string;
+      sourceFingerprint: string;
+      token: string | null;
+    },
+  ) => Promise<{ authorized: true; storeId: string; tenantId: string }>;
+  complete: (
+    context: ServiceContext,
+    input: { connectionId: string; storeId: string; tenantId: string },
+    outcome: "failed" | "succeeded",
+    metadata?: { errorName?: string; reason?: string },
+  ) => Promise<void>;
+};
+
 export async function authorizeWebhook(
   context: Context,
   createWebhookContext: (context: Context) => Promise<ServiceContext>,
   resolveEntitlements: ResolveCrmBotEntitlements,
   services: CrmServices,
+) {
+  return authorizeWhatsappWebhook(
+    context,
+    createWebhookContext,
+    resolveEntitlements,
+    services,
+    {
+      authorize: (serviceContext, input) =>
+        services.authorizeZapiWebhook(serviceContext, input),
+      complete: completeZapiWebhookAuthorization,
+    },
+  );
+}
+
+export async function authorizeUazapiWebhook(
+  context: Context,
+  createWebhookContext: (context: Context) => Promise<ServiceContext>,
+  resolveEntitlements: ResolveCrmBotEntitlements,
+  services: CrmServices,
+) {
+  return authorizeWhatsappWebhook(
+    context,
+    createWebhookContext,
+    resolveEntitlements,
+    services,
+    {
+      authorize: (serviceContext, input) =>
+        services.authorizeUazapiWebhook(serviceContext, input),
+      complete: completeUazapiWebhookAuthorization,
+    },
+  );
+}
+
+async function authorizeWhatsappWebhook(
+  context: Context,
+  createWebhookContext: (context: Context) => Promise<ServiceContext>,
+  resolveEntitlements: ResolveCrmBotEntitlements,
+  services: CrmServices,
+  hooks: WhatsappWebhookAuthorizationHooks,
 ) {
   const serviceContext = await createWebhookContext(context);
   const connectionId = context.req.param("connectionId");
@@ -33,7 +85,7 @@ export async function authorizeWebhook(
     readBearerToken(context.req.header("authorization")) ??
     context.req.query("token") ??
     null;
-  const authorized = await services.authorizeZapiWebhook(serviceContext, {
+  const authorized = await hooks.authorize(serviceContext, {
     connectionId,
     sourceFingerprint: createZapiWebhookSourceFingerprint({
       // Do not trust caller-controlled proxy headers for the authentication
@@ -56,7 +108,7 @@ export async function authorizeWebhook(
       tenantId: authorized.tenantId,
     });
   } catch (error) {
-    await completeZapiWebhookAuthorization(
+    await hooks.complete(
       scopedContext,
       {
         connectionId,
@@ -72,7 +124,7 @@ export async function authorizeWebhook(
     throw error;
   }
   if (!entitlements.includes("crm")) {
-    await completeZapiWebhookAuthorization(
+    await hooks.complete(
       scopedContext,
       {
         connectionId,
@@ -84,7 +136,7 @@ export async function authorizeWebhook(
     );
     throw new AuthorizationError("Invalid CRM WhatsApp webhook token.");
   }
-  await completeZapiWebhookAuthorization(
+  await hooks.complete(
     scopedContext,
     {
       connectionId,
@@ -96,7 +148,7 @@ export async function authorizeWebhook(
   return { ...scopedContext, entitlements };
 }
 
-function createAuthorizedWebhookContext(
+export function createAuthorizedWebhookContext(
   base: ServiceContext,
   scope: { storeId: string; tenantId: string },
 ): StoreScopedServiceContext {
@@ -126,59 +178,7 @@ function createAuthorizedWebhookContext(
   };
 }
 
-export async function authorizeOlxWebhook(
-  context: Context,
-  createWebhookContext: (context: Context) => Promise<ServiceContext>,
-  resolveEntitlements: ResolveCrmBotEntitlements,
-  services: CrmServices,
-): Promise<{
-  authorization: OlxWebhookAuthorization;
-  entitlementGranted: boolean;
-  serviceContext: StoreScopedServiceContext & {
-    entitlements: Awaited<ReturnType<ResolveCrmBotEntitlements>>;
-  };
-}> {
-  const serviceContext = await createWebhookContext(context);
-  const connectionId = context.req.param("connectionId");
-  if (!connectionId) {
-    throw new CrmMessagingValidationError("Webhook connectionId is required.");
-  }
-  // This header is authoritative only when deployment explicitly enables the
-  // Railway edge contract. x-forwarded-for is never used for authorization.
-  const clientAddress = context.req.header("x-real-ip") ?? null;
-  if (!isOlxWebhookSourceAllowed(clientAddress)) {
-    throw new AuthorizationError("Invalid OLX webhook source.");
-  }
-  const authorized = await services.authorizeOlxChatWebhook(serviceContext, {
-    connectionId,
-    sourceFingerprint: createOlxWebhookSourceFingerprint({
-      clientAddress,
-      connectionId,
-    }),
-    token:
-      context.req.header("x-olx-webhook-secret") ??
-      readBearerToken(context.req.header("authorization")) ??
-      context.req.query("token") ??
-      null,
-  });
-  const scopedContext = createAuthorizedWebhookContext(
-    serviceContext,
-    authorized,
-  );
-  const entitlements = await resolveEntitlements({
-    context: scopedContext,
-    integrationId: null,
-    storeId: authorized.storeId,
-    tenantId: authorized.tenantId,
-  });
-  return {
-    authorization: authorized.authorization,
-    entitlementGranted: entitlements.includes("crm"),
-    serviceContext: { ...scopedContext, entitlements },
-  };
-}
-
-function readBearerToken(value: string | undefined): string | null {
+export function readBearerToken(value: string | undefined): string | null {
   const match = value?.match(/^Bearer\s+(.+)$/iu);
   return match?.[1]?.trim() || null;
 }

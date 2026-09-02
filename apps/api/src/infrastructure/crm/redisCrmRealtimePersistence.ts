@@ -6,7 +6,7 @@ import type {
   CrmRealtimeReplayInput,
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
-import { filterCrmRealtimeReplayByHistoricalVisibility } from "../../domains/crm/messaging/crmQueueVisibility.js";
+import { filterCrmRealtimeReplayByHistoricalVisibility } from "../../domains/crm/messaging/crmQueueVisibilityRealtime.js";
 
 const channel = "crm:realtime";
 const streamKeyPrefix = "crm:realtime:stream:";

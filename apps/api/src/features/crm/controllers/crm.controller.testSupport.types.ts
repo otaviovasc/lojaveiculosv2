@@ -32,6 +32,7 @@ export type CreateCrmTestAppOptions = {
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
   crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmConnectionMemberRepository?: CrmServicePorts["crmConnectionMemberRepository"];
   crmConnectionRepository?: CrmConnectionRepository;
   crmStatisticsReadModel?: CrmServicePorts["crmStatisticsReadModel"];
   crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
@@ -61,5 +62,7 @@ export type CreateCrmTestAppOptions = {
   resolveBotEntitlements?: ResolveCrmBotEntitlements;
   transaction?: CrmServicePorts["transaction"];
   vehicleInventory?: CrmServicePorts["vehicleInventory"];
+  crmUazapiProvisioningProvider?: CrmServicePorts["crmUazapiProvisioningProvider"];
+  uazapiConnectionSetupProvider?: CrmServicePorts["uazapiConnectionSetupProvider"];
   zapiConnectionSetupProvider?: CrmServicePorts["zapiConnectionSetupProvider"];
 };

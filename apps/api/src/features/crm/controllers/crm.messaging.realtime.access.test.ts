@@ -5,6 +5,13 @@ import { createCrmRealtimeBroker } from "../../../infrastructure/crm/crmRealtime
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 import { registerCrmMessagingRealtimeRoutes } from "./crm.messaging.realtimeRoutes.js";
+import { resolveCrmQueueVisibility } from "../../../domains/crm/messaging/crmQueueVisibility.js";
+
+const realtimeServices = {
+  resolveCrmQueueVisibility: async (
+    context: Parameters<typeof resolveCrmQueueVisibility>[0],
+  ) => resolveCrmQueueVisibility(context),
+};
 
 describe("CRM realtime access boundaries", () => {
   it("returns 400 when the ticket request body is not an object", async () => {
@@ -42,6 +49,7 @@ describe("CRM realtime access boundaries", () => {
           { entitlements: ["crm"] },
         ),
       realtimeBroker: broker,
+      services: realtimeServices,
     });
     const app = new Hono().route("/api/v1/crm", feature);
 

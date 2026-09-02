@@ -23,7 +23,7 @@ describe("getCrmChannelConnectionOverview", () => {
       createPorts(),
     );
 
-    expect(overview.allowance).toEqual({ limit: 1, remaining: 1, used: 0 });
+    expect(overview.allowance).toEqual({ limit: 3, remaining: 3, used: 0 });
   });
 
   it("keeps Z-API discoverable without an add-on capacity", async () => {
@@ -32,9 +32,10 @@ describe("getCrmChannelConnectionOverview", () => {
       createPorts(),
     );
 
-    expect(overview.allowance).toEqual({ limit: 1, remaining: 1, used: 0 });
+    expect(overview.allowance).toEqual({ limit: 3, remaining: 3, used: 0 });
     expect(overview.availableSetups).toEqual([
       { broker: "direct", channel: "whatsapp", provider: "zapi" },
+      { broker: "direct", channel: "whatsapp", provider: "uazapi" },
       { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
       { broker: "composio", channel: "instagram", provider: "meta_cloud" },
     ]);
@@ -52,11 +53,13 @@ describe("getCrmChannelConnectionOverview", () => {
 
     expect(withoutCapacity.availableSetups).toEqual([
       { broker: "direct", channel: "whatsapp", provider: "zapi" },
+      { broker: "direct", channel: "whatsapp", provider: "uazapi" },
       { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
       { broker: "composio", channel: "instagram", provider: "meta_cloud" },
     ]);
     expect(withoutEntitlement.availableSetups).toEqual([
       { broker: "direct", channel: "whatsapp", provider: "zapi" },
+      { broker: "direct", channel: "whatsapp", provider: "uazapi" },
       { broker: "composio", channel: "whatsapp", provider: "meta_cloud" },
       { broker: "composio", channel: "instagram", provider: "meta_cloud" },
     ]);

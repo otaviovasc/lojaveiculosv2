@@ -1,8 +1,3 @@
-import {
-  assertPermission,
-  assertEntitlement,
-  AuthorizationError,
-} from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   CrmConnectionSetupProviderError,
@@ -12,20 +7,16 @@ import {
   type ZapiSetupCredentials,
 } from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
-import { CrmConnectionNotFoundError } from "../../messaging/crmMessagingErrors.js";
-import {
-  getCrmConnectionRepository,
-  requireCrmMessagingScope,
-  type CrmServicePorts,
-} from "../CrmService/serviceSupport.js";
+import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import {
   getCrmConnectionCredentialVault,
   getZapiConnectionSetupProvider,
 } from "../CrmService/crmConnectionSetupSupport.js";
+import { recordCrmServiceMutation } from "../CrmMessagingService/serviceSupport.js";
 import {
-  logCrmServiceEvent,
-  recordCrmServiceMutation,
-} from "../CrmMessagingService/serviceSupport.js";
+  loadWhatsappSetupTarget,
+  runWhatsappProviderOperation,
+} from "./whatsappConnectionSetupShared.js";
 
 const connectionPermission = "crm.messaging.connection.pair" as const;
 
@@ -48,7 +39,8 @@ export async function requestZapiPairingQr(
     context,
     setupAudit("crm.provider.zapi.connection.pairing_qr", connection.id),
     async () => {
-      const result = await runProviderOperation(
+      const result = await runWhatsappProviderOperation(
+        "zapi",
         context,
         connection.id,
         "pairing_qr",
@@ -78,7 +70,8 @@ export async function requestZapiPairingCode(
     context,
     setupAudit("crm.provider.zapi.connection.pairing_code", connection.id),
     async () => {
-      const result = await runProviderOperation(
+      const result = await runWhatsappProviderOperation(
+        "zapi",
         context,
         connection.id,
         "pairing_code",
@@ -127,32 +120,16 @@ async function loadZapiSetupTarget(
   connectionId: string,
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, connectionPermission);
-  if (context.actor.kind !== "user") {
-    throw new AuthorizationError(
-      "Z-API pairing requires an authenticated store user.",
-    );
-  }
-  const scope = requireCrmMessagingScope(context);
-  assertEntitlement(context as never, "crm");
-  logCrmServiceEvent(context, "crm.provider.zapi.connection.setup.started", {
+  return loadWhatsappSetupTarget(
+    {
+      actorErrorMessage: "Z-API pairing requires an authenticated store user.",
+      provider: "zapi",
+    },
+    context,
     connectionId,
-  });
-  const connection =
-    await getCrmConnectionRepository(ports).findConnectionById(connectionId);
-  if (
-    !connection ||
-    connection.provider !== "zapi" ||
-    connection.status === "archived" ||
-    connection.storeId !== scope.storeId ||
-    connection.tenantId !== scope.tenantId
-  ) {
-    throw new CrmConnectionNotFoundError(connectionId);
-  }
-  return {
-    connection,
-    credentials: await openZapiSetupCredentials(connection, ports),
-  };
+    ports,
+    openZapiSetupCredentials,
+  );
 }
 
 export async function openZapiSetupCredentials(
@@ -214,35 +191,4 @@ function readRecord(value: unknown): Record<string, unknown> {
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-async function runProviderOperation<T>(
-  context: ServiceContext,
-  connectionId: string,
-  operation: string,
-  action: () => Promise<T>,
-) {
-  const startedAt = Date.now();
-  try {
-    const result = await action();
-    logCrmServiceEvent(context, "crm.provider.zapi.operation.completed", {
-      connectionId,
-      durationMs: Date.now() - startedAt,
-      operation,
-      provider: "zapi",
-    });
-    return result;
-  } catch (error) {
-    logCrmServiceEvent(context, "crm.provider.zapi.operation.failed", {
-      connectionId,
-      durationMs: Date.now() - startedAt,
-      errorCode:
-        error && typeof error === "object" && "code" in error
-          ? String(error.code)
-          : "request_failed",
-      operation,
-      provider: "zapi",
-    });
-    throw error;
-  }
 }

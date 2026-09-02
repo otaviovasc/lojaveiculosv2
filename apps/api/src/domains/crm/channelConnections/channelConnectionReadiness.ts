@@ -13,6 +13,9 @@ export function isConnectionReady(
 ) {
   if (connection.status !== "active" || live.connected !== true) return false;
   if (connection.provider === "zapi") return setup?.status === "configured";
+  if (connection.provider === "uazapi") {
+    return isUazapiWebhookSetupConfigured(connection.metadata);
+  }
   if (connection.provider === "olx") {
     const webhookSetup = readRecord(connection.metadata.webhookSetup);
     const capabilities = readRecord(webhookSetup.capabilities);
@@ -45,6 +48,16 @@ export function readinessFor(
       reasonCode: "pending_webhook",
     };
   }
+  if (
+    connection.provider === "uazapi" &&
+    !isUazapiWebhookSetupConfigured(connection.metadata)
+  ) {
+    return {
+      ready: false,
+      reason: "A confirmação do webhook ainda está pendente.",
+      reasonCode: "pending_webhook",
+    };
+  }
   if (live.connected !== true) {
     return {
       ready: false,
@@ -70,4 +83,12 @@ function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+/**
+ * UAZAPI webhook setup state is written by the uazapi setup runner under the
+ * `uazapiWebhookSetup` metadata key; readiness gates on the configured state.
+ */
+function isUazapiWebhookSetupConfigured(metadata: Record<string, unknown>) {
+  return readRecord(metadata.uazapiWebhookSetup).state === "configured";
 }

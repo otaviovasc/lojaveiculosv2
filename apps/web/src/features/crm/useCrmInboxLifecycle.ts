@@ -8,6 +8,8 @@ type UseCrmInboxLifecycleInput = {
   activeSession: CrmConversationCycle | null;
   asError: (error: unknown) => Error;
   connectionId: string | null;
+  /** Aggregate connection filter: the queue queries run store-wide. */
+  storeWide?: boolean;
   connections: {
     error: Error | null;
     isLoading: boolean;
@@ -46,6 +48,7 @@ export function useCrmInboxLifecycle({
   setSessions,
   setError,
   setIsLoadingSessions,
+  storeWide = false,
 }: UseCrmInboxLifecycleInput): void {
   useEffect(() => {
     if (
@@ -67,7 +70,11 @@ export function useCrmInboxLifecycle({
   useEffect(() => {
     if (search === null) return;
     if (connections.isLoading) return;
-    if (connections.error || !connectionId || !permissions.canList) {
+    if (
+      connections.error ||
+      (!connectionId && !storeWide) ||
+      !permissions.canList
+    ) {
       if (!permissions.canList) setSessions([]);
       setIsLoadingSessions(false);
       return;
@@ -99,11 +106,16 @@ export function useCrmInboxLifecycle({
     setError,
     setIsLoadingSessions,
     setSessions,
+    storeWide,
     asError,
   ]);
 
   useEffect(() => {
-    if (connections.error || !connectionId || !permissions.canList) {
+    if (
+      connections.error ||
+      (!connectionId && !storeWide) ||
+      !permissions.canList
+    ) {
       return;
     }
     const interval = window.setInterval(() => {
@@ -143,5 +155,6 @@ export function useCrmInboxLifecycle({
     markCycleReadOnce,
     permissions.canList,
     refreshSessions,
+    storeWide,
   ]);
 }

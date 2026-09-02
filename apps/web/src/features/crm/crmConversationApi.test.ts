@@ -415,6 +415,129 @@ describe("CRM WhatsApp API", () => {
     });
   });
 
+  it("drives the UAZAPI lifecycle through routes mirroring Z-API", async () => {
+    const fake = createFakeFetch([
+      { id: "connection_3", provider: "uazapi", status: "disconnected" },
+      { setup: { status: "configured" }, results: [] },
+      {
+        expiresAt: "2099-01-01T00:05:00.000Z",
+        qrCode: "data:image/png;base64,qr",
+      },
+      { code: "654321", requested: true },
+      { id: "connection_3", status: "active" },
+      { id: "connection_3", status: "disconnected" },
+    ]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+
+    await api.createConnection({
+      channel: "whatsapp",
+      connectionPhoneNumber: "5511999999999",
+      displayName: "WhatsApp matriz",
+      provider: "uazapi",
+    });
+    await api.configureUazapiWebhooks("connection_3");
+    await api.requestUazapiPairingQr("connection_3");
+    await api.requestUazapiPairingCode("connection_3", "5511999999999");
+    await api.refreshUazapiConnectionStatus("connection_3");
+    await api.disconnectUazapiConnection("connection_3");
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/channel-connections",
+      init: {
+        body: JSON.stringify({
+          channel: "whatsapp",
+          connectionPhoneNumber: "5511999999999",
+          displayName: "WhatsApp matriz",
+          provider: "uazapi",
+        }),
+        method: "POST",
+      },
+    });
+    expect(fake.calls[1]?.input).toBe(
+      "/api/v1/crm/channel-connections/connection_3/uazapi/webhooks/configure",
+    );
+    expect(fake.calls[2]?.input).toBe(
+      "/api/v1/crm/channel-connections/connection_3/uazapi/pairing/qr",
+    );
+    expect(fake.calls[3]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_3/uazapi/pairing/code",
+      init: {
+        body: JSON.stringify({ phone: "5511999999999" }),
+        method: "POST",
+      },
+    });
+    expect(fake.calls[4]?.input).toBe(
+      "/api/v1/crm/channel-connections/connection_3/uazapi/status/refresh",
+    );
+    expect(fake.calls[5]?.input).toBe(
+      "/api/v1/crm/channel-connections/connection_3/uazapi/disconnect",
+    );
+  });
+
+  it("lists, grants, and revokes connection members with parsed payloads", async () => {
+    const payloads: unknown[] = [
+      [
+        {
+          createdAt: "2026-08-25T12:00:00.000Z",
+          grantedBy: null,
+          userId: "user_1",
+        },
+      ],
+      null,
+      { activeAssignedConversationCount: 2, revoked: true },
+    ];
+    const calls: FetchCall[] = [];
+    // The grant endpoint answers 204 with an empty body.
+    const memberFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      const next = payloads.shift();
+      if (next === null) return new Response(null, { status: 204 });
+      return new Response(JSON.stringify(next ?? {}), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createCrmConversationApi({ fetch: memberFetch });
+
+    const members = await api.listConnectionMembers("connection_3");
+    expect(members).toEqual([
+      {
+        createdAt: "2026-08-25T12:00:00.000Z",
+        grantedBy: null,
+        userId: "user_1",
+      },
+    ]);
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_3/members",
+      init: { method: "GET" },
+    });
+
+    await api.grantConnectionMember("connection_3", "user_2");
+    expect(calls[1]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_3/members/user_2",
+      init: { method: "PUT" },
+    });
+
+    const revoke = await api.revokeConnectionMember("connection_3", "user_1");
+    expect(calls[2]).toMatchObject({
+      input: "/api/v1/crm/channel-connections/connection_3/members/user_1",
+      init: { method: "DELETE" },
+    });
+    expect(revoke).toEqual({
+      activeAssignedConversationCount: 2,
+      revoked: true,
+    });
+  });
+
+  it("rejects a malformed members payload instead of guessing", async () => {
+    const fake = createFakeFetch([[{ userId: 42 }]]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+
+    await expect(api.listConnectionMembers("connection_3")).rejects.toThrow(
+      /Resposta inválida/,
+    );
+  });
+
   it("loads WhatsApp conversationCycles, counts, and messages through V2", async () => {
     const fake = createFakeFetch([
       [{ channel: "whatsapp", id: "session_1", revision: 0, status: "ACTIVE" }],

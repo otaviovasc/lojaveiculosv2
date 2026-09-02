@@ -11,7 +11,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
-import { stores, tenants } from "../identity.js";
+import { stores, tenants, users } from "../identity.js";
 import {
   authorizationState,
   capabilityGrantState,
@@ -139,6 +139,7 @@ export const crmChannelConnections = pgTable(
     externalConnectionId: varchar("external_connection_id", { length: 191 }),
     externalInstanceId: varchar("external_instance_id", { length: 191 }),
     metadata: jsonb("metadata").notNull().default({}),
+    phoneNumber: text("phone_number"),
     provider: transportProvider("provider").notNull(),
     revision: revisionColumn(),
     state: crmChannelConnectionState("state").notNull().default("sandbox"),
@@ -158,7 +159,7 @@ export const crmChannelConnections = pgTable(
     ),
     check(
       "crm_channel_connections_supported_triple_check",
-      sql`(${table.channel} = 'whatsapp' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'instagram' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.broker} = 'direct') OR (${table.channel} = 'olx_chat' AND ${table.provider} = 'olx' AND ${table.broker} = 'direct')`,
+      sql`(${table.channel} = 'whatsapp' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'instagram' AND ${table.provider} = 'meta_cloud' AND ${table.broker} = 'composio') OR (${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.broker} = 'direct') OR (${table.channel} = 'whatsapp' AND ${table.provider} = 'uazapi' AND ${table.broker} = 'direct') OR (${table.channel} = 'olx_chat' AND ${table.provider} = 'olx' AND ${table.broker} = 'direct')`,
     ),
     check(
       "crm_channel_connections_zapi_instance_redacted_check",
@@ -206,14 +207,48 @@ export const crmChannelConnections = pgTable(
         table.externalConnectionId,
       )
       .where(sql`${table.externalConnectionId} IS NOT NULL`),
-    uniqueIndex("crm_channel_connections_zapi_store_current_unique")
-      .on(table.tenantId, table.storeId, table.channel, table.provider)
+    uniqueIndex("crm_channel_connections_whatsapp_phone_store_unique")
+      .on(table.tenantId, table.storeId, table.channel, table.phoneNumber)
       .where(
-        sql`${table.broker} = 'direct' AND ${table.channel} = 'whatsapp' AND ${table.provider} = 'zapi' AND ${table.state} <> 'archived'`,
+        sql`${table.channel} = 'whatsapp' AND ${table.state} <> 'archived' AND ${table.phoneNumber} IS NOT NULL`,
       ),
     index("crm_channel_connections_store_state_idx").on(
       table.storeId,
       table.state,
+    ),
+  ],
+);
+
+export const crmChannelConnectionMembers = pgTable(
+  "crm_channel_connection_members",
+  {
+    ...lifecycleColumns,
+    connectionId: uuid("connection_id")
+      .notNull()
+      .references(() => crmChannelConnections.id, { onDelete: "cascade" }),
+    grantedBy: uuid("granted_by").references(() => users.id),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+  },
+  (table) => [
+    scopedStoreForeignKey(
+      table,
+      "crm_channel_connection_members_store_tenant_fk",
+    ),
+    uniqueIndex("crm_channel_connection_members_connection_user_unique").on(
+      table.connectionId,
+      table.userId,
+    ),
+    index("crm_channel_connection_members_store_user_idx").on(
+      table.storeId,
+      table.userId,
     ),
   ],
 );

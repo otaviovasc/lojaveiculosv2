@@ -69,6 +69,39 @@ export function coerceConversationCycleFilter(
   return canAssign ? filter : "mine";
 }
 
+type CrmConnectionMembershipView = {
+  memberUserIds?: readonly string[] | null | undefined;
+};
+
+/**
+ * Mirrors the server connection-scoped queue visibility: actors with global
+ * queue visibility (assign or read_unassigned) browse every connection;
+ * restricted agents only browse connections whose member list contains them.
+ * Connections without a member list (absent/empty) are not member connections,
+ * so restricted agents cannot browse them — matching the server rule that a
+ * restricted actor's scoped visibility only includes their member connections.
+ */
+export function filterConnectionsBrowsableByUser<
+  T extends CrmConnectionMembershipView,
+>(
+  connections: readonly T[],
+  input: {
+    canAssign: boolean;
+    canReadUnassigned: boolean;
+    currentUserId: string | null;
+  },
+): T[] {
+  if (input.canAssign || input.canReadUnassigned) return [...connections];
+  const currentUserId = input.currentUserId
+    ? String(input.currentUserId)
+    : null;
+  return connections.filter((connection) => {
+    const members = connection.memberUserIds;
+    if (!members || members.length === 0 || !currentUserId) return false;
+    return members.some((memberId) => String(memberId) === currentUserId);
+  });
+}
+
 export function filterSessionsForAssignmentQueue(
   conversationCycles: CrmConversationCycle[],
   filter: CrmConversationCycleFilter,

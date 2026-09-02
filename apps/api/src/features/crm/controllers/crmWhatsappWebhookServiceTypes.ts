@@ -17,6 +17,8 @@ import type { ProcessMetaMessagingWebhookResult } from "../../../domains/crm/ser
 import type { IngestOlxChatWebhookResult } from "../../../domains/crm/services/CrmMessagingService/ingestOlxChatWebhook.js";
 import type { IngestOlxLeadWebhookResult } from "../../../domains/crm/services/CrmMessagingService/ingestOlxLeadWebhook.js";
 import type { OlxWebhookAuthorization } from "../../../domains/crm/services/CrmMessagingService/authorizeOlxChatWebhook.js";
+import type { IngestUazapiWhatsappWebhookResult } from "../../../domains/crm/services/CrmWhatsappService/ingestUazapiWhatsappWebhook.js";
+import type { UazapiWebhookResult } from "../../../domains/crm/services/CrmWhatsappService/uazapiWebhookSupport.js";
 
 type CrmContextService<Input, Output> = (
   context: ServiceContext,
@@ -26,6 +28,11 @@ type CrmContextService<Input, Output> = (
 export type ZapiWebhookProcessor = CrmContextService<
   IngestZapiWhatsappWebhookInput,
   unknown
+>;
+
+export type UazapiWebhookProcessor = CrmContextService<
+  { connectionId: string; payload: Record<string, unknown> },
+  IngestUazapiWhatsappWebhookResult | UazapiWebhookResult
 >;
 
 export type CrmWhatsappWebhookServices = {
@@ -43,6 +50,10 @@ export type CrmWhatsappWebhookServices = {
     }
   >;
   authorizeZapiWebhook: CrmContextService<
+    { connectionId: string; sourceFingerprint: string; token: string | null },
+    { authorized: true; storeId: string; tenantId: string }
+  >;
+  authorizeUazapiWebhook: CrmContextService<
     { connectionId: string; sourceFingerprint: string; token: string | null },
     { authorized: true; storeId: string; tenantId: string }
   >;
@@ -85,6 +96,9 @@ export type CrmWhatsappWebhookServices = {
   processZapiWhatsappDeliveryWebhook: ZapiWebhookProcessor;
   processZapiWhatsappDisconnectedWebhook: ZapiWebhookProcessor;
   processZapiWhatsappStatusWebhook: ZapiWebhookProcessor;
+  ingestUazapiWhatsappWebhook: UazapiWebhookProcessor;
+  processUazapiWhatsappConnectionWebhook: UazapiWebhookProcessor;
+  processUazapiWhatsappStatusWebhook: UazapiWebhookProcessor;
   retryProviderEvent: CrmContextService<
     RetryProviderEventInput,
     RetryProviderEventResult

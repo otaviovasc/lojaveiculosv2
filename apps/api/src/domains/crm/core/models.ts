@@ -1,7 +1,12 @@
 export const CRM_CHANNELS = ["instagram", "olx_chat", "whatsapp"] as const;
 export type CrmChannel = (typeof CRM_CHANNELS)[number];
 
-export const CRM_TRANSPORT_PROVIDERS = ["meta_cloud", "olx", "zapi"] as const;
+export const CRM_TRANSPORT_PROVIDERS = [
+  "meta_cloud",
+  "olx",
+  "uazapi",
+  "zapi",
+] as const;
 export type CrmTransportProvider = (typeof CRM_TRANSPORT_PROVIDERS)[number];
 
 export const CRM_CREDENTIAL_BROKERS = ["composio", "direct"] as const;

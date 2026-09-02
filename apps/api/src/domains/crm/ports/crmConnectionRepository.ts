@@ -23,6 +23,8 @@ export type CrmConnection = {
   id: string;
   metadata: Record<string, unknown>;
   phone: string | null;
+  /** Canonical per-store phone number (crm_channel_connections.phone_number). */
+  phoneNumber?: string | null;
   provider: CrmConnectionProvider;
   revision?: number;
   status: CrmConnectionConfiguredStatus;

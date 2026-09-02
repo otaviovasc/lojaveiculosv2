@@ -41,6 +41,7 @@ export const crmScopeForeignKeyNames = [
 
 export const canonicalCrmForeignKeyNames = [
   "crm_channel_connections_store_tenant_fk",
+  "crm_channel_connection_members_store_tenant_fk",
   "conversation_threads_store_tenant_fk",
   "conversation_threads_semantic_connection_fk",
   "conversation_cycles_store_tenant_fk",

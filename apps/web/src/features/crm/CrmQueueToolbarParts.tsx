@@ -28,6 +28,7 @@ const quickFilterOptions: Array<{
 export function QueueQuickFilterRow({
   assignableMembers,
   canAssign,
+  canReadUnassigned = false,
   currentUserId,
   onOtherAssigneeChange,
   onQuickFilterChange,
@@ -37,6 +38,7 @@ export function QueueQuickFilterRow({
 }: {
   assignableMembers: CrmAssignableMember[];
   canAssign: boolean;
+  canReadUnassigned?: boolean;
   currentUserId: string | null;
   onOtherAssigneeChange: (assigneeId: string | null) => void;
   onQuickFilterChange: (filter: CrmConversationCycleFilter) => void;
@@ -44,6 +46,7 @@ export function QueueQuickFilterRow({
   quickFilter: CrmConversationCycleFilter;
   conversationCycleCounts: CrmConversationCycleCounts;
 }) {
+  const canBrowseAll = canAssign || canReadUnassigned;
   const dragRef = useDragToScroll<HTMLDivElement>();
   const othersButtonRef = useRef<HTMLButtonElement>(null);
   const othersButtonId = useId();
@@ -70,7 +73,7 @@ export function QueueQuickFilterRow({
         (right.activeChatCount ?? 0) - (left.activeChatCount ?? 0) ||
         left.name.localeCompare(right.name, "pt-BR"),
     );
-  if (!canAssign) {
+  if (!canBrowseAll) {
     return (
       <div
         className="crm-filter-row"

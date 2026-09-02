@@ -16,6 +16,7 @@ import type {
   CrmConnectionCredentialVault,
   CrmZapiSupportAuthorizer,
   OlxCrmWebhookSetupProvider,
+  UazapiConnectionSetupProvider,
   ZapiConnectionSetupProvider,
 } from "../../ports/crmConnectionSetupProvider.js";
 import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
@@ -29,6 +30,8 @@ import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
+import type { CrmUazapiProvisioningProvider } from "../../ports/crmUazapiProvisioningProvider.js";
+import type { CrmConnectionMemberRepository } from "../../ports/crmConnectionMemberRepository.js";
 import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentRepository.js";
 import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
 import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
@@ -45,6 +48,7 @@ export type CrmServicePorts = {
   crmRoutingConnectionRepository?: CrmRoutingConnectionRepository;
   crmRoutingPolicyRepository?: CrmRoutingPolicyRepository;
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmConnectionMemberRepository?: CrmConnectionMemberRepository;
   crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
   crmOutcomeRepository?: CrmOutcomeRepository;
   olxCrmCallbackOrigin?: string;
@@ -68,6 +72,7 @@ export type CrmServicePorts = {
   crmConversationRepository?: CrmConversationRepository;
   crmConversationCycleCommandRepository?: CrmConversationCycleCommandRepository;
   crmStatisticsReadModel?: CrmStatisticsReadModel;
+  crmUazapiProvisioningProvider?: CrmUazapiProvisioningProvider;
   environment?: string;
   transaction?: <T>(
     action: (ports: CrmServicePorts) => Promise<T>,
@@ -77,5 +82,6 @@ export type CrmServicePorts = {
     mediaRepository: VehicleMediaRepository;
     unitRepository: VehicleUnitRepository;
   };
+  uazapiConnectionSetupProvider?: UazapiConnectionSetupProvider;
   zapiConnectionSetupProvider?: ZapiConnectionSetupProvider;
 };

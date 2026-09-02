@@ -136,6 +136,7 @@ function canonicalRow(
     externalConnectionId: null,
     externalInstanceId: null,
     id: "00000000-0000-4000-8000-000000000010",
+    phoneNumber: null,
     revision: 0,
     storeId: claimInput.storeId,
     tenantId: claimInput.tenantId,

@@ -137,10 +137,12 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
-    const zapiSetupButtons = within(
+    const whatsappRegion = within(
       screen.getByRole("region", { name: "WhatsApp" }),
-    ).getAllByRole("button");
-    fireEvent.click(zapiSetupButtons[zapiSetupButtons.length - 1]!);
+    );
+    fireEvent.click(
+      whatsappRegion.getByRole("button", { name: /Z-API principal/ }),
+    );
     expect(screen.getByText("Etapa 2 de 4 · Configuração")).toBeVisible();
 
     rerender(

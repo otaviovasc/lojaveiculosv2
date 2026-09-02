@@ -645,6 +645,124 @@ describe("useCrmRealtime", () => {
     });
     expect(onStatus).toHaveBeenLastCalledWith("degraded");
   });
+
+  it("drops events from other connections while subscribed per-connection", async () => {
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const mergeCycles = vi.fn();
+    render(
+      <Harness
+        api={api}
+        connectionId="connection-1"
+        mergeCycles={mergeCycles}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    await waitFor(() => expect(onEvent).toBeDefined());
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-2",
+        cycle: createSession(),
+        type: "cycle",
+      });
+    });
+    expect(mergeCycles).not.toHaveBeenCalled();
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycle: createSession(),
+        type: "cycle",
+      });
+    });
+    expect(mergeCycles).toHaveBeenCalledTimes(1);
+    expect(api.subscribeEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ connectionId: "connection-1" }),
+    );
+  });
+
+  it("subscribes store-wide without demuxing when no connection is selected", async () => {
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const mergeCycles = vi.fn();
+    const refreshConnections = vi.fn(async () => undefined);
+    render(
+      <Harness
+        api={api}
+        mergeCycles={mergeCycles}
+        refreshConnections={refreshConnections}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+        storeWide
+      />,
+    );
+    await waitFor(() => expect(onEvent).toBeDefined());
+    expect(api.subscribeEvents).toHaveBeenCalledTimes(1);
+    expect(
+      (api.subscribeEvents as ReturnType<typeof vi.fn>).mock.calls[0]?.[0],
+    ).not.toHaveProperty("connectionId");
+
+    act(() => {
+      onEvent?.({
+        connectionId: "connection-2",
+        cycle: createSession(),
+        type: "cycle",
+      });
+      onEvent?.({
+        connectionId: "connection-9",
+        phone: null,
+        status: "connected",
+        type: "connection_status",
+      });
+    });
+
+    expect(mergeCycles).toHaveBeenCalledTimes(1);
+    expect(refreshConnections).toHaveBeenCalledTimes(1);
+  });
+
+  it("resubscribes when switching between store-wide and a specific connection", async () => {
+    const unsubscribe = vi.fn();
+    const api = {
+      subscribeEvents: vi.fn(() => unsubscribe),
+    } as unknown as CrmConversationApi;
+    const rendered = render(
+      <Harness
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+        storeWide
+      />,
+    );
+    await waitFor(() => expect(api.subscribeEvents).toHaveBeenCalledTimes(1));
+
+    rendered.rerender(
+      <Harness
+        api={api}
+        connectionId="connection-1"
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(api.subscribeEvents).toHaveBeenCalledTimes(2);
+    expect(api.subscribeEvents).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-1" }),
+    );
+  });
 });
 
 function Harness({
@@ -662,6 +780,7 @@ function Harness({
   refreshConnections = vi.fn(async () => undefined),
   refreshSessionCounts,
   removeSession = vi.fn(),
+  storeWide = false,
 }: {
   activeConversationConnectionId?: string | null;
   activeCycleId?: string;
@@ -679,6 +798,7 @@ function Harness({
   refreshConnections?: () => Promise<void>;
   refreshSessionCounts: () => Promise<void>;
   removeSession?: (cycleId: CrmConversationCycle["id"]) => void;
+  storeWide?: boolean;
 }) {
   const { contactPresence } = useCrmRealtime({
     activeConversationConnectionId,
@@ -686,7 +806,7 @@ function Harness({
     ...(activeCustomerPhone !== undefined ? { activeCustomerPhone } : {}),
     api,
     ...(canAccessSessionSnapshot ? { canAccessSessionSnapshot } : {}),
-    connectionId,
+    connectionId: storeWide ? undefined : connectionId,
     connectionsError,
     mergeRealtimeMessage,
     mergeCycles,

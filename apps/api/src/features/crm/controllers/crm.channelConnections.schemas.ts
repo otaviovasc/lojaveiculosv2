@@ -22,6 +22,14 @@ export const crmCreateChannelConnectionSchema = z.union([
     .strict(),
   z
     .object({
+      channel: z.literal("whatsapp"),
+      connectionPhoneNumber: z.string().trim().min(8).max(30).optional(),
+      displayName: z.string().trim().min(1).max(160).optional(),
+      provider: z.literal("uazapi"),
+    })
+    .strict(),
+  z
+    .object({
       channel: z.enum(["instagram", "whatsapp"]),
       displayName: z.string().trim().min(1).max(160).optional(),
       provider: z.literal("meta_cloud"),
@@ -31,6 +39,10 @@ export const crmCreateChannelConnectionSchema = z.union([
 
 export const whatsappZapiPairingCodeSchema = z
   .object({ phone: z.string().trim().min(8).max(30) })
+  .strict();
+
+export const whatsappUazapiPairingCodeSchema = z
+  .object({ phone: z.string().trim().min(8).max(30).optional() })
   .strict();
 
 export const whatsappZapiCredentialsSchema = z

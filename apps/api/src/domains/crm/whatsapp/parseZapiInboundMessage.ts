@@ -201,3 +201,16 @@ function isNotification(payload: Record<string, unknown>) {
     payload.type === "notification"
   );
 }
+
+export function isDirectHumanOutboundEcho(
+  parsed: Pick<ParsedZapiInboundMessage, "fromMe" | "metadata">,
+) {
+  if (!parsed.fromMe) return false;
+  const interactive = parsed.metadata.interactive;
+  return !(
+    interactive &&
+    typeof interactive === "object" &&
+    !Array.isArray(interactive) &&
+    (interactive as Record<string, unknown>).kind === "reaction"
+  );
+}

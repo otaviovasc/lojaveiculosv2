@@ -12,6 +12,7 @@ import { readWebhookRequestBase } from "./crm.webhookRequestBase.js";
 import { toChannelConnectionOverviewItem } from "./crm.channelConnection.dto.js";
 import { readConnectionId } from "./crm.channelConnections.routeSupport.js";
 import { registerCrmComposioConnectionSetupRoutes } from "./crm.channelConnections.composioSetupRoutes.js";
+import { registerCrmUazapiConnectionSetupRoutes } from "./crm.channelConnections.uazapiSetupRoutes.js";
 
 type ConnectionSetupRouteOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -195,6 +196,10 @@ export function registerCrmChannelConnectionSetupRoutes(
       }),
   );
   registerCrmComposioConnectionSetupRoutes(crmFeature, {
+    createContext,
+    services,
+  });
+  registerCrmUazapiConnectionSetupRoutes(crmFeature, {
     createContext,
     services,
   });

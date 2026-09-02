@@ -20,7 +20,7 @@ describe("CRM channel connection setup routes", () => {
     expect(overview.status).toBe(200);
     const overviewBody: unknown = await overview.json();
     expect(jsonObject(overviewBody)).toMatchObject({
-      allowance: { limit: 1, remaining: 1, used: 0 },
+      allowance: { limit: 3, remaining: 3, used: 0 },
       availableSetups: arrayContaining([
         { broker: "direct", channel: "whatsapp", provider: "zapi" },
       ]),

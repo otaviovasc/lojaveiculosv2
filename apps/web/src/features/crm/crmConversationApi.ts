@@ -1,4 +1,5 @@
 import {
+  crmChannelConnectionSchema,
   crmConnectionOverviewSchema,
   crmConversationCycleCountsResponseSchema,
   crmConversationCycleListResponseSchema,
@@ -128,6 +129,8 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.connections(baseUrl), input),
     disconnectZapiConnection: (connectionId) =>
       postJson(crmConversationRoutes.zapiDisconnect(connectionId, baseUrl)),
+    disconnectUazapiConnection: (connectionId) =>
+      postJson(crmConversationRoutes.uazapiDisconnect(connectionId, baseUrl)),
     repairZapiConnectionCredentials: (connectionId, input) =>
       putJson(
         crmConversationRoutes.zapiCredentials(connectionId, baseUrl),
@@ -150,6 +153,28 @@ export function createCrmConversationApi({
       postJson(
         crmConversationRoutes.zapiWebhooksConfigure(connectionId, baseUrl),
       ),
+    configureUazapiWebhooks: (connectionId) =>
+      postJson(
+        crmConversationRoutes.uazapiWebhooksConfigure(connectionId, baseUrl),
+      ),
+    listConnectionMembers: (connectionId) =>
+      getJson<unknown>(
+        crmConversationRoutes.connectionMembers(connectionId, baseUrl),
+      ).then(parseConnectionMembers),
+    grantConnectionMember: async (connectionId, userId) => {
+      await fetch(
+        crmConversationRoutes.connectionMember(connectionId, userId, baseUrl),
+        {
+          body: "{}",
+          headers: createProductCrmHeaders(auth),
+          method: "PUT",
+        },
+      ).then(readMaybeJson);
+    },
+    revokeConnectionMember: (connectionId, userId) =>
+      deleteMaybeJson<unknown>(
+        crmConversationRoutes.connectionMember(connectionId, userId, baseUrl),
+      ).then(parseConnectionMemberRevokeResult),
     createScheduledMessage: (input) =>
       postJson(crmConversationRoutes.scheduledMessages(baseUrl), input),
     createTag: (input) => postJson(crmConversationRoutes.tags(baseUrl), input),
@@ -259,6 +284,16 @@ export function createCrmConversationApi({
       postJson(crmConversationRoutes.zapiPairingQr(connectionId, baseUrl)),
     refreshZapiConnectionStatus: (connectionId) =>
       postJson(crmConversationRoutes.zapiStatusRefresh(connectionId, baseUrl)),
+    requestUazapiPairingCode: (connectionId, phone) =>
+      postJson(crmConversationRoutes.uazapiPairingCode(connectionId, baseUrl), {
+        phone,
+      }),
+    requestUazapiPairingQr: (connectionId) =>
+      postJson(crmConversationRoutes.uazapiPairingQr(connectionId, baseUrl)),
+    refreshUazapiConnectionStatus: (connectionId) =>
+      postJson(
+        crmConversationRoutes.uazapiStatusRefresh(connectionId, baseUrl),
+      ),
     retryOlxChatSetup: (connectionId) =>
       postJson(crmConversationRoutes.olxChatSetupRetry(connectionId, baseUrl)),
     setConnectionPaused: (connectionId, paused) =>
@@ -360,6 +395,53 @@ export function createCrmConversationApi({
 
 export function parseCrmExternalBotTestResult(payload: unknown) {
   return crmExternalBotTestResultSchema.parse(payload);
+}
+
+const memberUserIdsSchema = crmChannelConnectionSchema.shape.memberUserIds;
+
+/**
+ * GET /members answers an array of member DTOs (`{ createdAt, grantedBy,
+ * userId }`). There is no shared zod schema for it yet, so entries are
+ * validated field-by-field and the `memberUserIds` shape from the shared
+ * connection schema validates the extracted ids.
+ */
+export function parseConnectionMembers(payload: unknown) {
+  if (!Array.isArray(payload)) {
+    throw new Error("Resposta inválida ao listar os atendentes da conexão.");
+  }
+  const members = payload.map((entry) => {
+    const record = asRecord(entry);
+    if (typeof record.userId !== "string" || !record.userId.trim()) {
+      throw new Error("Resposta inválida ao listar os atendentes da conexão.");
+    }
+    return {
+      createdAt: typeof record.createdAt === "string" ? record.createdAt : "",
+      grantedBy: typeof record.grantedBy === "string" ? record.grantedBy : null,
+      userId: record.userId,
+    };
+  });
+  return members;
+}
+
+export function parseConnectionMemberUserIds(payload: unknown) {
+  return (
+    memberUserIdsSchema.parse(
+      parseConnectionMembers(payload).map((member) => member.userId),
+    ) ?? []
+  );
+}
+
+/** DELETE /members/:userId answers `{ activeAssignedConversationCount,
+ * revoked }`; a missing body means nothing was revoked. */
+export function parseConnectionMemberRevokeResult(payload: unknown) {
+  const record = asRecord(payload);
+  return {
+    activeAssignedConversationCount: readNonNegativeNumber(
+      record.activeAssignedConversationCount,
+      0,
+    ),
+    revoked: record.revoked === true,
+  };
 }
 
 export function parseCrmExternalBotActionAcceptedResult(payload: unknown) {

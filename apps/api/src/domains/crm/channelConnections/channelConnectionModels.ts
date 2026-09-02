@@ -62,6 +62,7 @@ export type CrmChannelConnectionMetadata = {
 export function toCrmChannelConnection(
   connection: CrmConnection,
   live: CrmChannelConnectionLiveStatus,
+  options: { memberUserIds?: readonly string[] } = {},
 ): CrmChannelConnection {
   const canonical = connection.canonical;
   if (!canonical) {
@@ -77,6 +78,8 @@ export function toCrmChannelConnection(
     displayName: connection.displayName,
     id: connection.id,
     isDefault: false,
+    ...(options.memberUserIds ? { memberUserIds: options.memberUserIds } : {}),
+    phoneNumber: connection.phoneNumber ?? connection.phone ?? null,
     provider: canonical.provider,
     ...(connection.revision !== undefined
       ? { revision: connection.revision }
@@ -113,6 +116,13 @@ export function setupProviderForConnection(
   if (
     connection.channel === "whatsapp" &&
     connection.provider === "zapi" &&
+    connection.broker === "direct"
+  ) {
+    return connectionIdentityKey(connection);
+  }
+  if (
+    connection.channel === "whatsapp" &&
+    connection.provider === "uazapi" &&
     connection.broker === "direct"
   ) {
     return connectionIdentityKey(connection);

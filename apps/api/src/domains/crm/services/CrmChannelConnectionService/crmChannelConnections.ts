@@ -58,6 +58,7 @@ export async function listCrmChannelConnections(
   logCrmServiceEvent(context, "crm.channel_connections.list.started");
   const providers = [
     "zapi",
+    "uazapi",
     "meta_cloud",
     ...(isCrmOlxChatEnabled(ports) ? (["olx"] as const) : []),
   ] as const;
@@ -71,11 +72,21 @@ export async function listCrmChannelConnections(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  const memberUserIdsByConnectionId = ports.crmConnectionMemberRepository
+    ? await ports.crmConnectionMemberRepository.listMemberUserIdsByConnectionIds(
+        {
+          connectionIds: connections.map((connection) => connection.id),
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        },
+      )
+    : {};
   const result = await Promise.all(
     connections.map(async (connection) =>
       toCrmChannelConnection(
         connection,
         await readConnectionLiveStatus(context, connection, ports),
+        { memberUserIds: memberUserIdsByConnectionId[connection.id] ?? [] },
       ),
     ),
   );

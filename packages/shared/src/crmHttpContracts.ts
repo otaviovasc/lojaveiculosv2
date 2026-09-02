@@ -106,6 +106,32 @@ export const crmConnectionOverviewSchema = z
   .strict();
 export type CrmConnectionOverview = z.infer<typeof crmConnectionOverviewSchema>;
 
+export const crmConnectionMemberSchema = z
+  .object({
+    createdAt: nonEmptyString,
+    grantedBy: nullableString,
+    userId: nonEmptyString,
+  })
+  .strict();
+export type CrmConnectionMemberDto = z.infer<typeof crmConnectionMemberSchema>;
+
+export const crmConnectionMemberListResponseSchema = z.array(
+  crmConnectionMemberSchema,
+);
+export type CrmConnectionMemberListResponse = z.infer<
+  typeof crmConnectionMemberListResponseSchema
+>;
+
+export const crmConnectionMemberRevokeResultSchema = z
+  .object({
+    activeAssignedConversationCount: nonNegativeInteger,
+    revoked: z.boolean(),
+  })
+  .strict();
+export type CrmConnectionMemberRevokeResult = z.infer<
+  typeof crmConnectionMemberRevokeResultSchema
+>;
+
 export const crmConversationCycleStatuses = [
   "ACTIVE",
   "COMPLETED",
