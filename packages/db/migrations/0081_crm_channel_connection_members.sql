@@ -1,3 +1,10 @@
+-- PostgreSQL requires enum values added by 0080 to be committed before this
+-- migration can use them. Drizzle executes all pending migrations in one
+-- transaction, so establish the boundary after the 0080 enum addition and its
+-- migration-ledger insert are durable (same pattern as 0070).
+COMMIT;--> statement-breakpoint
+BEGIN;--> statement-breakpoint
+
 ALTER TABLE "crm_channel_connections"
   ADD COLUMN IF NOT EXISTS "phone_number" text;
 
