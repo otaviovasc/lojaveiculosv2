@@ -1,27 +1,30 @@
+import "../../styles/marketing.css";
+
 import { HeroSection } from "./LandingHero";
-import { ProductSection } from "./LandingProduct";
+import { IntegrationsSection } from "./LandingIntegrations";
+import { RacingStripeDivider } from "./LandingMemphisGraphics";
+import { LandingNav } from "./LandingNav";
 import {
   FeatureSection,
   FinalCta,
   LandingFooter,
   MetricsSection,
-  ProblemSection,
   TestimonialsSection,
-  WorkflowSection,
 } from "./LandingPageParts";
 
 export function LandingPage() {
   return (
-    <main className="landing-page min-h-screen bg-app font-sans text-app-text antialiased">
+    <div className="landing-page min-h-screen bg-app font-sans text-app-text antialiased transition-colors duration-200">
+      <LandingNav />
       <HeroSection />
+      <RacingStripeDivider />
+      <IntegrationsSection />
       <MetricsSection />
-      <ProblemSection />
-      <WorkflowSection />
-      <ProductSection />
+      <RacingStripeDivider />
       <FeatureSection />
       <TestimonialsSection />
       <FinalCta />
       <LandingFooter />
-    </main>
+    </div>
   );
 }

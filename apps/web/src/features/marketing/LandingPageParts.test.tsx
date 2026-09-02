@@ -53,7 +53,7 @@ describe("public landing copy", () => {
         name: "O sistema que faz você vender até 10 carros a mais por mês.",
       }),
     ).toBeVisible();
-    expect(screen.getByText("SaaS para lojas de veículos")).toBeVisible();
+    expect(screen.getByText("ERP para lojas de veículos")).toBeVisible();
     expect(screen.getByText("Produtividade real")).toBeVisible();
     expect(screen.getByText("O status quo do mercado")).toBeVisible();
     expect(screen.getByText("Burocracia fiscal manual")).toBeVisible();
@@ -68,7 +68,7 @@ describe("public landing copy", () => {
   it("renders a product preview image instead of a background video", () => {
     const { container } = render(
       <MemoryRouter>
-        <ProductSection />
+        <HeroSection />
       </MemoryRouter>,
     );
 
