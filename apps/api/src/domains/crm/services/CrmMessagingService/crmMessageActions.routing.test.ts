@@ -189,11 +189,13 @@ function crmMessage(cycleId: string): CrmMessage {
 function conversationCycle(): CrmConversationCycle {
   const now = new Date("2026-08-18T12:00:00.000Z");
   return {
+    archivedAt: null,
     assignedUserId: null,
     channel: "WHATSAPP",
     channelMetadata: {},
     connectionId: "connection-1",
     createdAt: now,
+    deletedAt: null,
     customerChatId: null,
     customerDisplayName: "Cliente",
     customerPhone: "5511999999999",
@@ -216,6 +218,7 @@ function conversationCycle(): CrmConversationCycle {
     leadId: null,
     messageCount: 1,
     metadata: {},
+    pinnedAt: null,
     profilePhotoUrl: null,
     revision: 1,
     source: null,

@@ -32,6 +32,7 @@ export async function executeCrmConversationCycleCommand(input: {
   commandType: CrmConversationCycleCommandType;
   context: ServiceContext;
   fingerprintInput: Record<string, unknown>;
+  includeDeleted?: boolean;
   mutate: (
     current: CrmConversationCycle,
     ports: CrmServicePorts,
@@ -40,12 +41,17 @@ export async function executeCrmConversationCycleCommand(input: {
   ports: CrmServicePorts;
   cycleId: string;
 }): Promise<ConversationCycleCommandResponse & { changed: boolean }> {
+  const lookupOptions = {
+    includeArchived: true,
+    includeDeleted: input.includeDeleted === true,
+  };
   const requestFingerprint = fingerprint(input.fingerprintInput);
   const command = await runCrmTransaction(input.ports, async (ports) => {
     const { scope, conversationCycle } = await findScopedConversationCycle(
       input.context,
       { cycleId: input.cycleId },
       ports,
+      lookupOptions,
     );
     const repository = getCrmConversationCycleCommandRepository(ports);
     const claimed = await repository.claim({
@@ -78,6 +84,7 @@ export async function executeCrmConversationCycleCommand(input: {
           input.context,
           ports,
           input.cycleId,
+          lookupOptions,
         ),
       };
     }
@@ -132,9 +139,11 @@ export async function reloadVisibleConversationCycle(
   context: ServiceContext,
   ports: CrmServicePorts,
   cycleId: string,
+  options: { includeArchived?: boolean; includeDeleted?: boolean } = {},
 ) {
-  return (await findScopedConversationCycle(context, { cycleId }, ports))
-    .conversationCycle;
+  return (
+    await findScopedConversationCycle(context, { cycleId }, ports, options)
+  ).conversationCycle;
 }
 
 function fingerprint(input: Record<string, unknown>) {

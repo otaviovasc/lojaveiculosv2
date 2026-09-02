@@ -1,8 +1,6 @@
 import {
   Archive,
   ArchiveRestore,
-  Bell,
-  BellOff,
   Bot,
   Car,
   Check,
@@ -48,7 +46,6 @@ export function SessionList({
   onArchive,
   onDelete,
   onLoadMore = () => undefined,
-  onMute,
   onPin,
   onRefresh,
   onSelect,
@@ -64,7 +61,6 @@ export function SessionList({
   onArchive?: (cycleId: CrmConversationCycleId) => void;
   onDelete?: (cycleId: CrmConversationCycleId) => void;
   onLoadMore?: () => void;
-  onMute?: (cycleId: CrmConversationCycleId) => void;
   onPin?: (cycleId: CrmConversationCycleId) => void;
   onRefresh?: () => void | Promise<unknown>;
   onSelect: (cycleId: CrmConversationCycleId) => void;
@@ -307,7 +303,6 @@ export function SessionList({
               cycle={cycle}
               onArchive={onArchive}
               onDelete={onDelete}
-              onMute={onMute}
               onPin={onPin}
               onToggleRead={onToggleRead}
             />
@@ -350,22 +345,19 @@ function CrmCycleHoverMenu({
   cycle,
   onArchive,
   onDelete,
-  onMute,
   onPin,
   onToggleRead,
 }: {
   cycle: CrmConversationCycle;
   onArchive?: ((cycleId: CrmConversationCycleId) => void) | undefined;
   onDelete?: ((cycleId: CrmConversationCycleId) => void) | undefined;
-  onMute?: ((cycleId: CrmConversationCycleId) => void) | undefined;
   onPin?: ((cycleId: CrmConversationCycleId) => void) | undefined;
   onToggleRead?: ((cycle: CrmConversationCycle) => void) | undefined;
 }) {
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
-  const [isArchived, setIsArchived] = useState(false);
+  const isPinned = cycle.isPinned === true;
+  const isArchived = cycle.isArchived === true;
 
   return (
     <span className="crm-cycle-action-anchor" data-prevent-drag="true">
@@ -400,7 +392,6 @@ function CrmCycleHoverMenu({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
-              setIsArchived((prev) => !prev);
               onArchive?.(cycle.id);
             }}
             role="menuitem"
@@ -421,28 +412,6 @@ function CrmCycleHoverMenu({
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
-              setIsMuted((prev) => !prev);
-              onMute?.(cycle.id);
-            }}
-            role="menuitem"
-            type="button"
-          >
-            {isMuted ? (
-              <Bell className="size-4 text-muted shrink-0" />
-            ) : (
-              <BellOff className="size-4 text-muted shrink-0" />
-            )}
-            <span>
-              {isMuted ? "Ativar notificações" : "Silenciar notificações"}
-            </span>
-          </button>
-
-          <button
-            className="crm-context-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              setIsPinned((prev) => !prev);
               onPin?.(cycle.id);
             }}
             role="menuitem"

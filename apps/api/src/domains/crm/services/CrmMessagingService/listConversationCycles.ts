@@ -16,6 +16,7 @@ import { resolveCrmConnectionScopedQueueVisibility } from "../../messaging/crmQu
 const permission = "crm.conversations.read";
 
 export type ListConversationCyclesInput = {
+  archived?: boolean;
   assigneeId?: string;
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";

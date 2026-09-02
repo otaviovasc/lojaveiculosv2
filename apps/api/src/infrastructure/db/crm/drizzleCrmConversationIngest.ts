@@ -32,6 +32,7 @@ import {
   updateConversationCycleIdentity,
 } from "./drizzleCrmConversationCycleIdentity.js";
 import { findCanonicalSessionById } from "./drizzleCrmTagHydration.js";
+import { restoreSessionLifecycle } from "./drizzleCrmConversationLifecycleRestore.js";
 
 export async function ingestMessageInDatabase(
   db: DrizzleCrmClient,
@@ -158,7 +159,8 @@ async function findOrCreateSession(
   const existing = await findConversationCycleByIdentity(db, input);
   if (existing?.cycle.state === "active") {
     const updated = await updateConversationCycleIdentity(db, existing, input);
-    return { ...updated, created: false };
+    const restored = await restoreSessionLifecycle(db, updated, input);
+    return { ...restored, created: false };
   }
   if (existing) {
     const updated = await updateConversationCycleIdentity(db, existing, input);

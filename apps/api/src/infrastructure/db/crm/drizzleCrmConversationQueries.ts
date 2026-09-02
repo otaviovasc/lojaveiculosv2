@@ -120,6 +120,14 @@ export function conversationCycleFilters(
     eq(conversationCycles.storeId, input.storeId),
     eq(conversationCycles.tenantId, input.tenantId),
   ];
+  if (!input.includeDeleted) {
+    filters.push(isNull(conversationCycles.deletedAt));
+  }
+  if (input.archived) {
+    filters.push(isNotNull(conversationCycles.archivedAt));
+  } else if (!input.includeArchived) {
+    filters.push(isNull(conversationCycles.archivedAt));
+  }
   switch (input.queueVisibility?.kind) {
     case undefined:
     case "global":

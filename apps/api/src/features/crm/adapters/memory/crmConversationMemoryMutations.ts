@@ -74,6 +74,8 @@ export function updateMemoryCrmConversationCycle(
   if (input.assignedUserId !== undefined) {
     cycle.assignedUserId = input.assignedUserId;
   }
+  if (input.archivedAt !== undefined) cycle.archivedAt = input.archivedAt;
+  if (input.deletedAt !== undefined) cycle.deletedAt = input.deletedAt;
   if (input.firstHandledAt !== undefined) {
     cycle.firstHandledAt = input.firstHandledAt;
   }
@@ -105,6 +107,7 @@ export function updateMemoryCrmConversationCycle(
   if (input.lastReadAt !== undefined) cycle.lastReadAt = input.lastReadAt;
   if (input.leadId !== undefined) cycle.leadId = input.leadId;
   if (input.metadata) cycle.metadata = input.metadata;
+  if (input.pinnedAt !== undefined) cycle.pinnedAt = input.pinnedAt;
   if (input.status) cycle.status = input.status;
   cycle.revision += 1;
   cycle.updatedAt = new Date();

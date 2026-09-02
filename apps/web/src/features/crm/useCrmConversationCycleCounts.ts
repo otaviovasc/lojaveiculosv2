@@ -10,6 +10,7 @@ import type {
 
 export function useCrmConversationCycleCounts({
   api,
+  archivedOnly = false,
   canList,
   connectionId,
   humanAttendanceFilter,
@@ -21,6 +22,7 @@ export function useCrmConversationCycleCounts({
   unreadOnly,
 }: {
   api: CrmConversationApi;
+  archivedOnly?: boolean;
   canList: boolean;
   connectionId: CrmConnectionId | null;
   humanAttendanceFilter: CrmHumanAttendanceState | "";
@@ -43,6 +45,7 @@ export function useCrmConversationCycleCounts({
       return;
     }
     const counts = await api.listConversationCycleCounts({
+      ...(archivedOnly ? { archived: true } : {}),
       ...(connectionId ? { connectionId } : {}),
       filter: quickFilter,
       ...(humanAttendanceFilter
@@ -57,6 +60,7 @@ export function useCrmConversationCycleCounts({
     setSessionCounts(counts);
   }, [
     api,
+    archivedOnly,
     canList,
     connectionId,
     humanAttendanceFilter,

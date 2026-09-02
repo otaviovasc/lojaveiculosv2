@@ -39,6 +39,7 @@ export async function sendUazapiText(
       response.status,
       "UAZAPI send text",
       credentials.instanceToken,
+      payload,
     );
   }
   ensureUazapiOk(payload, "UAZAPI send text", credentials.instanceToken);

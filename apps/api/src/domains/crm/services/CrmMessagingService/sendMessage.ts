@@ -104,7 +104,7 @@ export async function sendMessage(
   );
 }
 
-async function resolveReplyTarget(
+export async function resolveReplyTarget(
   context: ServiceContext,
   input: {
     messageId: string;
@@ -135,7 +135,7 @@ async function resolveReplyTarget(
   return message;
 }
 
-function replyMetadata(message: CrmMessage) {
+export function replyMetadata(message: CrmMessage) {
   const senderUser = readHumanCrmMessageSenderUser(message);
   return {
     content: truncate(message.content, 280),

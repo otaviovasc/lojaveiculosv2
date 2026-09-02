@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AuthorizationError } from "../../../../shared/authorization.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
+import { createTestCrmConnectionMemberRepository } from "../../testSupportConnectionMembers.js";
 import { CrmZapiConnectionConflictError } from "../../channelConnections/connectionCreation.js";
 import { createCrmChannelConnection } from "./createCrmChannelConnection.js";
 import {
@@ -13,7 +14,8 @@ import {
 
 describe("createCrmChannelConnection", () => {
   it("creates a store-scoped sandbox connection inside the repository transaction", async () => {
-    const ports = createPorts();
+    const members = createTestCrmConnectionMemberRepository();
+    const ports = createPorts(1, undefined, members.repository);
 
     const connection = await createCrmChannelConnection(
       createContext(),
@@ -62,6 +64,13 @@ describe("createCrmChannelConnection", () => {
     expect(JSON.stringify(stored?.[0]?.credentialsRef)).toContain(
       '"webhookSecret":"sealed:',
     );
+    expect(members.grants).toEqual([
+      expect.objectContaining({
+        connectionId: connection.id,
+        grantedBy: "user_1",
+        userId: "user_1",
+      }),
+    ]);
   });
 
   it("requires the customer channel setup permission", async () => {

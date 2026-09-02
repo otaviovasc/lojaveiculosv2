@@ -11,6 +11,7 @@ import {
   requireWhatsappConnection,
   type CrmConnectionMemberServicePorts,
 } from "./connectionMemberSupport.js";
+import { CrmConnectionMemberValidationError } from "./crmConnectionMemberErrors.js";
 
 export type RevokeConnectionMemberInput = {
   connectionId: string;
@@ -51,6 +52,22 @@ export async function revokeConnectionMember(
       tenantId: scope.tenantId,
     },
     async () => {
+      // Fail-closed visibility: revoking the final member would make the
+      // connection invisible to everyone, including the connection creator.
+      const members = await getCrmConnectionMemberRepository(ports).listMembers(
+        {
+          connectionId: connection.id,
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        },
+      );
+      const isMember = members.some((member) => member.userId === input.userId);
+      if (isMember && members.length <= 1) {
+        throw new CrmConnectionMemberValidationError(
+          "Cannot revoke the last remaining member of a connection.",
+          "connection_last_member",
+        );
+      }
       // Visibility-only change: conversations currently assigned to the
       // revoked user stay assigned; they just leave the user's queue scope.
       const activeAssignedConversationCount = ports.crmConversationRepository

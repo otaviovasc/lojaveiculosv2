@@ -26,6 +26,7 @@ export function createMemoryCycleContext(
   now: Date,
 ): CrmConversationCycle {
   return {
+    archivedAt: null,
     assignedUserId: null,
     customerChatId: input.customerChatId ?? null,
     customerDisplayName: input.customerDisplayName ?? null,
@@ -35,6 +36,7 @@ export function createMemoryCycleContext(
     channelMetadata: {},
     connectionId: input.connectionId,
     createdAt: now,
+    deletedAt: null,
     externalCycleId: null,
     firstHandledAt: null,
     freshLeadAt: null,
@@ -53,6 +55,7 @@ export function createMemoryCycleContext(
     leadId: null,
     messageCount: 0,
     metadata: memoryProfilePhotoMetadata(input),
+    pinnedAt: null,
     profilePhotoUrl: input.profilePhotoUrl ?? null,
     revision: 0,
     tags: [],

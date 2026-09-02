@@ -34,6 +34,11 @@ import {
 } from "../../whatsapp/publishZapiWhatsappAttendance.js";
 import { ingestZapiProfilePhoto } from "../../whatsapp/zapiProfilePhotoIngestion.js";
 import { persistZapiWhatsappWebhook } from "../../whatsapp/persistZapiWhatsappWebhook.js";
+import {
+  applyInboundWhatsappReactionIfTargeted,
+  markUnresolvedInboundReaction,
+} from "../../whatsapp/applyInboundWhatsappReaction.js";
+import { pendingInboundMediaMetadata } from "../../whatsapp/pendingInboundMedia.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
 import type { CrmConversationCycle } from "../../ports/crmConversationRepository.js";
 
@@ -78,7 +83,14 @@ export async function ingestZapiWhatsappWebhook(
     }
     return { reason: "not_processable", status: "ignored" };
   }
-  const media = pendingZapiMedia(parsed);
+  const reaction = await applyInboundWhatsappReactionIfTargeted(
+    context,
+    { connection, parsed, provider: "zapi" },
+    ports,
+  );
+  if (reaction) return reaction;
+  markUnresolvedInboundReaction(parsed.metadata);
+  const media = pendingInboundMediaMetadata(parsed, { requireMediaUrl: true });
   const profilePhoto = { status: "unavailable" as const };
   const auditInput: CrmServiceAuditInput = {
     action: "crm.provider.zapi.webhook.received",
@@ -148,24 +160,6 @@ export async function ingestZapiWhatsappWebhook(
     message,
     conversationCycle,
     status: result.createdMessage ? "stored" : "duplicate",
-  };
-}
-
-function pendingZapiMedia(message: ParsedZapiInboundMessage) {
-  if (!message.mediaType || !message.mediaUrl) {
-    return { metadata: message.metadata };
-  }
-  const current = message.metadata.media;
-  return {
-    metadata: {
-      ...message.metadata,
-      media: {
-        ...(current && typeof current === "object" && !Array.isArray(current)
-          ? current
-          : {}),
-        mirrorStatus: "pending",
-      },
-    },
   };
 }
 

@@ -210,6 +210,112 @@ describe("CrmMessageParts rendering", () => {
       screen.queryByRole("button", { name: "Proxima midia" }),
     ).not.toBeInTheDocument();
   });
+  it("hides legacy standalone reaction rows from the thread", () => {
+    render(
+      <MessageList
+        isLoading={false}
+        messages={[
+          createMessage({ content: "Ola", id: "text-1" }),
+          createMessage({
+            content: "Reaction: ❤️",
+            id: "reaction-1",
+            metadata: {
+              interactive: {
+                kind: "reaction",
+                messageId: "target-ext-1",
+                value: "❤️",
+              },
+            },
+            type: "INTERACTIVE",
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Ola")).toBeInTheDocument();
+    expect(screen.queryByText("Reaction: ❤️")).not.toBeInTheDocument();
+  });
+
+  it("renders unresolved fallback reactions as a compact status line", () => {
+    render(
+      <MessageList
+        isLoading={false}
+        messages={[
+          createMessage({ content: "Ola", id: "text-1" }),
+          createMessage({
+            content: "Reaction: ❤️",
+            id: "reaction-1",
+            metadata: {
+              interactive: {
+                kind: "reaction",
+                unresolved: true,
+                value: "❤️",
+              },
+            },
+            type: "INTERACTIVE",
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Ola")).toBeInTheDocument();
+    expect(screen.queryByText("Reaction: ❤️")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Reagiu ❤️ a uma mensagem anterior"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders inbound reactions as a pill without the remove affordance", () => {
+    render(
+      <MessageList
+        isLoading={false}
+        messages={[
+          createMessage({
+            id: "message-1",
+            metadata: {
+              reaction: {
+                origin: "inbound",
+                receivedAt: "2026-07-02T19:01:00.000Z",
+                value: "❤️",
+              },
+            },
+          }),
+        ]}
+        onRemoveReaction={vi.fn(async () => true)}
+      />,
+    );
+
+    expect(screen.getByText("❤️")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Reacao ❤️" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the remove affordance for outbound reactions", () => {
+    render(
+      <MessageList
+        isLoading={false}
+        messages={[
+          createMessage({
+            direction: "OUTBOUND",
+            id: "message-1",
+            metadata: {
+              reaction: {
+                sentAt: "2026-07-02T19:01:00.000Z",
+                value: "👍",
+              },
+            },
+            senderType: "HUMAN",
+          }),
+        ]}
+        onRemoveReaction={vi.fn(async () => true)}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Reacao 👍" }),
+    ).toBeInTheDocument();
+  });
 });
 
 function createMessage(overrides: Partial<CrmMessage> = {}): CrmMessage {

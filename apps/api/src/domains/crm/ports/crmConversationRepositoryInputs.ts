@@ -37,10 +37,15 @@ export type CrmQueueVisibility =
     };
 
 export type CountCrmConversationCyclesInput = {
+  archived?: boolean;
   assignedUserId?: UserId;
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
   humanAttendanceState?: CrmHumanAttendanceState;
+  /** Internal: skip the archived filter entirely (mutation/reload paths). */
+  includeArchived?: boolean;
+  /** Internal: include soft-deleted cycles (command replay/reload paths). */
+  includeDeleted?: boolean;
   leadId?: string;
   queueVisibility?: CrmQueueVisibility;
   search?: string;
@@ -109,7 +114,9 @@ export type UpsertCrmConversationCycleContextInput = {
 };
 
 export type UpdateCrmConversationCycleInput = {
+  archivedAt?: Date | null;
   assignedUserId?: UserId | null;
+  deletedAt?: Date | null;
   expectedHumanAttendanceStateVersion?: number | null;
   expectedInterventionId?: string | null;
   expectedRevision?: number;
@@ -129,6 +136,7 @@ export type UpdateCrmConversationCycleInput = {
   leadId?: string | null;
   metadata?: Record<string, unknown>;
   cycleId: string;
+  pinnedAt?: Date | null;
   status?: CrmConversationCycleStatus;
   storeId: StoreId;
   tenantId: TenantId;

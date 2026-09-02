@@ -4,7 +4,14 @@ export type CrmConversationCycleCommandResult =
   "applied" | "already_applied" | "superseded";
 
 export type CrmConversationCycleCommandType =
-  "assign" | "close" | "intervention" | "mark_read" | "mark_unread";
+  | "archive"
+  | "assign"
+  | "close"
+  | "delete"
+  | "intervention"
+  | "mark_read"
+  | "mark_unread"
+  | "pin";
 
 export type CrmConversationCycleCommandReceipt = {
   commandId: string;

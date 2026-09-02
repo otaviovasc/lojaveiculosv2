@@ -106,6 +106,62 @@ describe("sendUazapiMedia", () => {
     expect(body.file).toBe("http://internal.test/voice.ogg");
   });
 
+  it("maps the reply target to the provider replyid field", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ messageid: "whatsapp-media-reply-1" }),
+    );
+
+    await sendUazapiMedia(credentials, fetch, {
+      mediaType: "image",
+      mediaUrl: "https://cdn.example.test/vehicle.jpg",
+      phone: "5511999999999",
+      replyToMessageId: "3EB0QUOTED1",
+    });
+
+    const body = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body)) as Record<
+      string,
+      unknown
+    >;
+    expect(body.replyid).toBe("3EB0QUOTED1");
+  });
+
+  it("surfaces the provider error detail from non-OK media responses", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ error: "Unsupported media format" }, { status: 415 }),
+    );
+
+    await expect(
+      sendUazapiMedia(credentials, fetch, {
+        mediaType: "image",
+        mediaUrl: "https://cdn.example.test/vehicle.jpg",
+        phone: "5511999999999",
+      }),
+    ).rejects.toMatchObject({
+      code: "provider_rejected",
+      message:
+        "UAZAPI send media failed with HTTP 415: Unsupported media format",
+      status: 502,
+    });
+  });
+
+  it("rejects HTTP 200 responses carrying a string-form error", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ error: "WhatsApp disconnected" }),
+    );
+
+    await expect(
+      sendUazapiMedia(credentials, fetch, {
+        mediaType: "image",
+        mediaUrl: "https://cdn.example.test/vehicle.jpg",
+        phone: "5511999999999",
+      }),
+    ).rejects.toMatchObject({
+      code: "provider_rejected",
+      message: "UAZAPI send media failed: WhatsApp disconnected",
+      status: 502,
+    });
+  });
+
   it("throws when the provider answers HTTP 200 with an error body", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
       Response.json({ error: true, message: "instance is disconnected" }),

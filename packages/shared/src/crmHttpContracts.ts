@@ -225,6 +225,8 @@ export const crmConversationCycleSchema = z
     id: nonEmptyString,
     interventionHistoryStartedAt: optionalNullableString,
     interventionId: optionalNullableString,
+    isArchived: z.boolean().optional(),
+    isPinned: z.boolean().optional(),
     lastCustomerReadAt: optionalNullableString,
     lastMessageAt: optionalNullableString,
     lastMessageContent: optionalNullableString,

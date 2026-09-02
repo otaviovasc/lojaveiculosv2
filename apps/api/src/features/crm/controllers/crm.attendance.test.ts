@@ -130,7 +130,11 @@ describe("CRM human attendance", () => {
       text: undefined,
     });
     const reaction = (await reactionResponse.json()) as {
-      message: { senderOrigin: string; senderType: string };
+      message: {
+        metadata?: { reaction?: { origin?: string; value?: string } };
+        senderOrigin: string;
+        senderType: string;
+      };
       conversationCycle: {
         humanAttendanceState: string | null;
         revision: number;
@@ -138,13 +142,16 @@ describe("CRM human attendance", () => {
       };
     };
 
+    // Targeted reactions attach to the reacted message instead of creating a
+    // standalone SYSTEM bubble.
     expect(reaction.message).toMatchObject({
-      senderOrigin: "unknown",
-      senderType: "SYSTEM",
+      metadata: { reaction: { origin: "inbound", value: "👍" } },
+      senderOrigin: "customer",
+      senderType: "CUSTOMER",
     });
     expect(reaction.conversationCycle).toMatchObject({
       humanAttendanceState: null,
-      revision: inbound.conversationCycle.revision + 1,
+      revision: inbound.conversationCycle.revision,
       status: "ACTIVE",
     });
   });

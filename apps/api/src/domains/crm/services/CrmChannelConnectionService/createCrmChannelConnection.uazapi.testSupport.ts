@@ -4,6 +4,7 @@ import {
   storeId,
   tenantId,
 } from "../../testSupportCrmChannelConnectionCreation.js";
+import { createTestCrmConnectionMemberRepository } from "../../testSupportConnectionMembers.js";
 import { createTestCrmConnectionRepository } from "../../testSupportConnections.js";
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
@@ -23,6 +24,7 @@ export function createUazapiPorts(
   const repository = createTestCrmConnectionRepository(
     input.initialConnections ?? [],
   );
+  const members = createTestCrmConnectionMemberRepository();
   const provisioning: UazapiProvisioningStub = {
     createInstance: vi.fn(async ({ name }: { name: string }) => ({
       baseUrl: "https://free.uazapi.com",
@@ -42,10 +44,10 @@ export function createUazapiPorts(
     ...input.provisioning,
   };
   const ports: CrmServicePorts = {
-    ...createPorts(0, repository),
+    ...createPorts(0, repository, members.repository),
     crmUazapiProvisioningProvider: provisioning,
   };
-  return { ports, provisioning, repository };
+  return { members, ports, provisioning, repository };
 }
 
 export function whatsappConnectionFixture(

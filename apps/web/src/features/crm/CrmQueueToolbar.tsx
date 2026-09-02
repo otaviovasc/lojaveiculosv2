@@ -1,4 +1,5 @@
 import {
+  Archive,
   CheckCheck,
   CheckSquare,
   Headset,
@@ -26,6 +27,7 @@ import type {
 } from "./crmConversationTypes";
 
 export function CrmQueueToolbar({
+  archivedOnly = false,
   assignableMembers,
   availableTags,
   children,
@@ -37,6 +39,7 @@ export function CrmQueueToolbar({
   connectionFilterId,
   connections,
   currentUserId,
+  onArchivedOnlyChange,
   onConnectionFilterChange,
   onHumanAttendanceFilterChange,
   onManageConnections,
@@ -63,6 +66,7 @@ export function CrmQueueToolbar({
   unreadOnly,
   canStartConversation,
 }: {
+  archivedOnly?: boolean;
   assignableMembers: CrmAssignableMember[];
   availableTags: CrmTag[];
   children?: ReactNode;
@@ -75,6 +79,7 @@ export function CrmQueueToolbar({
   connectionFilterId: string | null;
   connections: CrmProviderConnection[];
   currentUserId: string | null;
+  onArchivedOnlyChange?: (archivedOnly: boolean) => void;
   onConnectionFilterChange: (connectionId: string | null) => void;
   onHumanAttendanceFilterChange: (state: CrmHumanAttendanceState | "") => void;
   onManageConnections: () => void;
@@ -322,6 +327,24 @@ export function CrmQueueToolbar({
             <span>{conversationCycleCounts.statuses.COMPLETED}</span>
           ) : null}
         </button>
+        {onArchivedOnlyChange ? (
+          <button
+            aria-pressed={archivedOnly}
+            className={
+              archivedOnly
+                ? "crm-smart-filter crm-smart-filter-active"
+                : "crm-smart-filter"
+            }
+            onClick={() => onArchivedOnlyChange(!archivedOnly)}
+            type="button"
+          >
+            <Archive aria-hidden="true" />
+            Arquivadas
+            {archivedOnly && conversationCycleCounts.total > 0 ? (
+              <span>{conversationCycleCounts.total}</span>
+            ) : null}
+          </button>
+        ) : null}
       </div>
 
       {children}

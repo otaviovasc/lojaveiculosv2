@@ -103,28 +103,10 @@ export function parseJson(text: string): Record<string, unknown> {
   }
 }
 
-/**
- * Uazapi answers failed sends with HTTP 200 and `{ error: true, message }`
- * (for example on a disconnected instance), so the body must always be
- * inspected, not just the status code.
- */
-export function ensureUazapiOk(
-  payload: Record<string, unknown>,
-  label: string,
-  token?: string,
-) {
-  if (payload.error !== true) return;
-  const raw =
-    readString(payload.message) ??
-    readString(payload.response) ??
-    "provider returned an error";
-  throw new CrmMessagingGatewayError(
-    redactUazapiTokenInText(`${label} failed: ${raw}`, token),
-    502,
-    undefined,
-    "provider_rejected",
-  );
-}
+export {
+  ensureUazapiOk,
+  uazapiProviderResponseError,
+} from "./uazapiCrmWhatsappErrors.js";
 
 /**
  * Reads the outbound provider message id. Only the WhatsApp message id
@@ -220,21 +202,4 @@ export function assertUazapiProvider(provider: string) {
       "configuration_error",
     );
   }
-}
-
-export function uazapiProviderResponseError(
-  status: number,
-  label: string,
-  token?: string,
-) {
-  return new CrmMessagingGatewayError(
-    redactUazapiTokenInText(`${label} failed with HTTP ${status}`, token),
-    status === 429 ? 429 : 502,
-    status === 429 ? 1 : undefined,
-    status === 429
-      ? "rate_limited"
-      : status >= 500
-        ? "provider_unavailable"
-        : "provider_rejected",
-  );
 }

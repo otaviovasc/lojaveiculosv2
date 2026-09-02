@@ -26,6 +26,7 @@ export const crmHumanAttendanceStateSchema = z.enum([
 ]);
 
 export const conversationCyclesQuerySchema = z.object({
+  archived: queryBooleanSchema.optional(),
   assigneeId: z.string().uuid().optional(),
   connectionId: z.string().uuid().optional(),
   filter: crmConversationCycleFilterSchema.default("all"),

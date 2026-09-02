@@ -34,6 +34,7 @@ import { sealZapiCredentials } from "../../whatsapp/zapiInitialCredentials.js";
 import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
 import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
 import { provisionUazapiWhatsappConnection } from "./provisionUazapiConnection.js";
+import { grantCreatorConnectionMembership } from "./grantCreatorConnectionMembership.js";
 
 export const connectionPermission = "crm.messaging.connection.setup";
 
@@ -153,6 +154,11 @@ export async function createCrmChannelConnection(
                     tenantId: connection.tenantId,
                   })) ?? connection;
               }
+              await grantCreatorConnectionMembership(
+                context,
+                connection,
+                transactionPorts,
+              );
               return connection;
             });
       if (input.provider === "zapi" && input.webhookSetupTarget) {

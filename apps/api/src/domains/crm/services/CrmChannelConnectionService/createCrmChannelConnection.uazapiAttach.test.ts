@@ -15,7 +15,7 @@ const adminToken = uazapiTestAdminToken;
 
 describe("createCrmChannelConnection uazapi attach mode", () => {
   it("attaches an existing connected instance with its server-side token and phone", async () => {
-    const { ports, provisioning } = createUazapiPorts({
+    const { members, ports, provisioning } = createUazapiPorts({
       provisioning: {
         listInstances: vi.fn(async () => [
           {
@@ -61,6 +61,13 @@ describe("createCrmChannelConnection uazapi attach mode", () => {
       (persisted?.metadata as { uazapiWebhookSetup?: { state?: string } })
         .uazapiWebhookSetup?.state,
     ).toBe("pending");
+    expect(members.grants).toEqual([
+      expect.objectContaining({
+        connectionId: result.id,
+        grantedBy: "user_1",
+        userId: "user_1",
+      }),
+    ]);
   });
 
   it("rejects attach when the instance is absent from the admin account", async () => {

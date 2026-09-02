@@ -180,4 +180,18 @@ describe("CRM conversation API routes", () => {
     );
     expect(query).not.toContain("attendanceState=");
   });
+
+  it("serializes the archived flag in count queries", () => {
+    expect(
+      createCrmConversationCycleCountsQuery({
+        archived: true,
+        connectionId: "connection_1",
+      }).toString(),
+    ).toBe("archived=true&connectionId=connection_1");
+    expect(
+      createCrmConversationCycleCountsQuery({
+        connectionId: "connection_1",
+      }).toString(),
+    ).toBe("connectionId=connection_1");
+  });
 });

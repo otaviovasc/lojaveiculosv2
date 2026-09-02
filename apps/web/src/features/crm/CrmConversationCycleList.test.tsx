@@ -106,6 +106,80 @@ describe("SessionList", () => {
     expect(screen.queryByText("Intervenção humana")).not.toBeInTheDocument();
   });
 
+  it("wires archive, pin and delete menu actions without a mute item", async () => {
+    const user = userEvent.setup();
+    const onArchive = vi.fn();
+    const onPin = vi.fn();
+    const onDelete = vi.fn();
+    render(
+      <SessionList
+        activeCycleId={null}
+        onArchive={onArchive}
+        onDelete={onDelete}
+        onPin={onPin}
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedCycleIds={[]}
+        selectionMode={false}
+        conversationCycles={[createSession()]}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Opções da conversa" }),
+    );
+    expect(
+      screen.queryByRole("menuitem", { name: /Silenciar/ }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("menuitem", { name: /Fixar conversa/ }));
+    expect(onPin).toHaveBeenCalledWith("session_1");
+
+    await user.click(
+      screen.getByRole("button", { name: "Opções da conversa" }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: /Arquivar conversa/ }),
+    );
+    expect(onArchive).toHaveBeenCalledWith("session_1");
+
+    await user.click(
+      screen.getByRole("button", { name: "Opções da conversa" }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: /Excluir conversa/ }),
+    );
+    expect(onDelete).toHaveBeenCalledWith("session_1");
+  });
+
+  it("reflects pinned and archived state from the cycle", async () => {
+    const user = userEvent.setup();
+    render(
+      <SessionList
+        activeCycleId={null}
+        onArchive={vi.fn()}
+        onPin={vi.fn()}
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedCycleIds={[]}
+        selectionMode={false}
+        conversationCycles={[
+          { ...createSession(), isArchived: true, isPinned: true },
+        ]}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Opções da conversa" }),
+    );
+    expect(
+      screen.getByRole("menuitem", { name: /Desarquivar conversa/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: /Desafixar conversa/ }),
+    ).toBeInTheDocument();
+  });
+
   it("loads another page and exposes the reached-end state", async () => {
     const onLoadMore = vi.fn();
     const common = {

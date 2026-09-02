@@ -13,6 +13,7 @@ export function cleanCrmConversationCyclesQuery(
   input: CrmConversationCyclesQuery,
 ) {
   return {
+    ...(input.archived !== undefined ? { archived: input.archived } : {}),
     ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     filter: input.filter,
@@ -34,6 +35,7 @@ export function cleanConversationCycleCountsQuery(
   input: ConversationCycleCountsQuery,
 ) {
   return {
+    ...(input.archived !== undefined ? { archived: input.archived } : {}),
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     filter: input.filter,
     ...(input.humanAttendanceState

@@ -218,15 +218,16 @@ export function registerCrmMessagingApiRoutes(
         const input = await parseCrmMessagingJson(context, crmSendMediaSchema);
         const serviceContext = await createContext(context);
         assertMessageSend(serviceContext);
+        const idempotencyKey = context.req.header("Idempotency-Key");
+        const { replyToMessageId } = input;
         const message = await services.sendMedia(serviceContext, {
           base64: input.base64,
           ...(input.caption ? { caption: input.caption } : {}),
           ...(input.fileName ? { fileName: input.fileName } : {}),
-          ...(context.req.header("Idempotency-Key")
-            ? { idempotencyKey: context.req.header("Idempotency-Key")! }
-            : {}),
+          ...(idempotencyKey ? { idempotencyKey } : {}),
           mediaType: input.mediaType,
           ...(input.mimeType ? { mimeType: input.mimeType } : {}),
+          ...(replyToMessageId ? { replyToMessageId } : {}),
           cycleId: context.req.param("cycleId"),
         });
         return context.json(toCrmMessageDto(message), 201);

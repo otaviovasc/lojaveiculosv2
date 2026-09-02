@@ -17,7 +17,12 @@ import {
   getSenderLabel,
   getSenderOriginLabel,
 } from "./crmConversationModel";
-import { readReaction, readRecord, readString } from "./crmMessageHelpers";
+import {
+  readReaction,
+  readReactionOrigin,
+  readRecord,
+  readString,
+} from "./crmMessageHelpers";
 import type { CrmMessage } from "./crmConversationTypes";
 
 export function MessageBubble({
@@ -42,6 +47,7 @@ export function MessageBubble({
   const senderLabel = getSenderLabel(message, fallbackAssigneeName);
   const senderOrigin = getSenderOriginLabel(message);
   const reaction = readReaction(message.metadata);
+  const reactionInbound = readReactionOrigin(message.metadata) === "inbound";
   const delivery = readDeliveryPresentation(message.status);
   const channel = (message.channel ?? "whatsapp").toLowerCase();
   const elementId = `crm-msg-${message.id}`;
@@ -80,7 +86,7 @@ export function MessageBubble({
         message={message}
         onDelete={onDelete}
         onReact={onReact}
-        onRemoveReaction={onRemoveReaction}
+        onRemoveReaction={reactionInbound ? undefined : onRemoveReaction}
         onReply={onReply}
       />
       {showAttribution ? (
@@ -103,18 +109,28 @@ export function MessageBubble({
         onRetryMessage={onRetryMessage}
       />
       {reaction ? (
-        <button
-          aria-label={`Reacao ${reaction}`}
-          className="crm-reaction-pill"
-          disabled={actionsDisabled || !onRemoveReaction}
-          onClick={() => {
-            void onRemoveReaction?.(message);
-          }}
-          title="Remover reacao"
-          type="button"
-        >
-          {reaction}
-        </button>
+        reactionInbound ? (
+          <span
+            aria-label={`Reacao ${reaction}`}
+            className="crm-reaction-pill"
+            title="Reacao recebida"
+          >
+            {reaction}
+          </span>
+        ) : (
+          <button
+            aria-label={`Reacao ${reaction}`}
+            className="crm-reaction-pill"
+            disabled={actionsDisabled || !onRemoveReaction}
+            onClick={() => {
+              void onRemoveReaction?.(message);
+            }}
+            title="Remover reacao"
+            type="button"
+          >
+            {reaction}
+          </button>
+        )
       ) : null}
       <footer>
         <span>{formatMessageTime(message)}</span>

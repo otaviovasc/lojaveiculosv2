@@ -42,6 +42,7 @@ export async function downloadUazapiInboundMedia(
       response.status,
       "UAZAPI inbound media download",
       credentials.instanceToken,
+      payload,
     );
   }
   ensureUazapiOk(
@@ -87,6 +88,7 @@ export async function sendUazapiMedia(
           ? { docName: input.fileName ?? "documento.pdf" }
           : {}),
         ...(prepared.mimetype ? { mimetype: prepared.mimetype } : {}),
+        ...(input.replyToMessageId ? { replyid: input.replyToMessageId } : {}),
         ...(input.mediaType === "audio"
           ? { async: false }
           : input.asyncProcessing !== undefined
@@ -108,6 +110,7 @@ export async function sendUazapiMedia(
       response.status,
       "UAZAPI send media",
       credentials.instanceToken,
+      payload,
     );
   }
   ensureUazapiOk(payload, "UAZAPI send media", credentials.instanceToken);

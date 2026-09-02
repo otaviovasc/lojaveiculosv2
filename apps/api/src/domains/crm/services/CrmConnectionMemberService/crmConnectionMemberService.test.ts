@@ -158,6 +158,12 @@ describe("revokeConnectionMember", () => {
       { connectionId: "connection-1", userId: "user-1" },
       ports,
     );
+    // A second member keeps the connection visible after the revocation.
+    await grantConnectionMember(
+      context,
+      { connectionId: "connection-1", userId: "user-2" },
+      ports,
+    );
     const result = await revokeConnectionMember(
       context,
       { connectionId: "connection-1", userId: "user-1" },
@@ -168,6 +174,7 @@ describe("revokeConnectionMember", () => {
       revoked: true,
     });
     expect(members.members.has("user-1")).toBe(false);
+    expect(members.members.has("user-2")).toBe(true);
     const revokeEvents = audit.events.filter(
       (event) => event.action === "crm.connection.member.revoke",
     );
@@ -177,6 +184,26 @@ describe("revokeConnectionMember", () => {
       assignmentsLeftIntact: true,
       revoked: true,
     });
+  });
+
+  it("refuses to revoke the last remaining member", async () => {
+    const { context, members, ports } = setup({});
+    await grantConnectionMember(
+      context,
+      { connectionId: "connection-1", userId: "user-1" },
+      ports,
+    );
+    await expect(
+      revokeConnectionMember(
+        context,
+        { connectionId: "connection-1", userId: "user-1" },
+        ports,
+      ),
+    ).rejects.toMatchObject({
+      code: "connection_last_member",
+      name: "CrmConnectionMemberValidationError",
+    });
+    expect(members.members.has("user-1")).toBe(true);
   });
 
   it("reports revoked: false when the user is not a member", async () => {

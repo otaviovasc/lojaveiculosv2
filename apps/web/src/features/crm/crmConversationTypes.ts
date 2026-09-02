@@ -323,6 +323,7 @@ export type CrmTag = {
 };
 
 export type CrmConversationCycleQuery = {
+  archived?: boolean;
   assigneeId?: string;
   connectionId?: CrmConnectionId;
   filter?: CrmConversationCycleFilter;

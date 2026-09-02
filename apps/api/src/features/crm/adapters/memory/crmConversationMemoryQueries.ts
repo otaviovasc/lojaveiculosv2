@@ -76,7 +76,13 @@ export function compareCyclesNewestFirst(
   left: CrmConversationCycle,
   right: CrmConversationCycle,
 ) {
-  return timestamp(right.lastMessageAt) - timestamp(left.lastMessageAt);
+  // Null pinnedAt sorts last, mirroring `pinned_at desc nulls last` in SQL.
+  const pinnedDiff = timestamp(right.pinnedAt) - timestamp(left.pinnedAt);
+  if (pinnedDiff) return pinnedDiff;
+  const lastMessageDiff =
+    timestamp(right.lastMessageAt) - timestamp(left.lastMessageAt);
+  if (lastMessageDiff) return lastMessageDiff;
+  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
 
 export function compareMessagesNewestFirst(

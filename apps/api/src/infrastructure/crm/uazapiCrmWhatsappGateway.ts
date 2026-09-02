@@ -13,6 +13,7 @@ import {
   sendUazapiReaction,
 } from "./uazapiCrmWhatsappMessageActions.js";
 import { sendUazapiText } from "./uazapiCrmWhatsappTextActions.js";
+import { getUazapiProfilePhotoUrl } from "./uazapiCrmWhatsappProfileActions.js";
 import { configureUazapiWebhooks } from "./uazapiCrmWhatsappWebhookActions.js";
 import {
   assertUazapiProvider,
@@ -51,6 +52,11 @@ export function createUazapiCrmWhatsappGateway(
     },
     async getConnectionStatus(connection) {
       return readUazapiConnectionStatus(credentialsFor(connection), fetchImpl);
+    },
+    async getProfilePhotoUrl(connection, input) {
+      return getUazapiProfilePhotoUrl(credentialsFor(connection), fetchImpl, {
+        phone: input.phone,
+      });
     },
     async listCatalogProducts() {
       throw new CrmMessagingCapabilityError(

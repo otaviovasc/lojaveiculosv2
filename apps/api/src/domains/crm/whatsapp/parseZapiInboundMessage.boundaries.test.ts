@@ -140,7 +140,7 @@ describe("parseZapiInboundMessage boundaries", () => {
     });
   });
 
-  it("falls back through participant, chat-name, and connected phones for LIDs", () => {
+  it("falls back through participant and chat-name phones for LIDs, but never the connected phone", () => {
     expect(
       parseZapiInboundMessage({
         ...basePayload,
@@ -155,13 +155,15 @@ describe("parseZapiInboundMessage boundaries", () => {
         phone: "12345678901234567890@lid",
       }),
     ).toMatchObject({ phone: "5511977770000" });
+    // The connected account's own number is the sender on fromMe payloads,
+    // so it must never become the customer identity.
     expect(
       parseZapiInboundMessage({
         ...basePayload,
         connectedPhone: "5511966660000",
         phone: "1111111",
       }),
-    ).toMatchObject({ phone: "5511966660000" });
+    ).toBeNull();
   });
 
   it("recognizes a numeric phone that matches chatLid", () => {

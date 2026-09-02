@@ -12,6 +12,7 @@ import {
   CrmWhatsappConnectionLimitError,
 } from "../../channelConnections/connectionCreation.js";
 import type { CrmConnection } from "../../ports/crmConnectionRepository.js";
+import { grantCreatorConnectionMembership } from "./grantCreatorConnectionMembership.js";
 
 export type UazapiConnectionInput = Extract<
   CreateCrmChannelConnectionInput,
@@ -28,6 +29,7 @@ export type UazapiCallerCredentials = {
 };
 
 export async function persistUazapiConnection(
+  context: ServiceContext,
   input: UazapiConnectionInput,
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
@@ -52,7 +54,7 @@ export async function persistUazapiConnection(
       if (racedCount >= CRM_WHATSAPP_CONNECTION_LIMIT) {
         throw new CrmWhatsappConnectionLimitError();
       }
-      return transactionRepository.createConnection({
+      const connection = await transactionRepository.createConnection({
         broker: "direct",
         channel: "whatsapp",
         credentialsRef: provisioned.credentialsRef,
@@ -76,6 +78,12 @@ export async function persistUazapiConnection(
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
       });
+      await grantCreatorConnectionMembership(
+        context,
+        connection,
+        transactionPorts,
+      );
+      return connection;
     });
   } catch (error) {
     if (isPhoneUniqueViolation(error)) {

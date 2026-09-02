@@ -9,6 +9,33 @@ export function readReaction(metadata?: Record<string, unknown>) {
   return readString(reaction.value);
 }
 
+export function readReactionOrigin(metadata?: Record<string, unknown>) {
+  const reaction = readRecord(readRecord(metadata).reaction);
+  return readString(reaction.origin);
+}
+
+export function isStandaloneReactionMessage(
+  metadata?: Record<string, unknown>,
+) {
+  const interactive = readRecord(readRecord(metadata).interactive);
+  return interactive.kind === "reaction";
+}
+
+// Standalone fallback reactions whose target message could not be resolved are
+// stamped with metadata.interactive.unresolved by the server. They are shown
+// as a compact line instead of staying hidden like legacy resolved rows.
+export function isUnresolvedFallbackReactionMessage(
+  metadata?: Record<string, unknown>,
+) {
+  const interactive = readRecord(readRecord(metadata).interactive);
+  return interactive.kind === "reaction" && interactive.unresolved === true;
+}
+
+export function readFallbackReactionValue(metadata?: Record<string, unknown>) {
+  const interactive = readRecord(readRecord(metadata).interactive);
+  return readString(interactive.value);
+}
+
 export function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

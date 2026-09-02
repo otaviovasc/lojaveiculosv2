@@ -91,6 +91,9 @@ export function normalizeUazapiInboundData(
   );
   setFallback(
     "profilePhoto",
+    data.profilePicUrl,
+    data.photo,
+    data.senderPhoto,
     message.profilePhoto,
     message.profilePicUrl,
     message.photo,

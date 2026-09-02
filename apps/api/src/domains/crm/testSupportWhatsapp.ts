@@ -6,6 +6,7 @@ export function createTestCrmConversationCycle(
 ): CrmConversationCycle {
   const now = new Date("2026-08-10T14:00:00.000Z");
   return {
+    archivedAt: null,
     assignedUserId: null,
     customerChatId: null,
     customerDisplayName: null,
@@ -15,6 +16,7 @@ export function createTestCrmConversationCycle(
     channelMetadata: {},
     connectionId: "connection-1",
     createdAt: now,
+    deletedAt: null,
     externalCycleId: null,
     firstHandledAt: null,
     freshLeadAt: null,
@@ -33,6 +35,7 @@ export function createTestCrmConversationCycle(
     leadId: null,
     messageCount: 0,
     metadata: {},
+    pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
     tags: [],

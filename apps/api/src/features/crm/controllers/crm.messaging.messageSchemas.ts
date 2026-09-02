@@ -170,6 +170,7 @@ export const crmSendMediaSchema = z
     fileName: z.string().trim().max(191).optional(),
     mediaType: z.enum(["audio", "document", "image", "video"]),
     mimeType: z.string().trim().max(120).optional(),
+    replyToMessageId: z.string().uuid().optional(),
   })
   .superRefine((input, context) => {
     if (input.mediaType === "document" && !input.fileName) {
