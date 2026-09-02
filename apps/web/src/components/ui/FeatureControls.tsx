@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import { CustomSelect, type CustomSelectOption } from "./CustomSelect";
 import { DatePickerField } from "./DatePickerField";
 import { TimePickerField } from "./TimePickerField";
+import { Morphicon } from "./Morphicon";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export { DatePickerField } from "./DatePickerField";
@@ -53,12 +54,16 @@ export function FeatureSearchField({
   inputClassName?: string;
   label: string;
 }) {
+  const hasValue = Boolean(props.value);
   return (
     <label className={cx("relative block", className)}>
       <span className="sr-only">{label}</span>
-      <Search
+      <Morphicon
+        active={hasValue}
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+        name="search-close"
+        size={16}
       />
       <FeatureInput {...props} className={cx("pl-10", inputClassName)} />
     </label>

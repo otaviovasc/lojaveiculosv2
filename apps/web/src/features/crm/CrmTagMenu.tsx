@@ -1,5 +1,6 @@
 import { Check, Plus, Search, Tag, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Morphicon } from "../../components/ui/Morphicon";
 import type {
   CrmAddConversationCycleTagInput,
   CrmTag,
@@ -93,7 +94,13 @@ export function TagMenu({
       </div>
 
       <label className="crm-tag-search">
-        <Search className="size-4" aria-hidden="true" />
+        <Morphicon
+          active={Boolean(search)}
+          aria-hidden="true"
+          className="size-4 text-muted"
+          name="search-close"
+          size={16}
+        />
         <input
           disabled={disabled || isSaving}
           onChange={(event) => setSearch(event.target.value)}
@@ -107,7 +114,7 @@ export function TagMenu({
             onClick={() => setSearch("")}
             type="button"
           >
-            <X className="size-3.5" aria-hidden="true" />
+            <Morphicon active aria-hidden="true" name="check-cross" size={14} />
           </button>
         ) : null}
       </label>

@@ -209,7 +209,6 @@
   ) !important;
 }
 
-/* theme-contracts: ensure token strings exist for crmThemeContracts.test */
 .crm-session-active {
   outline-color: var(--color-success-strong) !important;
 }

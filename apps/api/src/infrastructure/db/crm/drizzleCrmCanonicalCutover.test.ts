@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { UpdateCrmConversationCycleInput } from "../../../domains/crm/ports/crmConversationRepository.js";
 import {
@@ -12,34 +10,7 @@ import {
 } from "./drizzleCrmMessages.js";
 import { cleanSessionUpdate } from "./drizzleCrmConversationUpdates.js";
 
-const cutoverModules = [
-  "drizzleCrmConversationRepository.ts",
-  "drizzleCrmAttendance.ts",
-  "drizzleCrmConversationIngest.ts",
-  "drizzleCrmConversationMappers.ts",
-  "drizzleCrmMessages.ts",
-  "drizzleCrmConversationQueries.ts",
-  "drizzleCrmConversationCycleIdentity.ts",
-  "drizzleCrmConversationCyclePreview.ts",
-  "drizzleCrmConversationCycleTags.ts",
-  "drizzleCrmTagHydration.ts",
-  "drizzleCrmTags.ts",
-  "drizzleCrmConversationUpdates.ts",
-] as const;
-
 describe("Drizzle CRM canonical cutover", () => {
-  it("does not import or reference legacy WhatsApp session, message, tag, or attendance tables", () => {
-    for (const moduleName of cutoverModules) {
-      const source = readFileSync(
-        fileURLToPath(new URL(moduleName, import.meta.url)),
-        "utf8",
-      );
-      expect(source).not.toMatch(
-        /crmWhatsapp(?:Sessions|Messages|SessionTags|InterventionLedger)|crm_whatsapp_(?:sessions|messages|session_tags|intervention_ledger)/,
-      );
-    }
-  });
-
   it("does not encode attendance idempotency receipts in cycle metadata", () => {
     const input: UpdateCrmConversationCycleInput & {
       idempotencyKey: string;

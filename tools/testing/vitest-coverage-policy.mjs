@@ -80,6 +80,7 @@ export function createCoverageConfig(workspaceName) {
       expect: {
         requireAssertions: true,
       },
+      ...createVitestPerformanceConfig(),
       // Vitest applies VITEST_MAX_WORKERS after config resolution, so callers
       // can lower this portable default further for constrained environments.
       maxWorkers,
@@ -96,6 +97,38 @@ export function createCoverageConfig(workspaceName) {
       },
     },
   };
+}
+
+export function createVitestPerformanceConfig(environment = process.env) {
+  const experimental = {};
+  if (environment.VITEST_FS_MODULE_CACHE === "1") {
+    experimental.fsModuleCache = true;
+  }
+  if (environment.VITEST_IMPORT_DURATIONS === "1") {
+    experimental.importDurations = { print: true };
+  }
+
+  const performanceConfig = {
+    ...(Object.keys(experimental).length > 0 ? { experimental } : {}),
+    ...(environment.VITEST_POOL ? { pool: environment.VITEST_POOL } : {}),
+    ...(environment.VITEST_FILE_PARALLELISM === "false"
+      ? { fileParallelism: false }
+      : {}),
+  };
+  const optimizerInclude = (environment.VITEST_OPTIMIZER_INCLUDE ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .filter((entry, index, entries) => entries.indexOf(entry) === index);
+  if (optimizerInclude.length > 0) {
+    performanceConfig.deps = {
+      optimizer: {
+        client: { enabled: true, include: optimizerInclude },
+        ssr: { enabled: true, include: optimizerInclude },
+      },
+    };
+  }
+  return performanceConfig;
 }
 
 function metrics(statements, branches, functions, lines) {

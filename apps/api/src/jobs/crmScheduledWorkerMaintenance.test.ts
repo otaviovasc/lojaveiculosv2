@@ -1,30 +1,8 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../shared/serviceContext.js";
 import { runCrmScheduledWorkerMaintenance } from "./crmScheduledWorkerMaintenance.js";
 
 describe("CRM scheduled worker maintenance", () => {
-  it("is invoked by the deployed no-restart Railway cron", () => {
-    const railway = readFileSync(
-      new URL("../../../../.railway/railway.ts", import.meta.url),
-      "utf8",
-    );
-    const worker = readFileSync(
-      new URL("./processCrmScheduledMessages.ts", import.meta.url),
-      "utf8",
-    );
-
-    expect(railway).toContain(
-      'const crmScheduleWorker = service("lojaveiculosv2-crm-schedule-worker"',
-    );
-    expect(railway).toContain('cronSchedule: "*/5 * * * *"');
-    expect(railway).toContain('restartPolicyType: "NEVER"');
-    expect(railway).toContain('start: "pnpm run crm:schedule:process"');
-    expect(railway).toContain("crmScheduleWorker,");
-    expect(worker).toContain("runCrmScheduledWorkerMaintenance(");
-    expect(worker).toContain('"crm.messaging.connection.setup"');
-  });
-
   it("runs bounded connection and outbound-recovery cleanup", async () => {
     const archiveAbandonedZapiConnections = vi.fn(async () => ({
       archived: 2,

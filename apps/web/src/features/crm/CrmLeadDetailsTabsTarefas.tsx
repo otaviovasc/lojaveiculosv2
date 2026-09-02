@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Calendar, ClipboardList } from "lucide-react";
+import { Plus, Calendar, CheckSquare } from "lucide-react";
 import {
   FeatureInput,
   FeatureTextarea,
@@ -74,49 +74,87 @@ export function CrmLeadDetailsTabsTarefas({
   return (
     <div className="flex flex-col gap-4 text-app-text select-none">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-black text-app-text">Tarefas</span>
+        <div className="flex items-center gap-2">
+          <CheckSquare className="size-4 text-primary" />
+          <span className="text-sm font-black text-app-text">
+            Tarefas ({tasks.length})
+          </span>
+        </div>
         <FeatureActionButton
           icon={Plus}
           label="Criar tarefa"
           onClick={() => setIsOpen(true)}
         >
-          Tarefa
+          Nova Tarefa
         </FeatureActionButton>
       </div>
 
       {tasks.length > 0 ? (
         <div className="flex flex-col gap-2.5">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="p-3.5 bg-panel/10 border border-line/15 rounded-xl flex flex-col gap-1.5"
-            >
-              <div className="flex justify-between items-start gap-4">
-                <span className="text-xs font-black text-app-text">
-                  {task.content}
-                </span>
-                {typeof task.metadata?.priority === "string" && (
-                  <span className="px-2 py-0.5 rounded text-xs font-black uppercase bg-line/25 text-muted">
-                    {task.metadata.priority}
+          {tasks.map((task) => {
+            const priorityVal =
+              typeof task.metadata?.priority === "string"
+                ? task.metadata.priority
+                : "Média";
+            const dueAtStr =
+              typeof task.metadata?.dueAt === "string"
+                ? task.metadata.dueAt
+                : null;
+            const dueDate = dueAtStr ? new Date(dueAtStr) : null;
+            const isOverdue = dueDate ? dueDate.getTime() < Date.now() : false;
+
+            return (
+              <div
+                key={task.id}
+                className="p-4 bg-panel/20 border border-line/20 rounded-xl flex flex-col gap-2 hover:border-line/40 transition-colors"
+              >
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span className="grid size-5 place-items-center rounded bg-blue-500/15 text-blue-500 shrink-0 mt-0.5">
+                      <CheckSquare className="size-3" />
+                    </span>
+                    <strong className="text-sm font-black text-app-text leading-snug break-words">
+                      {task.content}
+                    </strong>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider shrink-0 border ${getPriorityBadgeClass(
+                      priorityVal,
+                    )}`}
+                  >
+                    {priorityVal}
                   </span>
-                )}
+                </div>
+
+                {typeof task.metadata?.description === "string" &&
+                task.metadata.description ? (
+                  <p className="text-xs font-medium text-muted leading-relaxed pl-7">
+                    {task.metadata.description}
+                  </p>
+                ) : null}
+
+                {dueDate ? (
+                  <div className="flex items-center justify-between pt-1 border-t border-line/10 pl-7 text-xs font-bold">
+                    <span className="text-muted flex items-center gap-1.5">
+                      <Calendar className="size-3 text-muted/70" />
+                      <span>
+                        Vencimento:{" "}
+                        {dueDate.toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </span>
+                    {isOverdue ? (
+                      <span className="text-danger font-black text-xs uppercase">
+                        Atrasada
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
-              {typeof task.metadata?.description === "string" && (
-                <p className="text-xs font-bold text-muted leading-relaxed">
-                  {task.metadata.description}
-                </p>
-              )}
-              {typeof task.metadata?.dueAt === "string" && (
-                <span className="text-xs font-bold text-muted flex items-center gap-1 mt-1">
-                  <Calendar className="size-3" />
-                  <span>
-                    Vence em:{" "}
-                    {new Date(task.metadata.dueAt).toLocaleString("pt-BR")}
-                  </span>
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <FeatureEmptyState
@@ -128,9 +166,9 @@ export function CrmLeadDetailsTabsTarefas({
               variant="primary"
             />
           }
-          body="Nenhuma tarefa criada para este lead ainda."
+          body="Nenhuma tarefa pendente para este lead. Adicione prazos e lembretes para manter o atendimento em dia."
           density="compact"
-          icon={ClipboardList}
+          icon={CheckSquare}
           title="Sem tarefas"
         />
       )}
@@ -163,7 +201,7 @@ export function CrmLeadDetailsTabsTarefas({
             <FeatureTextarea
               disabled={isSaving}
               onChange={(event) => setDesc(event.target.value)}
-              placeholder="Detalhes..."
+              placeholder="Detalhes ou orientações..."
               value={desc}
             />
           </FeatureField>
@@ -197,4 +235,16 @@ export function CrmLeadDetailsTabsTarefas({
       </FeatureDialog>
     </div>
   );
+}
+
+function getPriorityBadgeClass(priority: string) {
+  switch (priority.toLowerCase()) {
+    case "alta":
+    case "urgente":
+      return "border-danger/30 bg-danger/10 text-danger";
+    case "baixa":
+      return "border-line/30 bg-line/15 text-muted";
+    default:
+      return "border-warning/30 bg-warning/10 text-warning-strong";
+  }
 }

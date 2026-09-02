@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
+import { Morphicon } from "../../components/ui/Morphicon";
 import { ChatAssignmentSelect } from "./CrmConversationHeaderAssignment";
 import { SessionTagRow } from "./CrmConversationHeaderTags";
 import {
@@ -273,7 +274,12 @@ export function ChatHeader({
             title="Pesquisar"
             type="button"
           >
-            <Search aria-hidden="true" className="size-[18px]" />
+            <Morphicon
+              active={headerSearchOpen}
+              aria-hidden="true"
+              name="search-close"
+              size={18}
+            />
           </button>
         </div>
         {canMarkRead || canTagSessions ? (
@@ -299,7 +305,12 @@ export function ChatHeader({
                 }
                 type="button"
               >
-                {cycle.unreadCount ? <MailCheck /> : <MailOpen />}
+                <Morphicon
+                  active={!cycle.unreadCount}
+                  aria-hidden="true"
+                  name="mail-read-unread"
+                  size={18}
+                />
               </button>
             ) : null}
             {canTagSessions ? (
