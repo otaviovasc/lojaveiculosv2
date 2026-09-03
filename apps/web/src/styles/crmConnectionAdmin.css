@@ -191,8 +191,9 @@
 .crm-connection-field input:focus,
 .crm-connection-field select:focus,
 .crm-connection-field textarea:focus {
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-connection-status-card {

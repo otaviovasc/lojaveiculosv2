@@ -364,7 +364,7 @@
 }
 
 .crm-skeleton-bar::after {
-  animation: crmShimmer 1.8s infinite ease-in-out;
+  animation: crmTimelineBarShimmer 1.8s infinite ease-in-out;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -377,7 +377,7 @@
   transform: translateX(-100%);
 }
 
-@keyframes crmShimmer {
+@keyframes crmTimelineBarShimmer {
   100% {
     transform: translateX(100%);
   }

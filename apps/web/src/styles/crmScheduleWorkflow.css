@@ -42,8 +42,9 @@
 .crm-schedule-field input:focus,
 .crm-schedule-field textarea:focus,
 .crm-schedule-field .crm-select:focus-visible {
-  border-color: color-mix(in srgb, #10b981 50%, var(--color-line));
-  box-shadow: 0 0 0 3px color-mix(in srgb, #10b981 20%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-schedule-field textarea {

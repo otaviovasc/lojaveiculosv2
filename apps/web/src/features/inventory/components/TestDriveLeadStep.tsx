@@ -153,7 +153,7 @@ export function TestDriveLeadStep({
                       .map((w) => w[0])
                       .join("")
                       .toUpperCase() || "?";
-                  const isSelected = selectedLead?.id === lead.id;
+                  const isSelected = false;
 
                   return (
                     <button

@@ -104,10 +104,10 @@ export type CrmProcessDueScheduledMessagesResult = {
 };
 
 type CrmStartConversationBase = {
-  customerDisplayName?: string;
+  customerDisplayName?: string | undefined;
   connectionId: CrmConnectionId;
-  leadId?: string;
-  phone?: string;
+  leadId?: string | undefined;
+  phone?: string | undefined;
 };
 
 export type CrmStartConversationInput = CrmStartConversationBase &

@@ -5,6 +5,7 @@ import type {
   InventoryListingList,
   InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnit,
   InventoryUnitStatus,
 } from "./types";
 
@@ -168,11 +169,14 @@ export function getInventoryPlate(summary: InventoryListingSummary): string {
 }
 
 export function getInventoryDisplayStatus(
-  summary: InventoryListingSummary,
+  summary: Pick<InventoryListingSummary, "listing"> & {
+    primaryUnit?: InventoryUnit | null | undefined;
+    units?: readonly InventoryUnit[] | undefined;
+  },
 ): InventoryDisplayStatus {
   return (
     summary.primaryUnit?.status ??
-    summary.units[0]?.status ??
+    summary.units?.[0]?.status ??
     summary.listing.status
   );
 }

@@ -54,7 +54,7 @@ export function CrmAttendanceConclusionDialog({
   disabled?: boolean;
   onClose: () => void;
   onConclude: (input: CrmConclusionInput) => Promise<boolean>;
-  onStartSale?: (cycle: CrmConversationCycle) => void;
+  onStartSale?: ((cycle: CrmConversationCycle) => void) | undefined;
   cycle: CrmConversationCycle;
 }) {
   const [outcome, setOutcome] = useState<Outcome>("follow_up");

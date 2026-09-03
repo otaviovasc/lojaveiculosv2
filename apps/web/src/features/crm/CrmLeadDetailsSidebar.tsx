@@ -362,10 +362,10 @@ export function CrmLeadDetailsSidebar({
           )}
 
           {/* Quick Comment Input */}
-          <div className="border border-line/25 bg-panel/20 rounded-xl p-2.5 flex flex-col gap-2 mt-1">
+          <div className="border border-line/25 bg-panel/20 rounded-xl p-2.5 flex flex-col gap-2 mt-1 transition-colors focus-within:border-accent focus-within:shadow-[var(--shadow-focus)]">
             <textarea
               aria-label="Comentário interno"
-              className="w-full min-h-[48px] bg-transparent text-xs font-medium text-app-text outline-none resize-none placeholder:text-muted/65 disabled:opacity-50"
+              className="crm-raw-input w-full min-h-[48px] bg-transparent text-xs font-medium text-app-text outline-none resize-none placeholder:text-muted/65 disabled:opacity-50"
               disabled={isPostingComment}
               placeholder="Escreva uma nota rápida..."
               value={commentText}

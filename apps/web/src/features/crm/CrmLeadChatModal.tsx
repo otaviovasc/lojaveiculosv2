@@ -361,7 +361,7 @@ function CrmLeadPairedWorkspace({
 }: {
   api: CrmConversationApi;
   cycleId: CrmConversationCycleId;
-  onStartSale?: () => void;
+  onStartSale?: (() => void) | undefined;
 }) {
   const inbox = useCrmInbox(api, cycleId);
 

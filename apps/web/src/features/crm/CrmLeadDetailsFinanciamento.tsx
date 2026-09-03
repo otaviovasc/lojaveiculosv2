@@ -22,7 +22,7 @@ type Props = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
-  onOpenSimulationModal?: () => void;
+  onOpenSimulationModal?: (() => void) | undefined;
 };
 
 export function CrmLeadDetailsFinanciamento({

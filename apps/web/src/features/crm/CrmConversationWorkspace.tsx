@@ -21,6 +21,7 @@ import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
 import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
 import type { useCrmInbox } from "./useCrmInbox";
 import type {
+  CrmConversationCycle,
   CrmConversationCycleId,
   CrmMessage,
   CrmProviderConnection,
@@ -42,7 +43,7 @@ export function CrmConversationWorkspace({
   inbox: ReturnType<typeof useCrmInbox>;
   onCycleChange: (cycleId: CrmConversationCycleId | null) => void;
   onScopeChange: (scope: CrmScope) => void;
-  onStartSale?: (cycle: CrmConversationCycle) => void;
+  onStartSale?: ((cycle: CrmConversationCycle) => void) | undefined;
   routeCycleId: CrmConversationCycleId | null;
 }) {
   const activeSession = inbox.activeSession;

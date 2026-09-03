@@ -15,7 +15,7 @@ export function CrmCredereOfficialPanel({
 }: {
   lead: ProductCrmLead;
   loadSimulations?: () => Promise<CredereSimulation[]>;
-  onOpenSimulationModal?: () => void;
+  onOpenSimulationModal?: (() => void) | undefined;
 }) {
   const [history, setHistory] = useState<
     | { status: "loading" }

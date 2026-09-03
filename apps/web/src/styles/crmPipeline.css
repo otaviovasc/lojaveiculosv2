@@ -26,8 +26,9 @@
 }
 
 .crm-input:focus {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-stage {

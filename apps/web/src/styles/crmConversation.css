@@ -125,6 +125,15 @@
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.crm-page :is(input, textarea, select, button):focus,
+.crm-page :is(input, textarea, select, button):focus-visible,
+.crm-shell :is(input, textarea, select, button):focus,
+.crm-shell :is(input, textarea, select, button):focus-visible {
+  outline: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+}
+
 .crm-page
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
     [type="submit"]
@@ -146,14 +155,22 @@
   outline: none;
 }
 
-.crm-search-field input,
-.crm-bot-input-wrap input,
-.crm-tag-custom-input-wrap input,
-.crm-tag-search input,
-.crm-campaign-search input {
+.crm-search input:focus,
+.crm-search-field input:focus,
+.crm-bot-input-wrap input:focus,
+.crm-composer-textbox textarea:focus,
+.crm-tag-custom-input-wrap input:focus,
+.crm-tag-search input:focus,
+.crm-campaign-search input:focus,
+.crm-tag-input-with-preview input:focus,
+.crm-header-search-overlay input:focus,
+.crm-pairing-phone input:focus,
+.crm-pipeline-page .crm-search input:focus {
   background: transparent !important;
   border: 0 !important;
+  border-color: transparent !important;
   box-shadow: none !important;
+  outline: none !important;
 }
 
 .crm-page :is(.crm-cycle-chip, .crm-cycle-status) {

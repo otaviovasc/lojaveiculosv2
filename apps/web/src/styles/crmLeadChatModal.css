@@ -85,7 +85,7 @@
 }
 
 .crm-lead-chat-starter-chip:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-panel-elevated, var(--color-panel));
   transform: translateY(-1px);
 }
@@ -123,8 +123,9 @@
 }
 
 .crm-lead-chat-textarea:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-lead-chat-hints {

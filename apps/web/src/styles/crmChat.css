@@ -384,6 +384,7 @@
 .crm-header-actions .crm-select:focus-visible {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-shell .crm-header-actions .crm-action {

@@ -32,7 +32,7 @@ type Props = {
   linkedRecords: CrmLeadLinkedRecordsState;
   stages: PipelineStage[];
   vehicleOptions: LeadVehicleOption[];
-  onOpenSaleModal?: (saleId?: string) => void;
+  onOpenSaleModal?: ((saleId?: string) => void) | undefined;
 };
 
 export function CrmLeadDetailsTabsVisao({
@@ -308,7 +308,7 @@ function LinkedSalesPanel({
   onOpenSaleModal,
 }: {
   linkedRecords: CrmLeadLinkedRecordsState;
-  onOpenSaleModal?: (saleId?: string) => void;
+  onOpenSaleModal?: ((saleId?: string) => void) | undefined;
 }) {
   return (
     <div className="flex flex-col gap-3">

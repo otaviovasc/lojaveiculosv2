@@ -267,8 +267,8 @@
 .crm-action-fields textarea:focus,
 .crm-action-fields select:focus {
   background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
   outline: none;
 }
 
@@ -554,4 +554,156 @@
   font-weight: 650;
   margin: 0;
   padding: 0.5rem 0.75rem;
+}
+
+/* Quick message template kind tabs and templates list */
+.crm-template-kind {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.35rem;
+}
+
+.crm-template-kind button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0 0.75rem;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.crm-template-kind button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
+}
+
+.crm-template-kind button.active {
+  background: var(--color-panel);
+  border-color: var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-template-kind button svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
+.crm-template-kind button.active svg {
+  color: var(--color-accent);
+}
+
+.crm-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.crm-template-row {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto auto 1fr auto;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--font-size-xs);
+}
+
+.crm-template-row span:first-child {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xs, 0.25rem);
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  color: var(--color-accent);
+}
+
+.crm-template-row strong {
+  font-weight: 750;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.crm-template-row small {
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-template-row em {
+  font-style: normal;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+.crm-template-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.crm-template-actions button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-xs, 0.25rem);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+  transition: all 0.15s ease;
+}
+
+.crm-template-actions button:hover:not(:disabled) {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.crm-template-actions button svg {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.crm-template-preview {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.crm-template-preview img {
+  border-radius: var(--radius-xs, 0.25rem);
+  height: 3rem;
+  object-fit: cover;
+  width: 3rem;
+}
+
+.crm-template-preview audio {
+  height: 2rem;
 }

@@ -45,10 +45,10 @@ export function SalesModule({
 }: {
   api?: SalesApi;
   inventoryApi?: InventoryApi;
-  embedded?: boolean;
-  initialContext?: SaleStartContext | null;
-  initialSaleId?: string | null;
-  onCloseWorkspace?: () => void;
+  embedded?: boolean | undefined;
+  initialContext?: SaleStartContext | null | undefined;
+  initialSaleId?: string | null | undefined;
+  onCloseWorkspace?: (() => void) | undefined;
 }) {
   const accountSession = useOptionalAccountSession();
   const [runtimeApi, setRuntimeApi] = useState<SalesApi | null>(api ?? null);
@@ -233,10 +233,13 @@ export function SalesModule({
       return;
     let isActive = true;
     void runtimeApi
-      .get(activeId)
-      .then((loaded) => {
+      .list({ status: "all" })
+      .then((loadedList) => {
         if (!isActive) return;
-        setSales((current) => replaceSale(current, loaded));
+        const loaded = loadedList.find((s) => s.id === activeId);
+        if (loaded) {
+          setSales((current) => replaceSale(current, loaded));
+        }
       })
       .catch(() => {});
     return () => {

@@ -27,8 +27,9 @@ export function LeadSaleModal({
     if (context) return context;
     if (!lead) return {};
     return {
-      customerDisplayName: lead.buyerName || undefined,
-      customerPhone: lead.buyerPhone || undefined,
+      buyerEmail: lead.buyerEmail || undefined,
+      buyerName: lead.buyerName || undefined,
+      buyerPhone: lead.buyerPhone || undefined,
       leadId: lead.id,
       listingId: lead.listingId || undefined,
       listingTitle: lead.vehicleTitle || undefined,

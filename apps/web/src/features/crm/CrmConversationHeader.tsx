@@ -81,7 +81,7 @@ export function ChatHeader({
   messages?: { id: string; content: string }[];
   onAddTag: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
   onAssign: (agentId: string | null) => void;
-  onBack?: () => void;
+  onBack?: (() => void) | undefined;
   onClose: () => void;
   onInsertPrompt?: (text: string) => void;
   onMarkRead: () => void;

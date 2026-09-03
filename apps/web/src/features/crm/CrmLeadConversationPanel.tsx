@@ -27,8 +27,8 @@ import type { ProductCrmLead } from "./productCrmTypes";
 
 type Props = {
   lead: ProductCrmLead;
-  api?: CrmConversationApi;
-  onOpenChatModal?: (lead: ProductCrmLead) => void;
+  api?: CrmConversationApi | undefined;
+  onOpenChatModal?: ((lead: ProductCrmLead) => void) | undefined;
 };
 
 export function CrmLeadConversationPanel({
@@ -243,7 +243,7 @@ export function CrmLeadConversationPanel({
 
         <textarea
           aria-label="Mensagem inicial"
-          className="min-h-24 rounded-xl border border-line/35 bg-panel/20 p-3 text-sm font-medium text-app-text outline-none focus:border-primary/50 transition-colors"
+          className="min-h-24 rounded-xl border border-line/35 bg-panel/20 p-3 text-sm font-medium text-app-text outline-none focus:border-accent focus:shadow-[var(--shadow-focus)] transition-colors"
           disabled={!connection}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Mensagem inicial"

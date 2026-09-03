@@ -283,8 +283,8 @@
 .crm-campaign-panel textarea:focus,
 .crm-campaign-panel select:focus {
   background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
   outline: none;
 }
 
@@ -309,8 +309,8 @@
 
 .crm-campaign-search:focus-within {
   background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .crm-campaign-search svg {

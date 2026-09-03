@@ -33,12 +33,12 @@ export function LeadFinancingSimulationModal({
     if (directPrefill) return directPrefill;
     if (!lead) return {};
     return {
-      cpf:
+      cpfCnpj:
         typeof lead.metadata?.cpf === "string" ? lead.metadata.cpf : undefined,
       email: lead.buyerEmail || undefined,
       leadId: lead.id,
-      leadName: lead.buyerName || undefined,
-      leadPhone: lead.buyerPhone || undefined,
+      applicantName: lead.buyerName || undefined,
+      phone: lead.buyerPhone || undefined,
       listingId: lead.listingId || undefined,
       vehiclePriceCents: vehiclePriceCents ?? undefined,
       vehicleTitle: lead.vehicleTitle || undefined,
