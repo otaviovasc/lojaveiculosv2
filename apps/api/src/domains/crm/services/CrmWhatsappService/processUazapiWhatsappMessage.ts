@@ -14,7 +14,6 @@ import {
   type UazapiWebhookResult,
 } from "./uazapiWebhookSupport.js";
 import { updateReadSessionState } from "./updateReadSessionState.js";
-import { logCrmServiceEvent } from "../CrmMessagingService/serviceSupport.js";
 
 const permission = "crm.messages.ingest";
 const statusRank: Record<CrmMessageStatus, number> = {
@@ -31,9 +30,6 @@ export async function processUazapiWhatsappMessage(
   ports: CrmServicePorts,
 ): Promise<UazapiWebhookResult> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.uazapi.webhook.status.start", {
-    connectionId: input.connectionId,
-  });
   const updates = parseUazapiStatusUpdates(input.payload).filter(
     (update) => update.status !== null,
   );

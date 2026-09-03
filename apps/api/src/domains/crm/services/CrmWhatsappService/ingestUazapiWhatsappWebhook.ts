@@ -54,9 +54,6 @@ export async function ingestUazapiWhatsappWebhook(
   ports: CrmServicePorts,
 ): Promise<IngestUazapiWhatsappWebhookResult> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.uazapi.webhook.received", {
-    connectionId: input.connectionId,
-  });
   const connection = await readUazapiConnection(
     context,
     input.connectionId,

@@ -12,7 +12,6 @@ import {
 } from "../../whatsapp/parseZapiWebhookEvents.js";
 import {
   auditZapiWebhook,
-  logCrmServiceEvent,
   readZapiConnection,
   type ZapiWebhookInput,
   type ZapiWebhookResult,
@@ -35,9 +34,6 @@ export async function processZapiWhatsappDeliveryWebhook(
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.zapi.webhook.delivery.start", {
-    connectionId: input.connectionId,
-  });
   const parsed = parseZapiDelivery(input.payload);
   if (!parsed.externalId) {
     return { reason: "missing_message_id", status: "ignored" };
@@ -64,9 +60,6 @@ export async function processZapiWhatsappStatusWebhook(
   ports: CrmServicePorts,
 ): Promise<ZapiWebhookResult> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.zapi.webhook.status.start", {
-    connectionId: input.connectionId,
-  });
   const parsed = parseZapiStatus(input.payload);
   if (parsed.externalIds.length === 0) {
     return { reason: "missing_message_id", status: "ignored" };

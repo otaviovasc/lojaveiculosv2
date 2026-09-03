@@ -59,9 +59,6 @@ export async function ingestZapiWhatsappWebhook(
   ports: CrmServicePorts,
 ): Promise<IngestZapiWhatsappWebhookResult> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.zapi.webhook.received", {
-    connectionId: input.connectionId,
-  });
   const connection = await readConnection(context, input.connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
 

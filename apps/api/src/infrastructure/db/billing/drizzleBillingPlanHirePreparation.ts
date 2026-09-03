@@ -24,7 +24,7 @@ import {
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { recordBillingProductEvent } from "./drizzleBillingProductEvents.js";
 import {
-  assertNoOpenHire,
+  expireStaleOpenHires,
   findExistingHire,
   lockPlanHire,
   type PrepareHireInput,
@@ -60,7 +60,7 @@ export async function prepareBillingPlanHire(
       });
       return existing;
     }
-    await assertNoOpenHire(txDb, input);
+    await expireStaleOpenHires(txDb, input);
 
     const catalogVersion = await findActiveBillingCatalogVersion(txDb);
     if (!catalogVersion) throw unavailablePlanHire("catalog_unavailable");

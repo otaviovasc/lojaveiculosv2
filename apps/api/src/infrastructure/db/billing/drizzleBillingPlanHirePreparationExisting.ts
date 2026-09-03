@@ -10,6 +10,7 @@ import {
 import type { BillingPlanHireRepository } from "../../../domains/billing/ports/billingPlanHireRepository.js";
 import { findEffectivePlanItems } from "./drizzleBillingPlanHireContracts.js";
 import {
+  recordPlanHireTransition,
   toPlanHire,
   unavailablePlanHire,
 } from "./drizzleBillingPlanHireSupport.js";
@@ -146,25 +147,75 @@ export function assertIdempotentHireMatches(
   }
 }
 
-export async function assertNoOpenHire(
+export const OPEN_PLAN_HIRE_STATUSES = [
+  "created",
+  "checkout_created",
+  "payment_pending",
+  "activation_pending",
+] as const;
+
+// Hires without any checkout session get a grace window beyond the 60-minute
+// provider checkout TTL before they are considered abandoned.
+export const STALE_HIRE_WITHOUT_SESSION_MS = 70 * 60 * 1000;
+
+export async function expireStaleOpenHires(
   db: DrizzleBillingClient,
   input: PrepareHireInput,
 ) {
-  const [openHire] = await db
-    .select({ id: billingPlanHires.id })
+  const openHires = await db
+    .select()
     .from(billingPlanHires)
     .where(
       and(
         eq(billingPlanHires.tenantId, input.tenantId),
         eq(billingPlanHires.storeId, input.storeId),
-        inArray(billingPlanHires.status, [
-          "created",
-          "checkout_created",
-          "payment_pending",
-          "activation_pending",
-        ]),
+        inArray(billingPlanHires.status, [...OPEN_PLAN_HIRE_STATUSES]),
       ),
-    )
-    .limit(1);
-  if (openHire) throw unavailablePlanHire("hire_in_progress");
+    );
+  if (openHires.length === 0) return;
+
+  const now = new Date();
+  const staleWithoutSessionBefore = new Date(
+    now.getTime() - STALE_HIRE_WITHOUT_SESSION_MS,
+  );
+  let blocking = 0;
+  for (const hire of openHires) {
+    const [session] = await db
+      .select({ expiresAt: billingCheckoutSessions.expiresAt })
+      .from(billingCheckoutSessions)
+      .where(
+        and(
+          eq(billingCheckoutSessions.planHireId, hire.id),
+          eq(billingCheckoutSessions.tenantId, hire.tenantId),
+          eq(billingCheckoutSessions.storeId, hire.storeId),
+        ),
+      )
+      .orderBy(desc(billingCheckoutSessions.createdAt))
+      .limit(1);
+    const stale = session
+      ? session.expiresAt !== null && session.expiresAt < now
+      : hire.updatedAt < staleWithoutSessionBefore;
+    if (!stale) {
+      blocking += 1;
+      continue;
+    }
+    const fromStatus = hire.status as (typeof OPEN_PLAN_HIRE_STATUSES)[number];
+    const [expired] = await db
+      .update(billingPlanHires)
+      .set({
+        failureCode: "checkout_expired",
+        status: "expired",
+        updatedAt: now,
+      })
+      .where(eq(billingPlanHires.id, hire.id))
+      .returning();
+    await recordPlanHireTransition(
+      db,
+      expired ?? hire,
+      fromStatus,
+      "expired",
+      "checkout_expired",
+    );
+  }
+  if (blocking > 0) throw unavailablePlanHire("hire_in_progress");
 }

@@ -10,10 +10,7 @@ import {
   buildUazapiProviderEventId,
   type UazapiWebhookType,
 } from "../../whatsapp/uazapiWebhookEventKey.js";
-import {
-  auditCrmServiceEvent,
-  logCrmServiceEvent,
-} from "../CrmMessagingService/serviceSupport.js";
+import { auditCrmServiceEvent } from "../CrmMessagingService/serviceSupport.js";
 import {
   readUazapiConnection,
   type UazapiWebhookInput,
@@ -41,10 +38,6 @@ export async function processUazapiWhatsappWebhookEvent<
   ports: CrmServicePorts,
 ): Promise<Result> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.uazapi.webhook.record.started", {
-    connectionId: input.connectionId,
-    webhookType: type,
-  });
   const connection = await readUazapiConnection(
     context,
     input.connectionId,
