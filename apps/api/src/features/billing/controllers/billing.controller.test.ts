@@ -8,6 +8,7 @@ import { createMemoryBillingPlanHireRepository } from "../adapters/memory/billin
 import { createMemoryBillingRepository } from "../adapters/memory/billingRepository.js";
 import { createMemoryBillingWebhookRepository } from "../adapters/memory/billingWebhookRepository.js";
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
+import type { PaymentProviderGateway } from "../../../domains/billing/ports/paymentProviderGateway.js";
 
 describe("billing controller webhooks", () => {
   it("returns service unavailable instead of using in-memory billing implicitly", async () => {
@@ -121,9 +122,80 @@ describe("billing controller webhooks", () => {
       code: "BILLING_WEBHOOK_AUTHENTICATION_FAILED",
     });
   });
+
+  it("maps incomplete billing customer data to 400 with the missing fields", async () => {
+    const hireRepository = createMemoryBillingPlanHireRepository();
+    const app = createTestApp("secret", ["billing.manage"], {
+      billingPlanHireRepository: {
+        ...hireRepository,
+        prepareHire: async (input) => ({
+          ...(await hireRepository.prepareHire(input)),
+          customerData: null,
+        }),
+      },
+    });
+    const response = await app.request("/api/v1/billing/plan-hires", {
+      body: JSON.stringify({
+        billingTypes: ["CREDIT_CARD"],
+        idempotencyKey: "hire-route-incomplete-1",
+        planId: "83262608-0000-4000-8000-000000000002",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: "BILLING_CUSTOMER_DATA_INCOMPLETE",
+      details: {
+        missingFields: [
+          "email",
+          "cpfCnpj",
+          "address",
+          "addressNumber",
+          "province",
+          "postalCode",
+        ],
+      },
+    });
+  });
+
+  it("maps provider checkout rejection to 502", async () => {
+    const app = createTestApp("secret", ["billing.manage"], {
+      paymentProviderGateway: {
+        ...createMemoryPaymentProviderGateway([], "secret"),
+        createCheckout: async () => {
+          throw new Error("O campo email deve ser informado.");
+        },
+      },
+    });
+    const response = await app.request("/api/v1/billing/plan-hires", {
+      body: JSON.stringify({
+        billingTypes: ["CREDIT_CARD"],
+        idempotencyKey: "hire-route-provider-fail-1",
+        planId: "83262608-0000-4000-8000-000000000002",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      code: "BILLING_PROVIDER_CHECKOUT_FAILED",
+    });
+  });
 });
 
-function createTestApp(secret: string, permissions = ["billing.manage"]) {
+function createTestApp(
+  secret: string,
+  permissions = ["billing.manage"],
+  overrides: {
+    billingPlanHireRepository?: ReturnType<
+      typeof createMemoryBillingPlanHireRepository
+    >;
+    paymentProviderGateway?: PaymentProviderGateway;
+  } = {},
+) {
   const app = new Hono();
   app.route(
     "/api/v1/billing",
@@ -141,15 +213,16 @@ function createTestApp(secret: string, permissions = ["billing.manage"]) {
         }),
       services: createBillingServices({
         ports: {
-          billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
+          billingPlanHireRepository:
+            overrides.billingPlanHireRepository ??
+            createMemoryBillingPlanHireRepository(),
           billingProviderRepository: createMemoryBillingProviderRepository(),
           billingRepository: createMemoryBillingRepository(),
           billingWebhookRepository: createMemoryBillingWebhookRepository(),
           environment: "test",
-          paymentProviderGateway: createMemoryPaymentProviderGateway(
-            [],
-            secret,
-          ),
+          paymentProviderGateway:
+            overrides.paymentProviderGateway ??
+            createMemoryPaymentProviderGateway([], secret),
           publicAppUrl: "http://localhost:5173",
         },
       }),

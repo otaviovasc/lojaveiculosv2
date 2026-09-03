@@ -8,6 +8,7 @@ const nonEntrypointFiles = new Set([
   "buildCrmChannelConnectionOverview.ts",
   "billingPlanHireAudit.ts",
   "billingPlanHireCallbacks.ts",
+  "billingCustomerDataRequirements.ts",
   "billingPlanHireErrors.ts",
   "billingWebhookResultStatus.ts",
   "billingWebhookSync.ts",

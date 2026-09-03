@@ -19,7 +19,7 @@ describe("CrmComposer structured sends", () => {
     });
 
     await openAttachment(user, "Enviar catalogo");
-    const dialog = screen.getByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Catálogo da loja")).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "Enviar" }));
 
@@ -41,7 +41,7 @@ describe("CrmComposer structured sends", () => {
     });
 
     await openAttachment(user, "Enviar catalogo");
-    const dialog = screen.getByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Honda Civic EXL")).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "Enviar" }));
 
@@ -62,7 +62,7 @@ describe("CrmComposer structured sends", () => {
     });
 
     await openAttachment(user, "Enviar catalogo");
-    const dialog = screen.getByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
 
     expect(
       await within(dialog).findByText(/Não foi possível carregar/),
@@ -89,7 +89,7 @@ describe("CrmComposer structured sends", () => {
     const { callbacks } = renderComposer({ onLoadCatalogProducts });
 
     await openAttachment(user, "Enviar catalogo");
-    const dialog = screen.getByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
     await user.click(
       await within(dialog).findByRole("button", { name: "Carregar mais" }),
     );
@@ -152,7 +152,7 @@ describe("CrmComposer structured sends", () => {
     });
 
     await openAttachment(user, "Enviar veiculo");
-    const dialog = screen.getByRole("dialog");
+    const dialog = await screen.findByRole("dialog");
     expect(
       await within(dialog).findByText("Audi A4 Prestige Plus 2022"),
     ).toBeVisible();

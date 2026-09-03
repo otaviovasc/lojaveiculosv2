@@ -79,7 +79,16 @@ export async function prepareBillingPlanHire(
       .limit(1);
     if (!plan) throw unavailablePlanHire("plan_unavailable");
     const [store] = await txDb
-      .select({ name: stores.tradingName, phone: storeProfiles.contactPhone })
+      .select({
+        addressDistrict: storeProfiles.addressDistrict,
+        addressLine1: storeProfiles.addressLine1,
+        addressNumber: storeProfiles.addressNumber,
+        addressZipCode: storeProfiles.addressZipCode,
+        contactEmail: storeProfiles.contactEmail,
+        documentNumber: storeProfiles.documentNumber,
+        name: stores.tradingName,
+        phone: storeProfiles.contactPhone,
+      })
       .from(stores)
       .leftJoin(storeProfiles, eq(storeProfiles.storeId, stores.id))
       .where(
@@ -97,6 +106,10 @@ export async function prepareBillingPlanHire(
       txDb,
       input.tenantId,
       input.storeId,
+      {
+        contactEmail: store.contactEmail,
+        documentNumber: store.documentNumber,
+      },
     );
     const effectiveItems = await findEffectivePlanItems(txDb, input);
     const currentPaid = effectiveItems.find((item) => item.unitAmountCents > 0);
@@ -196,10 +209,14 @@ export async function prepareBillingPlanHire(
       billingTypes: input.billingTypes,
       created: true,
       customerData: {
-        cpfCnpj: account.customer.documentNumber,
-        email: account.customer.email,
+        address: store.addressLine1,
+        addressNumber: store.addressNumber,
+        cpfCnpj: account.customer.documentNumber ?? store.documentNumber,
+        email: account.customer.email ?? store.contactEmail,
         name: store.name,
         phone: store.phone,
+        postalCode: store.addressZipCode,
+        province: store.addressDistrict,
       },
       hire: toPlanHire(hire, null),
       providerTransition: currentPaid

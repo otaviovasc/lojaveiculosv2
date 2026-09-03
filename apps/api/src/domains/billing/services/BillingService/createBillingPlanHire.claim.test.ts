@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { BillingPlanHireRepository } from "../../ports/billingPlanHireRepository.js";
 import { createBillingPlanHire } from "./createBillingPlanHire.js";
 import {
+  completeCustomerData,
   context,
   createHire,
   createRepository,
@@ -120,7 +121,7 @@ describe("createBillingPlanHire checkout claim", () => {
     repository.prepareHire = async () => ({
       billingTypes: ["CREDIT_CARD"],
       created: false,
-      customerData: null,
+      customerData: completeCustomerData(),
       hire: claimed ? pendingHire : createdHire,
       providerTransition: null,
     });

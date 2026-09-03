@@ -9,6 +9,10 @@ export type CrmProviderCapabilities = {
   allowImageCaption: boolean;
   allowImages: boolean;
   allowLocation: boolean;
+  allowNotes: boolean;
+  allowTags: boolean;
+  allowVisits: boolean;
+  allowFinancing: boolean;
   allowQuickMessages: boolean;
   allowReactions: boolean;
   allowReply: boolean;
@@ -27,6 +31,10 @@ const UNKNOWN_PROVIDER_CAPABILITIES: CrmProviderCapabilities = {
   allowImageCaption: false,
   allowImages: false,
   allowLocation: false,
+  allowNotes: false,
+  allowTags: false,
+  allowVisits: false,
+  allowFinancing: false,
   allowQuickMessages: false,
   allowReactions: false,
   allowReply: false,
@@ -70,12 +78,16 @@ export function readCrmConnectionCapabilities(
     : new Set<string>();
   return {
     allowAudio: canonical.has("media"),
-    allowCatalog: false,
+    allowCatalog: canonical.has("catalog"),
     allowDelete: false,
     allowDocuments: canonical.has("media"),
     allowImageCaption: canonical.has("media") && canonical.has("text"),
     allowImages: canonical.has("media"),
     allowLocation: canonical.has("media"),
+    allowNotes: canonical.has("text"),
+    allowTags: canonical.has("text"),
+    allowVisits: canonical.has("text"),
+    allowFinancing: canonical.has("text"),
     allowQuickMessages: canonical.has("text"),
     allowReactions: false,
     allowReply: canonical.has("outbound"),

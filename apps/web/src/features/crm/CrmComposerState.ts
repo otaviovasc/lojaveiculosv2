@@ -7,7 +7,7 @@ import {
   readQuickNeedle,
   usePreviewUrls,
 } from "./crmComposerSupport";
-import type { MessageComposerProps } from "./CrmComposerTypes";
+import type { ComposerDialog, MessageComposerProps } from "./CrmComposerTypes";
 
 type UseMessageComposerStateInput = {
   allowMediaCaption?: boolean;
@@ -23,7 +23,7 @@ export type MessageComposerState = {
   activeIndex: number;
   applyQuickMessage: (message: CrmQuickMessage) => void;
   canSend: boolean;
-  dialog: "catalog" | "location" | "quick" | "vehicle" | null;
+  dialog: ComposerDialog | null;
   discardFiles: () => void;
   effectiveDisabled: boolean;
   files: File[];
@@ -40,9 +40,7 @@ export type MessageComposerState = {
   quickPickerOpen: boolean;
   removeFile: (index: number) => void;
   setActiveIndex: Dispatch<SetStateAction<number>>;
-  setDialog: Dispatch<
-    SetStateAction<"catalog" | "location" | "quick" | "vehicle" | null>
-  >;
+  setDialog: Dispatch<SetStateAction<ComposerDialog | null>>;
   setFiles: Dispatch<SetStateAction<File[]>>;
   setIsSubmitting: Dispatch<SetStateAction<boolean>>;
   setMenuOpen: Dispatch<SetStateAction<boolean>>;
@@ -64,9 +62,7 @@ export function useMessageComposerState({
   quickMessages = [],
 }: UseMessageComposerStateInput): MessageComposerState {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [dialog, setDialog] = useState<
-    "catalog" | "location" | "quick" | "vehicle" | null
-  >(null);
+  const [dialog, setDialog] = useState<ComposerDialog | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

@@ -44,6 +44,10 @@ describe("CRM connection capabilities", () => {
       allowImageCaption: true,
       allowImages: true,
       allowLocation: true,
+      allowNotes: true,
+      allowTags: true,
+      allowVisits: true,
+      allowFinancing: true,
       allowQuickMessages: true,
       allowReactions: false,
       allowReply: true,
@@ -52,6 +56,33 @@ describe("CRM connection capabilities", () => {
       allowVideo: true,
       officialWindowNotice: null,
       provider: "zapi",
+    });
+  });
+
+  it("maps catalog and CRM record actions from canonical capabilities", () => {
+    expect(
+      readCrmConnectionCapabilities({
+        capabilities: ["catalog", "text"],
+        provider: "zapi",
+      }),
+    ).toMatchObject({
+      allowCatalog: true,
+      allowNotes: true,
+      allowTags: true,
+      allowVisits: true,
+      allowFinancing: true,
+    });
+    expect(
+      readCrmConnectionCapabilities({
+        capabilities: ["outbound"],
+        provider: "zapi",
+      }),
+    ).toMatchObject({
+      allowCatalog: false,
+      allowNotes: false,
+      allowTags: false,
+      allowVisits: false,
+      allowFinancing: false,
     });
   });
 

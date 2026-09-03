@@ -59,11 +59,24 @@ function customerData(input: PaymentProviderCheckoutInput) {
   const phone = input.customerData.phone
     ? onlyDigits(input.customerData.phone)
     : null;
+  const postalCode = input.customerData.postalCode
+    ? onlyDigits(input.customerData.postalCode)
+    : null;
   const data = {
+    ...(input.customerData.address
+      ? { address: input.customerData.address }
+      : {}),
+    ...(input.customerData.addressNumber
+      ? { addressNumber: input.customerData.addressNumber }
+      : {}),
     ...(cpfCnpj ? { cpfCnpj } : {}),
     ...(input.customerData.email ? { email: input.customerData.email } : {}),
     name: input.customerData.name,
     ...(phone ? { phone } : {}),
+    ...(postalCode ? { postalCode } : {}),
+    ...(input.customerData.province
+      ? { province: input.customerData.province }
+      : {}),
   };
   return Object.keys(data).length > 1 ? data : null;
 }

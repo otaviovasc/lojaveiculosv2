@@ -1,6 +1,8 @@
 import { Car, ImageIcon, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionDialog } from "./CrmActionDialogFrame";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
 import type {
   CrmWhatsappSendVehicleInput,
   CrmVehicleOption,
@@ -32,6 +34,7 @@ export function VehicleDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [mediaLimit, setMediaLimit] = useState("4");
   const [vehicles, setVehicles] = useState<readonly CrmVehicleOption[]>([]);
   const loadRef = useRef(onLoadVehicles);
   const filteredVehicles = useMemo(
@@ -84,7 +87,7 @@ export function VehicleDialog({
         try {
           const accepted = await onSend({
             listingId: selectedVehicle.listingId,
-            mediaLimit: 4,
+            mediaLimit: Number(mediaLimit),
             ...(selectedVehicle.mileageLabel
               ? { mileageLabel: selectedVehicle.mileageLabel }
               : {}),
@@ -144,6 +147,35 @@ export function VehicleDialog({
           ) : null}
         </div>
       )}
+
+      {selectedVehicle ? (
+        <>
+          <FeatureField
+            hint="Fotos e vídeos enviados junto com a ficha do veículo."
+            label="Mídias por envio"
+          >
+            <FeatureSelect
+              ariaLabel="Quantidade de mídias por envio"
+              disabled={disabled || isSaving}
+              onChange={setMediaLimit}
+              options={[
+                { label: "1 mídia", value: "1" },
+                { label: "4 mídias", value: "4" },
+                { label: "8 mídias", value: "8" },
+              ]}
+              value={mediaLimit}
+            />
+          </FeatureField>
+          <div className="crm-vehicle-summary-preview">
+            <strong>Prévia da mensagem</strong>
+            <p>{buildVehicleSummaryPreview(selectedVehicle)}</p>
+            <small>
+              {Math.min(selectedVehicle.mediaCount, Number(mediaLimit))} de{" "}
+              {selectedVehicle.mediaCount} mídia(s) anexada(s)
+            </small>
+          </div>
+        </>
+      ) : null}
     </ActionDialog>
   );
 }
@@ -189,7 +221,7 @@ function VehicleOptionButton({
       </span>
       <span className="crm-vehicle-meta">
         <span data-status={vehicle.status}>{statusLabel(vehicle.status)}</span>
-        <small>{vehicle.mediaCount} foto(s)</small>
+        <small>{vehicle.mediaCount} mídia(s)</small>
       </span>
     </button>
   );
@@ -213,6 +245,13 @@ function filterVehicles(vehicles: readonly CrmVehicleOption[], query: string) {
         String(value).toLocaleLowerCase("pt-BR").includes(needle),
       ),
   );
+}
+
+function buildVehicleSummaryPreview(vehicle: CrmVehicleOption) {
+  const details = [vehicle.yearLabel, vehicle.mileageLabel, vehicle.priceLabel]
+    .filter(Boolean)
+    .join(" · ");
+  return details ? `${vehicle.title} — ${details}` : vehicle.title;
 }
 
 function statusLabel(status: string) {

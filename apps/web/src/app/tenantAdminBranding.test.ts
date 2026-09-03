@@ -108,8 +108,10 @@ function createSettings({
     },
     profile: {
       addressCity: null,
+      addressDistrict: null,
       addressLine1: null,
       addressLine2: null,
+      addressNumber: null,
       addressState: null,
       addressZipCode: null,
       businessHours: {},

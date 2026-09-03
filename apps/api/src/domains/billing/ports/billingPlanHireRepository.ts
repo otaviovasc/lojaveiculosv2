@@ -1,5 +1,8 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { PaymentProviderCheckoutBillingType } from "./paymentProviderGateway.js";
+import type {
+  PaymentProviderCheckoutBillingType,
+  PaymentProviderCheckoutInput,
+} from "./paymentProviderGateway.js";
 import type { BillingAuditIntent } from "./billingAuditOutbox.js";
 
 export class BillingPlanHireRepositoryError extends Error {
@@ -69,12 +72,9 @@ export type BillingPlanHireRecord = {
 export type PreparedBillingPlanHire = {
   billingTypes: readonly PaymentProviderCheckoutBillingType[];
   created: boolean;
-  customerData: {
-    cpfCnpj: string | null;
-    email: string | null;
-    name: string;
-    phone: string | null;
-  } | null;
+  customerData: NonNullable<
+    PaymentProviderCheckoutInput["customerData"]
+  > | null;
   hire: BillingPlanHireRecord;
   providerTransition: {
     effectiveAt: Date;

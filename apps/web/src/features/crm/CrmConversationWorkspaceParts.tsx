@@ -6,12 +6,10 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { useEffect, type RefObject } from "react";
+import { lazy, Suspense, useEffect, type RefObject } from "react";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { CrmAttendanceConclusionDialog } from "./CrmAttendanceConclusionDialog";
 import { CrmNewConversationDialog } from "./CrmNewConversationDialog";
-import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
-import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
 import { SessionList } from "./CrmConversationCycleList";
 import { SessionListSkeleton } from "./CrmSkeletons";
 import type { CrmScope } from "./CrmScopedNav";
@@ -20,6 +18,17 @@ import type {
   CrmConversationCycle,
   CrmConversationCycleId,
 } from "./crmConversationTypes";
+
+const CrmScheduleMessageDialog = lazy(() =>
+  import("./CrmScheduleMessageDialog").then((module) => ({
+    default: module.CrmScheduleMessageDialog,
+  })),
+);
+const CrmVisitSessionDialog = lazy(() =>
+  import("./CrmVisitSessionDialog").then((module) => ({
+    default: module.CrmVisitSessionDialog,
+  })),
+);
 
 type CrmInbox = ReturnType<typeof useCrmInbox>;
 
@@ -316,33 +325,37 @@ export function CrmWorkspaceOverlays({
         />
       ) : null}
       {activeSession && scheduleMessageOpen ? (
-        <CrmScheduleMessageDialog
-          canCancel={true}
-          canCreate={inbox.permissions.canScheduleCreate}
-          canProcess={true}
-          canRead={true}
-          onCancel={(scheduledMessageId) =>
-            inbox.cancelScheduledMessage(scheduledMessageId)
-          }
-          onClose={onCloseScheduleMessage}
-          onList={() =>
-            inbox.listScheduledMessages({ cycleId: activeSession.id })
-          }
-          onProcessDue={() => inbox.processDueScheduledMessages()}
-          onSchedule={(input) =>
-            inbox.createScheduledMessage({
-              cycleId: activeSession.id,
-              ...input,
-            })
-          }
-        />
+        <Suspense fallback={null}>
+          <CrmScheduleMessageDialog
+            canCancel={true}
+            canCreate={inbox.permissions.canScheduleCreate}
+            canProcess={true}
+            canRead={true}
+            onCancel={(scheduledMessageId) =>
+              inbox.cancelScheduledMessage(scheduledMessageId)
+            }
+            onClose={onCloseScheduleMessage}
+            onList={() =>
+              inbox.listScheduledMessages({ cycleId: activeSession.id })
+            }
+            onProcessDue={() => inbox.processDueScheduledMessages()}
+            onSchedule={(input) =>
+              inbox.createScheduledMessage({
+                cycleId: activeSession.id,
+                ...input,
+              })
+            }
+          />
+        </Suspense>
       ) : null}
       {activeSession && scheduleVisitOpen ? (
-        <CrmVisitSessionDialog
-          cycle={activeSession}
-          listVehicles={inbox.listVehicles}
-          onClose={onCloseScheduleVisit}
-        />
+        <Suspense fallback={null}>
+          <CrmVisitSessionDialog
+            cycle={activeSession}
+            listVehicles={inbox.listVehicles}
+            onClose={onCloseScheduleVisit}
+          />
+        </Suspense>
       ) : null}
       <ConfirmDialog
         confirmLabel="Excluir conversa"

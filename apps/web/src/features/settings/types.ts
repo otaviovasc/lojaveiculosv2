@@ -13,8 +13,10 @@ export type StoreSettingsSnapshot = {
   };
   profile: {
     addressCity: string | null;
+    addressDistrict: string | null;
     addressLine1: string | null;
     addressLine2: string | null;
+    addressNumber: string | null;
     addressState: string | null;
     addressZipCode: string | null;
     businessHours: Record<string, unknown>;

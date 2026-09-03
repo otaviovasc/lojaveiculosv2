@@ -11,6 +11,8 @@ import {
 import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BillingApi } from "./apiClient";
+import type { SettingsApi } from "../settings/apiClient";
+import type { StoreSettingsSnapshot } from "../settings/types";
 import { AppApiError } from "../../lib/apiErrors";
 import { BillingModule } from "./BillingModule";
 import { BillingActivationTimeline } from "./BillingSignupFlow";
@@ -82,6 +84,69 @@ describe("BillingModule v3", () => {
     expect(
       screen.queryByText(/teste gratuito|módulos extras/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("collects missing billing customer data and retries the hire", async () => {
+    const billingApi = api();
+    vi.mocked(billingApi.createPlanHire)
+      .mockRejectedValueOnce(
+        new AppApiError({
+          code: "BILLING_CUSTOMER_DATA_INCOMPLETE",
+          details: {
+            missingFields: [
+              "address",
+              "addressNumber",
+              "province",
+              "postalCode",
+            ],
+          },
+          message: "Store billing data is incomplete.",
+          status: 400,
+        }),
+      )
+      .mockResolvedValueOnce(hire(plan("essencial", 2, 19_700).id));
+    const settingsApi = settingsApiMock();
+    render(<BillingModule api={billingApi} settingsApi={settingsApi} />);
+    await screen.findAllByRole("radio");
+    fireEvent.click(planRadio("Essencial"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continuar para pagamento" }),
+    );
+
+    const address = await screen.findByLabelText("Logradouro / endereço");
+    expect(screen.getByLabelText("Número")).toBeInTheDocument();
+    expect(screen.getByLabelText("Bairro")).toBeInTheDocument();
+    expect(screen.queryByLabelText("E-mail de cobrança")).toBeNull();
+    fireEvent.change(address, { target: { value: "Avenida Principal" } });
+    fireEvent.change(screen.getByLabelText("Número"), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByLabelText("Bairro"), {
+      target: { value: "Centro" },
+    });
+    fireEvent.change(screen.getByLabelText("CEP"), {
+      target: { value: "01001000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar e continuar" }));
+
+    await waitFor(() =>
+      expect(settingsApi.updateStoreSettings).toHaveBeenCalledWith({
+        profile: {
+          addressDistrict: "Centro",
+          addressLine1: "Avenida Principal",
+          addressNumber: "100",
+          addressZipCode: "01001-000",
+        },
+      }),
+    );
+    await waitFor(() =>
+      expect(billingApi.createPlanHire).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(billingApi.createPlanHire).mock.calls[0]?.[0].idempotencyKey,
+    ).toBe(
+      vi.mocked(billingApi.createPlanHire).mock.calls[1]?.[0].idempotencyKey,
+    );
   });
 
   it("keeps the overview visible and blocks paid hiring when provider readiness fails", async () => {
@@ -478,6 +543,57 @@ describe("BillingModule v3", () => {
 });
 
 const scopedHireKey = "lojaveiculos.billing.active-hire.tenant_1.store_1";
+
+function settingsApiMock(): SettingsApi {
+  return {
+    getRoleManagement: vi.fn(),
+    getStoreMemberOptions: vi.fn(),
+    getStoreSettings: vi.fn(async () => storeSettingsSnapshot()),
+    inviteStoreMember: vi.fn(),
+    resendInvitation: vi.fn(),
+    updateMembershipAccess: vi.fn(),
+    updateStoreSettings: vi.fn(async () => storeSettingsSnapshot()),
+  } as unknown as SettingsApi;
+}
+
+function storeSettingsSnapshot(): StoreSettingsSnapshot {
+  return {
+    identity: {
+      legalName: null,
+      primaryDomain: null,
+      publicSlug: "loja-teste",
+      tradingName: "Loja Teste",
+    },
+    profile: {
+      addressCity: null,
+      addressDistrict: null,
+      addressLine1: null,
+      addressLine2: null,
+      addressNumber: null,
+      addressState: null,
+      addressZipCode: null,
+      businessHours: {},
+      contactEmail: "contato@loja.test",
+      contactPhone: null,
+      documentNumber: "12.345.678/0001-99",
+      logoImageUrl: null,
+      whatsappPhone: null,
+    },
+    publicSite: {
+      customDomain: null,
+      customDomainStatus: "not_configured",
+      heroImageUrl: null,
+      isPublished: true,
+      layoutKey: "default",
+      seoDescription: null,
+      seoTitle: null,
+      theme: {},
+      verificationToken: null,
+    },
+    storeId: "store_1",
+    tenantId: "tenant_1",
+  };
+}
 const essentialIdempotencyKey =
   "lojaveiculos.billing.plan-hire-idempotency.tenant_1.store_1.83262608-0000-4000-8000-000000000002";
 

@@ -79,6 +79,72 @@ describe("createAsaasPaymentProviderGateway checkout", () => {
     expect(fetcher.calls[0]?.url).toContain("/checkouts");
   });
 
+  it("maps the store billing address into the checkout customerData", async () => {
+    const fetcher = createFetchSequence([
+      {
+        id: "chk_addressed",
+        link: "https://sandbox.asaas.com/checkoutSession/show/chk_addressed",
+      },
+    ]);
+    const gateway = createAsaasPaymentProviderGateway(
+      {
+        ASAAS_API_KEY: "token",
+        ASAAS_API_URL: "https://api-sandbox.asaas.com/v3",
+        ASAAS_RUNTIME_IMPLEMENTATION: "http",
+        ASAAS_WEBHOOK_SECRET: "secret",
+        ASAAS_WEBHOOK_URL:
+          "https://api.example.com/api/v1/billing/webhooks/asaas",
+        PUBLIC_APP_URL: "https://app.example.com",
+      },
+      { fetcher: fetcher.fetcher },
+    );
+
+    await expect(
+      gateway.createCheckout?.({
+        billingTypes: ["CREDIT_CARD"],
+        callback: {
+          cancelUrl: "https://app.example.com/billing?checkout=cancelled",
+          expiredUrl: "https://app.example.com/billing?checkout=expired",
+          successUrl: "https://app.example.com/billing?checkout=success",
+        },
+        customerData: {
+          address: "Avenida Principal",
+          addressNumber: "100",
+          cpfCnpj: "12.345.678/0001-99",
+          email: "contato@loja.com.br",
+          name: "Loja",
+          phone: "(11) 99999-8888",
+          postalCode: "01001-000",
+          province: "Centro",
+        },
+        externalReference:
+          "lojaveiculos:subscription:subscription_1:checkout:2",
+        items: [
+          {
+            description: null,
+            name: "Essencial",
+            quantity: 1,
+            valueCents: 19700,
+          },
+        ],
+        minutesToExpire: 60,
+        nextDueDate: "2026-07-10",
+      }),
+    ).resolves.toMatchObject({ providerCheckoutId: "chk_addressed" });
+    expect(fetcher.calls[0]?.body).toMatchObject({
+      customerData: {
+        address: "Avenida Principal",
+        addressNumber: "100",
+        cpfCnpj: "12345678000199",
+        email: "contato@loja.com.br",
+        name: "Loja",
+        phone: "11999998888",
+        postalCode: "01001000",
+        province: "Centro",
+      },
+    });
+  });
+
   it("cancels the existing recurrence for a scheduled Free downgrade", async () => {
     const fetcher = createFetchSequence([{}]);
     const gateway = createAsaasPaymentProviderGateway(

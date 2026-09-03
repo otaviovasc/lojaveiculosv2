@@ -61,6 +61,8 @@ export async function ensureBillingCustomer(
     const [updated] = await db
       .update(billingCustomers)
       .set({
+        documentNumber: profile?.documentNumber ?? existing.documentNumber,
+        email: profile?.contactEmail ?? existing.email,
         name: tenant.legalName ?? tenant.tradingName,
         updatedAt: new Date(),
       })

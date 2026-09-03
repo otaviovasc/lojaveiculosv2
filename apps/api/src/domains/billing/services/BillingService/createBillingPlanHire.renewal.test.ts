@@ -17,10 +17,14 @@ describe("createBillingPlanHire paid renewal", () => {
       billingTypes: ["CREDIT_CARD"],
       created: true,
       customerData: {
+        address: null,
+        addressNumber: null,
         cpfCnpj: "12345678000190",
         email: "billing@example.com",
         name: "Loja Teste",
         phone: null,
+        postalCode: null,
+        province: null,
       },
       hire,
       providerTransition: {
@@ -98,10 +102,14 @@ describe("createBillingPlanHire paid renewal", () => {
       billingTypes: ["CREDIT_CARD"],
       created: true,
       customerData: {
+        address: null,
+        addressNumber: null,
         cpfCnpj: "12345678000190",
         email: "billing@example.com",
         name: "Loja Teste",
         phone: null,
+        postalCode: null,
+        province: null,
       },
       hire,
       providerTransition: {
