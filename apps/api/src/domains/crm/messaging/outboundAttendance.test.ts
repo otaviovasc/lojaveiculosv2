@@ -130,8 +130,8 @@ describe("transitionConfirmedHumanOutboundAttendance", () => {
       interventionId: "intervention-1",
       providerTimestamp,
       repository,
-      senderOrigin: "bot",
-      senderType: "BOT",
+      senderOrigin: "external_bot",
+      senderType: "AI",
     });
 
     expect(result.changed).toBe(false);
