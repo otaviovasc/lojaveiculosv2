@@ -35,6 +35,20 @@ describe("API error display helpers", () => {
     );
   });
 
+  it("guides the store when billing customer data is incomplete", () => {
+    const error = new AppApiError({
+      code: "BILLING_CUSTOMER_DATA_INCOMPLETE",
+      details: { missingFields: ["address", "postalCode"] },
+      message: "Store billing data is incomplete.",
+      status: 400,
+    });
+
+    expect(getApiErrorDisplay(error, "Fallback")).toEqual({
+      message:
+        "Faltam alguns dados de cobrança da loja. Complete abaixo para continuar.",
+    });
+  });
+
   it.each([
     [
       "AUTHENTICATION_REQUIRED",

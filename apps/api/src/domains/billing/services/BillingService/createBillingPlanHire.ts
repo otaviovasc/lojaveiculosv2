@@ -14,6 +14,7 @@ import { changeBillingPlanAtRenewal } from "./changeBillingPlanAtRenewal.js";
 import { callbackUrls, isoDate } from "./billingPlanHireCallbacks.js";
 import { createDurableBillingAuditIntent } from "./billingPlanHireAudit.js";
 import { BillingPlanHireError } from "./billingPlanHireErrors.js";
+import { missingBillingCustomerFields } from "./billingCustomerDataRequirements.js";
 
 export { BillingPlanHireError } from "./billingPlanHireErrors.js";
 
@@ -111,27 +112,61 @@ export async function createBillingPlanHire(
   });
   if (!request.claimed) return request.hire;
 
+  const missingFields = missingBillingCustomerFields(prepared.customerData);
+  if (missingFields.length > 0) {
+    await repository.failHire({
+      failureCode: "customer_data_incomplete",
+      hireId: request.hire.id,
+      ...scope,
+    });
+    throw new BillingPlanHireError(
+      "BILLING_CUSTOMER_DATA_INCOMPLETE",
+      "Store billing data is incomplete.",
+      { missingFields },
+    );
+  }
+
   const callback = callbackUrls(
     ports.publicAppUrl,
     input.returnPath ?? "/billing",
     request.hire.id,
   );
-  const checkout = await gateway.createCheckout({
-    billingTypes: prepared.billingTypes,
-    callback,
-    ...(prepared.customerData ? { customerData: prepared.customerData } : {}),
-    externalReference: request.hire.id,
-    items: [
-      {
-        description: `Plano ${request.hire.planSnapshot.name}`,
-        name: request.hire.planSnapshot.name,
-        quantity: 1,
-        valueCents: request.hire.quotedCents,
-      },
-    ],
-    minutesToExpire: 60,
-    nextDueDate: isoDate(new Date()),
-  });
+  let checkout;
+  try {
+    checkout = await gateway.createCheckout({
+      billingTypes: prepared.billingTypes,
+      callback,
+      ...(prepared.customerData ? { customerData: prepared.customerData } : {}),
+      externalReference: request.hire.id,
+      items: [
+        {
+          description: `Plano ${request.hire.planSnapshot.name}`,
+          name: request.hire.planSnapshot.name,
+          quantity: 1,
+          valueCents: request.hire.quotedCents,
+        },
+      ],
+      minutesToExpire: 60,
+      nextDueDate: isoDate(new Date()),
+    });
+  } catch (error) {
+    context.logger.warn(
+      "billing.plan_hire.checkout_failed",
+      createServiceLogMetadata(context, {
+        hireId: request.hire.id,
+        reason: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    await repository.failHire({
+      failureCode: "provider_checkout_failed",
+      hireId: request.hire.id,
+      ...scope,
+    });
+    throw new BillingPlanHireError(
+      "BILLING_PROVIDER_CHECKOUT_FAILED",
+      "The payment provider rejected the checkout. Review the store billing data and try again.",
+    );
+  }
   const hire = await repository.bindCheckout({
     audit,
     callbackUrls: callback,

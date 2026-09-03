@@ -196,8 +196,10 @@ export const updateStoreSettingsSchema = z.object({
   profile: z
     .object({
       addressCity: nullableText(120),
+      addressDistrict: nullableText(120),
       addressLine1: nullableText(191),
       addressLine2: nullableText(191),
+      addressNumber: nullableText(32),
       addressState: nullableText(80),
       addressZipCode: nullableText(32),
       businessHours: recordSchema.optional(),

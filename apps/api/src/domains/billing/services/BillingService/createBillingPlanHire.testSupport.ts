@@ -5,6 +5,7 @@ import type {
   BillingPlanHireRecord,
   BillingPlanHireRepository,
 } from "../../ports/billingPlanHireRepository.js";
+import type { PaymentProviderCheckoutInput } from "../../ports/paymentProviderGateway.js";
 
 export function readyProvider() {
   return {
@@ -15,10 +16,26 @@ export function readyProvider() {
   };
 }
 
+export function completeCustomerData() {
+  return {
+    address: "Avenida Principal",
+    addressNumber: "100",
+    cpfCnpj: "12345678000199",
+    email: "contato@loja.test",
+    name: "Loja",
+    phone: "11999998888",
+    postalCode: "01001000",
+    province: "Centro",
+  };
+}
+
 export function createRepository(
   hire: BillingPlanHireRecord,
   order: string[],
   created = true,
+  customerData: NonNullable<
+    PaymentProviderCheckoutInput["customerData"]
+  > | null = completeCustomerData(),
 ): BillingPlanHireRepository {
   return {
     async approveQuote() {
@@ -56,7 +73,7 @@ export function createRepository(
       return {
         billingTypes: ["CREDIT_CARD"],
         created,
-        customerData: null,
+        customerData,
         hire,
         providerTransition: null,
       };

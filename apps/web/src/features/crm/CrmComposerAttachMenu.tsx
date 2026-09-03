@@ -1,39 +1,58 @@
 import {
   BookOpen,
+  CalendarCheck,
+  CalendarClock,
   Car,
   FileText,
   Image as ImageIcon,
+  Landmark,
   MapPin,
   MessageSquareText,
   Music,
   Paperclip,
+  StickyNote,
+  Tags,
 } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { CrmProviderCapabilities } from "./crmProviderCapabilities";
 
+const NO_LEAD_TOOLTIP = "Vincule um lead à conversa para registrar esta ação.";
+
 export function CrmComposerAttachMenu({
   capabilities,
   disabled,
+  hasLead,
   onOpenAudio,
   onOpenCatalog,
   onOpenDocuments,
+  onOpenFinancing,
   onOpenImages,
   onOpenLocation,
+  onOpenNote,
   onOpenQuickMessages,
+  onOpenSchedule,
+  onOpenTags,
   onOpenVehicle,
+  onOpenVisit,
   onToggle,
   open,
 }: {
   capabilities: CrmProviderCapabilities;
   disabled?: boolean;
+  hasLead?: boolean;
   onOpenAudio: () => void;
   onOpenCatalog: () => void;
   onOpenDocuments: () => void;
+  onOpenFinancing?: () => void;
   onOpenImages: () => void;
   onOpenLocation: () => void;
+  onOpenNote?: () => void;
   onOpenQuickMessages: () => void;
+  onOpenSchedule?: () => void;
+  onOpenTags?: () => void;
   onOpenVehicle: () => void;
+  onOpenVisit?: () => void;
   onToggle: () => void;
   open: boolean;
 }) {
@@ -146,6 +165,57 @@ export function CrmComposerAttachMenu({
               Localizacao
             </AttachMenuButton>
           ) : null}
+          {capabilities.allowScheduling && onOpenSchedule ? (
+            <AttachMenuButton
+              colorClass="crm-attach-color-quick"
+              icon={<CalendarClock />}
+              onClick={onOpenSchedule}
+            >
+              Agendar mensagem
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowNotes && onOpenNote ? (
+            <AttachMenuButton
+              colorClass="crm-attach-color-audio"
+              disabled={!hasLead}
+              icon={<StickyNote />}
+              onClick={onOpenNote}
+              title={hasLead ? undefined : NO_LEAD_TOOLTIP}
+            >
+              Nota interna
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowTags && onOpenTags ? (
+            <AttachMenuButton
+              colorClass="crm-attach-color-catalog"
+              icon={<Tags />}
+              onClick={onOpenTags}
+            >
+              Adicionar etiqueta
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowVisits && onOpenVisit ? (
+            <AttachMenuButton
+              colorClass="crm-attach-color-doc"
+              disabled={!hasLead}
+              icon={<CalendarCheck />}
+              onClick={onOpenVisit}
+              title={hasLead ? undefined : NO_LEAD_TOOLTIP}
+            >
+              Agendar visita
+            </AttachMenuButton>
+          ) : null}
+          {capabilities.allowFinancing && onOpenFinancing ? (
+            <AttachMenuButton
+              colorClass="crm-attach-color-vehicle"
+              disabled={!hasLead}
+              icon={<Landmark />}
+              onClick={onOpenFinancing}
+              title={hasLead ? undefined : NO_LEAD_TOOLTIP}
+            >
+              Status financiamento
+            </AttachMenuButton>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -155,16 +225,26 @@ export function CrmComposerAttachMenu({
 function AttachMenuButton({
   children,
   colorClass,
+  disabled,
   icon,
   onClick,
+  title,
 }: {
   children: string;
   colorClass?: string | undefined;
+  disabled?: boolean;
   icon: ReactNode;
   onClick: () => void;
+  title?: string | undefined;
 }) {
   return (
-    <button className="crm-attach-option" onClick={onClick} type="button">
+    <button
+      className="crm-attach-option"
+      disabled={disabled}
+      onClick={onClick}
+      title={title}
+      type="button"
+    >
       <span className={`crm-attach-icon-wrap ${colorClass ?? ""}`}>{icon}</span>
       <span className="crm-attach-label">{children}</span>
     </button>

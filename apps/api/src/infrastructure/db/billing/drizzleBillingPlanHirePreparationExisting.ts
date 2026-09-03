@@ -71,7 +71,16 @@ async function loadExistingHireResumeContext(
   input: PrepareHireInput,
 ) {
   const [store] = await db
-    .select({ name: stores.tradingName, phone: storeProfiles.contactPhone })
+    .select({
+      addressDistrict: storeProfiles.addressDistrict,
+      addressLine1: storeProfiles.addressLine1,
+      addressNumber: storeProfiles.addressNumber,
+      addressZipCode: storeProfiles.addressZipCode,
+      contactEmail: storeProfiles.contactEmail,
+      documentNumber: storeProfiles.documentNumber,
+      name: stores.tradingName,
+      phone: storeProfiles.contactPhone,
+    })
     .from(stores)
     .leftJoin(storeProfiles, eq(storeProfiles.storeId, stores.id))
     .where(
@@ -103,10 +112,14 @@ async function loadExistingHireResumeContext(
   );
   return {
     customerData: {
-      cpfCnpj: account.customer.documentNumber,
-      email: account.customer.email,
+      address: store.addressLine1,
+      addressNumber: store.addressNumber,
+      cpfCnpj: account.customer.documentNumber ?? store.documentNumber,
+      email: account.customer.email ?? store.contactEmail,
       name: store.name,
       phone: store.phone,
+      postalCode: store.addressZipCode,
+      province: store.addressDistrict,
     },
     providerTransition: hasCurrentPaid
       ? {

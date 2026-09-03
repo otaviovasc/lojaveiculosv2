@@ -399,10 +399,39 @@ export function CrmConversationWorkspace({
                   key={`${String(activeSession.id)}:${inbox.connectionFilterId ?? activeSessionConnection?.id ?? "default"}`}
                   capabilities={providerCapabilities}
                   ref={composerRef}
+                  availableTags={inbox.availableTags}
+                  canScheduleCreate={inbox.permissions.canScheduleCreate}
                   catalogUrl={inbox.catalogUrl}
+                  cycle={activeSession}
                   defaultLocationName={inbox.storeLocationName}
                   disabled={inbox.isSending}
+                  onAddCycleTag={async (input) => {
+                    const accepted = await inbox.actions.addCycleTag(
+                      activeSession.id,
+                      input,
+                    );
+                    if (accepted) void inbox.refreshTags();
+                    return accepted;
+                  }}
                   onCancelReply={() => setReplyToMessage(null)}
+                  onCancelScheduledMessage={(scheduledMessageId) =>
+                    inbox.cancelScheduledMessage(scheduledMessageId)
+                  }
+                  onListScheduledMessages={() =>
+                    inbox.listScheduledMessages({ cycleId: activeSession.id })
+                  }
+                  onProcessDueScheduledMessages={() =>
+                    inbox.processDueScheduledMessages()
+                  }
+                  onRemoveCycleTag={(tagId) =>
+                    inbox.actions.removeCycleTag(activeSession.id, tagId)
+                  }
+                  onScheduleMessage={(input) =>
+                    inbox.createScheduledMessage({
+                      cycleId: activeSession.id,
+                      ...input,
+                    })
+                  }
                   onCreateQuickMessage={inbox.createQuickMessage}
                   onDeleteQuickMessage={inbox.deleteQuickMessage}
                   onLoadCatalogProducts={inbox.listCatalogProducts}

@@ -6,6 +6,17 @@ import type {
   BillingPlanHireRepository,
 } from "../../../../domains/billing/ports/billingPlanHireRepository.js";
 
+const memoryCustomerData = {
+  address: "Avenida Principal",
+  addressNumber: "100",
+  cpfCnpj: "12345678000199",
+  email: "contato@loja.test",
+  name: "Loja Teste",
+  phone: "11999998888",
+  postalCode: "01001000",
+  province: "Centro",
+};
+
 export function createMemoryBillingPlanHireRepository(): BillingPlanHireRepository {
   const hires = new Map<string, BillingPlanHireRecord>();
   const quotes = new Map<string, BillingPlanQuoteRecord>();
@@ -110,7 +121,7 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
         return {
           billingTypes: input.billingTypes,
           created: false,
-          customerData: null,
+          customerData: memoryCustomerData,
           hire: existing,
           providerTransition: null,
         };
@@ -167,7 +178,7 @@ export function createMemoryBillingPlanHireRepository(): BillingPlanHireReposito
       return {
         billingTypes: input.billingTypes,
         created: true,
-        customerData: null,
+        customerData: memoryCustomerData,
         hire,
         providerTransition: null,
       };

@@ -42,10 +42,14 @@ describe("changeBillingPlanAtRenewal", () => {
           billingTypes: ["CREDIT_CARD"],
           created: true,
           customerData: {
+            address: null,
+            addressNumber: null,
             cpfCnpj: "12345678000190",
             email: "billing@example.test",
             name: "Loja Teste",
             phone: null,
+            postalCode: null,
+            province: null,
           },
           hire,
           providerTransition: {
@@ -150,10 +154,14 @@ function preparedPaidTransition(hire: ReturnType<typeof createHire>) {
     billingTypes: ["CREDIT_CARD" as const],
     created: true,
     customerData: {
+      address: null,
+      addressNumber: null,
       cpfCnpj: "12345678000190",
       email: "billing@example.test",
       name: "Loja Teste",
       phone: null,
+      postalCode: null,
+      province: null,
     },
     hire,
     providerTransition: {

@@ -106,6 +106,9 @@ export async function handleBilling(
     ) {
       return jsonApiError(context, {
         code: error.code,
+        ...(error instanceof BillingPlanHireError && error.details !== undefined
+          ? { details: error.details as Record<string, unknown> }
+          : {}),
         error,
         message: error.message,
         status:
@@ -113,9 +116,11 @@ export async function handleBilling(
             ? 404
             : error.code === "BILLING_PROVIDER_UNAVAILABLE"
               ? 503
-              : error.code === "hire_in_progress"
-                ? 409
-                : 400,
+              : error.code === "BILLING_PROVIDER_CHECKOUT_FAILED"
+                ? 502
+                : error.code === "hire_in_progress"
+                  ? 409
+                  : 400,
       });
     }
     if (error instanceof BillingWebhookAuthenticationError) {

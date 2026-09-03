@@ -201,6 +201,8 @@ function friendlyMessage(input: {
     case "REQUEST_VALIDATION_ERROR":
     case "VEHICLE_VALIDATION_ERROR":
       return "Revise os campos informados e tente novamente.";
+    case "BILLING_CUSTOMER_DATA_INCOMPLETE":
+      return "Faltam alguns dados de cobrança da loja. Complete abaixo para continuar.";
     case "CRM_WHATSAPP_VALIDATION_ERROR":
       return "A solicitação do atendimento está incompleta ou desatualizada. Atualize as conversas e tente novamente.";
     case "CRM_WHATSAPP_SESSION_REVISION_CONFLICT":

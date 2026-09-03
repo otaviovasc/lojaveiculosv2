@@ -145,8 +145,10 @@ function toSnapshot(
     },
     profile: {
       addressCity: profile?.addressCity ?? null,
+      addressDistrict: profile?.addressDistrict ?? null,
       addressLine1: profile?.addressLine1 ?? null,
       addressLine2: profile?.addressLine2 ?? null,
+      addressNumber: profile?.addressNumber ?? null,
       addressState: profile?.addressState ?? null,
       addressZipCode: profile?.addressZipCode ?? null,
       businessHours: toRecord(profile?.businessHours),

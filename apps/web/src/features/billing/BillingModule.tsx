@@ -6,12 +6,13 @@ import {
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { useOptionalAccountSessionRefresh } from "../account/accountSession";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
 import { cn } from "../../lib/utils";
 import "../../styles/billing-composition.css";
 import "../../styles/billing-panels.css";
 import "../../styles/billing-upgrade.css";
 import { createBillingApi, type BillingApi } from "./apiClient";
+import type { SettingsApi } from "../settings/apiClient";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import {
   BillingActivationSuccessDialog,
@@ -22,6 +23,15 @@ import {
   readBillingCheckoutReturn,
   redirectToCheckout,
 } from "./billingCheckoutReturn";
+import {
+  clearPlanIdempotencyKey,
+  readOrCreatePlanIdempotencyKey,
+} from "./billingPlanIdempotency";
+import {
+  BillingCustomerDataForm,
+  readBillingCustomerMissingFields,
+  type BillingCustomerMissingField,
+} from "./BillingCustomerDataForm";
 import {
   billingPlanHirePollDelays,
   isBillingPlanHireTerminal,
@@ -43,7 +53,13 @@ import type {
 
 const legacyActiveHireStorageKey = "lojaveiculos.billing.active-hire";
 
-export function BillingModule({ api }: { api?: BillingApi }) {
+export function BillingModule({
+  api,
+  settingsApi,
+}: {
+  api?: BillingApi;
+  settingsApi?: SettingsApi;
+}) {
   const billingApi = useMemo(() => api ?? createRuntimeBillingApi(), [api]);
   const refreshAccountSession = useOptionalAccountSessionRefresh();
   const overviewGeneration = useRef(0);
@@ -67,6 +83,10 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   );
   const [activationSuccess, setActivationSuccess] =
     useState<BillingActivationSuccess | null>(null);
+  const [customerDataRequirement, setCustomerDataRequirement] = useState<{
+    missingFields: readonly BillingCustomerMissingField[];
+    plan: BillingPlan;
+  } | null>(null);
   const checkoutReturn = readBillingCheckoutReturn("store");
   const activeHireStorageKey = overview
     ? scopedActiveHireStorageKey(overview.tenantId, overview.storeId)
@@ -252,8 +272,18 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         await loadOverview();
       }
     } catch (cause) {
-      if (generation === actionGeneration.current)
-        setError(errorMessage(cause));
+      if (generation !== actionGeneration.current) return;
+      if (
+        cause instanceof AppApiError &&
+        cause.code === "BILLING_CUSTOMER_DATA_INCOMPLETE"
+      ) {
+        setCustomerDataRequirement({
+          missingFields: readBillingCustomerMissingFields(cause.details),
+          plan,
+        });
+        return;
+      }
+      setError(errorMessage(cause));
     } finally {
       if (generation === actionGeneration.current) setSubmitting(false);
     }
@@ -331,6 +361,17 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       ) : null}
       {overview ? (
         <div className="space-y-6">
+          {customerDataRequirement ? (
+            <BillingCustomerDataForm
+              {...(settingsApi ? { api: settingsApi } : {})}
+              missingFields={customerDataRequirement.missingFields}
+              onSaved={() => {
+                const requirement = customerDataRequirement;
+                setCustomerDataRequirement(null);
+                void createHire(requirement.plan);
+              }}
+            />
+          ) : null}
           <div
             className="flex items-center gap-2 border-b border-line pb-1"
             role="tablist"
@@ -462,65 +503,13 @@ function scopedActiveHireStorageKey(tenantId: string, storeId: string) {
   return `lojaveiculos.billing.active-hire.${tenantId}.${storeId}`;
 }
 
-function createIdempotencyKey(planId: string) {
-  const random =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `web-${planId}-${random}`;
-}
-
-function planIdempotencyStorageKey(overview: BillingOverview, planId: string) {
-  return `lojaveiculos.billing.plan-hire-idempotency.${overview.tenantId}.${overview.storeId}.${planId}`;
-}
-
-function readOrCreatePlanIdempotencyKey(
-  overview: BillingOverview,
-  planId: string,
-  fallback: Map<string, string>,
-) {
-  const storageKey = planIdempotencyStorageKey(overview, planId);
-  try {
-    const stored = window.sessionStorage.getItem(storageKey);
-    if (stored) {
-      fallback.set(storageKey, stored);
-      return stored;
-    }
-    const fallbackKey = fallback.get(storageKey);
-    if (fallbackKey) return fallbackKey;
-    const created = createIdempotencyKey(planId);
-    window.sessionStorage.setItem(storageKey, created);
-    fallback.set(storageKey, created);
-    return created;
-  } catch {
-    const stored = fallback.get(storageKey);
-    if (stored) return stored;
-    const created = createIdempotencyKey(planId);
-    fallback.set(storageKey, created);
-    return created;
-  }
-}
-
-function clearPlanIdempotencyKey(
-  overview: BillingOverview,
-  planId: string,
-  fallback: Map<string, string>,
-) {
-  const storageKey = planIdempotencyStorageKey(overview, planId);
-  fallback.delete(storageKey);
-  try {
-    window.sessionStorage.removeItem(storageKey);
-  } catch {
-    // Storage can be unavailable in hardened browser contexts.
-  }
-}
-
 function hireMatchesOverview(hire: BillingPlanHire, overview: BillingOverview) {
   return (
     hire.tenantId === overview.tenantId && hire.storeId === overview.storeId
   );
 }
 
+// duplicate-implementation-allow-start: sessionStorage try/catch guard idiom shared with billingPlanIdempotency.ts storage helpers
 function removeStoredHireIfCurrent(storageKey: string, hireId: string) {
   try {
     if (window.sessionStorage.getItem(storageKey) === hireId) {
@@ -538,6 +527,7 @@ function storeActiveHire(storageKey: string, hireId: string) {
     // Polling in the active page still works without browser storage.
   }
 }
+// duplicate-implementation-allow-end
 
 function errorMessage(error: unknown) {
   const message = formatApiErrorDisplay(

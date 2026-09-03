@@ -63,6 +63,59 @@ describe("ensureBillingCustomer", () => {
     );
   });
 
+  it("self-heals email and document on the existing customer from the profile", async () => {
+    const db = createFakeBillingAccountDb({
+      billingCustomers: [
+        {
+          documentNumber: null,
+          email: null,
+          id: "customer_1",
+          name: "Nome antigo",
+          provider: "asaas",
+          tenantId: "tenant_1",
+        },
+      ],
+    });
+
+    const customer = await ensureBillingCustomer(db, tenant as never, {
+      contactEmail: "contato@loja.com.br",
+      documentNumber: "12345678000199",
+    });
+
+    expect(customer).toMatchObject({
+      documentNumber: "12345678000199",
+      email: "contato@loja.com.br",
+      id: "customer_1",
+      name: "Loja LTDA",
+    });
+  });
+
+  it("keeps the existing customer contacts when the profile has none", async () => {
+    const db = createFakeBillingAccountDb({
+      billingCustomers: [
+        {
+          documentNumber: "00999888000111",
+          email: "financeiro@loja.com.br",
+          id: "customer_1",
+          name: "Nome antigo",
+          provider: "asaas",
+          tenantId: "tenant_1",
+        },
+      ],
+    });
+
+    const customer = await ensureBillingCustomer(
+      db,
+      tenant as never,
+      undefined,
+    );
+
+    expect(customer).toMatchObject({
+      documentNumber: "00999888000111",
+      email: "financeiro@loja.com.br",
+    });
+  });
+
   it("creates an unbound Asaas customer with the profile contacts", async () => {
     const db = createFakeBillingAccountDb();
 

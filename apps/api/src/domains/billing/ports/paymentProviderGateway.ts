@@ -60,10 +60,14 @@ export type PaymentProviderCheckoutInput = {
     successUrl: string;
   };
   customerData?: {
+    address: string | null;
+    addressNumber: string | null;
     cpfCnpj: string | null;
     email: string | null;
     name: string;
     phone: string | null;
+    postalCode: string | null;
+    province: string | null;
   };
   externalReference: string;
   items: readonly PaymentProviderCheckoutLineItem[];

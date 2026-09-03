@@ -6,6 +6,11 @@ import { CrmComposerAudioRecorderButton } from "./CrmComposerAudioRecorderButton
 import { CatalogDialog } from "./CrmWhatsappCatalogDialog";
 import { LocationDialog } from "./CrmComposerActionDialogs";
 import { VehicleDialog } from "./CrmWhatsappVehicleDialog";
+import { CrmComposerFinancingDialog } from "./CrmComposerFinancingDialog";
+import { CrmComposerNoteDialog } from "./CrmComposerNoteDialog";
+import { CrmComposerTagsDialog } from "./CrmComposerTagsDialog";
+import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
+import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
 import { CrmMediaPreviewDialog } from "./CrmMediaPreviewDialog";
 import { CrmQuickMessageManager } from "./CrmQuickMessageManager";
 import { CrmQuickMessagePicker } from "./CrmQuickMessagePicker";
@@ -26,10 +31,19 @@ export const MessageComposer = forwardRef<
   MessageComposerProps
 >(function MessageComposer(
   {
+    availableTags = [],
     capabilities = readCrmConnectionCapabilities(undefined),
+    canScheduleCreate = true,
     catalogUrl,
+    cycle = null,
     defaultLocationName,
     disabled = false,
+    onAddCycleTag,
+    onCancelScheduledMessage,
+    onListScheduledMessages,
+    onProcessDueScheduledMessages,
+    onRemoveCycleTag,
+    onScheduleMessage,
     onSend,
     onSendCatalog,
     onLoadCatalogProducts,
@@ -226,6 +240,61 @@ export const MessageComposer = forwardRef<
           onSend={onSendVehicle}
         />
       ) : null}
+      {dialog === "schedule" &&
+      capabilities.allowScheduling &&
+      onScheduleMessage &&
+      onListScheduledMessages &&
+      onCancelScheduledMessage &&
+      onProcessDueScheduledMessages ? (
+        <CrmScheduleMessageDialog
+          canCancel
+          canCreate={canScheduleCreate}
+          canProcess
+          canRead
+          onCancel={onCancelScheduledMessage}
+          onClose={() => setDialog(null)}
+          onList={onListScheduledMessages}
+          onProcessDue={onProcessDueScheduledMessages}
+          onSchedule={onScheduleMessage}
+        />
+      ) : null}
+      {dialog === "note" && capabilities.allowNotes && cycle?.leadId ? (
+        <CrmComposerNoteDialog
+          disabled={effectiveDisabled}
+          leadId={cycle.leadId}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "tags" &&
+      capabilities.allowTags &&
+      onAddCycleTag &&
+      onRemoveCycleTag ? (
+        <CrmComposerTagsDialog
+          activeTags={cycle?.tags ?? []}
+          availableTags={availableTags}
+          disabled={effectiveDisabled}
+          onAddTag={onAddCycleTag}
+          onClose={() => setDialog(null)}
+          onRemoveTag={onRemoveCycleTag}
+        />
+      ) : null}
+      {dialog === "visit" && capabilities.allowVisits && cycle?.leadId ? (
+        <CrmVisitSessionDialog
+          cycle={cycle}
+          disabled={effectiveDisabled}
+          listVehicles={onLoadVehicles}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "financing" &&
+      capabilities.allowFinancing &&
+      cycle?.leadId ? (
+        <CrmComposerFinancingDialog
+          disabled={effectiveDisabled}
+          leadId={cycle.leadId}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
 
       {replyToMessage && capabilities.allowReply ? (
         <div className="crm-reply-draft">
@@ -253,6 +322,7 @@ export const MessageComposer = forwardRef<
         <CrmComposerAttachMenu
           capabilities={capabilities}
           disabled={effectiveDisabled}
+          hasLead={Boolean(cycle?.leadId)}
           onOpenAudio={() => {
             setMenuOpen(false);
             audioInputRef.current?.click();
@@ -262,15 +332,20 @@ export const MessageComposer = forwardRef<
             setMenuOpen(false);
             documentInputRef.current?.click();
           }}
+          onOpenFinancing={() => openDialog("financing")}
           onOpenImages={() => {
             setMenuOpen(false);
             imageInputRef.current?.click();
           }}
           onOpenLocation={() => openDialog("location")}
+          onOpenNote={() => openDialog("note")}
           onOpenQuickMessages={() => {
             openDialog("quick");
           }}
+          onOpenSchedule={() => openDialog("schedule")}
+          onOpenTags={() => openDialog("tags")}
           onOpenVehicle={() => openDialog("vehicle")}
+          onOpenVisit={() => openDialog("visit")}
           onToggle={() => setMenuOpen((open) => !open)}
           open={menuOpen}
         />
