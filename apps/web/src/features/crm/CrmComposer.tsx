@@ -1,24 +1,51 @@
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import { Loader2, Reply, Send, X } from "lucide-react";
-import { forwardRef, useCallback, useImperativeHandle } from "react";
+import {
+  forwardRef,
+  lazy,
+  Suspense,
+  useCallback,
+  useImperativeHandle,
+} from "react";
 import { CrmComposerAttachMenu } from "./CrmComposerAttachMenu";
 import { CrmComposerAudioRecorderButton } from "./CrmComposerAudioRecorderButton";
-import { CatalogDialog } from "./CrmWhatsappCatalogDialog";
 import { LocationDialog } from "./CrmComposerActionDialogs";
-import { VehicleDialog } from "./CrmWhatsappVehicleDialog";
 import { CrmComposerFinancingDialog } from "./CrmComposerFinancingDialog";
 import { CrmComposerNoteDialog } from "./CrmComposerNoteDialog";
 import { CrmComposerTagsDialog } from "./CrmComposerTagsDialog";
-import { CrmScheduleMessageDialog } from "./CrmScheduleMessageDialog";
-import { CrmVisitSessionDialog } from "./CrmVisitSessionDialog";
 import { CrmMediaPreviewDialog } from "./CrmMediaPreviewDialog";
-import { CrmQuickMessageManager } from "./CrmQuickMessageManager";
 import { CrmQuickMessagePicker } from "./CrmQuickMessagePicker";
 import { addFiles, formatReplyDraft } from "./crmComposerSupport";
 import type { ComposerDialog, MessageComposerProps } from "./CrmComposerTypes";
 import { useMessageComposerState } from "./CrmComposerState";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 import { readMediaType } from "./crmMediaFiles";
+
+const CatalogDialog = lazy(() =>
+  import("./CrmWhatsappCatalogDialog").then((module) => ({
+    default: module.CatalogDialog,
+  })),
+);
+const VehicleDialog = lazy(() =>
+  import("./CrmWhatsappVehicleDialog").then((module) => ({
+    default: module.VehicleDialog,
+  })),
+);
+const CrmQuickMessageManager = lazy(() =>
+  import("./CrmQuickMessageManager").then((module) => ({
+    default: module.CrmQuickMessageManager,
+  })),
+);
+const CrmScheduleMessageDialog = lazy(() =>
+  import("./CrmScheduleMessageDialog").then((module) => ({
+    default: module.CrmScheduleMessageDialog,
+  })),
+);
+const CrmVisitSessionDialog = lazy(() =>
+  import("./CrmVisitSessionDialog").then((module) => ({
+    default: module.CrmVisitSessionDialog,
+  })),
+);
 
 export type MessageComposerHandle = {
   focusInput: () => void;
@@ -204,97 +231,101 @@ export const MessageComposer = forwardRef<
           previewUrls={previewUrls}
         />
       ) : null}
-      {dialog === "catalog" && capabilities.allowCatalog ? (
-        <CatalogDialog
-          catalogUrl={catalogUrl}
-          disabled={effectiveDisabled}
-          onClose={() => setDialog(null)}
-          onLoadProducts={onLoadCatalogProducts}
-          onSend={onSendCatalog}
-          onSendProduct={onSendCatalogProduct}
-        />
-      ) : null}
-      {dialog === "location" && capabilities.allowLocation ? (
-        <LocationDialog
-          {...(defaultLocationName ? { defaultName: defaultLocationName } : {})}
-          disabled={effectiveDisabled}
-          onClose={() => setDialog(null)}
-          onSend={onSendLocation}
-        />
-      ) : null}
-      {dialog === "quick" && capabilities.allowQuickMessages ? (
-        <CrmQuickMessageManager
-          disabled={effectiveDisabled}
-          messages={quickMessages}
-          onClose={() => setDialog(null)}
-          onCreate={onCreateQuickMessage}
-          onDelete={onDeleteQuickMessage}
-          onUpdate={onUpdateQuickMessage}
-        />
-      ) : null}
-      {dialog === "vehicle" && capabilities.allowVehicle ? (
-        <VehicleDialog
-          disabled={effectiveDisabled}
-          onClose={() => setDialog(null)}
-          onLoadVehicles={onLoadVehicles}
-          onSend={onSendVehicle}
-        />
-      ) : null}
-      {dialog === "schedule" &&
-      capabilities.allowScheduling &&
-      onScheduleMessage &&
-      onListScheduledMessages &&
-      onCancelScheduledMessage &&
-      onProcessDueScheduledMessages ? (
-        <CrmScheduleMessageDialog
-          canCancel
-          canCreate={canScheduleCreate}
-          canProcess
-          canRead
-          onCancel={onCancelScheduledMessage}
-          onClose={() => setDialog(null)}
-          onList={onListScheduledMessages}
-          onProcessDue={onProcessDueScheduledMessages}
-          onSchedule={onScheduleMessage}
-        />
-      ) : null}
-      {dialog === "note" && capabilities.allowNotes && cycle?.leadId ? (
-        <CrmComposerNoteDialog
-          disabled={effectiveDisabled}
-          leadId={cycle.leadId}
-          onClose={() => setDialog(null)}
-        />
-      ) : null}
-      {dialog === "tags" &&
-      capabilities.allowTags &&
-      onAddCycleTag &&
-      onRemoveCycleTag ? (
-        <CrmComposerTagsDialog
-          activeTags={cycle?.tags ?? []}
-          availableTags={availableTags}
-          disabled={effectiveDisabled}
-          onAddTag={onAddCycleTag}
-          onClose={() => setDialog(null)}
-          onRemoveTag={onRemoveCycleTag}
-        />
-      ) : null}
-      {dialog === "visit" && capabilities.allowVisits && cycle?.leadId ? (
-        <CrmVisitSessionDialog
-          cycle={cycle}
-          disabled={effectiveDisabled}
-          listVehicles={onLoadVehicles}
-          onClose={() => setDialog(null)}
-        />
-      ) : null}
-      {dialog === "financing" &&
-      capabilities.allowFinancing &&
-      cycle?.leadId ? (
-        <CrmComposerFinancingDialog
-          disabled={effectiveDisabled}
-          leadId={cycle.leadId}
-          onClose={() => setDialog(null)}
-        />
-      ) : null}
+      <Suspense fallback={null}>
+        {dialog === "catalog" && capabilities.allowCatalog ? (
+          <CatalogDialog
+            catalogUrl={catalogUrl}
+            disabled={effectiveDisabled}
+            onClose={() => setDialog(null)}
+            onLoadProducts={onLoadCatalogProducts}
+            onSend={onSendCatalog}
+            onSendProduct={onSendCatalogProduct}
+          />
+        ) : null}
+        {dialog === "location" && capabilities.allowLocation ? (
+          <LocationDialog
+            {...(defaultLocationName
+              ? { defaultName: defaultLocationName }
+              : {})}
+            disabled={effectiveDisabled}
+            onClose={() => setDialog(null)}
+            onSend={onSendLocation}
+          />
+        ) : null}
+        {dialog === "quick" && capabilities.allowQuickMessages ? (
+          <CrmQuickMessageManager
+            disabled={effectiveDisabled}
+            messages={quickMessages}
+            onClose={() => setDialog(null)}
+            onCreate={onCreateQuickMessage}
+            onDelete={onDeleteQuickMessage}
+            onUpdate={onUpdateQuickMessage}
+          />
+        ) : null}
+        {dialog === "vehicle" && capabilities.allowVehicle ? (
+          <VehicleDialog
+            disabled={effectiveDisabled}
+            onClose={() => setDialog(null)}
+            onLoadVehicles={onLoadVehicles}
+            onSend={onSendVehicle}
+          />
+        ) : null}
+        {dialog === "schedule" &&
+        capabilities.allowScheduling &&
+        onScheduleMessage &&
+        onListScheduledMessages &&
+        onCancelScheduledMessage &&
+        onProcessDueScheduledMessages ? (
+          <CrmScheduleMessageDialog
+            canCancel
+            canCreate={canScheduleCreate}
+            canProcess
+            canRead
+            onCancel={onCancelScheduledMessage}
+            onClose={() => setDialog(null)}
+            onList={onListScheduledMessages}
+            onProcessDue={onProcessDueScheduledMessages}
+            onSchedule={onScheduleMessage}
+          />
+        ) : null}
+        {dialog === "note" && capabilities.allowNotes && cycle?.leadId ? (
+          <CrmComposerNoteDialog
+            disabled={effectiveDisabled}
+            leadId={cycle.leadId}
+            onClose={() => setDialog(null)}
+          />
+        ) : null}
+        {dialog === "tags" &&
+        capabilities.allowTags &&
+        onAddCycleTag &&
+        onRemoveCycleTag ? (
+          <CrmComposerTagsDialog
+            activeTags={cycle?.tags ?? []}
+            availableTags={availableTags}
+            disabled={effectiveDisabled}
+            onAddTag={onAddCycleTag}
+            onClose={() => setDialog(null)}
+            onRemoveTag={onRemoveCycleTag}
+          />
+        ) : null}
+        {dialog === "visit" && capabilities.allowVisits && cycle?.leadId ? (
+          <CrmVisitSessionDialog
+            cycle={cycle}
+            disabled={effectiveDisabled}
+            listVehicles={onLoadVehicles}
+            onClose={() => setDialog(null)}
+          />
+        ) : null}
+        {dialog === "financing" &&
+        capabilities.allowFinancing &&
+        cycle?.leadId ? (
+          <CrmComposerFinancingDialog
+            disabled={effectiveDisabled}
+            leadId={cycle.leadId}
+            onClose={() => setDialog(null)}
+          />
+        ) : null}
+      </Suspense>
 
       {replyToMessage && capabilities.allowReply ? (
         <div className="crm-reply-draft">
