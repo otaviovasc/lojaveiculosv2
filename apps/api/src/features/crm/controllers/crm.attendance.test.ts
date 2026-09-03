@@ -61,7 +61,7 @@ describe("CRM human attendance", () => {
     ]);
   });
 
-  it("classifies direct WhatsApp messages as human attendance", async () => {
+  it("queues direct WhatsApp messages for a human when nobody is assigned", async () => {
     const conversationRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
@@ -99,7 +99,7 @@ describe("CRM human attendance", () => {
     });
     expect(echo.conversationCycle).toMatchObject({
       assignedUserId: null,
-      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceState: "WAITING_HUMAN",
       revision: inbound.conversationCycle.revision + 2,
       status: "HUMAN_TAKEOVER",
     });

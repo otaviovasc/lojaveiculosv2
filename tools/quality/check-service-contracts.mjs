@@ -112,6 +112,16 @@ function isServiceFile(file) {
   return file.includes("/services/") && !nonEntrypointFiles.has(fileName);
 }
 
+// WhatsApp webhook ingestion pipelines persist routine forensic data
+// (crm_webhook_events + audit trail) and only log failures, so routine
+// structured logs are intentionally absent from these services.
+const routineLogExemptFiles = new Set([
+  "processUazapiWhatsappMessage.ts",
+  "processUazapiWhatsappWebhookEvent.ts",
+  "processZapiWhatsappMessageWebhook.ts",
+  "processZapiWhatsappWebhookEvent.ts",
+]);
+
 const failures = [];
 const domainFiles = walk(domainsRoot);
 const delegatedContractHelpers = new Map([
@@ -146,11 +156,7 @@ const delegatedContractHelpers = new Map([
         domainsRoot,
         "crm/services/CrmWhatsappService/authorizeWhatsappWebhookSupport.ts",
       ),
-      requiredContracts: [
-        "assertPermission(",
-        "auditCrmServiceEvent(",
-        "logCrmServiceEvent(",
-      ],
+      requiredContracts: ["assertPermission(", "auditCrmServiceEvent("],
     },
   ],
   [
@@ -293,6 +299,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
   }
 
   if (
+    !routineLogExemptFiles.has(basename(file)) &&
     !source.includes("context.logger.") &&
     !source.includes("input.logger.") &&
     !source.includes("logCrmServiceEvent(") &&

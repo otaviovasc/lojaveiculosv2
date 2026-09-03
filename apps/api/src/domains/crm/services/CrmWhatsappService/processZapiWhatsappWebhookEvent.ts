@@ -12,7 +12,6 @@ import {
 } from "../../whatsapp/zapiWebhookEventKey.js";
 import {
   auditCrmServiceEvent,
-  logCrmServiceEvent,
   readZapiConnection,
   type ZapiWebhookInput,
   type ZapiWebhookResult,
@@ -39,10 +38,6 @@ export async function processZapiWhatsappWebhookEvent<
   ports: CrmServicePorts,
 ): Promise<Result> {
   assertPermission(context, permission);
-  logCrmServiceEvent(context, "crm.provider.zapi.webhook.record.started", {
-    connectionId: input.connectionId,
-    webhookType: type,
-  });
   if (type === "chat_presence") {
     return process(context, input, ports);
   }

@@ -11,10 +11,7 @@ import {
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import { CrmMessageActionError } from "../../messaging/crmMessagingErrors.js";
-import {
-  auditCrmServiceEvent,
-  logCrmServiceEvent,
-} from "../CrmMessagingService/serviceSupport.js";
+import { auditCrmServiceEvent } from "../CrmMessagingService/serviceSupport.js";
 
 const permission = "crm.messages.ingest" as const;
 
@@ -40,15 +37,6 @@ export async function authorizeWhatsappWebhook(
   ports: CrmServicePorts,
 ) {
   assertPermission(context, permission);
-  logCrmServiceEvent(
-    context,
-    `crm.provider.${providerConfig.provider}.webhook.authorize.started`,
-    {
-      connectionId: input.connectionId,
-      operation: "authorize_webhook",
-      provider: providerConfig.provider,
-    },
-  );
   await auditAuthorization(
     providerConfig,
     context,
@@ -155,19 +143,6 @@ export async function completeWhatsappWebhookAuthorization(
       tenantId: input.tenantId,
     },
   );
-  if (outcome === "succeeded") {
-    logCrmServiceEvent(
-      context,
-      `crm.provider.${providerConfig.provider}.webhook.authorize.completed`,
-      {
-        connectionId: input.connectionId,
-        operation: "authorize_webhook",
-        provider: providerConfig.provider,
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      },
-    );
-  }
 }
 
 async function auditAuthorization(
