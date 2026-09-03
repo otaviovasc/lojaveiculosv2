@@ -35,6 +35,7 @@ type Props = {
     leadId: string,
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
+  onOpenChatModal?: () => void;
 };
 
 export function CrmLeadDetailsSidebar({
@@ -43,6 +44,7 @@ export function CrmLeadDetailsSidebar({
   activities,
   leadVehicles,
   onCreateActivity,
+  onOpenChatModal,
 }: Props) {
   const [commentText, setCommentText] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -108,16 +110,28 @@ export function CrmLeadDetailsSidebar({
         {/* Quick Action Contact Bar */}
         <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-line/15">
           {rawPhone ? (
-            <a
-              className="inline-flex flex-col items-center justify-center p-2 rounded-lg bg-panel/40 border border-line/25 hover:bg-line/20 hover:text-app-text transition-all text-muted text-center"
-              href={`https://wa.me/${rawPhone}`}
-              rel="noreferrer"
-              target="_blank"
-              title="Abrir WhatsApp"
-            >
-              <MessageSquare className="size-4 mb-0.5" />
-              <span className="text-xs font-black">WhatsApp</span>
-            </a>
+            onOpenChatModal ? (
+              <button
+                className="inline-flex flex-col items-center justify-center p-2 rounded-lg bg-panel/40 border border-line/25 hover:bg-line/20 hover:text-app-text transition-all text-muted text-center cursor-pointer"
+                onClick={onOpenChatModal}
+                title="Abrir Chat CRM"
+                type="button"
+              >
+                <MessageSquare className="size-4 mb-0.5" />
+                <span className="text-xs font-black">Chat CRM</span>
+              </button>
+            ) : (
+              <a
+                className="inline-flex flex-col items-center justify-center p-2 rounded-lg bg-panel/40 border border-line/25 hover:bg-line/20 hover:text-app-text transition-all text-muted text-center"
+                href={`https://wa.me/${rawPhone}`}
+                rel="noreferrer"
+                target="_blank"
+                title="Abrir WhatsApp"
+              >
+                <MessageSquare className="size-4 mb-0.5" />
+                <span className="text-xs font-black">WhatsApp</span>
+              </a>
+            )
           ) : (
             <div className="inline-flex flex-col items-center justify-center p-2 rounded-lg bg-panel/20 border border-line/15 opacity-40 text-muted text-center">
               <MessageSquare className="size-4 mb-0.5" />
@@ -348,10 +362,10 @@ export function CrmLeadDetailsSidebar({
           )}
 
           {/* Quick Comment Input */}
-          <div className="border border-line/25 bg-panel/20 rounded-xl p-2.5 flex flex-col gap-2 mt-1">
+          <div className="border border-line/25 bg-panel/20 rounded-xl p-2.5 flex flex-col gap-2 mt-1 transition-colors focus-within:border-accent focus-within:shadow-[var(--shadow-focus)]">
             <textarea
               aria-label="Comentário interno"
-              className="w-full min-h-[48px] bg-transparent text-xs font-medium text-app-text outline-none resize-none placeholder:text-muted/65 disabled:opacity-50"
+              className="crm-raw-input w-full min-h-[48px] bg-transparent text-xs font-medium text-app-text outline-none resize-none placeholder:text-muted/65 disabled:opacity-50"
               disabled={isPostingComment}
               placeholder="Escreva uma nota rápida..."
               value={commentText}

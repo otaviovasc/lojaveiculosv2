@@ -9,6 +9,8 @@ import {
   getInventoryPlate,
   getInventoryStockDays,
   getInventoryStockLabel,
+  getInventoryVehicleSubtitle,
+  getInventoryVehicleTitle,
   getInventoryYearLine,
   summarizeInventoryList,
 } from "./listCatalogModel";
@@ -66,6 +68,10 @@ describe("inventory list catalog model", () => {
     expect(getInventoryCatalogLine(item.listing.catalog, item.listing)).toBe(
       "Toyota - Corolla - XEI",
     );
+    expect(getInventoryVehicleTitle(item.listing)).toBe("Toyota Corolla");
+    expect(
+      getInventoryVehicleSubtitle(item.listing, item.listing.catalog),
+    ).toBe("XEI");
     expect(getInventoryYearLine(item.listing)).toBe("2024/2025");
     expect(getInventoryPlate(item)).toBe("ABC1D23");
     expect(getInventoryStockLabel(item)).toBe("Estoque STK-1");

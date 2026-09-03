@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Gauge, PencilLine } from "lucide-react";
 import { FeatureActionButton } from "../../../components/ui/FeatureLayout";
 import { NotesBlockField } from "./NotesBlockField";
+import { MercosulPlateBadge } from "./InventoryListingBadges";
 
 export type TabId =
   "geral" | "financeiro" | "anuncio" | "documentos" | "historico" | "vitrine";
@@ -66,7 +67,11 @@ export function TechnicalSpecsPanel({
             className="flex justify-between items-center text-xs font-bold border-b border-line/30 pb-2"
           >
             <span className="text-muted">{row.label}</span>
-            <span className="text-app-text font-black">{row.value}</span>
+            {row.label === "Placa" && row.value && row.value !== "-" ? (
+              <MercosulPlateBadge plate={row.value} />
+            ) : (
+              <span className="text-app-text font-black">{row.value}</span>
+            )}
           </div>
         ))}
       </div>

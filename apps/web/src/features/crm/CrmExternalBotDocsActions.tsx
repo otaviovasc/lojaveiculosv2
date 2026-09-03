@@ -1,7 +1,20 @@
 import { useMemo, useState } from "react";
-import { Bot, Check, Code2, Copy, Play, Search, Terminal } from "lucide-react";
+import {
+  Bot,
+  Check,
+  Code2,
+  Copy,
+  ExternalLink,
+  Play,
+  Search,
+  Terminal,
+} from "lucide-react";
 import { botActionExamples } from "./CrmExternalBotActionExamplesData";
 import { actionGroups } from "./CrmExternalBotDocsData";
+import {
+  CrmExternalBotLlmsBanner,
+  readCrmLlmsTxtUrl,
+} from "./CrmExternalBotLlmsBanner";
 
 type CodeLang = "curl" | "typescript" | "python" | "json";
 
@@ -200,6 +213,9 @@ else:
         </div>
       </div>
 
+      {/* LLMS.txt AI Agents Callout for Bot Actions */}
+      <CrmExternalBotLlmsBanner variant="compact" />
+
       {/* Main Two-Column Playground Layout */}
       <div className="crm-bot-playground-layout">
         {/* Left Column: Action List */}
@@ -271,27 +287,41 @@ else:
               <span className="crm-bot-code-lang-label">
                 {activeLang.toUpperCase()} EXECUTABLE REQUEST
               </span>
-              <button
-                aria-label="Copiar código"
-                className="crm-bot-copy-btn"
-                onClick={copyGeneratedCode}
-                type="button"
-              >
-                {copied ? (
-                  <>
-                    <Check
-                      aria-hidden="true"
-                      className="size-3.5 text-emerald-600"
-                    />
-                    <span>Copiado</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy aria-hidden="true" className="size-3.5" />
-                    <span>Copiar código</span>
-                  </>
-                )}
-              </button>
+              <div className="crm-bot-code-toolbar-actions">
+                <a
+                  aria-label="Abrir llms.txt em nova aba"
+                  className="crm-bot-llms-toolbar-link"
+                  href={readCrmLlmsTxtUrl()}
+                  rel="noreferrer"
+                  target="_blank"
+                  title="Abrir llms.txt para agentes de IA"
+                >
+                  <Bot aria-hidden="true" className="size-3.5" />
+                  <span>LLMS.txt</span>
+                  <ExternalLink aria-hidden="true" className="size-3" />
+                </a>
+                <button
+                  aria-label="Copiar código"
+                  className="crm-bot-copy-btn"
+                  onClick={copyGeneratedCode}
+                  type="button"
+                >
+                  {copied ? (
+                    <>
+                      <Check
+                        aria-hidden="true"
+                        className="size-3.5 text-emerald-600"
+                      />
+                      <span>Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy aria-hidden="true" className="size-3.5" />
+                      <span>Copiar código</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <pre className="crm-bot-code-block">{generatedCode}</pre>
           </div>

@@ -39,6 +39,18 @@
   grid-template-columns: minmax(21rem, 25rem) minmax(27rem, 1fr);
 }
 
+.crm-shell[data-standalone-chat="true"] {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+}
+
+.crm-shell[data-standalone-chat="true"] .crm-chat {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
 /* Scoped Top Bar Navigation — glass + single elevation */
 .crm-scope-nav {
   align-items: center;
@@ -422,6 +434,8 @@
   background-size: 400% 100%;
   animation: crmShimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm, 0.5rem);
+  transform: none !important;
+  pointer-events: none;
 }
 
 :root[data-theme="dark"] .crm-skeleton,

@@ -5,6 +5,7 @@ import type {
   InventoryListingList,
   InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnit,
   InventoryUnitStatus,
 } from "./types";
 
@@ -121,6 +122,40 @@ export function getInventoryCatalogLine(
     .join(" - ");
 }
 
+export function getInventoryVehicleTitle(listing: InventoryListing): string {
+  if (listing.catalog?.brandName && listing.catalog?.modelName) {
+    return `${listing.catalog.brandName} ${listing.catalog.modelName}`;
+  }
+  return listing.title;
+}
+
+export function getInventoryVehicleSubtitle(
+  listing: InventoryListing,
+  catalog: InventoryCatalogSnapshot | null = listing.catalog,
+): string {
+  const trim = listing.trimName?.trim();
+  if (trim) return trim;
+
+  if (catalog?.brandName && catalog?.modelName) {
+    const brandModelPattern = new RegExp(
+      `^${escapeRegExp(catalog.brandName)}\\s+${escapeRegExp(catalog.modelName)}\\s*`,
+      "i",
+    );
+    const remainder = listing.title.replace(brandModelPattern, "").trim();
+    if (remainder) return remainder;
+  }
+
+  if (catalog?.yearName || catalog?.fuel) {
+    return [catalog.yearName, catalog.fuel].filter(Boolean).join(" • ");
+  }
+
+  return "Versão única";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function getInventoryYearLine(listing: InventoryListing): string {
   if (listing.manufactureYear && listing.modelYear) {
     return `${listing.manufactureYear}/${listing.modelYear}`;
@@ -134,11 +169,14 @@ export function getInventoryPlate(summary: InventoryListingSummary): string {
 }
 
 export function getInventoryDisplayStatus(
-  summary: InventoryListingSummary,
+  summary: Pick<InventoryListingSummary, "listing"> & {
+    primaryUnit?: InventoryUnit | null | undefined;
+    units?: readonly InventoryUnit[] | undefined;
+  },
 ): InventoryDisplayStatus {
   return (
     summary.primaryUnit?.status ??
-    summary.units[0]?.status ??
+    summary.units?.[0]?.status ??
     summary.listing.status
   );
 }

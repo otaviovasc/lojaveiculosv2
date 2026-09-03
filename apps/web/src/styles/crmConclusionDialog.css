@@ -77,13 +77,13 @@
 }
 
 .crm-conclusion-options > button:hover {
-  border-color: #10b981;
+  border-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-text) 3%, var(--color-panel));
 }
 
 .crm-conclusion-options > button[aria-checked="true"] {
-  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
-  border-color: #10b981;
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel));
+  border-color: var(--color-accent);
   color: var(--color-text);
 }
 
@@ -98,9 +98,9 @@
 }
 
 .crm-conclusion-options > button[aria-checked="true"] > span {
-  background: #10b981;
+  background: var(--color-accent);
   border: 2.5px solid var(--color-panel);
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--color-accent);
   box-shadow: none;
 }
 
@@ -147,7 +147,7 @@
 .crm-conclusion-expand svg {
   height: 1.1rem;
   width: 1.1rem;
-  color: #10b981;
+  color: var(--color-accent);
 }
 
 .crm-conclusion-reminder-fields,
@@ -174,8 +174,8 @@
 }
 
 .crm-conclusion-panel .crm-select:focus {
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .crm-conclusion-error {

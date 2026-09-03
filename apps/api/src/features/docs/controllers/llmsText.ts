@@ -73,6 +73,7 @@ export const llmsText = `# Loja Veiculos API
 - Cancel unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/cancel
 - Expire unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/expire
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
+- CRM bot actions: POST /api/v1/crm/bot/actions
 ## Authentication
 - API clients should send a bearer token in the Authorization header.
 - Scoped API keys may send x-api-key: lv2_... or Authorization: Bearer lv2_...
@@ -253,6 +254,8 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and an Idempotency-Key deduplication key.
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
+## Current CRM bot endpoints
+- POST /api/v1/crm/bot/actions: executes external bot actions for CRM conversations; supports send_text, send_image, send_audio, send_document, add_note, schedule_message, set_visita, remove_visita, create_tag, assign_tag, remove_tag, list_tags, set_intervention, update_session, close_session, get_session, and check_connection; requires bot authentication with X-Webhook-Secret header or Bearer token.
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with filterable audit events, safe diagnostic metadata, request/source context, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; supports limit, actorId, action, category, correlationId, criticality, entityId, entityType, outcome, providerName, requestId, severity, from, and to; requires audit.read.
 - GET /api/v1/internal/platform/health: returns the same safe, filterable observability projection across all stores and tenants; requires both active, non-delegable platformAdmin authority and audit.read. Store/agency roles and audit.read alone are insufficient. Use requestId/correlationId/action/entity/provider filters to build an AI-ready incident context.

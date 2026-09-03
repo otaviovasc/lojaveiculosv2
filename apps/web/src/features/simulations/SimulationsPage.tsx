@@ -56,9 +56,11 @@ function readSimulationIdFromUrl(): string | null {
 
 export function SimulationsPage({
   api: apiOverride,
+  embedded,
   prefill,
 }: {
   api?: CredereApi | undefined;
+  embedded?: boolean;
   prefill?: SimulationPrefill | undefined;
 }) {
   const resolvedPrefill = useSimulationRoutePrefill(prefill);
@@ -347,25 +349,9 @@ export function SimulationsPage({
     }
   };
 
-  return (
-    <FeaturePageShell className="credere-shell" variant="content">
-      <FeaturePageHeader
-        chip={
-          statusState.kind === "ready" && statusState.status.mappedStoreAlias
-            ? `Loja vinculada: ${statusState.status.mappedStoreAlias}`
-            : undefined
-        }
-        className="credere-shell-header"
-        description="Consulte os bancos autorizados para a loja ativa e acompanhe cada retorno sem confundir pré-análise com aprovação."
-        eyebrow={
-          <>
-            <Landmark aria-hidden="true" className="size-4" />
-            Financiamento
-          </>
-        }
-        title="Simulações Credere"
-      />
-      {canManageDirectCredere ? (
+  const pageBody = (
+    <>
+      {canManageDirectCredere && !embedded ? (
         <DirectOwnerCrederePanel
           apiPromise={apiPromise}
           onChanged={() => void loadStatus()}
@@ -407,21 +393,51 @@ export function SimulationsPage({
           historyError={historyError}
           isRefreshing={isRefreshing}
           isSubmitting={isSubmitting}
-          onRefresh={() => void refreshCurrent()}
-          onRetryHistory={() => void retryHistory()}
           onGetRequiredFields={getRequiredFields}
+          onRefresh={() => void refreshCurrent()}
           onResolveFipe={resolveFipeVehicle}
+          onRetryHistory={() => void retryHistory()}
           onSelectSimulation={(simulation) => {
             void handleSelectSimulation(simulation);
           }}
           onSubmit={handleSubmit}
           pollError={pollError}
           pollExhausted={pollExhausted}
-          {...(resolvedPrefill ? { prefill: resolvedPrefill } : {})}
           status={statusState.status}
           submitError={submitError}
+          {...(resolvedPrefill ? { prefill: resolvedPrefill } : {})}
         />
       )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="credere-page credere-embedded-page flex flex-col flex-1 min-h-0 w-full">
+        {pageBody}
+      </div>
+    );
+  }
+
+  return (
+    <FeaturePageShell className="credere-shell" variant="content">
+      <FeaturePageHeader
+        chip={
+          statusState.kind === "ready" && statusState.status.mappedStoreAlias
+            ? `Loja vinculada: ${statusState.status.mappedStoreAlias}`
+            : undefined
+        }
+        className="credere-shell-header"
+        description="Consulte os bancos autorizados para a loja ativa e acompanhe cada retorno sem confundir pré-análise com aprovação."
+        eyebrow={
+          <>
+            <Landmark aria-hidden="true" className="size-4" />
+            Financiamento
+          </>
+        }
+        title="Simulações Credere"
+      />
+      {pageBody}
     </FeaturePageShell>
   );
 }

@@ -112,9 +112,8 @@
 
 .crm-composer-textbox:focus-within {
   background: var(--color-panel);
-  border-color: var(--color-success, #10b981);
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--color-success) 22%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .crm-composer-textbox textarea {

@@ -236,10 +236,9 @@
     color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
     color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
   ) !important;
-  border-color: color-mix(in srgb, var(--color-success) 65%, var(--color-line));
-  box-shadow:
-    0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent) inset,
-    0 0 0 2.5px color-mix(in srgb, var(--color-success) 16%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-search:focus-within .crm-search-icon {

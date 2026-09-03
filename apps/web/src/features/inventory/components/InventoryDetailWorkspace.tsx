@@ -12,8 +12,14 @@ import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
 import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
 import { InventoryDetailVitrineTab } from "./InventoryDetailVitrineTab";
-import { buildSalesRouteFromInventoryDetail } from "./InventoryDetailSalesRoute";
+import {
+  buildSaleContextFromInventoryDetail,
+  buildSalesRouteFromInventoryDetail,
+} from "./InventoryDetailSalesRoute";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
+import { LeadFinancingSimulationModal } from "../../crm/LeadFinancingSimulationModal";
+import { LeadSaleModal } from "../../crm/LeadSaleModal";
+import type { SimulationPrefill } from "../../simulations/SimulationForm";
 import {
   InventoryDetailEmptyTab,
   InventoryDetailWorkspaceTabs,
@@ -65,6 +71,8 @@ export function InventoryDetailWorkspace({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
 
   const primaryUnit =
     detail.units.find((unit) => unit.id === selectedUnitId) ??
@@ -87,14 +95,33 @@ export function InventoryDetailWorkspace({
     [detail, stores],
   );
 
+  const simulationPrefill: SimulationPrefill = useMemo(
+    () => ({
+      listingId: listing.id,
+      vehiclePlate: specs.plate !== "-" ? specs.plate : undefined,
+      vehiclePriceCents: listing.priceCents ?? undefined,
+      vehicleTitle: listing.title,
+    }),
+    [listing.id, listing.priceCents, listing.title, specs.plate],
+  );
+
+  const saleContext = useMemo(
+    () => buildSaleContextFromInventoryDetail(detail, primaryUnitId),
+    [detail, primaryUnitId],
+  );
+
   const showNotification = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
   };
 
   const handleAction = (action: WorkspaceTopBarAction) => {
+    if (action === "simulate") {
+      setIsSimulationModalOpen(true);
+      return;
+    }
     if (action === "sell") {
-      openSaleWorkspace();
+      setIsSaleModalOpen(true);
       return;
     }
     if (action === "view-public-listing") {
@@ -118,13 +145,6 @@ export function InventoryDetailWorkspace({
       setDeleteError(null);
       setIsDeleteDialogOpen(true);
     }
-  };
-
-  const openSaleWorkspace = () => {
-    window.location.hash = buildSalesRouteFromInventoryDetail(
-      detail,
-      primaryUnitId,
-    );
   };
 
   const handleTabChange = (tab: TabId) => {
@@ -190,6 +210,8 @@ export function InventoryDetailWorkspace({
           setActiveTab("geral");
           setIsEditRequested(true);
         }}
+        onSell={() => setIsSaleModalOpen(true)}
+        onSimulate={() => setIsSimulationModalOpen(true)}
         primaryUnit={primaryUnit}
         specs={specs}
       />
@@ -225,6 +247,8 @@ export function InventoryDetailWorkspace({
           <InventoryDetailFinanceiroTab
             api={api}
             detail={detail}
+            onSell={() => setIsSaleModalOpen(true)}
+            onSimulate={() => setIsSimulationModalOpen(true)}
             onUpdated={handleUpdatedDetail}
             unit={primaryUnit}
           />
@@ -285,6 +309,22 @@ export function InventoryDetailWorkspace({
         }}
         onConfirm={() => void handleDeleteListing()}
       />
+
+      {isSimulationModalOpen && (
+        <LeadFinancingSimulationModal
+          onClose={() => setIsSimulationModalOpen(false)}
+          prefill={simulationPrefill}
+          title={`Simulação de Financiamento · ${listing.title}`}
+        />
+      )}
+
+      {isSaleModalOpen && (
+        <LeadSaleModal
+          context={saleContext}
+          onClose={() => setIsSaleModalOpen(false)}
+          title={`Nova Venda · ${listing.title}`}
+        />
+      )}
     </FeaturePageShell>
   );
 

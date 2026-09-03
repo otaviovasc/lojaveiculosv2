@@ -7,10 +7,13 @@ import {
   Calendar,
   CheckSquare,
   ChevronDown,
+  ExternalLink,
   Folder,
+  Landmark,
   LayoutDashboard,
   MessageSquare,
   Phone,
+  ReceiptText,
   StickyNote,
 } from "lucide-react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
@@ -28,6 +31,9 @@ import type {
 import { CrmLeadDetailsTabs } from "./CrmLeadDetailsTabs";
 import { CrmLeadDetailsSidebar } from "./CrmLeadDetailsSidebar";
 import { sourceLabels } from "./crmPipelineConfig";
+import { CrmLeadChatModal } from "./CrmLeadChatModal";
+import { LeadFinancingSimulationModal } from "./LeadFinancingSimulationModal";
+import { LeadSaleModal } from "./LeadSaleModal";
 import {
   emptyCrmLeadLinkedRecords,
   loadCrmLeadLinkedRecords,
@@ -46,6 +52,11 @@ export function CrmLeadDetailsPage({
 }: CrmLeadDetailsPageProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>("visao");
   const [isStageDropdownOpen, setIsStageDropdownOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+  const [activeSaleModalId, setActiveSaleModalId] = useState<string | null>(
+    null,
+  );
   const [linkedRecords, setLinkedRecords] = useState<CrmLeadLinkedRecordsState>(
     emptyCrmLeadLinkedRecords,
   );
@@ -175,16 +186,49 @@ export function CrmLeadDetailsPage({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <button
+            aria-label={`Abrir chat de ${leadName} no CRM`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-3 text-xs font-black text-primary transition-all hover:bg-primary/20 cursor-pointer"
+            onClick={() => setIsChatModalOpen(true)}
+            title="Abrir conversa no CRM"
+            type="button"
+          >
+            <MessageSquare aria-hidden="true" className="size-3.5" />
+            <span className="hidden sm:inline">Chat CRM</span>
+          </button>
+
+          <button
+            aria-label={`Simular financiamento para ${leadName}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text cursor-pointer"
+            onClick={() => setIsSimulationModalOpen(true)}
+            title="Simular financiamento Credere"
+            type="button"
+          >
+            <Landmark aria-hidden="true" className="size-3.5" />
+            <span className="hidden sm:inline">Simular</span>
+          </button>
+
+          <button
+            aria-label={`Iniciar venda para ${leadName}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text cursor-pointer"
+            onClick={() => setActiveSaleModalId("new")}
+            title="Iniciar venda para este cliente"
+            type="button"
+          >
+            <ReceiptText aria-hidden="true" className="size-3.5" />
+            <span className="hidden sm:inline">Venda</span>
+          </button>
+
           {rawPhone ? (
             <a
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-success/30 bg-success/10 px-3 text-xs font-black text-success-strong transition-all hover:bg-success/20"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text"
               href={`https://wa.me/${rawPhone}`}
               rel="noreferrer"
               target="_blank"
               title="Abrir WhatsApp Web"
             >
-              <MessageSquare aria-hidden="true" className="size-3.5" />
-              <span className="hidden md:inline">WhatsApp</span>
+              <ExternalLink aria-hidden="true" className="size-3.5" />
+              <span className="hidden md:inline">WhatsApp Web</span>
             </a>
           ) : null}
 
@@ -348,6 +392,11 @@ export function CrmLeadDetailsPage({
               stages={stages}
               onCreateActivity={onCreateActivity}
               vehicleOptions={vehicleOptions}
+              onOpenChatModal={() => setIsChatModalOpen(true)}
+              onOpenSimulationModal={() => setIsSimulationModalOpen(true)}
+              onOpenSaleModal={(saleId) =>
+                setActiveSaleModalId(saleId ?? "new")
+              }
             />
           </div>
         </div>
@@ -359,8 +408,36 @@ export function CrmLeadDetailsPage({
           activities={activities}
           leadVehicles={leadVehicles}
           onCreateActivity={onCreateActivity}
+          onOpenChatModal={() => setIsChatModalOpen(true)}
         />
       </div>
+
+      {isChatModalOpen && (
+        <CrmLeadChatModal
+          lead={lead}
+          onClose={() => setIsChatModalOpen(false)}
+          onStartSale={() => setActiveSaleModalId("new")}
+        />
+      )}
+
+      {isSimulationModalOpen && (
+        <LeadFinancingSimulationModal
+          lead={lead}
+          onClose={() => setIsSimulationModalOpen(false)}
+          vehicleOptions={vehicleOptions}
+        />
+      )}
+
+      {activeSaleModalId && (
+        <LeadSaleModal
+          lead={lead}
+          onClose={() => {
+            setActiveSaleModalId(null);
+            void loadCrmLeadLinkedRecords(lead.id).then(setLinkedRecords);
+          }}
+          saleId={activeSaleModalId === "new" ? null : activeSaleModalId}
+        />
+      )}
     </div>
   );
 }

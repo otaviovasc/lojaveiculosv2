@@ -999,6 +999,8 @@
   border-radius: 1.25rem;
   height: 8.5rem;
   display: block;
+  transform: none !important;
+  pointer-events: none;
 }
 
 :root[data-theme="dark"] .crm-stats-skeleton i,

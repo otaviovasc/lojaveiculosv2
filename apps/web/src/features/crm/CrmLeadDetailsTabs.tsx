@@ -27,6 +27,9 @@ type Props = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
+  onOpenChatModal?: (lead: ProductCrmLead) => void;
+  onOpenSimulationModal?: () => void;
+  onOpenSaleModal?: (saleId?: string) => void;
 };
 
 export function CrmLeadDetailsTabs({
@@ -37,6 +40,9 @@ export function CrmLeadDetailsTabs({
   stages,
   onCreateActivity,
   vehicleOptions,
+  onOpenChatModal,
+  onOpenSimulationModal,
+  onOpenSaleModal,
 }: Props) {
   if (activeTab === "visao") {
     return (
@@ -46,12 +52,15 @@ export function CrmLeadDetailsTabs({
         linkedRecords={linkedRecords}
         stages={stages}
         vehicleOptions={vehicleOptions}
+        onOpenSaleModal={onOpenSaleModal}
       />
     );
   }
 
   if (activeTab === "chat") {
-    return <CrmLeadConversationPanel lead={lead} />;
+    return (
+      <CrmLeadConversationPanel lead={lead} onOpenChatModal={onOpenChatModal} />
+    );
   }
 
   if (activeTab === "tarefas") {
@@ -100,6 +109,7 @@ export function CrmLeadDetailsTabs({
       <CrmLeadDetailsFinanciamento
         lead={lead}
         onCreateActivity={onCreateActivity}
+        onOpenSimulationModal={onOpenSimulationModal}
         vehicleOptions={vehicleOptions}
       />
     );

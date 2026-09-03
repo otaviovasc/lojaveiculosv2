@@ -12,6 +12,7 @@ import { CrmExternalBotDocsOverview } from "./CrmExternalBotDocsOverview";
 import { CrmExternalBotDocsEvents } from "./CrmExternalBotDocsEvents";
 import { CrmExternalBotDocsActions } from "./CrmExternalBotDocsActions";
 import { CrmExternalBotDocsTakeover } from "./CrmExternalBotDocsTakeover";
+import { CrmExternalBotLlmsBanner } from "./CrmExternalBotLlmsBanner";
 
 type DocSubTab = "overview" | "events" | "actions" | "takeover";
 
@@ -78,6 +79,7 @@ export function CrmExternalBotDocs() {
             <span>Estados de atendimento humano</span>
           </button>
         </div>
+        <CrmExternalBotLlmsBanner variant="button" />
       </div>
 
       {/* Render Selected View */}

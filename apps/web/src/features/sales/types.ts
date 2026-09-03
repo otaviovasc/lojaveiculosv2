@@ -135,17 +135,17 @@ export type SalesListQuery = {
 };
 
 export type SaleStartContext = {
-  buyerEmail?: string;
-  buyerName?: string;
-  buyerPhone?: string;
-  leadId?: string;
-  listingId?: string;
-  listingTitle?: string;
-  priceCents?: number;
-  sellerUserId?: string;
-  unitId?: string;
-  unitLabel?: string;
-  plate?: string;
-  colorName?: string;
-  primaryMediaUrl?: string;
+  buyerEmail?: string | undefined;
+  buyerName?: string | undefined;
+  buyerPhone?: string | undefined;
+  leadId?: string | undefined;
+  listingId?: string | undefined;
+  listingTitle?: string | undefined;
+  priceCents?: number | undefined;
+  sellerUserId?: string | undefined;
+  unitId?: string | undefined;
+  unitLabel?: string | undefined;
+  plate?: string | undefined;
+  colorName?: string | undefined;
+  primaryMediaUrl?: string | undefined;
 };

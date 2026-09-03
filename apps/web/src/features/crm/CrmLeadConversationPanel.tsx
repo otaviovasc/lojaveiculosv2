@@ -18,6 +18,7 @@ import { readCrmCapabilities } from "./crmPermissions";
 import { crmConversationCycleHash } from "./crmRouteState";
 import { formatCrmPhone } from "./crmPhoneFormat";
 import { formatLeadName } from "./crmPipelineModels";
+import { buildLeadStarterPrompts } from "./crmLeadData";
 import type {
   CrmProviderConnection,
   CrmConversationCycle,
@@ -26,10 +27,15 @@ import type { ProductCrmLead } from "./productCrmTypes";
 
 type Props = {
   lead: ProductCrmLead;
-  api?: CrmConversationApi;
+  api?: CrmConversationApi | undefined;
+  onOpenChatModal?: ((lead: ProductCrmLead) => void) | undefined;
 };
 
-export function CrmLeadConversationPanel({ api, lead }: Props) {
+export function CrmLeadConversationPanel({
+  api,
+  lead,
+  onOpenChatModal,
+}: Props) {
   const conversationApi = useMemo(
     () => api ?? createRuntimeCrmConversationApi(),
     [api],
@@ -58,13 +64,7 @@ export function CrmLeadConversationPanel({ api, lead }: Props) {
   const leadName = formatLeadName(lead);
 
   const starterPrompts = useMemo(
-    () => [
-      `👋 Olá ${leadName}! Vi seu interesse em nossos veículos. Como posso ajudar?`,
-      lead.vehicleTitle
-        ? `🚗 Olá ${leadName}! Posso te passar mais detalhes e fotos do ${lead.vehicleTitle}?`
-        : `🚗 Olá ${leadName}! Posso te passar mais fotos e detalhes dos veículos em estoque?`,
-      `📅 Olá ${leadName}! Gostaria de agendar uma visita na loja ou simular entrada?`,
-    ],
+    () => buildLeadStarterPrompts(leadName, lead.vehicleTitle),
     [leadName, lead.vehicleTitle],
   );
 
@@ -108,7 +108,11 @@ export function CrmLeadConversationPanel({ api, lead }: Props) {
       });
       setLinkedSessions([result.cycle]);
       setDraft("");
-      window.location.hash = crmConversationCycleHash(result.cycle.id);
+      if (onOpenChatModal) {
+        onOpenChatModal(lead);
+      } else {
+        window.location.hash = crmConversationCycleHash(result.cycle.id);
+      }
     } catch (caught) {
       setError(
         formatApiErrorDisplay(caught, "Não foi possível iniciar a conversa."),
@@ -171,14 +175,25 @@ export function CrmLeadConversationPanel({ api, lead }: Props) {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-line/15">
-            <a
-              className="crm-action crm-action-primary w-fit inline-flex items-center gap-2"
-              href={`#${crmConversationCycleHash(linkedSession.id)}`}
-            >
-              <ExternalLink aria-hidden="true" className="size-4" />
-              Abrir conversa
-            </a>
+          <div className="pt-2 border-t border-line/15 flex items-center gap-3 flex-wrap">
+            {onOpenChatModal ? (
+              <button
+                className="crm-action crm-action-primary w-fit inline-flex items-center gap-2 cursor-pointer"
+                onClick={() => onOpenChatModal(lead)}
+                type="button"
+              >
+                <MessageSquare aria-hidden="true" className="size-4" />
+                Abrir conversa no CRM
+              </button>
+            ) : (
+              <a
+                className="crm-action crm-action-primary w-fit inline-flex items-center gap-2"
+                href={`#${crmConversationCycleHash(linkedSession.id)}`}
+              >
+                <ExternalLink aria-hidden="true" className="size-4" />
+                Abrir conversa
+              </a>
+            )}
           </div>
         </div>
       </ChatPanelFrame>
@@ -228,7 +243,7 @@ export function CrmLeadConversationPanel({ api, lead }: Props) {
 
         <textarea
           aria-label="Mensagem inicial"
-          className="min-h-24 rounded-xl border border-line/35 bg-panel/20 p-3 text-sm font-medium text-app-text outline-none focus:border-primary/50 transition-colors"
+          className="min-h-24 rounded-xl border border-line/35 bg-panel/20 p-3 text-sm font-medium text-app-text outline-none focus:border-accent focus:shadow-[var(--shadow-focus)] transition-colors"
           disabled={!connection}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Mensagem inicial"

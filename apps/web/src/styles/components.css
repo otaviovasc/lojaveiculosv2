@@ -35,6 +35,8 @@
 .crm-thread:focus-visible {
   box-shadow: var(--shadow-focus);
   outline: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
 }
 
 .nav-item {

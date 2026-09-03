@@ -11,9 +11,11 @@ import type { ProductCrmLead } from "./productCrmTypes";
 export function CrmCredereOfficialPanel({
   lead,
   loadSimulations = loadCredereSimulations,
+  onOpenSimulationModal,
 }: {
   lead: ProductCrmLead;
   loadSimulations?: () => Promise<CredereSimulation[]>;
+  onOpenSimulationModal?: (() => void) | undefined;
 }) {
   const [history, setHistory] = useState<
     | { status: "loading" }
@@ -55,10 +57,21 @@ export function CrmCredereOfficialPanel({
             </p>
           </div>
         </div>
-        <a className="credere-panel-cta" href={credereSimulationHref(lead)}>
-          Simular no Credere
-          <ArrowUpRight aria-hidden="true" className="size-4" />
-        </a>
+        {onOpenSimulationModal ? (
+          <button
+            className="credere-panel-cta cursor-pointer"
+            onClick={onOpenSimulationModal}
+            type="button"
+          >
+            Simular no Credere
+            <Landmark aria-hidden="true" className="size-4" />
+          </button>
+        ) : (
+          <a className="credere-panel-cta" href={credereSimulationHref(lead)}>
+            Simular no Credere
+            <ArrowUpRight aria-hidden="true" className="size-4" />
+          </a>
+        )}
       </header>
       {history.status === "loading" ? (
         <div className="credere-panel-skeleton" role="status">

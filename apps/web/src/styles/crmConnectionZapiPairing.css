@@ -160,9 +160,9 @@
 }
 
 .crm-pairing-phone input:focus {
-  border-color: var(--color-success);
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--color-success) 18%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-pairing-code {

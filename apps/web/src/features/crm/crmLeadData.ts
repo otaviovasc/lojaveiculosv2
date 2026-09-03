@@ -86,3 +86,16 @@ export function readMetadataString(
   const value = metadata[key];
   return typeof value === "string" && value.trim() ? value : undefined;
 }
+
+export function buildLeadStarterPrompts(
+  leadName: string,
+  vehicleTitle?: string | null,
+): string[] {
+  return [
+    `👋 Olá ${leadName}! Vi seu interesse em nossos veículos. Como posso ajudar?`,
+    vehicleTitle
+      ? `🚗 Olá ${leadName}! Posso te passar mais detalhes e fotos do ${vehicleTitle}?`
+      : `🚗 Olá ${leadName}! Posso te passar mais fotos e detalhes dos veículos em destaque?`,
+    `📅 Olá ${leadName}! Gostaria de agendar uma visita na loja ou simular entrada?`,
+  ];
+}

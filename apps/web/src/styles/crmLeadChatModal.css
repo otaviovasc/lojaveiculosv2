@@ -4,9 +4,18 @@
 
 .crm-lead-chat-dialog .feature-dialog__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   padding: 0;
+}
+
+.crm-lead-chat-dialog .crm-shell {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
 }
 
 .crm-lead-chat-shell.crm-shell {
@@ -76,7 +85,7 @@
 }
 
 .crm-lead-chat-starter-chip:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-panel-elevated, var(--color-panel));
   transform: translateY(-1px);
 }
@@ -114,8 +123,9 @@
 }
 
 .crm-lead-chat-textarea:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .crm-lead-chat-hints {

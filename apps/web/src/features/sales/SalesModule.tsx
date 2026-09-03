@@ -38,9 +38,17 @@ import type { SaleRecord, SaleStartContext } from "./types";
 export function SalesModule({
   api,
   inventoryApi,
+  embedded,
+  initialContext,
+  initialSaleId,
+  onCloseWorkspace,
 }: {
   api?: SalesApi;
   inventoryApi?: InventoryApi;
+  embedded?: boolean | undefined;
+  initialContext?: SaleStartContext | null | undefined;
+  initialSaleId?: string | null | undefined;
+  onCloseWorkspace?: (() => void) | undefined;
 }) {
   const accountSession = useOptionalAccountSession();
   const [runtimeApi, setRuntimeApi] = useState<SalesApi | null>(api ?? null);
@@ -50,8 +58,12 @@ export function SalesModule({
     { kind: "loading", options: emptySaleContextOptions },
   );
   const [sales, setSales] = useState<readonly SaleRecord[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "workspace">("list");
+  const [activeId, setActiveId] = useState<string | null>(
+    initialSaleId ?? null,
+  );
+  const [viewMode, setViewMode] = useState<"list" | "workspace">(
+    initialSaleId || initialContext ? "workspace" : "list",
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [isStartingSale, setIsStartingSale] = useState(false);
   const startContextUsed = useRef(false);
@@ -197,7 +209,13 @@ export function SalesModule({
 
   useEffect(() => {
     if (!runtimeApi || startContextUsed.current) return;
-    const context = parseSaleStartContext();
+    if (initialSaleId) {
+      startContextUsed.current = true;
+      setActiveId(initialSaleId);
+      setViewMode("workspace");
+      return;
+    }
+    const context = initialContext ?? parseSaleStartContext();
     if (!context.leadId && !context.unitId && !context.listingId) return;
     startContextUsed.current = true;
     setIsStartingSale(true);
@@ -205,10 +223,29 @@ export function SalesModule({
       .catch(() => undefined)
       .then(() => createDraft(context))
       .then((sale) => {
-        if (sale) clearSaleStartContext();
+        if (sale && !initialContext) clearSaleStartContext();
       })
       .finally(() => setIsStartingSale(false));
-  }, [createDraft, runtimeApi]);
+  }, [createDraft, initialContext, initialSaleId, runtimeApi]);
+
+  useEffect(() => {
+    if (!runtimeApi || !activeId || sales.some((s) => s.id === activeId))
+      return;
+    let isActive = true;
+    void runtimeApi
+      .list({ status: "all" })
+      .then((loadedList) => {
+        if (!isActive) return;
+        const loaded = loadedList.find((s) => s.id === activeId);
+        if (loaded) {
+          setSales((current) => replaceSale(current, loaded));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isActive = false;
+    };
+  }, [activeId, runtimeApi, sales]);
 
   const selectedSale = useMemo(
     () => sales.find((sale) => sale.id === activeId) ?? null,
@@ -308,6 +345,34 @@ export function SalesModule({
     [fetchContextOptions, runtimeApi],
   );
 
+  const workspaceView = (
+    <SaleWorkspace
+      inventoryApi={runtimeInventoryApi}
+      contextMessage={contextMessage(contextOptions)}
+      contextOptions={contextOptions.options}
+      onCancel={(sale, reason) => transition(sale, "cancel", reason)}
+      onClose={(sale) => transition(sale, "close")}
+      onCreateLead={handleCreateLead}
+      onReserve={(sale) => transition(sale, "reserve")}
+      onRevert={revert}
+      onSave={saveSale}
+      sale={selectedSale}
+      onBack={onCloseWorkspace ?? (() => setViewMode("list"))}
+    />
+  );
+
+  if (embedded) {
+    return (
+      <div className="sales-embedded-module flex flex-col flex-1 min-h-0 w-full">
+        {isStartingSale ? (
+          <FeatureLoadingState title="Preparando a venda..." />
+        ) : (
+          workspaceView
+        )}
+      </div>
+    );
+  }
+
   return (
     <FeaturePageShell mainClassName="flex flex-col gap-6">
       <SalesModuleOverview message={message} sales={sales} />
@@ -327,19 +392,7 @@ export function SalesModule({
           onCreate={() => void createDraft({})}
         />
       ) : (
-        <SaleWorkspace
-          inventoryApi={runtimeInventoryApi}
-          contextMessage={contextMessage(contextOptions)}
-          contextOptions={contextOptions.options}
-          onCancel={(sale, reason) => transition(sale, "cancel", reason)}
-          onClose={(sale) => transition(sale, "close")}
-          onCreateLead={handleCreateLead}
-          onReserve={(sale) => transition(sale, "reserve")}
-          onRevert={revert}
-          onSave={saveSale}
-          sale={selectedSale}
-          onBack={() => setViewMode("list")}
-        />
+        workspaceView
       )}
     </FeaturePageShell>
   );

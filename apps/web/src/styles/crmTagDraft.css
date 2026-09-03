@@ -332,6 +332,7 @@
 .crm-tag-custom-color input:focus,
 .crm-tag-custom-emoji input:focus,
 .crm-tag-draft-name input:focus {
-  border-color: #10b981;
-  outline: 2px solid rgba(16, 185, 129, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
