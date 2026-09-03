@@ -7,23 +7,20 @@ import {
 } from "lucide-react";
 import {
   formatInventoryPrice,
-  getInventoryCatalogLine,
-  getInventoryPlate,
-  getInventoryYearLine,
   getInventoryDisplayStatus,
-  getInventoryKm,
-  getInventoryStockDays,
   getInventoryFipeComparison,
+  getInventoryKm,
+  getInventoryPlate,
+  getInventoryStockDays,
+  getInventoryVehicleSubtitle,
+  getInventoryVehicleTitle,
+  getInventoryYearLine,
 } from "../model/listCatalogModel";
 import type { InventoryListSortKey } from "../model/inventoryListSortModel";
 import type { InventoryListingSummary } from "../model/types";
 import { EmptyCatalog } from "./InventoryListingCardGrid";
 import { MercosulPlateBadge, StatusPill } from "./InventoryListingBadges";
-import {
-  FeatureRowAction,
-  FeatureRowActions,
-  FeatureTableFrame,
-} from "../../../components/ui/FeatureTable";
+import { FeatureTableFrame } from "../../../components/ui/FeatureTable";
 import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
 import { InventoryLeadBadge } from "./InventoryLeadBadge";
 import { InventorySortableHeader } from "./InventorySortableHeader";
@@ -190,10 +187,10 @@ export function InventoryListingTable({
                 {visibleColumns.marcaModelo && (
                   <td className="min-w-[220px] max-w-[280px] px-4 py-3 align-middle">
                     <div className="whitespace-normal break-words text-sm font-black leading-snug text-app-text transition-colors group-hover:text-accent">
-                      {listing.title}
+                      {getInventoryVehicleTitle(listing)}
                     </div>
-                    <div className="mt-1 whitespace-normal break-words text-xs font-bold leading-snug text-muted">
-                      {getInventoryCatalogLine(listing.catalog, listing)}
+                    <div className="mt-1 whitespace-normal break-words text-xs font-semibold leading-snug text-muted">
+                      {getInventoryVehicleSubtitle(listing, listing.catalog)}
                     </div>
                   </td>
                 )}
@@ -286,31 +283,46 @@ export function InventoryListingTable({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {onAction ? (
-                      <FeatureRowActions className="gap-2.5">
-                        <FeatureRowAction
-                          ariaLabel={`Criar post para ${listing.title}`}
-                          icon={LayoutTemplate}
-                          iconClassName="text-accent"
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          aria-label={`Criar post para ${listing.title}`}
+                          className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-violet-700 dark:text-violet-400 hover:text-violet-900 dark:hover:text-violet-200 transition-all hover:border-violet-500/40 hover:bg-violet-500/10 active:scale-95"
                           onClick={() => onAction("template", item)}
-                          tooltip="Criar post"
-                        />
-                        <FeatureRowAction
-                          ariaLabel={`Agendar test drive para ${listing.title}`}
-                          icon={CalendarClock}
-                          iconClassName="text-success"
-                          onClick={() => onAction("test-drive", item)}
-                          tooltip="Test drive"
-                        />
-                        {item.mediaCount > 0 ? (
-                          <FeatureRowAction
-                            ariaLabel={`Baixar fotos de ${listing.title}`}
-                            icon={FileArchive}
-                            iconClassName="text-accent"
-                            onClick={() => onAction("zip-photos", item)}
-                            tooltip="Baixar fotos em ZIP"
+                          title="Criar post"
+                          type="button"
+                        >
+                          <LayoutTemplate
+                            aria-hidden="true"
+                            className="size-3.5"
                           />
+                        </button>
+                        <button
+                          aria-label={`Agendar test drive para ${listing.title}`}
+                          className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-emerald-500 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 active:scale-95"
+                          onClick={() => onAction("test-drive", item)}
+                          title="Test drive"
+                          type="button"
+                        >
+                          <CalendarClock
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
+                        </button>
+                        {item.mediaCount > 0 ? (
+                          <button
+                            aria-label={`Baixar fotos de ${listing.title}`}
+                            className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-accent transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent-strong active:scale-95"
+                            onClick={() => onAction("zip-photos", item)}
+                            title="Baixar fotos em ZIP"
+                            type="button"
+                          >
+                            <FileArchive
+                              aria-hidden="true"
+                              className="size-3.5"
+                            />
+                          </button>
                         ) : null}
-                      </FeatureRowActions>
+                      </div>
                     ) : null}
                   </td>
                 )}

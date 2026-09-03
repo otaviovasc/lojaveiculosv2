@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ClipboardList, Wallet } from "lucide-react";
+import { ClipboardList, DollarSign, Landmark, Wallet } from "lucide-react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
@@ -34,11 +34,15 @@ import {
 export function InventoryDetailFinanceiroTab({
   api,
   detail,
+  onSimulate,
+  onSell,
   onUpdated,
   unit,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  onSimulate?: () => void;
+  onSell?: () => void;
   onUpdated: (detail: InventoryListingDetail) => void;
   unit: InventoryUnit | null;
 }) {
@@ -258,6 +262,31 @@ export function InventoryDetailFinanceiroTab({
               </span>
             </div>
           </div>
+
+          {onSimulate || onSell ? (
+            <div className="mt-4 flex items-center gap-2 pt-2 border-t border-line/20 flex-wrap">
+              {onSimulate ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line/40 bg-panel/60 px-3 text-xs font-bold text-muted hover:text-app-text hover:bg-line/15 transition-all cursor-pointer"
+                  onClick={onSimulate}
+                  type="button"
+                >
+                  <Landmark className="size-3.5 text-accent" />
+                  <span>Simular Financiamento</span>
+                </button>
+              ) : null}
+              {onSell ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 text-xs font-black text-accent-text hover:bg-accent hover:text-accent-foreground transition-all cursor-pointer"
+                  onClick={onSell}
+                  type="button"
+                >
+                  <DollarSign className="size-3.5" />
+                  <span>Iniciar Venda</span>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">

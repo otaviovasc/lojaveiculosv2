@@ -121,6 +121,40 @@ export function getInventoryCatalogLine(
     .join(" - ");
 }
 
+export function getInventoryVehicleTitle(listing: InventoryListing): string {
+  if (listing.catalog?.brandName && listing.catalog?.modelName) {
+    return `${listing.catalog.brandName} ${listing.catalog.modelName}`;
+  }
+  return listing.title;
+}
+
+export function getInventoryVehicleSubtitle(
+  listing: InventoryListing,
+  catalog: InventoryCatalogSnapshot | null = listing.catalog,
+): string {
+  const trim = listing.trimName?.trim();
+  if (trim) return trim;
+
+  if (catalog?.brandName && catalog?.modelName) {
+    const brandModelPattern = new RegExp(
+      `^${escapeRegExp(catalog.brandName)}\\s+${escapeRegExp(catalog.modelName)}\\s*`,
+      "i",
+    );
+    const remainder = listing.title.replace(brandModelPattern, "").trim();
+    if (remainder) return remainder;
+  }
+
+  if (catalog?.yearName || catalog?.fuel) {
+    return [catalog.yearName, catalog.fuel].filter(Boolean).join(" • ");
+  }
+
+  return "Versão única";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function getInventoryYearLine(listing: InventoryListing): string {
   if (listing.manufactureYear && listing.modelYear) {
     return `${listing.manufactureYear}/${listing.modelYear}`;

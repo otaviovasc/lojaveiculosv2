@@ -1,11 +1,5 @@
-import {
-  DollarSign,
-  Car,
-  Globe,
-  MessageSquare,
-  MoreVertical,
-} from "lucide-react";
-import type { DragEvent, MouseEvent } from "react";
+import { Car, Globe, MessageSquare, MoreVertical } from "lucide-react";
+import type { DragEvent } from "react";
 import { formatLeadName } from "./crmPipelineModels";
 import { formatLeadTimelineLabel, getLinkedLeadVehicles } from "./crmLeadData";
 import { useCrmLeadOwnerName } from "./useCrmLeadOwnerName";
@@ -19,7 +13,7 @@ type Props = {
   onChatClick: (lead: ProductCrmLead) => void;
   onDragStart: (leadId: string) => void;
   onSelectLead: (leadId: string) => void;
-  onSimulateClick: (lead: ProductCrmLead) => void;
+  onSimulateClick?: (lead: ProductCrmLead) => void;
   vehicleOptions: LeadVehicleOption[];
 };
 
@@ -28,7 +22,6 @@ export function CrmLeadCard({
   onChatClick,
   onDragStart,
   onSelectLead,
-  onSimulateClick,
   vehicleOptions,
 }: Props) {
   const leadName = formatLeadName(lead).toUpperCase();
@@ -51,11 +44,6 @@ export function CrmLeadCard({
   const handleDragStart = (event: DragEvent<HTMLElement>) => {
     event.dataTransfer.setData("text/plain", lead.id);
     onDragStart(lead.id);
-  };
-
-  const handleSimulate = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onSimulateClick(lead);
   };
 
   return (
@@ -94,7 +82,9 @@ export function CrmLeadCard({
             e.stopPropagation();
             if (hasPhone) onChatClick(lead);
           }}
-          title={hasPhone ? "Abrir chat" : "Lead sem telefone cadastrado"}
+          title={
+            hasPhone ? "Abrir chat no CRM" : "Lead sem telefone cadastrado"
+          }
           type="button"
         >
           <MessageSquare aria-hidden="true" className="size-3.5" />
@@ -189,19 +179,6 @@ export function CrmLeadCard({
           )}
         </div>
       </div>
-
-      {/* Low-profile Simulation Button */}
-      <button
-        className="w-full inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-line/60 bg-app-elevated px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors mt-0.5"
-        onClick={handleSimulate}
-        type="button"
-      >
-        <DollarSign
-          aria-hidden="true"
-          className="size-3 shrink-0 text-success-strong"
-        />
-        <span>Simular financiamento</span>
-      </button>
     </article>
   );
 }

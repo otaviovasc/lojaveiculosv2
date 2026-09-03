@@ -6,6 +6,7 @@ import {
   ExternalLink,
   MessageSquare,
   PhoneCall,
+  Plus,
   ReceiptText,
   Sparkles,
   StickyNote,
@@ -23,6 +24,7 @@ import { formatCents } from "../sales/salesModel";
 import type { SaleStatus } from "../sales/types";
 import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
 import type { PipelineStage } from "./crmPipelineStorage";
+import { cn } from "../../lib/utils";
 
 type Props = {
   lead: ProductCrmLead;
@@ -30,6 +32,7 @@ type Props = {
   linkedRecords: CrmLeadLinkedRecordsState;
   stages: PipelineStage[];
   vehicleOptions: LeadVehicleOption[];
+  onOpenSaleModal?: (saleId?: string) => void;
 };
 
 export function CrmLeadDetailsTabsVisao({
@@ -38,6 +41,7 @@ export function CrmLeadDetailsTabsVisao({
   linkedRecords,
   stages,
   vehicleOptions,
+  onOpenSaleModal,
 }: Props) {
   const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
   const primaryVehicle = leadVehicles[0];
@@ -168,7 +172,10 @@ export function CrmLeadDetailsTabsVisao({
       ) : null}
 
       {/* Linked Sales Panel */}
-      <LinkedSalesPanel linkedRecords={linkedRecords} />
+      <LinkedSalesPanel
+        linkedRecords={linkedRecords}
+        onOpenSaleModal={onOpenSaleModal}
+      />
 
       {/* Split Next Task / Last Interaction */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,14 +305,28 @@ function renderActivityIcon(type: string) {
 
 function LinkedSalesPanel({
   linkedRecords,
+  onOpenSaleModal,
 }: {
   linkedRecords: CrmLeadLinkedRecordsState;
+  onOpenSaleModal?: (saleId?: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-1.5 text-xs font-black uppercase text-muted tracking-wider">
-        <ReceiptText aria-hidden="true" className="size-4 text-muted" />
-        <span>Vendas vinculadas</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs font-black uppercase text-muted tracking-wider">
+          <ReceiptText aria-hidden="true" className="size-4 text-muted" />
+          <span>Vendas vinculadas</span>
+        </div>
+        {onOpenSaleModal ? (
+          <button
+            className="inline-flex items-center gap-1 text-xs font-black text-primary hover:underline cursor-pointer"
+            onClick={() => onOpenSaleModal()}
+            type="button"
+          >
+            <Plus aria-hidden="true" className="size-3.5" />
+            Nova venda
+          </button>
+        ) : null}
       </div>
       {linkedRecords.kind === "loading" ? (
         <p className="rounded-xl border border-line/20 bg-panel/10 p-4 text-xs font-bold text-muted">
@@ -316,15 +337,41 @@ function LinkedSalesPanel({
           {linkedRecords.message}
         </p>
       ) : linkedRecords.sales.length === 0 ? (
-        <div className="rounded-xl border border-line/20 bg-panel/10 p-4 text-xs font-bold text-muted">
-          Nenhuma venda vinculada a este cliente ainda.
+        <div className="rounded-xl border border-line/20 bg-panel/10 p-4 text-xs font-bold text-muted flex items-center justify-between gap-3 flex-wrap">
+          <span>Nenhuma venda vinculada a este cliente ainda.</span>
+          {onOpenSaleModal ? (
+            <button
+              className="crm-action crm-action-primary text-xs cursor-pointer"
+              onClick={() => onOpenSaleModal()}
+              type="button"
+            >
+              Iniciar venda
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {linkedRecords.sales.map((sale) => (
             <article
-              className="rounded-xl border border-line/25 bg-panel/20 p-4"
+              className={cn(
+                "rounded-xl border border-line/25 bg-panel/20 p-4 transition-all",
+                onOpenSaleModal &&
+                  "hover:border-primary/50 hover:bg-panel/40 cursor-pointer",
+              )}
               key={sale.id}
+              onClick={() => onOpenSaleModal?.(sale.id)}
+              onKeyDown={
+                onOpenSaleModal
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenSaleModal(sale.id);
+                      }
+                    }
+                  : undefined
+              }
+              role={onOpenSaleModal ? "button" : undefined}
+              tabIndex={onOpenSaleModal ? 0 : undefined}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -345,7 +392,13 @@ function LinkedSalesPanel({
                 <span className="font-black text-app-text">
                   {formatCents(sale.salePriceCents)}
                 </span>
-                <span>Rev. {sale.revision}</span>
+                {onOpenSaleModal ? (
+                  <span className="font-black text-primary hover:underline">
+                    Abrir venda →
+                  </span>
+                ) : (
+                  <span>Rev. {sale.revision}</span>
+                )}
               </div>
             </article>
           ))}

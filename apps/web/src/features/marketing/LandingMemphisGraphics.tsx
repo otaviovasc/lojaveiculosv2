@@ -1,18 +1,7 @@
-import {
-  Activity,
-  Car,
-  CarFront,
-  CircleDot,
-  Cog,
-  Compass,
-  Flame,
-  Gauge,
-  Sparkles,
-  Workflow,
-  Wrench,
-  Zap,
-} from "lucide-react";
+import { CarFront, Cog, Flame, Gauge } from "lucide-react";
 import { cn } from "../../lib/utils";
+
+export * from "./LandingFeatureWatermarks";
 
 export function MemphisSquiggle({
   className = "w-24 h-6 text-red-500",
@@ -265,6 +254,179 @@ export function MemphisCheckered({
           />
         );
       })}
+    </div>
+  );
+}
+
+/* --- Dynamic Racing Checkered Ribbon --- */
+
+export function MemphisSpeedCheckered({
+  className = "w-32 text-current opacity-40",
+  skew = true,
+  cols = 8,
+}: {
+  className?: string;
+  skew?: boolean;
+  cols?: number;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "inline-flex flex-col gap-0.5 select-none",
+        skew && "-skew-x-12",
+        className,
+      )}
+    >
+      <div className="flex gap-0.5">
+        {Array.from({ length: cols }).map((_, i) => (
+          <span
+            key={`c1-${i}`}
+            className={cn(
+              "size-2.5 sm:size-3 rounded-[1px] transition-colors",
+              i % 2 === 0
+                ? "bg-current"
+                : "border border-current/30 bg-transparent",
+            )}
+          />
+        ))}
+      </div>
+      <div className="flex gap-0.5">
+        {Array.from({ length: cols }).map((_, i) => (
+          <span
+            key={`c2-${i}`}
+            className={cn(
+              "size-2.5 sm:size-3 rounded-[1px] transition-colors",
+              i % 2 !== 0
+                ? "bg-current"
+                : "border border-current/30 bg-transparent",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* --- Automotive RPM Tachometer Arc --- */
+
+export function MemphisTachometerArc({
+  className = "size-28 text-white/40",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      viewBox="0 0 100 100"
+      fill="none"
+      stroke="currentColor"
+    >
+      {/* Outer Dial Arc */}
+      <path
+        d="M 18 80 A 42 42 0 1 1 82 80"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      {/* Redline Zone Accent */}
+      <path
+        d="M 68 28 A 42 42 0 0 1 82 80"
+        stroke="currentColor"
+        strokeWidth="4"
+        strokeLinecap="round"
+        className="opacity-90"
+      />
+      {/* Inner Dotted Speed Arc */}
+      <path
+        d="M 28 76 A 30 30 0 1 1 72 76"
+        strokeWidth="1.5"
+        strokeDasharray="3 3"
+        strokeOpacity="0.4"
+      />
+      {/* Radial Ticks */}
+      <line x1="18" y1="80" x2="25" y2="76" strokeWidth="2" />
+      <line x1="13" y1="50" x2="21" y2="50" strokeWidth="2" />
+      <line x1="25" y1="25" x2="31" y2="31" strokeWidth="2" />
+      <line x1="50" y1="13" x2="50" y2="21" strokeWidth="2" />
+      <line x1="75" y1="25" x2="69" y2="31" strokeWidth="2" />
+      <line x1="87" y1="50" x2="79" y2="50" strokeWidth="2" />
+      {/* Center Pivot */}
+      <circle cx="50" cy="62" r="5" fill="currentColor" />
+      {/* Needle pointing to high RPM */}
+      <line
+        x1="50"
+        y1="62"
+        x2="72"
+        y2="34"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <text
+        x="50"
+        y="82"
+        textAnchor="middle"
+        fontSize="7"
+        fontFamily="monospace"
+        fontWeight="bold"
+        fill="currentColor"
+        stroke="none"
+      >
+        RPM x1000
+      </text>
+    </svg>
+  );
+}
+
+/* --- Architectural Corner Bracket --- */
+
+export function MemphisCornerBracket({
+  className = "size-3 text-red-500",
+  position = "top-left",
+}: {
+  className?: string;
+  position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+}) {
+  const rotation = {
+    "top-left": "",
+    "top-right": "rotate-90",
+    "bottom-right": "rotate-180",
+    "bottom-left": "-rotate-90",
+  }[position];
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={cn("transition-all duration-300", rotation, className)}
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M1 11V1H11" />
+    </svg>
+  );
+}
+
+/* --- Memphis Telemetry Stamped Badge --- */
+
+export function MemphisTelemetryBadge({
+  code = "01 // RPM",
+  className = "",
+}: {
+  code?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "inline-flex items-center gap-1.5 border border-current/30 px-2 py-0.5 font-mono text-xs font-bold tracking-widest uppercase select-none rounded-[2px]",
+        className,
+      )}
+    >
+      <span className="size-1.5 rounded-full bg-current animate-pulse" />
+      <span>{code}</span>
     </div>
   );
 }

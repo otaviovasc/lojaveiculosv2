@@ -47,12 +47,14 @@ export function CrmAttendanceConclusionDialog({
   disabled = false,
   onClose,
   onConclude,
+  onStartSale,
   cycle,
 }: {
   assignableMembers: Array<{ id: number; name: string }>;
   disabled?: boolean;
   onClose: () => void;
   onConclude: (input: CrmConclusionInput) => Promise<boolean>;
+  onStartSale?: (cycle: CrmConversationCycle) => void;
   cycle: CrmConversationCycle;
 }) {
   const [outcome, setOutcome] = useState<Outcome>("follow_up");
@@ -312,9 +314,16 @@ export function CrmAttendanceConclusionDialog({
 
       <footer className="crm-conclusion-footer">
         <button
-          className="crm-action crm-action-muted"
+          className="crm-action crm-action-muted cursor-pointer"
           disabled={disabled}
-          onClick={() => navigateToSale(cycle)}
+          onClick={() => {
+            if (onStartSale) {
+              onStartSale(cycle);
+              onClose();
+            } else {
+              navigateToSale(cycle);
+            }
+          }}
           type="button"
         >
           <UserRound aria-hidden="true" className="size-4" />

@@ -31,21 +31,25 @@ import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 import { isUiDemoConnection } from "./crmConnectionSelection";
 
 export function CrmConversationWorkspace({
+  hideQueue,
   inbox,
   onCycleChange,
   onScopeChange,
+  onStartSale,
   routeCycleId,
 }: {
+  hideQueue?: boolean;
   inbox: ReturnType<typeof useCrmInbox>;
   onCycleChange: (cycleId: CrmConversationCycleId | null) => void;
   onScopeChange: (scope: CrmScope) => void;
+  onStartSale?: (cycle: CrmConversationCycle) => void;
   routeCycleId: CrmConversationCycleId | null;
 }) {
   const activeSession = inbox.activeSession;
   const shellRef = useRef<HTMLElement>(null);
   const composerRef = useRef<MessageComposerHandle>(null);
   const [mobilePane, setMobilePane] = useState<"chat" | "context" | "list">(
-    () => (routeCycleId ? "chat" : "list"),
+    () => (hideQueue || routeCycleId ? "chat" : "list"),
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -238,103 +242,110 @@ export function CrmConversationWorkspace({
       className="crm-shell"
       data-details-open={detailsOpen ? "true" : "false"}
       data-mobile-pane={mobilePane}
+      data-standalone-chat={hideQueue ? "true" : undefined}
       ref={shellRef}
     >
-      <aside className="crm-list" aria-label="Fila de conversas" tabIndex={-1}>
-        <CrmQueueToolbar
-          assignableMembers={inbox.assignableMembers}
-          availableTags={inbox.availableTags}
-          canAssign={inbox.permissions.canAssign}
-          canReadUnassigned={inbox.permissions.canReadUnassigned}
-          canManageConnections={
-            inbox.permissions.canConnectionSetup ||
-            inbox.permissions.canConnectionPair
-          }
-          canManageTags={inbox.permissions.canTagManage}
-          canStartConversation={inbox.canStartConversation}
-          connectionId={inbox.connectionId}
-          connectionFilterId={inbox.connectionFilterId}
-          connections={inbox.connections}
-          currentUserId={inbox.currentUserId}
-          onConnectionFilterChange={inbox.setConnectionFilterId}
-          onHumanAttendanceFilterChange={inbox.setHumanAttendanceFilter}
-          onManageConnections={() => onScopeChange("connection")}
-          onManageTags={() => onScopeChange("tags")}
-          onOtherAssigneeChange={inbox.setOtherAssigneeId}
-          onQuickFilterChange={inbox.setQuickFilter}
-          onSearch={inbox.setSearch}
-          onSelectionModeChange={(enabled) => {
-            setSelectionMode(enabled);
-            if (!enabled) inbox.clearSelectedSessions();
-          }}
-          onStartConversation={() => setNewConversationOpen(true)}
-          onStatusFilterChange={(nextStatus) => {
-            inbox.setStatusFilter(nextStatus);
-            if (nextStatus === "COMPLETED" && inbox.quickFilter === "fresh") {
-              inbox.setQuickFilter("all");
-            }
-          }}
-          onTagFilterToggle={inbox.toggleTagFilter}
-          onUnreadOnlyChange={inbox.setUnreadOnly}
-          otherAssigneeId={inbox.otherAssigneeId}
-          humanAttendanceFilter={inbox.humanAttendanceFilter}
-          quickFilter={inbox.quickFilter}
-          search={inbox.search}
-          selectedTagIds={inbox.selectedTagIds}
-          selectedCount={selectedCount}
-          selectionMode={showSelectionMode}
-          conversationCycleCounts={inbox.conversationCycleCounts}
-          sessionCount={inbox.conversationCycles.length}
-          statusFilter={inbox.statusFilter}
-          startConversationUnavailableReason={
-            inbox.startConversationUnavailableReason
-          }
-          unreadOnly={inbox.unreadOnly}
+      {!hideQueue && (
+        <aside
+          className="crm-list"
+          aria-label="Fila de conversas"
+          tabIndex={-1}
         >
-          <CrmQueueBulkBar
+          <CrmQueueToolbar
             assignableMembers={inbox.assignableMembers}
             availableTags={inbox.availableTags}
-            canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
-            canClose={inbox.permissions.canClose}
-            canRead={inbox.permissions.canRead}
-            canTag={inbox.permissions.canTagAssign}
-            onApply={inbox.actions.bulkApplySessions}
-            onClear={inbox.clearSelectedSessions}
-            onSelectAll={inbox.selectAllVisibleSessions}
-            selectedCount={inbox.selectedSessions.length}
-            visible={showSelectionMode}
-          />
-        </CrmQueueToolbar>
-        {inbox.isLoading && !inbox.conversationCycles.length ? (
-          <SessionListSkeleton />
-        ) : (
-          <SessionList
-            activeCycleId={inbox.activeCycleId}
-            hasMore={inbox.hasMoreSessions}
-            isLoadingMore={inbox.isLoadingMoreSessions}
-            onLoadMore={() => void inbox.loadMoreSessions()}
-            onRefresh={() =>
-              void inbox.refreshSessions({ preserveLocalOnly: true })
+            canAssign={inbox.permissions.canAssign}
+            canReadUnassigned={inbox.permissions.canReadUnassigned}
+            canManageConnections={
+              inbox.permissions.canConnectionSetup ||
+              inbox.permissions.canConnectionPair
             }
-            onSelect={(cycleId) => {
-              setDetailsOpen(false);
-              onCycleChange(cycleId);
-              focusPane("chat");
+            canManageTags={inbox.permissions.canTagManage}
+            canStartConversation={inbox.canStartConversation}
+            connectionId={inbox.connectionId}
+            connectionFilterId={inbox.connectionFilterId}
+            connections={inbox.connections}
+            currentUserId={inbox.currentUserId}
+            onConnectionFilterChange={inbox.setConnectionFilterId}
+            onHumanAttendanceFilterChange={inbox.setHumanAttendanceFilter}
+            onManageConnections={() => onScopeChange("connection")}
+            onManageTags={() => onScopeChange("tags")}
+            onOtherAssigneeChange={inbox.setOtherAssigneeId}
+            onQuickFilterChange={inbox.setQuickFilter}
+            onSearch={inbox.setSearch}
+            onSelectionModeChange={(enabled) => {
+              setSelectionMode(enabled);
+              if (!enabled) inbox.clearSelectedSessions();
             }}
-            onToggleRead={(cycle) => {
-              if (cycle.unreadCount) {
-                void inbox.actions.markCycleRead(cycle.id);
-              } else {
-                void inbox.actions.markCycleUnread(cycle.id);
+            onStartConversation={() => setNewConversationOpen(true)}
+            onStatusFilterChange={(nextStatus) => {
+              inbox.setStatusFilter(nextStatus);
+              if (nextStatus === "COMPLETED" && inbox.quickFilter === "fresh") {
+                inbox.setQuickFilter("all");
               }
             }}
-            onToggleSelected={inbox.toggleSelectedSession}
-            selectedCycleIds={inbox.selectedCycleIds}
+            onTagFilterToggle={inbox.toggleTagFilter}
+            onUnreadOnlyChange={inbox.setUnreadOnly}
+            otherAssigneeId={inbox.otherAssigneeId}
+            humanAttendanceFilter={inbox.humanAttendanceFilter}
+            quickFilter={inbox.quickFilter}
+            search={inbox.search}
+            selectedTagIds={inbox.selectedTagIds}
+            selectedCount={selectedCount}
             selectionMode={showSelectionMode}
-            conversationCycles={inbox.conversationCycles}
-          />
-        )}
-      </aside>
+            conversationCycleCounts={inbox.conversationCycleCounts}
+            sessionCount={inbox.conversationCycles.length}
+            statusFilter={inbox.statusFilter}
+            startConversationUnavailableReason={
+              inbox.startConversationUnavailableReason
+            }
+            unreadOnly={inbox.unreadOnly}
+          >
+            <CrmQueueBulkBar
+              assignableMembers={inbox.assignableMembers}
+              availableTags={inbox.availableTags}
+              canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
+              canClose={inbox.permissions.canClose}
+              canRead={inbox.permissions.canRead}
+              canTag={inbox.permissions.canTagAssign}
+              onApply={inbox.actions.bulkApplySessions}
+              onClear={inbox.clearSelectedSessions}
+              onSelectAll={inbox.selectAllVisibleSessions}
+              selectedCount={inbox.selectedSessions.length}
+              visible={showSelectionMode}
+            />
+          </CrmQueueToolbar>
+          {inbox.isLoading && !inbox.conversationCycles.length ? (
+            <SessionListSkeleton />
+          ) : (
+            <SessionList
+              activeCycleId={inbox.activeCycleId}
+              hasMore={inbox.hasMoreSessions}
+              isLoadingMore={inbox.isLoadingMoreSessions}
+              onLoadMore={() => void inbox.loadMoreSessions()}
+              onRefresh={() =>
+                void inbox.refreshSessions({ preserveLocalOnly: true })
+              }
+              onSelect={(cycleId) => {
+                setDetailsOpen(false);
+                onCycleChange(cycleId);
+                focusPane("chat");
+              }}
+              onToggleRead={(cycle) => {
+                if (cycle.unreadCount) {
+                  void inbox.actions.markCycleRead(cycle.id);
+                } else {
+                  void inbox.actions.markCycleUnread(cycle.id);
+                }
+              }}
+              onToggleSelected={inbox.toggleSelectedSession}
+              selectedCycleIds={inbox.selectedCycleIds}
+              selectionMode={showSelectionMode}
+              conversationCycles={inbox.conversationCycles}
+            />
+          )}
+        </aside>
+      )}
 
       <section
         className="crm-chat"
@@ -380,10 +391,14 @@ export function CrmConversationWorkspace({
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
               contactPresence={inbox.activeContactPresence}
-              onBack={() => {
-                onCycleChange(null);
-                focusPane("list");
-              }}
+              onBack={
+                hideQueue
+                  ? undefined
+                  : () => {
+                      onCycleChange(null);
+                      focusPane("list");
+                    }
+              }
               onAddTag={async (input) => {
                 const accepted = await inbox.actions.addCycleTag(
                   activeSession.id,
@@ -698,6 +713,7 @@ export function CrmConversationWorkspace({
           onConclude={(input) =>
             inbox.actions.concludeCycle(activeSession.id, input)
           }
+          onStartSale={onStartSale}
           cycle={activeSession}
         />
       ) : null}

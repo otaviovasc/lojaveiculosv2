@@ -39,6 +39,18 @@
   grid-template-columns: minmax(21rem, 25rem) minmax(27rem, 1fr);
 }
 
+.crm-shell[data-standalone-chat="true"] {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+}
+
+.crm-shell[data-standalone-chat="true"] .crm-chat {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
 /* Scoped Top Bar Navigation — glass + single elevation */
 .crm-scope-nav {
   align-items: center;

@@ -1,5 +1,30 @@
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import type { InventoryListingDetail } from "../model/types";
+import type { SaleStartContext } from "../../sales/types";
+
+export function buildSaleContextFromInventoryDetail(
+  detail: InventoryListingDetail,
+  unitId: string | null,
+): SaleStartContext {
+  const listing = detail.listing;
+  const unit =
+    detail.units.find((candidate) => candidate.id === unitId) ??
+    detail.units[0] ??
+    null;
+
+  return {
+    colorName: unit?.colorName
+      ? getVehicleColorLabel(unit.colorName)
+      : undefined,
+    listingId: listing.id,
+    listingTitle: listing.title,
+    plate: unit?.plate ?? listing.plate ?? undefined,
+    priceCents: listing.priceCents ?? undefined,
+    primaryMediaUrl: findPrimaryMediaUrl(detail) ?? undefined,
+    unitId: unit?.id ?? undefined,
+    unitLabel: unit?.stockNumber ?? undefined,
+  };
+}
 
 export function buildSalesRouteFromInventoryDetail(
   detail: InventoryListingDetail,

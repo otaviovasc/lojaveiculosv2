@@ -1,15 +1,33 @@
 import { useState, useEffect } from "react";
 import {
+  AlertCircle,
+  CarFront,
+  Check,
+  Clock,
+  IdCard,
+  UserCheck,
+} from "lucide-react";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { Badge } from "../../../components/ui/badge";
+import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
+import { cn } from "../../../lib/utils";
 import { useRemoteSearch } from "../../../lib/useRemoteSearch";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import type { InventoryListingSummary } from "../model/types";
+import {
+  getInventoryVehicleSubtitle,
+  getInventoryVehicleTitle,
+  getInventoryYearLine,
+} from "../model/listCatalogModel";
 import type { InventoryStoreSettings } from "./InventoryPrintTypes";
+import { MercosulPlateBadge } from "./InventoryListingBadges";
 import { TestDriveDetailsStep } from "./TestDriveDetailsStep";
 import { TestDriveLeadStep } from "./TestDriveLeadStep";
 import { TestDrivePrintPreview } from "./TestDrivePrintPreview";
@@ -160,11 +178,13 @@ export default function TestDriveWizard({
   const handleNextStep = () => {
     if (step === "lead") {
       if (!selectedLead && !isNewLead) {
-        setNotice("Selecione ou crie um lead para continuar.");
+        setNotice(
+          "Selecione um cliente existente ou cadastre um novo para continuar.",
+        );
         return;
       }
-      if (isNewLead && (!driver.name || !driver.phone)) {
-        setNotice("Preencha nome e telefone do novo lead.");
+      if (isNewLead && (!driver.name.trim() || !driver.phone.trim())) {
+        setNotice("Preencha o nome completo e o telefone do novo cliente.");
         return;
       }
       setNotice(null);
@@ -173,8 +193,8 @@ export default function TestDriveWizard({
   };
 
   const handleSubmit = async () => {
-    if (!driver.name || !driver.cpf || !driver.phone || !departureTime) {
-      setNotice("Preencha todos os campos obrigatórios antes de finalizar.");
+    if (!driver.name.trim() || !driver.cpf.trim() || !departureTime.trim()) {
+      setNotice("Preencha o CPF e o horário de saída antes de finalizar.");
       return;
     }
 
@@ -184,7 +204,7 @@ export default function TestDriveWizard({
       const headers = await createInventoryRuntimeHeaders();
       let leadId = selectedLead?.id;
 
-      // Create new lead if chosen
+      // Create new lead in CRM if chosen
       if (isNewLead) {
         const leadRes = await fetch("/api/v1/crm/leads", {
           method: "POST",
@@ -203,8 +223,7 @@ export default function TestDriveWizard({
         }
       }
 
-      // Log or create test drive entry if backend route exists
-      // V2 endpoint could be `/api/v1/crm/leads/:leadId/activities` or `/api/v1/inventory/test-drives`
+      // Log test drive activity in CRM timeline
       if (leadId) {
         await fetch(`/api/v1/crm/leads/${leadId}/activities`, {
           method: "POST",
@@ -228,11 +247,21 @@ export default function TestDriveWizard({
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      setNotice("Não foi possível salvar o registro de test drive.");
+      setNotice("Não foi possível registrar o test drive. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const vehicleTitle = preSelectedVehicle
+    ? getInventoryVehicleTitle(preSelectedVehicle.listing)
+    : "Veículo";
+  const vehicleSubtitle = preSelectedVehicle
+    ? getInventoryVehicleSubtitle(
+        preSelectedVehicle.listing,
+        preSelectedVehicle.listing.catalog,
+      )
+    : "";
 
   return (
     <>
@@ -243,29 +272,147 @@ export default function TestDriveWizard({
           radius="3xl"
           surface="panel"
         >
-          {/* Header */}
+          {/* Dialog Header with Vehicle Anchor */}
           <DialogHeader className="border-b border-line">
-            <div>
-              <DialogTitle className="text-lg font-black text-app-text">
-                Termo de Test Drive
-              </DialogTitle>
-              <DialogDescription className="text-xs font-bold text-muted">
-                Passo{" "}
-                {step === "lead"
-                  ? "1 de 2: Cliente"
-                  : step === "details"
-                    ? "2 de 2: Condutor"
-                    : "Sucesso"}
-              </DialogDescription>
+            <div className="p-5 sm:p-6 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <DialogTitle className="text-base sm:text-lg font-black text-app-text">
+                    Termo de Test Drive
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted">
+                    Emissão de termo de responsabilidade e agendamento de saída
+                  </DialogDescription>
+                </div>
+              </div>
+
+              {/* Vehicle Card Header */}
+              {preSelectedVehicle && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-line/60 bg-app-elevated/40 p-2.5">
+                  <div className="relative size-11 shrink-0 overflow-hidden rounded-lg border border-line/50 bg-panel">
+                    {preSelectedVehicle.primaryMediaUrl ? (
+                      <ImageWithFallback
+                        alt={preSelectedVehicle.listing.title}
+                        className="size-full object-cover"
+                        fallback={
+                          <CarFront className="m-auto size-5 text-muted" />
+                        }
+                        src={preSelectedVehicle.primaryMediaUrl}
+                      />
+                    ) : (
+                      <CarFront className="m-auto size-5 text-muted" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate text-sm font-black text-app-text">
+                      {vehicleTitle}
+                    </h4>
+                    <p className="truncate text-xs font-semibold text-muted">
+                      {vehicleSubtitle}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {preSelectedVehicle.listing.plate ? (
+                      <MercosulPlateBadge
+                        plate={preSelectedVehicle.listing.plate}
+                      />
+                    ) : null}
+                    <Badge variant="secondary" className="font-bold text-xs">
+                      {getInventoryYearLine(preSelectedVehicle.listing)}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogHeader>
 
+          {/* Stepper Progress Bar */}
+          <div className="flex items-center justify-between border-b border-line px-6 py-2.5 bg-panel/30">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex size-5 items-center justify-center rounded-full text-xs font-black transition-colors",
+                  step === "lead"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-emerald-500/20 text-emerald-500",
+                )}
+              >
+                {step === "details" || step === "success" ? (
+                  <Check className="size-3" />
+                ) : (
+                  <UserCheck className="size-3" />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-bold",
+                  step === "lead" ? "text-app-text" : "text-muted",
+                )}
+              >
+                1. Cliente
+              </span>
+            </div>
+
+            <div className="h-px flex-1 max-w-16 bg-line/60 mx-2" />
+
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex size-5 items-center justify-center rounded-full text-xs font-black transition-colors",
+                  step === "details"
+                    ? "bg-accent text-accent-foreground"
+                    : step === "success"
+                      ? "bg-emerald-500/20 text-emerald-500"
+                      : "bg-line/40 text-muted",
+                )}
+              >
+                {step === "success" ? (
+                  <Check className="size-3" />
+                ) : (
+                  <IdCard className="size-3" />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-bold",
+                  step === "details" ? "text-app-text" : "text-muted",
+                )}
+              >
+                2. Condutor & Horários
+              </span>
+            </div>
+
+            <div className="h-px flex-1 max-w-16 bg-line/60 mx-2" />
+
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex size-5 items-center justify-center rounded-full text-xs font-black transition-colors",
+                  step === "success"
+                    ? "bg-emerald-500 text-white"
+                    : "bg-line/40 text-muted",
+                )}
+              >
+                <Clock className="size-3" />
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-bold",
+                  step === "success" ? "text-app-text" : "text-muted",
+                )}
+              >
+                3. Conclusão
+              </span>
+            </div>
+          </div>
+
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
             {notice ? (
-              <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
-                {notice}
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{notice}</AlertDescription>
+              </Alert>
             ) : null}
 
             {step === "lead" && (
@@ -297,9 +444,16 @@ export default function TestDriveWizard({
               />
             )}
 
-            {step === "success" && <TestDriveSuccessStep />}
+            {step === "success" && (
+              <TestDriveSuccessStep
+                departureTime={departureTime}
+                driver={driver}
+                preSelectedVehicle={preSelectedVehicle}
+              />
+            )}
           </div>
 
+          {/* Footer */}
           <TestDriveWizardFooter
             onBack={() => setStep("lead")}
             onClose={onClose}

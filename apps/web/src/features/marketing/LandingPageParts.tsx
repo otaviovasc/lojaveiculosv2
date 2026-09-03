@@ -6,16 +6,15 @@ import { LandingAuthActions } from "./LandingAuthActions";
 import { FeatureSection } from "./LandingFeatureSection";
 import {
   MemphisCarIcon,
-  MemphisCheckered,
   MemphisConcentric,
-  MemphisCrosshair,
   MemphisDotMatrix,
-  MemphisGaugeIcon,
   MemphisGearIcon,
   MemphisHatch,
   MemphisPlusGrid,
+  MemphisSpeedCheckered,
   MemphisSquiggle,
   MemphisStarburst,
+  MemphisTachometerArc,
   MemphisTurboIcon,
   MemphisZigZag,
 } from "./LandingMemphisGraphics";
@@ -258,62 +257,93 @@ export function TestimonialsSection() {
 
 export function FinalCta() {
   return (
-    <section className="relative bg-gradient-to-b from-red-600 to-red-700 px-5 pt-4 pb-28 text-white sm:px-8 sm:pb-36 lg:px-10 overflow-hidden -mt-1">
+    <section className="relative bg-gradient-to-br from-red-600 via-red-600 to-red-700 px-5 pt-14 pb-28 text-white sm:px-8 sm:pt-20 sm:pb-36 lg:px-10 overflow-hidden -mt-1">
       {/* Branded LV Logo Outline Pattern overlay on red */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-logo-pattern opacity-10 select-none mix-blend-overlay"
       />
 
-      {/* Automotive & Gearhead Memphis Vectors from Lucide on Solid Red (NO card background) */}
+      {/* Subtle Ambient Background Watermarks */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 select-none overflow-hidden"
       >
-        {/* Top Left: Car Icon & Plus Grid */}
-        <div className="absolute left-8 top-8 opacity-30">
-          <MemphisCarIcon className="size-10 text-white" />
-          <MemphisPlusGrid cols={4} rows={2} className="mt-3 text-white/40" />
-        </div>
+        <span className="absolute top-4 right-6 font-mono text-xs text-white/30 tracking-widest hidden sm:block">
+          + + +
+        </span>
+        <span className="absolute bottom-6 left-6 font-mono text-xs text-white/30 tracking-widest hidden sm:block">
+          + + +
+        </span>
 
-        {/* Top Right: Gear Icon & Concentric */}
-        <div className="absolute right-10 top-6 opacity-30">
-          <MemphisGearIcon className="size-10 text-white" />
-          <MemphisConcentric className="mt-2 size-36 text-white/25" />
-        </div>
+        {/* Ambient watermark for smaller viewports (< lg) */}
+        <MemphisTachometerArc className="absolute -top-10 -left-10 size-48 text-white/10 lg:hidden" />
+        <MemphisConcentric className="absolute -bottom-14 -right-14 size-56 text-white/10 lg:hidden" />
+        <MemphisSpeedCheckered
+          cols={6}
+          className="absolute bottom-4 left-4 text-white/15 lg:hidden"
+        />
+      </div>
 
-        {/* Bottom Left: Gauge & Checkered Track */}
-        <div className="absolute left-10 bottom-8 opacity-35">
-          <MemphisGaugeIcon className="size-10 text-white" />
-          <MemphisCheckered className="mt-2 text-white/40" />
-        </div>
-
-        {/* Bottom Right: Turbo Flame & Starburst */}
-        <div className="absolute right-12 bottom-10 opacity-35">
-          <MemphisTurboIcon className="size-10 text-white" />
-          <MemphisStarburst className="mt-2 size-10 text-white/60" />
+      {/* Left Flank Memphis Composition (Clean Automotive Vectors - Desktop) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-6 xl:left-14 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-6 select-none z-0"
+      >
+        <MemphisTachometerArc className="size-28 text-white/35 transition-transform duration-700 hover:scale-105" />
+        <MemphisSpeedCheckered
+          cols={8}
+          className="text-white opacity-40 -rotate-6"
+        />
+        <div className="flex items-center gap-3">
+          <MemphisCarIcon className="size-8 text-white/80 drop-shadow" />
+          <MemphisSquiggle className="w-20 h-4 text-white/60 -rotate-3" />
         </div>
       </div>
 
-      <div className="relative mx-auto max-w-4xl text-center z-10">
+      {/* Right Flank Memphis Composition (Clean Engineering Vectors - Desktop) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-6 xl:right-14 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-6 select-none z-0"
+      >
+        <div className="relative flex size-28 items-center justify-center">
+          <MemphisConcentric className="size-28 text-white/25" />
+          <MemphisGearIcon className="absolute size-9 text-white/70 animate-[spin_20s_linear_infinite]" />
+        </div>
+        <MemphisHatch className="w-20 h-10 text-white/25 rounded-sm border border-white/20 rotate-3" />
+        <div className="flex items-center gap-3">
+          <MemphisStarburst className="size-8 text-white/85 drop-shadow animate-pulse" />
+          <MemphisTurboIcon className="size-8 text-white/80" />
+        </div>
+      </div>
+
+      {/* Central CTA Content */}
+      <div className="relative mx-auto max-w-3xl text-center z-10">
         <AnimatedContent>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/15 px-3.5 py-1 text-xs font-black uppercase tracking-[0.28em] text-white backdrop-blur-sm">
-            <span>{landingFinalCta.badge}</span>
-          </div>
-          <h2 className="mt-5 font-display text-3xl font-extrabold uppercase tracking-tight text-white sm:text-5xl lg:text-6xl drop-shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-white/90">
+            {landingFinalCta.badge}
+          </p>
+
+          <h2 className="mt-4 font-display text-3xl font-extrabold uppercase tracking-tight text-white sm:text-5xl lg:text-6xl drop-shadow-md text-balance">
             {landingFinalCta.title}
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base text-white/95 sm:text-lg">
+
+          <p className="mx-auto mt-6 max-w-xl text-base text-white/95 sm:text-lg leading-relaxed text-pretty">
             {landingFinalCta.text}
           </p>
+
           <div className="mt-10 flex items-center justify-center">
             <Link
               to="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-md bg-black px-8 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-neutral-900 active:translate-y-px"
+              className="group inline-flex h-14 items-center justify-center gap-3 rounded-lg bg-black px-10 text-xs sm:text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-neutral-900 hover:scale-105 active:scale-[0.98] border border-white/15"
             >
-              Criar minha loja
+              <span>Criar minha loja</span>
+              <span className="font-mono text-base transition-transform duration-200 group-hover:translate-x-1.5">
+                →
+              </span>
             </Link>
           </div>
+
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs font-bold text-white/95">
             {landingFinalCta.points.map((point) => (
               <span className="inline-flex items-center gap-2" key={point}>

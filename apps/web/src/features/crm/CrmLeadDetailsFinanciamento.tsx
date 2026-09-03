@@ -22,12 +22,14 @@ type Props = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
+  onOpenSimulationModal?: () => void;
 };
 
 export function CrmLeadDetailsFinanciamento({
   lead,
   onCreateActivity,
   vehicleOptions,
+  onOpenSimulationModal,
 }: Props) {
   const vehiclePriceCents =
     getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
@@ -98,7 +100,10 @@ export function CrmLeadDetailsFinanciamento({
 
   return (
     <div className="flex flex-col gap-6">
-      <CrmCredereOfficialPanel lead={lead} />
+      <CrmCredereOfficialPanel
+        lead={lead}
+        onOpenSimulationModal={onOpenSimulationModal}
+      />
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-black text-app-text">
           Estimativa interna (Tabela Price)
