@@ -116,19 +116,6 @@ export function useCrmInbox(
   const storeScopeKey = activeStore?.storeId ?? null;
   const previousStoreIdRef = useRef(storeScopeKey);
   const hasCurrentScopeAccess = permissions.canList && permissions.canRead;
-  const queueAccess = useCrmQueueAccess({
-    canAssign: permissions.canAssign,
-    canReadUnassigned: permissions.canReadUnassigned,
-    currentUserId,
-    conversationCycles,
-  });
-  const {
-    otherAssigneeId,
-    quickFilter,
-    setOtherAssigneeId,
-    setQuickFilter,
-    visibleSessions,
-  } = queueAccess;
   const assignmentState = useCrmAssignableMembers(accountSession);
   const listVehicles = useCrmVehicleInventory();
   const activeSession = useMemo(
@@ -261,6 +248,20 @@ export function useCrmInbox(
     initialCycleId && activeSession?.id === initialCycleId
       ? operationalConnectionId
       : queueConnectionId;
+  const queueAccess = useCrmQueueAccess({
+    canAssign: permissions.canAssign,
+    canReadUnassigned: permissions.canReadUnassigned,
+    currentUserId,
+    conversationCycles,
+    queueConnectionId: sessionListConnectionId,
+  });
+  const {
+    otherAssigneeId,
+    quickFilter,
+    setOtherAssigneeId,
+    setQuickFilter,
+    visibleSessions,
+  } = queueAccess;
   const conversationStartCapability = useMemo(
     () => readConversationStartCapability(activeConnection),
     [activeConnection],

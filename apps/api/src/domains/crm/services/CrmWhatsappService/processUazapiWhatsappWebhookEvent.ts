@@ -91,6 +91,7 @@ export async function processUazapiWhatsappWebhookEvent<
       payload: {
         retention: "minimized_after_processing",
         webhookType: type,
+        ...(result.status === "ignored" ? { reason: result.reason } : {}),
       },
       processingToken,
       status: result.status === "ignored" ? "ignored" : "processed",
