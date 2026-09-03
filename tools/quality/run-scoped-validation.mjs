@@ -29,10 +29,13 @@ const forceFull =
   process.argv.includes("--full") || process.env.VALIDATION_SCOPE === "full";
 
 const FRONTEND_ONLY_PREFIXES = ["apps/web/", "packages/design-system/"];
+const FRONTEND_WEB_BUNDLE_PREFIXES = ["tools/quality/web-bundle"];
 const FRONTEND_WEB_BUNDLE_FILES = new Set([
   "tools/quality/web-bundle-policy.json",
   "tools/quality/web-bundle-artifact-rules.mjs",
+  "tools/quality/web-bundle-artifact-rules.test.mjs",
   "tools/quality/web-bundle-config-rules.mjs",
+  "tools/quality/web-bundle-config-rules.test.mjs",
   "tools/quality/check-web-bundle.mjs",
   "tools/quality/verify-web-bundle-artifacts.mjs",
   "tools/quality/run-scoped-validation.mjs",
@@ -45,6 +48,7 @@ const scoped =
   files.every(
     (file) =>
       FRONTEND_ONLY_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+      FRONTEND_WEB_BUNDLE_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
       FRONTEND_WEB_BUNDLE_FILES.has(file),
   );
 
