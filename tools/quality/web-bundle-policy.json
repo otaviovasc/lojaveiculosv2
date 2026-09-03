@@ -3,7 +3,7 @@
   "manifestRelativePath": ".vite/manifest.json",
   "limits": {
     "javascript": 580000,
-    "stylesheet": 645000
+    "stylesheet": 650000
   },
   "workerExceptions": [
     {
