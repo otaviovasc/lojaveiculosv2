@@ -13,11 +13,18 @@ export function useCrmQueueAccess({
   canReadUnassigned = false,
   currentUserId,
   conversationCycles,
+  queueConnectionId = null,
 }: {
   canAssign: boolean;
   canReadUnassigned?: boolean;
   currentUserId: string | null;
   conversationCycles: CrmConversationCycle[];
+  // Connection scope of the current queue query. Cycles kept in local state
+  // from other connections (preserved merges, realtime snapshots) must not
+  // leak into the sidebar when the query is connection-scoped. Cycles without
+  // a hydrated connection are kept because we cannot prove they belong
+  // elsewhere.
+  queueConnectionId?: string | null;
 }) {
   const [requestedFilter, setRequestedFilter] =
     useState<CrmConversationCycleFilter>("fresh");
@@ -32,16 +39,27 @@ export function useCrmQueueAccess({
     canBrowseAll,
   );
   const otherAssigneeId = canBrowseAll ? requestedAssigneeId : null;
-  const visibleSessions = useMemo(
-    () =>
-      filterSessionsForAssignmentQueue(
-        conversationCycles,
-        quickFilter,
-        currentUserId,
-        otherAssigneeId,
-      ),
-    [currentUserId, otherAssigneeId, quickFilter, conversationCycles],
-  );
+  const visibleSessions = useMemo(() => {
+    const scopedCycles = queueConnectionId
+      ? conversationCycles.filter(
+          (cycle) =>
+            !cycle.connection?.id ||
+            String(cycle.connection.id) === queueConnectionId,
+        )
+      : conversationCycles;
+    return filterSessionsForAssignmentQueue(
+      scopedCycles,
+      quickFilter,
+      currentUserId,
+      otherAssigneeId,
+    );
+  }, [
+    currentUserId,
+    otherAssigneeId,
+    quickFilter,
+    conversationCycles,
+    queueConnectionId,
+  ]);
   const setQuickFilter = useCallback(
     (filter: CrmConversationCycleFilter) => {
       const nextFilter = coerceConversationCycleFilter(filter, canBrowseAll);

@@ -2,6 +2,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
@@ -117,6 +118,36 @@ describe("CRM WhatsApp uazapi webhook route", () => {
     expect(duplicate.status).toBe(200);
     await expect(duplicate.json()).resolves.toMatchObject({
       status: "duplicate",
+    });
+  });
+
+  it("persists the reason when an envelope is ignored", async () => {
+    const webhookEvents = createMemoryCrmWebhookEventRepository();
+    const { app } = createUazapiWebhookTestApp({
+      crmWebhookEventRepository: webhookEvents,
+    });
+
+    const response = await postUazapiWebhook(app, {
+      event: "message",
+      instance: "instance-uazapi-1",
+      data: { connected: true },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      reason: "not_processable",
+      status: "ignored",
+    });
+    const [event] = await webhookEvents.list({
+      limit: 1,
+      status: "ignored",
+      storeId,
+      tenantId,
+    });
+    expect(event?.payload).toEqual({
+      reason: "not_processable",
+      retention: "minimized_after_processing",
+      webhookType: "received",
     });
   });
 

@@ -958,6 +958,61 @@ describe("useCrmInbox realtime queue integration", () => {
     );
   });
 
+  it("hides preserved cycles from other connections when a connection filter is selected", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({ displayName: "Secundária", id: "connection-2" }),
+    ];
+    const cycleConn1 = createSession({ id: "cycle-conn-1" });
+    const cycleConn2 = createSession({
+      connection: {
+        displayName: "Secundária",
+        id: "connection-2",
+        provider: "zapi",
+        status: "active",
+      },
+      id: "cycle-conn-2",
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (query: { connectionId?: string }) =>
+        query.connectionId === "connection-2"
+          ? [cycleConn2]
+          : [cycleConn1, cycleConn2],
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    expect(
+      result.current.conversationCycles.map((cycle) => cycle.id).sort(),
+    ).toEqual(["cycle-conn-1", "cycle-conn-2"]);
+
+    act(() => result.current.setConnectionFilterId("connection-2"));
+    await act(async () => result.current.refreshSessions());
+
+    // The scoped refresh preserves locally-kept cycles from connection-1 in
+    // state, but the sidebar must only show the selected connection.
+    expect(result.current.conversationCycles.map((cycle) => cycle.id)).toEqual([
+      "cycle-conn-2",
+    ]);
+
+    act(() => result.current.setConnectionFilterId(null));
+    await act(async () => result.current.refreshSessions());
+
+    expect(
+      result.current.conversationCycles.map((cycle) => cycle.id).sort(),
+    ).toEqual(["cycle-conn-1", "cycle-conn-2"]);
+  });
+
   it("keeps global queue filters for read_unassigned actors without assign", async () => {
     const api = {
       listConversationCycleCounts: vi.fn(
