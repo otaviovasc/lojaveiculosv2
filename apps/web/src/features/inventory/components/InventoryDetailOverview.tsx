@@ -78,7 +78,7 @@ export function InventoryDetailOverview({
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
       {/* Vehicle Hero Card */}
-      <div className="overflow-hidden rounded-2xl border border-line bg-panel shadow-sm">
+      <div className="vehicle-overview-card overflow-hidden rounded-2xl border border-line bg-panel shadow-sm">
         <div className="grid gap-0 md:grid-cols-[4fr_3fr] h-full">
           {/* Photo Cover with Contrast Scrim */}
           <div className="relative min-h-[280px] bg-app-elevated flex items-center justify-center overflow-hidden">
@@ -129,7 +129,7 @@ export function InventoryDetailOverview({
           </div>
 
           {/* Pricing and Key Specs Panel */}
-          <div className="grid content-between gap-4 border-t border-line bg-panel p-5 md:border-l md:border-t-0">
+          <div className="vehicle-overview-pricing-panel grid content-between gap-4 border-t border-line bg-panel p-5 md:border-l md:border-t-0">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-muted">
@@ -211,7 +211,7 @@ export function InventoryDetailOverview({
       </div>
 
       {/* Readiness / Quality Checklist Card */}
-      <div className="rounded-2xl border border-line bg-panel p-5 shadow-sm flex flex-col justify-between">
+      <div className="vehicle-readiness-card rounded-2xl border border-line bg-panel p-5 shadow-sm flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -255,7 +255,7 @@ function OverviewMetric({
   value: number | string;
 }) {
   return (
-    <div className="rounded-xl border border-line/60 bg-app-elevated/40 p-2.5 transition-colors hover:border-line-strong">
+    <div className="vehicle-metric-chip rounded-xl border border-line/60 bg-app-elevated/40 p-2.5 transition-colors hover:border-line-strong">
       <div className="flex items-center gap-1.5 text-muted">
         {icon}
         <span className="text-xs font-bold uppercase tracking-wider">

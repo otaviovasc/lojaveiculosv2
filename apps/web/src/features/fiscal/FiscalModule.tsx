@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Clock,
   FilePlus2,
   FileText,
@@ -166,18 +167,35 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
       />
 
       {status.kind === "error" && overview ? (
-        <FeatureAlert className="fiscal-shell-notice">
-          {status.message}
+        <FeatureAlert
+          className="fiscal-shell-notice"
+          icon={<AlertTriangle aria-hidden="true" className="size-5" />}
+          title={
+            <span className="fiscal-notice-header">
+              <span className="fiscal-notice-title">
+                Erro de comunicação fiscal
+              </span>
+              <span className="fiscal-notice-badge fiscal-notice-badge--danger">
+                Aviso
+              </span>
+            </span>
+          }
+          tone="danger"
+        >
+          <div className="fiscal-notice-text-wrap">
+            <p className="fiscal-notice-body">{status.message}</p>
+          </div>
         </FeatureAlert>
       ) : null}
 
       {overview && connection ? (
         <>
           {!overview.provider.configured ? (
-            <FiscalProviderPanel overview={overview} />
-          ) : null}
-
-          {!emissionReady ? (
+            <FiscalProviderPanel
+              onOpenConnection={() => setTab("conexao")}
+              overview={overview}
+            />
+          ) : !emissionReady ? (
             <FeatureAlert
               action={
                 <FeatureActionButton
@@ -188,11 +206,26 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                 />
               }
               className="fiscal-shell-notice"
+              icon={<PlugZap aria-hidden="true" className="size-5" />}
+              title={
+                <span className="fiscal-notice-header">
+                  <span className="fiscal-notice-title">
+                    Emissão fiscal bloqueada
+                  </span>
+                  <span className="fiscal-notice-badge fiscal-notice-badge--warning">
+                    Configuração pendente
+                  </span>
+                </span>
+              }
               tone="warning"
             >
-              A emissão está bloqueada porque a conexão fiscal ainda não está
-              pronta. Conclua a configuração da empresa, do certificado e dos
-              padrões fiscais.
+              <div className="fiscal-notice-text-wrap">
+                <p className="fiscal-notice-body">
+                  A emissão está bloqueada porque a conexão fiscal ainda não
+                  está pronta. Conclua a configuração da empresa, do certificado
+                  e dos padrões fiscais.
+                </p>
+              </div>
             </FeatureAlert>
           ) : null}
 

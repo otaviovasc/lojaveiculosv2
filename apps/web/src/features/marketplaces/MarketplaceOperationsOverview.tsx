@@ -1,5 +1,6 @@
 import {
   Activity,
+  ArrowUpRight,
   BadgeCheck,
   CarFront,
   CircleX,
@@ -75,12 +76,18 @@ export function MarketplaceOperationsOverview({
           value={failedJobs}
         />
       </FeatureKpiStrip>
+
       <aside className="marketplace-scope-note">
         <span className="marketplace-scope-note__icon">
           <CarFront aria-hidden="true" className="size-5" />
         </span>
-        <div>
-          <strong>Visão por veículo</strong>
+        <div className="marketplace-scope-note__content">
+          <div className="marketplace-scope-note__header">
+            <strong>Visão por veículo</strong>
+            <span className="marketplace-scope-note__badge">
+              Inventário sincronizado
+            </span>
+          </div>
           <p>
             Ajustes de um anúncio ficam no detalhe do veículo; esta central
             cuida dos lotes da loja.
@@ -89,6 +96,14 @@ export function MarketplaceOperationsOverview({
               : " Gere uma prévia para medir a cobertura."}
           </p>
         </div>
+        <a
+          className="marketplace-scope-note__link"
+          href="#/inventory"
+          title="Abrir o inventário de veículos"
+        >
+          <span>Abrir inventário</span>
+          <ArrowUpRight aria-hidden="true" className="size-3.5" />
+        </a>
       </aside>
     </section>
   );

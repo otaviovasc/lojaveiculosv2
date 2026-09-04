@@ -365,6 +365,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <section aria-label="Conexões da loja" className="marketplace-grid">
             {orderedProviders(overview).map((provider, index) => (
               <AnimatedContent
+                className="h-full"
                 delay={index * 0.06}
                 distance={18}
                 duration={0.38}

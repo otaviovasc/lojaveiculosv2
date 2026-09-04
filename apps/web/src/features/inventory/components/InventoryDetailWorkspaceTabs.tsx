@@ -34,7 +34,7 @@ export function InventoryDetailWorkspaceTabs({
     <div className="custom-scrollbar -mx-1 select-none overflow-x-auto px-1">
       <nav
         aria-label="Abas do veículo"
-        className="flex min-w-max items-center gap-1 rounded-2xl border border-line bg-app-elevated/35 p-1.5 md:min-w-0"
+        className="vehicle-detail-tabs flex min-w-max items-center gap-1 rounded-2xl border border-line bg-app-elevated/35 p-1.5 md:min-w-0"
       >
         {inventoryDetailTabs
           .filter((tab) => showVitrine || tab.id !== "vitrine")
@@ -45,9 +45,9 @@ export function InventoryDetailWorkspaceTabs({
               <button
                 aria-pressed={active}
                 className={cx(
-                  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-black transition-all cursor-pointer md:flex-1",
+                  "vehicle-detail-tab inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-black transition-all cursor-pointer md:flex-1",
                   active
-                    ? "border border-line bg-panel text-app-text"
+                    ? "vehicle-detail-tab-active border border-line bg-panel text-app-text"
                     : "border border-transparent text-muted hover:bg-panel/50 hover:text-app-text",
                 )}
                 key={tab.id}
@@ -73,7 +73,7 @@ export function InventoryDetailEmptyTab({ activeTab }: { activeTab: TabId }) {
   if (inventoryDetailTabIds.includes(activeTab)) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">
+    <div className="vehicle-detail-card flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">
       <Layers className="size-10 text-muted/50 mb-3" />
       <h4 className="text-sm font-black text-app-text capitalize">
         Painel de {activeTab}

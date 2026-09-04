@@ -26,7 +26,7 @@ export function FinanceiroCashFlowSection({
   );
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-5">
+    <div className="vehicle-detail-card bg-panel border border-line rounded-2xl p-5 flex flex-col gap-5">
       <div className="flex items-center justify-between border-b border-line pb-3.5">
         <h3 className="text-sm font-black uppercase tracking-wider">
           Fluxo de Caixa

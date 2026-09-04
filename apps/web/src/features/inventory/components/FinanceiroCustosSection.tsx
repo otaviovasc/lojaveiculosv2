@@ -67,7 +67,7 @@ export function FinanceiroCustosSection({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+    <div className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
       <div className="flex flex-col justify-between gap-4 border-b border-line pb-4 md:flex-row md:items-center">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-black uppercase tracking-wider">

@@ -134,7 +134,7 @@ export function InventoryDetailHistoricoTab({
 
   return (
     <div className="flex w-full max-w-none flex-col gap-6 text-app-text">
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="flex flex-col justify-between gap-3 border-b border-line pb-3 sm:flex-row sm:items-center">
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
             <Sparkles className="size-4 shrink-0 text-accent" />
@@ -218,7 +218,7 @@ export function InventoryDetailHistoricoTab({
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="border-b border-line pb-3">
           <h3 className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wider">
             <Clock className="size-4 shrink-0 text-muted" />
@@ -242,7 +242,7 @@ export function InventoryDetailHistoricoTab({
         </ol>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="flex items-center gap-2 border-b border-line pb-3">
           <Database className="size-4 shrink-0 text-muted" />
           <h3 className="text-sm font-black uppercase tracking-wider">

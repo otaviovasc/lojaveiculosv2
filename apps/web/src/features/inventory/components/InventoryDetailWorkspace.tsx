@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { FeaturePageShell } from "../../../components/ui/FeatureLayout";
+import "../../../styles/vehicleDetail.css";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
@@ -167,7 +168,10 @@ export function InventoryDetailWorkspace({
   const margin = calculateMargin(listing.priceCents, acquisitionCost);
 
   return (
-    <FeaturePageShell mainClassName="text-app-text">
+    <FeaturePageShell
+      className="vehicle-detail-shell"
+      mainClassName="text-app-text"
+    >
       {/* Toast Notification */}
       <AnimatePresence>
         {notification && (

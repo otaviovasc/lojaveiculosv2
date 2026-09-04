@@ -1,5 +1,4 @@
 import { RefreshCcw, RotateCcw } from "lucide-react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
@@ -23,10 +22,13 @@ export function MarketplaceJobList({
   overview: MarketplaceOverview;
 }) {
   return (
-    <FeatureSection
-      description="Resultados dos últimos lotes solicitados para a loja atual."
-      title="Atividade recente"
-    >
+    <section aria-label="Atividade recente" className="marketplace-activity">
+      <div className="marketplace-activity__header">
+        <h3 className="marketplace-activity__title">Atividade recente</h3>
+        <p className="marketplace-activity__description">
+          Resultados dos últimos lotes solicitados para a loja atual.
+        </p>
+      </div>
       <div className="marketplace-job-list">
         {overview.jobs.length ? (
           overview.jobs.map((job) => (
@@ -35,45 +37,60 @@ export function MarketplaceJobList({
               data-status={job.status}
               key={job.id}
             >
-              <div className="marketplace-job__provider">
-                <strong>{providerLabels[job.provider]}</strong>
-                <FeatureStatusBadge size="dense" tone={jobTone(job.status)}>
-                  {getMarketplaceJobStatusLabel(job.status)}
-                </FeatureStatusBadge>
-              </div>
-              <div className="marketplace-job__description">
-                <span>{getMarketplaceJobTypeLabel(job.jobType)}</span>
-                <small>{jobVehicleLabel(job)}</small>
-              </div>
-              {job.status === "submitted" ? (
-                <p className="marketplace-job__message">
-                  {jobStatusDetail(job)}
-                </p>
-              ) : null}
-              {job.errorMessage ? <JobFailureMessage job={job} /> : null}
-              {job.status === "failed" ? (
-                <FeatureRowAction
-                  ariaLabel={`Tentar novamente no ${providerLabels[job.provider]}`}
-                  icon={RotateCcw}
-                  onClick={() => void onRetry(job)}
-                  tooltip="Tentar novamente"
+              <div className="marketplace-job__indicator">
+                <span
+                  className={`marketplace-job__dot tone-${jobTone(job.status)}`}
                 />
-              ) : null}
-              {job.status === "submitted" ? (
-                <FeatureRowAction
-                  ariaLabel={`Consultar confirmação no ${providerLabels[job.provider]}`}
-                  icon={RefreshCcw}
-                  onClick={() => void onReconcile(job)}
-                  tooltip="Consultar canal"
-                />
-              ) : null}
+              </div>
+              <div className="marketplace-job__main">
+                <div className="marketplace-job__topline">
+                  <div className="marketplace-job__provider">
+                    <strong>{providerLabels[job.provider]}</strong>
+                    <FeatureStatusBadge size="dense" tone={jobTone(job.status)}>
+                      {getMarketplaceJobStatusLabel(job.status)}
+                    </FeatureStatusBadge>
+                  </div>
+                  <span className="marketplace-job__scope">
+                    {jobVehicleLabel(job)}
+                  </span>
+                </div>
+                <div className="marketplace-job__description">
+                  <span>{getMarketplaceJobTypeLabel(job.jobType)}</span>
+                </div>
+                {job.status === "submitted" ? (
+                  <p className="marketplace-job__message is-info">
+                    {jobStatusDetail(job)}
+                  </p>
+                ) : null}
+                {job.errorMessage ? <JobFailureMessage job={job} /> : null}
+              </div>
+              <div className="marketplace-job__actions">
+                {job.status === "failed" ? (
+                  <FeatureRowAction
+                    ariaLabel={`Tentar novamente no ${providerLabels[job.provider]}`}
+                    icon={RotateCcw}
+                    onClick={() => void onRetry(job)}
+                    tooltip="Tentar novamente"
+                  />
+                ) : null}
+                {job.status === "submitted" ? (
+                  <FeatureRowAction
+                    ariaLabel={`Consultar confirmação no ${providerLabels[job.provider]}`}
+                    icon={RefreshCcw}
+                    onClick={() => void onReconcile(job)}
+                    tooltip="Consultar canal"
+                  />
+                ) : null}
+              </div>
             </article>
           ))
         ) : (
-          <p>Nenhuma sincronização de estoque foi solicitada.</p>
+          <div className="marketplace-job-empty">
+            <p>Nenhuma sincronização de estoque foi solicitada.</p>
+          </div>
         )}
       </div>
-    </FeatureSection>
+    </section>
   );
 }
 
