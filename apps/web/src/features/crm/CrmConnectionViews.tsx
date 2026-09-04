@@ -47,7 +47,7 @@ export function ConnectionSetupFlow({
         <div className="grid gap-2" role="alert">
           <p className="crm-connection-error">{localError}</p>
           <a
-            className="crm-connection-save"
+            className="crm-action crm-action-primary crm-connection-save"
             href={crmSupportUrl(
               readConnectionSetupSupportCode(props.connection),
             )}

@@ -5,7 +5,7 @@
 .crm-zapi-guided-card {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl, 1rem);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   display: grid;
   gap: 1.5rem;
@@ -15,25 +15,95 @@
   width: 100%;
 }
 
-.crm-zapi-progress {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: 0.875rem;
+/* Connection Dialog overrides */
+.crm-connection-dialog .crm-zapi-guided-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 1.25rem;
+  max-width: none;
+  padding: 0;
+}
+
+.crm-connection-dialog .crm-zapi-guided-card > header {
+  align-items: center;
   display: grid;
-  gap: 0;
-  grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.5fr);
-  overflow: hidden;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding-bottom: 0.25rem;
+}
+
+.crm-connection-dialog .crm-zapi-guided-card > header > span {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--color-crm-active-emerald);
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"]
+  .crm-connection-dialog
+  .crm-zapi-guided-card
+  > header
+  > span,
+.dark .crm-connection-dialog .crm-zapi-guided-card > header > span {
+  color: var(--color-crm-active-emerald);
+}
+
+.crm-connection-dialog .crm-zapi-guided-card > header > span svg {
+  height: 1.85rem;
+  width: 1.85rem;
+}
+
+.crm-connection-dialog .crm-zapi-guided-card > header h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.crm-connection-dialog .crm-zapi-guided-card > header p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  margin: 0.25rem 0 0;
+  line-height: 1.45;
+}
+
+/* Stepper Progress Bar */
+.crm-zapi-progress {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  overflow: visible;
 }
 
 .crm-zapi-progress-summary {
-  align-content: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.875rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   color: #059669;
   display: grid;
   font-size: var(--font-size-xs);
-  font-weight: 750;
+  font-weight: 800;
   line-height: 1.4;
   margin: 0;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 }
 
 :root[data-theme="dark"] .crm-zapi-progress-summary,
@@ -42,26 +112,40 @@
 }
 
 .crm-zapi-progress ol {
-  border-left: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   list-style: none;
   margin: 0;
+  overflow: hidden;
   padding: 0;
 }
 
 .crm-zapi-progress li {
+  align-content: center;
   align-items: center;
   color: var(--color-muted);
   display: grid;
-  gap: 0.65rem;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  min-height: 2.75rem;
-  padding: 0.5rem 0.875rem;
-  text-align: left;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  min-height: 4.5rem;
+  padding: 0.65rem 0.5rem;
+  text-align: center;
+  transition: all 0.18s ease;
 }
 
 .crm-zapi-progress li + li {
-  border-top: 1px solid var(--color-line);
+  border-left: 1px solid var(--color-line);
+  border-top: 0;
 }
 
 .crm-zapi-progress li > span {
@@ -69,10 +153,11 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 9999px;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent);
   display: inline-flex;
-  height: 1.5rem;
+  height: 1.65rem;
   justify-content: center;
-  width: 1.5rem;
+  width: 1.65rem;
 }
 
 .crm-zapi-progress li > span svg {
@@ -93,6 +178,7 @@
 
 .crm-zapi-progress li strong {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .crm-zapi-progress li[data-state="complete"] {
@@ -106,20 +192,26 @@
 }
 
 .crm-zapi-progress li[data-state="current"] {
-  background: color-mix(in srgb, #10b981 8%, var(--color-app));
+  background: color-mix(in srgb, #10b981 12%, transparent);
   color: var(--color-text);
 }
 
 .crm-zapi-progress li[data-state="current"] > span {
+  background: var(--color-panel);
   border-color: #10b981;
-  color: #10b981;
+  color: var(--color-crm-active-emerald);
+}
+
+:root[data-theme="dark"] .crm-zapi-progress li[data-state="current"] > span,
+.dark .crm-zapi-progress li[data-state="current"] > span {
+  color: var(--color-crm-active-emerald);
 }
 
 .crm-zapi-stage,
 .crm-zapi-credentials,
 .crm-zapi-pairing {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.15rem;
 }
 
 /* High-contrast QR Container */
@@ -162,6 +254,11 @@
   letter-spacing: 0.03em;
 }
 
+:root[data-theme="dark"] .crm-zapi-countdown,
+.dark .crm-zapi-countdown {
+  color: #34d399;
+}
+
 .crm-zapi-pairing-instructions {
   display: grid;
   gap: 0.75rem;
@@ -172,9 +269,14 @@
 
 .crm-zapi-pairing-instructions li {
   align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent);
   color: var(--color-text);
   display: flex;
   font-size: var(--font-size-sm);
@@ -200,7 +302,11 @@
 /* Pairing code display */
 .crm-zapi-code-display {
   align-items: center;
-  background: var(--color-app);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
   border: 2px dashed color-mix(in srgb, #10b981 40%, var(--color-line));
   border-radius: 1rem;
   display: flex;
@@ -217,51 +323,63 @@
   letter-spacing: 0.2em;
 }
 
-/* The setup is also rendered inside a dialog. Keep its content aligned with
-   the card hierarchy used by the Conexao workspace. */
-.crm-connection-dialog .crm-zapi-guided-card {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  gap: 1.25rem;
-  max-width: none;
-  padding: 0;
-}
-
+/* Stage Heading Cards */
 .crm-zapi-stage-heading {
   align-items: start;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow:
+    0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent) inset,
+    0 2px 8px color-mix(in srgb, var(--color-text) 3%, transparent);
   display: grid;
-  gap: 0.85rem;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 1.25rem;
 }
 
 .crm-zapi-stage-heading > span {
   align-items: center;
-  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
-  border: 1px solid
-    color-mix(in srgb, var(--color-success) 28%, var(--color-line));
+  background: color-mix(in srgb, #10b981 14%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 28%, var(--color-line));
   border-radius: 0.75rem;
-  color: var(--color-success-strong, var(--color-success));
+  color: #059669;
   display: inline-flex;
-  height: 2.5rem;
+  height: 2.75rem;
   justify-content: center;
-  width: 2.5rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .crm-zapi-stage-heading > span,
+.dark .crm-zapi-stage-heading > span {
+  color: #34d399;
 }
 
 .crm-zapi-stage-heading > span svg {
-  height: 1.2rem;
-  width: 1.2rem;
+  height: 1.35rem;
+  width: 1.35rem;
 }
 
 .crm-zapi-stage-heading small,
 .crm-zapi-qr-details small {
-  color: var(--color-success-strong, var(--color-success));
+  color: #059669;
   display: block;
   font-size: var(--font-size-xs);
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-zapi-stage-heading small,
+.dark .crm-zapi-stage-heading small,
+:root[data-theme="dark"] .crm-zapi-qr-details small,
+.dark .crm-zapi-qr-details small {
+  color: #34d399;
 }
 
 .crm-zapi-stage-heading h4,
@@ -270,7 +388,7 @@
   font-size: var(--font-size-md);
   font-weight: 850;
   letter-spacing: -0.015em;
-  margin: 0.2rem 0 0;
+  margin: 0.25rem 0 0;
 }
 
 .crm-zapi-stage-heading p,
@@ -281,50 +399,303 @@
   margin: 0.35rem 0 0;
 }
 
-.crm-zapi-progress {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  gap: 0.75rem;
-  grid-template-columns: 1fr;
-  overflow: visible;
+.crm-zapi-stage-heading .crm-icon-action {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.625rem;
+  box-shadow: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.35rem;
+  justify-content: center;
+  width: 2.35rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.crm-zapi-progress-summary {
+.crm-zapi-stage-heading .crm-icon-action:hover {
   background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: 0.875rem;
-  padding: 0.75rem 1rem;
+  border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-0.5px);
 }
 
-.crm-zapi-progress ol {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: 1rem;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  overflow: hidden;
+/* Credential Fields Container */
+.crm-zapi-credential-fields {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow:
+    0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent) inset,
+    0 2px 8px color-mix(in srgb, var(--color-text) 3%, transparent);
+  display: grid;
+  gap: 1.15rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  padding: 1.35rem;
 }
 
-.crm-zapi-progress li {
-  align-content: center;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  min-height: 4.5rem;
-  padding: 0.65rem 0.5rem;
-  text-align: center;
+/* Credential & Connection Fields: Inputs with Search Gradient & Sea Green Focus */
+.crm-zapi-credential-fields .crm-connection-field,
+.crm-zapi-credential-fields .crm-zapi-field,
+.crm-connection-dialog .crm-connection-field,
+.crm-zapi-field {
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.crm-zapi-progress li + li {
-  border-left: 1px solid var(--color-line);
-  border-top: 0;
+.crm-zapi-credential-fields .crm-connection-field label,
+.crm-zapi-credential-fields .crm-zapi-field label,
+.crm-connection-dialog .crm-connection-field label,
+.crm-zapi-field label {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  letter-spacing: 0.03em;
 }
 
-.crm-zapi-progress li strong {
-  overflow-wrap: anywhere;
+.crm-zapi-credential-fields .crm-connection-field input,
+.crm-zapi-credential-fields .crm-zapi-field input,
+.crm-connection-dialog .crm-connection-field input,
+.crm-zapi-field input {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent) !important;
+  border-radius: var(--radius-lg, 0.75rem) !important;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  min-height: 2.85rem !important;
+  outline: none !important;
+  padding: 0.65rem 0.95rem !important;
+  text-transform: none !important;
+  width: 100% !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.crm-zapi-stage,
-.crm-zapi-credentials,
-.crm-zapi-pairing {
-  gap: 1rem;
+.crm-zapi-credential-fields .crm-connection-field input:focus,
+.crm-zapi-credential-fields .crm-zapi-field input:focus,
+.crm-connection-dialog .crm-connection-field input:focus,
+.crm-zapi-field input:focus {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  outline: none !important;
+}
+
+.crm-zapi-credential-fields .crm-connection-field input[aria-invalid="true"],
+.crm-zapi-credential-fields .crm-zapi-field input[aria-invalid="true"],
+.crm-connection-dialog .crm-connection-field input[aria-invalid="true"],
+.crm-zapi-field input[aria-invalid="true"] {
+  border-color: var(--color-danger, #ef4444) !important;
+  box-shadow: 0 0 0 1px var(--color-danger, #ef4444) !important;
+}
+
+.crm-zapi-credential-fields .crm-connection-field input:disabled,
+.crm-zapi-credential-fields .crm-zapi-field input:disabled,
+.crm-connection-dialog .crm-connection-field input:disabled,
+.crm-zapi-field input:disabled {
+  background: color-mix(
+    in srgb,
+    var(--color-line) 70%,
+    var(--color-app)
+  ) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.crm-connection-field small,
+.crm-zapi-field small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.35;
+  margin-top: 0.2rem;
+  text-transform: none;
+}
+
+/* Action Buttons in Setup & Credentials Stage */
+.crm-zapi-inline-actions,
+.crm-connection-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Primary "Salvar credenciais" Button in CRM Sea Green */
+.crm-zapi-inline-actions .crm-connection-save,
+.crm-zapi-inline-actions button.crm-connection-save,
+.crm-zapi-inline-actions .crm-action-primary,
+.crm-connection-actions .crm-connection-save,
+.crm-connection-actions button.crm-connection-save,
+.crm-connection-actions .crm-action-primary,
+button.crm-connection-save {
+  align-items: center !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: 1px solid #047857 !important;
+  border-radius: var(--radius-lg, 0.75rem) !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-family: inherit !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 750 !important;
+  gap: 0.55rem !important;
+  justify-content: center !important;
+  letter-spacing: -0.01em !important;
+  min-height: 2.85rem !important;
+  padding: 0.65rem 1.45rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+}
+
+.crm-zapi-inline-actions .crm-connection-save:hover:not(:disabled),
+.crm-zapi-inline-actions button.crm-connection-save:hover:not(:disabled),
+.crm-zapi-inline-actions .crm-action-primary:hover:not(:disabled),
+.crm-connection-actions .crm-connection-save:hover:not(:disabled),
+.crm-connection-actions button.crm-connection-save:hover:not(:disabled),
+.crm-connection-actions .crm-action-primary:hover:not(:disabled),
+button.crm-connection-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #065f46 !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.crm-zapi-inline-actions .crm-connection-save:active:not(:disabled),
+.crm-zapi-inline-actions button.crm-connection-save:active:not(:disabled),
+.crm-zapi-inline-actions .crm-action-primary:active:not(:disabled),
+.crm-connection-actions .crm-connection-save:active:not(:disabled),
+.crm-connection-actions button.crm-connection-save:active:not(:disabled),
+.crm-connection-actions .crm-action-primary:active:not(:disabled),
+button.crm-connection-save:active:not(:disabled) {
+  box-shadow: none !important;
+  transform: scale(0.98) !important;
+}
+
+.crm-zapi-inline-actions .crm-connection-save:disabled,
+.crm-zapi-inline-actions button.crm-connection-save:disabled,
+.crm-zapi-inline-actions .crm-action-primary:disabled,
+.crm-connection-actions .crm-connection-save:disabled,
+.crm-connection-actions button.crm-connection-save:disabled,
+.crm-connection-actions .crm-action-primary:disabled,
+button.crm-connection-save:disabled {
+  background: color-mix(
+    in srgb,
+    var(--color-line) 80%,
+    var(--color-app)
+  ) !important;
+  border-color: var(--color-line) !important;
+  box-shadow: none !important;
+  color: var(--color-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+
+.crm-zapi-inline-actions .crm-connection-save svg,
+.crm-connection-actions .crm-connection-save svg,
+button.crm-connection-save svg {
+  flex-shrink: 0 !important;
+  height: 1.05rem !important;
+  width: 1.05rem !important;
+}
+
+/* Secondary / Cancel Button */
+.crm-zapi-inline-actions .crm-action-muted,
+.crm-zapi-inline-actions .crm-action-secondary,
+.crm-connection-actions .crm-action-muted,
+.crm-connection-actions .crm-action-secondary {
+  align-items: center !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent) !important;
+  border-radius: var(--radius-lg, 0.75rem) !important;
+  box-shadow: none !important;
+  color: var(--color-text) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-family: inherit !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 650 !important;
+  gap: 0.45rem !important;
+  justify-content: center !important;
+  min-height: 2.85rem !important;
+  padding: 0.65rem 1.25rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+}
+
+.crm-zapi-inline-actions .crm-action-muted:hover:not(:disabled),
+.crm-zapi-inline-actions .crm-action-secondary:hover:not(:disabled),
+.crm-connection-actions .crm-action-muted:hover:not(:disabled),
+.crm-connection-actions .crm-action-secondary:hover:not(:disabled) {
+  background: var(--color-panel) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-text) 22%,
+    var(--color-line)
+  ) !important;
+  box-shadow: none !important;
+  color: var(--color-text) !important;
+  transform: translateY(-0.5px) !important;
+}
+
+.crm-zapi-inline-actions .crm-action-muted:active:not(:disabled),
+.crm-zapi-inline-actions .crm-action-secondary:active:not(:disabled),
+.crm-connection-actions .crm-action-muted:active:not(:disabled),
+.crm-connection-actions .crm-action-secondary:active:not(:disabled) {
+  transform: scale(0.98) !important;
+}
+
+.crm-zapi-inline-actions .crm-action-muted:disabled,
+.crm-zapi-inline-actions .crm-action-secondary:disabled,
+.crm-connection-actions .crm-action-muted:disabled,
+.crm-connection-actions .crm-action-secondary:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+  transform: none !important;
+}
+
+.crm-connection-error {
+  color: var(--color-danger, #ef4444);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0.5rem 0 0;
 }

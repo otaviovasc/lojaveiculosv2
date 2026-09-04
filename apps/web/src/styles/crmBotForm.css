@@ -159,6 +159,15 @@
 .crm-bot-form-field {
   display: grid;
   gap: 0.4rem;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.crm-bot-form-field:focus-within {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .crm-bot-field-label {
@@ -184,12 +193,14 @@
   min-height: 2.85rem;
   padding: 0 0.95rem;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
 }
 
 .crm-bot-input-wrap:focus-within {
   background: var(--color-panel);
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+  outline: none;
 }
 
 .crm-bot-input-wrap svg {

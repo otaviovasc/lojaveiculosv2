@@ -190,9 +190,9 @@ export function CrmConnectionMembersSection({
         </p>
       ) : null}
       {canManage && onGrantConnectionMember && onListConnectionMembers ? (
-        <div className="crm-zapi-inline-actions">
-          <label className="crm-pairing-phone">
-            Adicionar atendente
+        <div className="crm-connection-add-member-bar">
+          <label className="crm-connection-field flex-1 min-w-[14rem]">
+            <span>Adicionar atendente</span>
             <CrmSelect
               ariaLabel="Atendente para liberar acesso"
               disabled={busy !== null || candidates.length === 0}
@@ -210,7 +210,7 @@ export function CrmConnectionMembersSection({
             />
           </label>
           <button
-            className="crm-action crm-action-secondary"
+            className="crm-action crm-action-secondary self-end"
             disabled={busy !== null || !selectedUserId}
             onClick={() => void grant()}
             type="button"

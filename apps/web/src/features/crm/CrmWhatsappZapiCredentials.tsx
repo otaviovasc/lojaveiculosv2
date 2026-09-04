@@ -172,7 +172,7 @@ export function CredentialsStage({
       ) : null}
       <div className="crm-zapi-inline-actions">
         <button
-          className="crm-connection-save"
+          className="crm-action crm-action-primary crm-connection-save"
           disabled={busy !== null || !canSubmit}
           onClick={onSave}
           type="button"
@@ -192,7 +192,7 @@ export function CredentialsStage({
         </button>
         {onCancel ? (
           <button
-            className="crm-action crm-action-muted"
+            className="crm-action crm-action-muted crm-action-secondary"
             disabled={busy !== null}
             onClick={onCancel}
             type="button"
@@ -222,7 +222,7 @@ function CredentialField({
 }) {
   const inputId = useId();
   return (
-    <div className="crm-connection-field">
+    <div className="crm-connection-field crm-zapi-field">
       <label htmlFor={inputId}>{label}</label>
       <input
         aria-invalid={invalid}
