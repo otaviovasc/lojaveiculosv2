@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/marketplaces.css";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
   FeatureActionButton,
@@ -365,6 +366,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <section aria-label="Conexões da loja" className="marketplace-grid">
             {orderedProviders(overview).map((provider, index) => (
               <AnimatedContent
+                className="h-full"
                 delay={index * 0.06}
                 distance={18}
                 duration={0.38}

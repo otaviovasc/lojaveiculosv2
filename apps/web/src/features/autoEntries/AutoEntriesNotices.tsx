@@ -56,11 +56,23 @@ export function AutoEntriesNotices({
       ) : null}
       {sellerError ? (
         <FeatureAlert
+          className="auto-entries-shell-notice auto-entries-warning-banner"
           icon={<TriangleAlert aria-hidden="true" className="size-5" />}
-          title="Lista de responsáveis indisponível"
+          title={
+            <span className="auto-entries-notice-header">
+              <span className="auto-entries-notice-title">
+                Lista de responsáveis indisponível
+              </span>
+              <span className="auto-entries-notice-badge auto-entries-notice-badge--warning">
+                Aviso operacional
+              </span>
+            </span>
+          }
           tone="warning"
         >
-          <p>{sellerError}</p>
+          <div className="auto-entries-notice-text-wrap">
+            <p className="auto-entries-notice-body">{sellerError}</p>
+          </div>
         </FeatureAlert>
       ) : null}
     </>

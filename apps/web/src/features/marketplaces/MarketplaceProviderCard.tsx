@@ -1,11 +1,15 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   Pause,
   Play,
   SearchCheck,
+  ShieldCheck,
+  SlidersHorizontal,
 } from "lucide-react";
+import { useState } from "react";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
@@ -17,6 +21,7 @@ import {
 import { resolveMarketplaceConnectionPresentation } from "./marketplaceConnectionPresentation";
 import { marketplaceProviderPresentation } from "./marketplaceProviderPresentation";
 import { MarketplaceProviderBrand } from "./MarketplaceProviderBrand";
+import { MarketplaceProviderModal } from "./MarketplaceProviderModal";
 import type {
   MarketplaceAccount,
   MarketplaceProvider,
@@ -48,6 +53,7 @@ export function MarketplaceProviderCard({
   provider: MarketplaceProvider;
   state: MarketplaceProviderState | undefined;
 }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const connection = resolveMarketplaceConnectionPresentation(state, account);
   const presentation = marketplaceProviderPresentation[provider];
   const providerLabel = providerLabels[provider];
@@ -60,115 +66,154 @@ export function MarketplaceProviderCard({
   );
 
   return (
-    <article
-      className="marketplace-card"
-      data-connection-tone={connection.tone}
-      data-provider={provider}
-    >
-      <header className="marketplace-card-header">
-        <div className="marketplace-card-header__topline">
-          <MarketplaceProviderBrand provider={provider} />
-          <FeatureStatusBadge tone={connection.tone}>
-            {getMarketplaceConnectionLabel(
-              state?.connectionStatus,
-              account?.status,
-            )}
-          </FeatureStatusBadge>
-        </div>
-        <div className="marketplace-card__intro">
-          <span className="marketplace-card__channel-type">
-            {presentation.channelType}
-          </span>
-          <p>{presentation.description}</p>
-        </div>
-      </header>
-
-      <details
-        className="marketplace-requirements"
-        open={hasRequirementAttention || undefined}
+    <>
+      <article
+        className="marketplace-card"
+        data-connection-tone={connection.tone}
+        data-provider={provider}
       >
-        <summary>Requisitos do canal</summary>
-        <div className="marketplace-requirements__body">
-          <section
-            aria-label={`O que o ${providerLabel} valida`}
-            className="marketplace-channel-contract"
-          >
-            <div className="marketplace-channel-contract__heading">
-              <ClipboardCheck aria-hidden="true" className="size-4" />
-              <strong>O canal valida</strong>
+        <header className="marketplace-card-header">
+          <div className="marketplace-card-header__topline">
+            <MarketplaceProviderBrand provider={provider} />
+            <div className="marketplace-card-header__badges">
+              <button
+                className="marketplace-provider-inspect-btn"
+                onClick={() => setIsModalOpen(true)}
+                title={`Ver requisitos e validações do ${providerLabel}`}
+                type="button"
+              >
+                <ShieldCheck aria-hidden="true" className="size-3.5" />
+                <span>Requisitos</span>
+              </button>
+              <FeatureStatusBadge tone={connection.tone}>
+                {getMarketplaceConnectionLabel(
+                  state?.connectionStatus,
+                  account?.status,
+                )}
+              </FeatureStatusBadge>
             </div>
-            <ul>
-              {presentation.readinessItems.map((item) => (
-                <li key={item}>
-                  <CheckCircle2 aria-hidden="true" className="size-4" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <MarketplaceRequirementChecklist state={state} />
-        </div>
-      </details>
+          </div>
+          <div className="marketplace-card__intro">
+            <span className="marketplace-card__channel-type">
+              {presentation.channelType}
+            </span>
+            <p>{presentation.description}</p>
+          </div>
+        </header>
 
-      <footer className="marketplace-card__footer">
-        <p className="marketplace-preview-summary">
-          {preview
-            ? `Prévia: ${preview.accounting.found} ${preview.accounting.found === 1 ? "veículo encontrado" : "veículos encontrados"} · ${preview.accounting.needsCorrection} precisam de correção`
-            : "Gere a prévia para diagnosticar o estoque antes do envio."}
-        </p>
-        <div className="marketplace-actions">
-          <FeatureActionButton
-            icon={SearchCheck}
-            isBusy={isSaving}
-            label={`${presentation.previewLabel} no ${providerLabel}`}
-            onClick={() => void onPreview(provider)}
-          >
-            Gerar prévia
-          </FeatureActionButton>
-          {connection.canSync ? (
-            <>
-              <FeatureActionButton
-                disabled={!canPublish}
-                icon={Play}
-                isBusy={isSaving}
-                label={presentation.runLabel}
-                onClick={() => void onRun(provider)}
-                variant="primary"
-              />
-              {statusAction ? (
-                <FeatureRowAction
-                  ariaLabel={`${statusAction.label} publicações no ${providerLabel}`}
-                  disabled={isSaving}
-                  icon={Pause}
-                  onClick={() =>
-                    void onStatusChange(provider, statusAction.status)
-                  }
-                  tooltip="Pausar envios"
-                />
+        <details
+          className="marketplace-requirements"
+          open={hasRequirementAttention || undefined}
+        >
+          <summary className="marketplace-requirements__summary">
+            <span className="marketplace-requirements__summary-label">
+              <SlidersHorizontal aria-hidden="true" className="size-3.5" />
+              <span>Requisitos do canal</span>
+            </span>
+            <span className="marketplace-requirements__summary-meta">
+              {hasRequirementAttention ? (
+                <span className="marketplace-requirements__attention-pill">
+                  Requer atenção
+                </span>
               ) : null}
-            </>
-          ) : connection.connectLabel ? (
-            <FeatureActionButton
-              isBusy={isSaving}
-              label={`${connection.connectLabel} do ${providerLabel}`}
-              onClick={() => void onConnect(provider)}
-              variant="primary"
+              <ChevronDown
+                aria-hidden="true"
+                className="marketplace-requirements__chevron size-4"
+              />
+            </span>
+          </summary>
+          <div className="marketplace-requirements__body">
+            <section
+              aria-label={`O que o ${providerLabel} valida`}
+              className="marketplace-channel-contract"
             >
-              {connection.connectLabel}
-            </FeatureActionButton>
-          ) : statusAction ? (
+              <div className="marketplace-channel-contract__heading">
+                <ClipboardCheck aria-hidden="true" className="size-4" />
+                <strong>O canal valida</strong>
+              </div>
+              <ul>
+                {presentation.readinessItems.map((item) => (
+                  <li key={item}>
+                    <CheckCircle2 aria-hidden="true" className="size-4" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <MarketplaceRequirementChecklist state={state} />
+          </div>
+        </details>
+
+        <footer className="marketplace-card__footer">
+          <p className="marketplace-preview-summary">
+            {preview
+              ? `Prévia: ${preview.accounting.found} ${preview.accounting.found === 1 ? "veículo encontrado" : "veículos encontrados"} · ${preview.accounting.needsCorrection} precisam de correção`
+              : "Gere a prévia para diagnosticar o estoque antes do envio."}
+          </p>
+          <div className="marketplace-actions">
             <FeatureActionButton
+              icon={SearchCheck}
               isBusy={isSaving}
-              label={`${statusAction.label} publicações no ${providerLabel}`}
-              onClick={() => void onStatusChange(provider, statusAction.status)}
-              variant="primary"
+              label={`${presentation.previewLabel} no ${providerLabel}`}
+              onClick={() => void onPreview(provider)}
             >
-              Ativar conta
+              Gerar prévia
             </FeatureActionButton>
-          ) : null}
-        </div>
-      </footer>
-    </article>
+            {connection.canSync ? (
+              <>
+                <FeatureActionButton
+                  disabled={!canPublish}
+                  icon={Play}
+                  isBusy={isSaving}
+                  label={presentation.runLabel}
+                  onClick={() => void onRun(provider)}
+                  variant="primary"
+                />
+                {statusAction ? (
+                  <FeatureRowAction
+                    ariaLabel={`${statusAction.label} publicações no ${providerLabel}`}
+                    disabled={isSaving}
+                    icon={Pause}
+                    onClick={() =>
+                      void onStatusChange(provider, statusAction.status)
+                    }
+                    tooltip="Pausar envios"
+                  />
+                ) : null}
+              </>
+            ) : connection.connectLabel ? (
+              <FeatureActionButton
+                isBusy={isSaving}
+                label={`${connection.connectLabel} do ${providerLabel}`}
+                onClick={() => void onConnect(provider)}
+                variant="primary"
+              >
+                {connection.connectLabel}
+              </FeatureActionButton>
+            ) : statusAction ? (
+              <FeatureActionButton
+                isBusy={isSaving}
+                label={`${statusAction.label} publicações no ${providerLabel}`}
+                onClick={() =>
+                  void onStatusChange(provider, statusAction.status)
+                }
+                variant="primary"
+              >
+                Ativar conta
+              </FeatureActionButton>
+            ) : null}
+          </div>
+        </footer>
+      </article>
+
+      <MarketplaceProviderModal
+        account={account}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        provider={provider}
+        state={state}
+      />
+    </>
   );
 }
 

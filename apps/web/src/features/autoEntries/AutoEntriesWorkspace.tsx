@@ -1,4 +1,4 @@
-import { Bot, RefreshCcw } from "lucide-react";
+import { Bot, RefreshCcw, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import "../../styles/autoEntries.css";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
@@ -172,8 +172,26 @@ export function AutoEntriesWorkspace({
         <AutoEntriesLoadingSkeleton />
       ) : workspace.loadState.kind === "error" ? (
         <>
-          <FeatureAlert title="As regras não puderam ser carregadas">
-            <p>{workspace.loadState.message}</p>
+          <FeatureAlert
+            className="auto-entries-shell-notice"
+            icon={<TriangleAlert aria-hidden="true" className="size-5" />}
+            title={
+              <span className="auto-entries-notice-header">
+                <span className="auto-entries-notice-title">
+                  As regras não puderam ser carregadas
+                </span>
+                <span className="auto-entries-notice-badge auto-entries-notice-badge--danger">
+                  Erro de sincronização
+                </span>
+              </span>
+            }
+            tone="danger"
+          >
+            <div className="auto-entries-notice-text-wrap">
+              <p className="auto-entries-notice-body">
+                {workspace.loadState.message}
+              </p>
+            </div>
           </FeatureAlert>
           <FeatureEmptyState
             action={

@@ -4,7 +4,7 @@ export function FinanceiroNotasFiscaisSection() {
   return (
     <section
       aria-labelledby="vehicle-fiscal-title"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+      className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div className="flex items-center gap-2">
@@ -21,7 +21,7 @@ export function FinanceiroNotasFiscaisSection() {
         </span>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-xl border border-line bg-app/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="vehicle-detail-subcard flex flex-col gap-4 rounded-xl border border-line bg-app/30 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-soft text-success-strong">
             <ShieldCheck aria-hidden="true" className="size-5" />

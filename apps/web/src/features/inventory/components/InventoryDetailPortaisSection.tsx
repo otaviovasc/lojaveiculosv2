@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ArrowRight,
   Check,
   ExternalLink,
   Info,
@@ -26,17 +27,25 @@ type PortalBrand = {
   color: string;
   slug: string;
   textColor?: string;
+  marketplaceProvider?: "mercado_livre" | "olx";
 };
 
 const partnerPortals: PortalBrand[] = [
   { name: "Webmotors", short: "W", color: "#143d8f", slug: "webmotors" },
   { name: "iCarros", short: "iC", color: "#ec7000", slug: "icarros" },
-  { name: "OLX", short: "OLX", color: "#23e5db", slug: "olx" },
+  {
+    name: "OLX",
+    short: "OLX",
+    color: "#23e5db",
+    slug: "olx",
+    marketplaceProvider: "olx",
+  },
   {
     name: "Mercado Livre",
     short: "ML",
     color: "#2d3277",
     slug: "mercadolivre",
+    marketplaceProvider: "mercado_livre",
   },
 ];
 
@@ -74,7 +83,7 @@ export function InventoryDetailPortaisSection({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+    <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
       <div className="flex flex-col justify-between gap-2 border-b border-line pb-3 sm:flex-row sm:items-center">
         <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-strong">
@@ -88,7 +97,7 @@ export function InventoryDetailPortaisSection({
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-panel">
+        <article className="vehicle-detail-card flex flex-col overflow-hidden rounded-xl border border-line bg-panel">
           <header className="flex items-center justify-between gap-2 border-b border-line bg-accent-soft px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
@@ -171,21 +180,46 @@ export function InventoryDetailPortaisSection({
 }
 
 function PartnerPortalCard({ brand }: { brand: PortalBrand }) {
+  const hasMarketplace = !!brand.marketplaceProvider;
+
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-panel">
+    <article className="vehicle-detail-card flex flex-col overflow-hidden rounded-xl border border-line bg-panel">
       <header
         className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5"
         style={{ backgroundColor: `${brand.color}14` }}
       >
         <PortalLogo brand={brand} />
-        <span className="shrink-0 rounded-full border border-line bg-app px-2 py-0.5 text-xs font-black uppercase text-muted">
-          Em breve
+        <span
+          className={
+            "shrink-0 rounded-full px-2 py-0.5 text-xs font-black uppercase " +
+            (hasMarketplace
+              ? "bg-accent-soft text-accent-strong"
+              : "border border-line bg-app text-muted")
+          }
+        >
+          {hasMarketplace ? "Disponível" : "Em breve"}
         </span>
       </header>
-      <div className="p-3.5">
-        <p className="text-xs font-bold text-muted">
-          Integração não disponível nesta tela.
-        </p>
+      <div className="flex flex-col gap-2.5 p-3.5">
+        {hasMarketplace ? (
+          <>
+            <p className="text-xs font-bold text-muted">
+              Gerencie a integração com {brand.name} pelo módulo de
+              Marketplaces.
+            </p>
+            <a
+              className="inline-flex w-fit items-center gap-1 text-xs font-black text-accent-strong hover:underline"
+              href="#/marketplaces"
+            >
+              <span>Gerenciar integração</span>
+              <ArrowRight className="size-3" />
+            </a>
+          </>
+        ) : (
+          <p className="text-xs font-bold text-muted">
+            Integração não disponível nesta tela.
+          </p>
+        )}
       </div>
     </article>
   );

@@ -79,7 +79,11 @@ export function FinanceiroCostFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" radius="xl" surface="panel">
+      <DialogContent
+        className="max-w-md vehicle-dialog-surface"
+        radius="xl"
+        surface="panel"
+      >
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-black uppercase tracking-wider">
             {cost ? "Corrigir custo" : "Adicionar novo custo"}
@@ -251,7 +255,11 @@ export function FinanceiroCostVoidDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" radius="xl" surface="panel">
+      <DialogContent
+        className="max-w-md vehicle-dialog-surface"
+        radius="xl"
+        surface="panel"
+      >
         <DialogHeader className="mb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-danger/30 bg-danger/10 text-danger">

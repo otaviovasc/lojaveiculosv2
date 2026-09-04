@@ -197,7 +197,7 @@ export function InventoryDetailVitrineTab({
       {activePage ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Column 1: Controls (7 cols) */}
-          <div className="lg:col-span-7 bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6 shadow-sm">
+          <div className="vehicle-detail-card lg:col-span-7 bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6 shadow-sm">
             {/* Top Row Controls */}
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export function InventoryDetailVitrineTab({
               <span className="text-xs font-black uppercase tracking-wider text-muted">
                 URL pública da Vitrine
               </span>
-              <div className="flex items-center justify-between min-h-10 rounded-xl border border-line bg-app/30 px-3.5 font-bold text-xs">
+              <div className="vehicle-detail-subcard flex items-center justify-between min-h-10 rounded-xl border border-line bg-app/30 px-3.5 font-bold text-xs">
                 <span className="text-app-text truncate mr-2 select-all">
                   {publicUrl}
                 </span>
@@ -286,7 +286,7 @@ export function InventoryDetailVitrineTab({
           </div>
 
           {/* Column 2: Live Mockup Preview (5 cols) */}
-          <div className="lg:col-span-5 bg-panel border border-line rounded-2xl p-5 shadow-sm">
+          <div className="vehicle-detail-card lg:col-span-5 bg-panel border border-line rounded-2xl p-5 shadow-sm">
             <VitrinePreviewMockup
               settings={settings}
               listing={listing}
@@ -297,7 +297,7 @@ export function InventoryDetailVitrineTab({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-panel border border-line rounded-2xl p-6 lg:p-8 shadow-sm">
+        <div className="vehicle-detail-card grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-panel border border-line rounded-2xl p-6 lg:p-8 shadow-sm">
           {/* Left panel: Info & Trigger (7 cols) */}
           <div className="lg:col-span-7 flex flex-col gap-4 text-center lg:text-left">
             <div className="size-12 rounded-full bg-accent-soft text-accent flex items-center justify-center border border-accent-soft/20 animate-pulse mx-auto lg:mx-0">

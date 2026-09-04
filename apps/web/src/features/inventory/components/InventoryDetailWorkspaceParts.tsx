@@ -76,7 +76,7 @@ export function TechnicalSpecsPanel({
         ))}
       </div>
 
-      <div className="mt-2 overflow-hidden rounded-xl border border-line">
+      <div className="vehicle-detail-subcard mt-2 overflow-hidden rounded-xl border border-line">
         <div>
           <button
             aria-controls="inventory-internal-notes"

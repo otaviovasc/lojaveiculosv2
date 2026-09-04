@@ -215,7 +215,7 @@ export function InventoryDetailFinanceiroTab({
       className="flex w-full max-w-none flex-col gap-8 text-app-text"
     >
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
+        <div className="vehicle-detail-card flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
           <div>
             <h3 className="mb-4 flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
               <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -247,7 +247,7 @@ export function InventoryDetailFinanceiroTab({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-1.5 rounded-xl border border-accent-soft/20 bg-accent-soft/30 p-4">
+          <div className="vehicle-detail-subcard mt-6 flex flex-col gap-1.5 rounded-xl border border-accent-soft/20 bg-accent-soft/30 p-4">
             <span className="text-xs font-black uppercase tracking-wider text-muted">
               Resultado Esperado
             </span>
@@ -289,7 +289,7 @@ export function InventoryDetailFinanceiroTab({
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+        <div className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
           <h3 className="flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
             <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
               <ClipboardList className="size-4" />
