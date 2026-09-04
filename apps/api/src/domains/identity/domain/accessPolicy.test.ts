@@ -7,6 +7,23 @@ import {
 import { permissionGroups } from "./permissionCatalog.js";
 
 describe("access policy", () => {
+  it("grants the core dashboard to every store role by default", () => {
+    for (const role of [
+      "agency",
+      "admin",
+      "investor",
+      "owner",
+      "salesman",
+      "supervisor",
+    ] as const) {
+      expect(canAccess(resolvePermissions({ role }), "dashboard.read")).toEqual(
+        {
+          allowed: true,
+        },
+      );
+    }
+  });
+
   it("keeps owner and agency defaults aligned with every assignable permission", () => {
     const assignablePermissions = permissionGroups.flatMap((group) =>
       group.permissions.map((permission) => permission.key),
@@ -17,6 +34,58 @@ describe("access policy", () => {
         expect.arrayContaining(assignablePermissions),
       );
     }
+  });
+
+  it("keeps platform support authority out of every store role projection", () => {
+    for (const role of [
+      "agency",
+      "admin",
+      "investor",
+      "owner",
+      "salesman",
+      "supervisor",
+    ] as const) {
+      expect(resolvePermissions({ role })).not.toContain(
+        "crm.messaging.support.manage",
+      );
+    }
+
+    expect(
+      resolvePermissions({
+        overrides: [
+          { allowed: true, permission: "crm.messaging.support.manage" },
+        ],
+        role: "owner",
+      }),
+    ).not.toContain("crm.messaging.support.manage");
+  });
+
+  it("keeps commission rules and settlement separated by role", () => {
+    for (const role of ["agency", "owner", "admin"] as const) {
+      const permissions = resolvePermissions({ role });
+      expect(permissions).toContain("billing.manage");
+      expect(permissions).toEqual(
+        expect.arrayContaining([
+          "commissions.read",
+          "commissions.rules.manage",
+          "commissions.settle",
+        ]),
+      );
+    }
+
+    expect(resolvePermissions({ role: "supervisor" })).toEqual(
+      expect.arrayContaining(["commissions.read", "commissions.rules.manage"]),
+    );
+    expect(resolvePermissions({ role: "supervisor" })).not.toContain(
+      "commissions.settle",
+    );
+    expect(resolvePermissions({ role: "investor" })).toContain("finance.read");
+    expect(resolvePermissions({ role: "investor" })).not.toContain(
+      "commissions.settle",
+    );
+    expect(resolvePermissions({ role: "salesman" })).not.toContain(
+      "commissions.read",
+    );
   });
 
   it("does not duplicate permissions inside default role projections", () => {
@@ -78,50 +147,6 @@ describe("access policy", () => {
         "fiscal.template.manage",
       ]),
     );
-  });
-
-  it("keeps WhatsApp permissions explicit and operator-manageable", () => {
-    const crmPermissions =
-      permissionGroups.find((group) => group.key === "crm")?.permissions ?? [];
-
-    expect(crmPermissions.map((permission) => permission.key)).toEqual(
-      expect.arrayContaining([
-        "crm.whatsapp.list",
-        "crm.whatsapp.read",
-        "crm.whatsapp.send",
-        "crm.whatsapp.assign",
-        "crm.whatsapp.close",
-        "crm.whatsapp.toggle_intervention",
-      ]),
-    );
-  });
-
-  it("mirrors prior WhatsApp role behavior with explicit CRM permissions", () => {
-    const investor = resolvePermissions({ role: "investor" });
-    const owner = resolvePermissions({ role: "owner" });
-    const salesman = resolvePermissions({ role: "salesman" });
-    const supervisor = resolvePermissions({ role: "supervisor" });
-    const operatorPermissions = [
-      "crm.whatsapp.list",
-      "crm.whatsapp.read",
-      "crm.whatsapp.send",
-      "crm.whatsapp.assign",
-      "crm.whatsapp.close",
-      "crm.whatsapp.toggle_intervention",
-    ] as const;
-
-    expect(canAccess(investor, "crm.whatsapp.read")).toEqual({
-      allowed: true,
-    });
-    expect(canAccess(investor, "crm.whatsapp.send")).toEqual({
-      allowed: false,
-      reason: "Missing permission: crm.whatsapp.send",
-    });
-    for (const permissions of [owner, salesman, supervisor]) {
-      for (const permission of operatorPermissions) {
-        expect(canAccess(permissions, permission)).toEqual({ allowed: true });
-      }
-    }
   });
 
   it("keeps automation approval manager-only by default", () => {

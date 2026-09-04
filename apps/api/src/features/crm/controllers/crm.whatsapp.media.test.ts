@@ -1,30 +1,31 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type {
-  ObjectStorage,
-  PutStorageObjectInput,
-} from "../../../shared/storage/objectStorage.js";
+import { describe, expect, it, vi } from "vitest";
+import { UnsafeCrmRemoteMediaUrlError } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
-
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const connectionId = "24000000-0000-4000-8000-000000000101";
+import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
+import {
+  createRemoteMediaFetcher,
+  createTestObjectStorage,
+  createZapiMediaTestConnection,
+  mediaTestConnectionId as connectionId,
+  mediaTestStoreId as storeId,
+  mediaTestTenantId as tenantId,
+  postImageWebhook,
+} from "./crm.whatsapp.media.testSupport.js";
 
 describe("CRM WhatsApp media webhooks", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("stores inbound ZAPI image media as a CRM WhatsApp message", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const canonicalRepository =
+      createMemoryCrmCanonicalInboundRepository(whatsappRepository);
     const app = createTestApp({
+      crmCanonicalInboundRepository: canonicalRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
+        createZapiMediaTestConnection(),
       ]),
-      crmWhatsappRepository: whatsappRepository,
+      crmMediaFetcher: createRemoteMediaFetcher(),
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await postImageWebhook(app, {
@@ -41,7 +42,7 @@ describe("CRM WhatsApp media webhooks", () => {
         metadata: Record<string, unknown>;
         type: string;
       };
-      session: { id: string; lastMessageContent: string | null };
+      conversationCycle: { id: string; lastMessageContent: string | null };
       status: string;
     };
 
@@ -52,7 +53,7 @@ describe("CRM WhatsApp media webhooks", () => {
         mediaUrl: "https://zapi.test/media/car.jpg",
         type: "IMAGE",
       },
-      session: {
+      conversationCycle: {
         lastMessageContent: "Foto do carro",
       },
       status: "stored",
@@ -65,38 +66,30 @@ describe("CRM WhatsApp media webhooks", () => {
       provider: "zapi",
     });
 
-    const messages = await whatsappRepository.listMessages({
-      limit: 10,
-      offset: 0,
-      sessionId: body.session.id,
-      storeId,
-      tenantId,
-    });
-    expect(messages[0]).toMatchObject({
-      mediaUrl: "https://zapi.test/media/car.jpg",
-      type: "IMAGE",
-    });
+    await expect(
+      whatsappRepository.listConversationCycles({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toHaveLength(1);
   });
 
   it("mirrors inbound ZAPI media to configured object storage", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const { putObject, storage } = createTestObjectStorage();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(new Uint8Array([1, 2, 3]), {
-            headers: { "Content-Type": "image/png" },
-            status: 200,
-          }),
-      ),
-    );
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
+        createZapiMediaTestConnection(),
       ]),
-      crmWhatsappMediaStorage: storage,
-      crmWhatsappRepository: whatsappRepository,
+      crmMediaFetcher: createRemoteMediaFetcher({
+        body: new Uint8Array([1, 2, 3]),
+        contentType: "image/png",
+        finalUrl: "https://zapi.test/media/car.jpg",
+      }),
+      crmMediaStorage: storage,
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await postImageWebhook(app, {
@@ -111,15 +104,37 @@ describe("CRM WhatsApp media webhooks", () => {
         metadata: { media?: Record<string, unknown> };
       };
     };
-    expect(body.message.mediaUrl).toBe(
-      "https://cdn.local/crm-whatsapp/car.jpg",
-    );
+    expect(body.message.mediaUrl).toBeNull();
     expect(body.message.metadata.media).toMatchObject({
-      contentType: "image/png",
-      mirrorStatus: "stored",
-      providerUrl: "https://zapi.test/media/car.jpg",
-      sizeBytes: 3,
-      storageKey: "crm-whatsapp/car.jpg",
+      mirrorStatus: "pending",
+    });
+
+    await vi.waitFor(async () => {
+      const [cycle] = await whatsappRepository.listConversationCycles({
+        limit: 10,
+        offset: 0,
+        storeId,
+        tenantId,
+      });
+      const stored = cycle
+        ? (
+            await whatsappRepository.listMessages({
+              cycleId: cycle.id,
+              limit: 10,
+              offset: 0,
+              storeId,
+              tenantId,
+            })
+          )[0]
+        : null;
+      expect(stored?.mediaUrl).toBe("https://cdn.local/crm-whatsapp/car.jpg");
+      expect(stored?.metadata.media).toMatchObject({
+        contentType: "image/png",
+        mirrorStatus: "stored",
+        providerUrl: "https://zapi.test/media/car.jpg",
+        sizeBytes: 3,
+        storageKey: "crm-whatsapp/car.jpg",
+      });
     });
 
     const putInput = putObject.mock.calls[0]?.[0];
@@ -137,17 +152,19 @@ describe("CRM WhatsApp media webhooks", () => {
   });
 
   it("keeps the ZAPI media URL when object storage mirroring fails", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("not found", { status: 404 })),
-    );
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
+        createZapiMediaTestConnection(),
       ]),
-      crmWhatsappMediaStorage: createTestObjectStorage().storage,
-      crmWhatsappRepository: whatsappRepository,
+      crmMediaFetcher: {
+        fetchMedia: vi.fn(async () => {
+          throw new Error("not found");
+        }),
+        validateUrl: vi.fn(async () => undefined),
+      },
+      crmMediaStorage: createTestObjectStorage().storage,
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await postImageWebhook(app, {
@@ -169,74 +186,41 @@ describe("CRM WhatsApp media webhooks", () => {
       providerUrl: "https://zapi.test/media/failing.jpg",
     });
   });
+
+  it("does not persist a displayable URL rejected by the safety policy", async () => {
+    const app = createTestApp({
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiMediaTestConnection(),
+      ]),
+      crmMediaFetcher: {
+        fetchMedia: vi.fn(async () => {
+          throw new UnsafeCrmRemoteMediaUrlError();
+        }),
+        validateUrl: vi.fn(async () => {
+          throw new UnsafeCrmRemoteMediaUrlError();
+        }),
+      },
+      crmMediaStorage: createTestObjectStorage().storage,
+    });
+
+    const response = await postImageWebhook(app, {
+      imageUrl: "https://127.0.0.1/internal.jpg",
+      messageId: "zapi-image-unsafe-1",
+    });
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as {
+      message: {
+        mediaUrl: string | null;
+        metadata: { media?: Record<string, unknown> };
+      };
+    };
+    expect(body.message.mediaUrl).toBeNull();
+    expect(body.message.metadata.media).toMatchObject({
+      mirrorErrorName: "UnsafeCrmRemoteMediaUrlError",
+      mirrorStatus: "failed",
+      unsafeUrlRejected: true,
+    });
+    expect(body.message.metadata.media).not.toHaveProperty("providerUrl");
+  });
 });
-
-function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
-}
-
-function postImageWebhook(
-  app: ReturnType<typeof createTestApp>,
-  input: { imageUrl: string; messageId: string },
-) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/received`,
-    {
-      body: JSON.stringify({
-        image: {
-          caption: "Foto do carro",
-          imageUrl: input.imageUrl,
-          mimeType: "image/jpeg",
-        },
-        messageId: input.messageId,
-        phone: "5511999999999",
-        senderName: "Ana",
-        timestamp: 1783029600,
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    },
-  );
-}
-
-function createTestObjectStorage(): {
-  putObject: ReturnType<
-    typeof vi.fn<
-      (input: PutStorageObjectInput) => Promise<{
-        publicUrl: string;
-        storageKey: string;
-      }>
-    >
-  >;
-  storage: ObjectStorage;
-} {
-  const putObject = vi.fn(async (input: PutStorageObjectInput) => ({
-    publicUrl: `https://cdn.local/crm-whatsapp/${input.fileName}`,
-    storageKey: `crm-whatsapp/${input.fileName}`,
-  }));
-  return {
-    putObject,
-    storage: {
-      createDownload: vi.fn(),
-      createUpload: vi.fn(),
-      getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
-      putObject,
-    },
-  };
-}

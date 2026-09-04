@@ -11,6 +11,10 @@ import {
 
 export function createRuntimeStorefrontPagesApi(): StorefrontPagesApi {
   return {
+    createOrReuseVehicleVitrine: async (listingId, input) =>
+      createStorefrontPagesApi(
+        await createSettingsApiOptions(),
+      ).createOrReuseVehicleVitrine(listingId, input),
     createPage: async (input) =>
       createStorefrontPagesApi(await createSettingsApiOptions()).createPage(
         input,

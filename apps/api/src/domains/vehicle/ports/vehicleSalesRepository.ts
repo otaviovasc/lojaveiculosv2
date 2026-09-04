@@ -12,10 +12,19 @@ export type VehicleSalePaymentStatus = SalePaymentStatus;
 
 export type VehicleBuyerSnapshot = {
   address: string | null;
+  cep?: string | null | undefined;
+  city?: string | null | undefined;
+  district?: string | null | undefined;
   document: string | null;
   email: string | null;
+  maritalStatus?: string | null | undefined;
   name: string;
+  nationality?: string | null | undefined;
   phone: string | null;
+  phone2?: string | null | undefined;
+  phone3?: string | null | undefined;
+  profession?: string | null | undefined;
+  state?: string | null | undefined;
 };
 
 export type VehicleSale = {
@@ -24,6 +33,7 @@ export type VehicleSale = {
   createdAt: Date;
   id: string;
   salePriceCents: number;
+  saleSourceSnapshot?: Record<string, unknown>;
   sellerUserId: string | null;
   status: VehicleSaleStatus;
   storeId: string;

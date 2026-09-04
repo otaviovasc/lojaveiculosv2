@@ -1,0 +1,2 @@
+CREATE INDEX "lead_activities_scoped_history_idx" ON "lead_activities" USING btree ("tenant_id","store_id","lead_id","occurred_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "leads_board_page_idx" ON "leads" USING btree ("tenant_id","store_id","pipeline_id","pipeline_stage_id","is_deleted","updated_at" DESC NULLS LAST,"id" DESC NULLS LAST);

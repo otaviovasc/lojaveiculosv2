@@ -1,24 +1,17 @@
 import type {
-  AgencyTenantOverview,
   BillingEntitlementEvent,
-  BillingOverview,
   BillingRepository,
-  StoreEntitlement,
 } from "../../../../domains/billing/ports/billingRepository.js";
+import { memoryDefaultEntitlements } from "./billingMemoryCatalog.js";
 import {
-  createBillingAuthority,
-  createBillingOverview,
-} from "../../../../domains/billing/readModels/billingOverviewModel.js";
-import {
-  memoryBillingAddons,
-  memoryBillingPlans,
-  memoryTrialEntitlements,
-} from "./billingMemoryCatalog.js";
+  toMemoryBillingOverview,
+  toMemoryTenantOverview,
+} from "./billingRepositoryOverview.js";
 
 export function createMemoryBillingRepository(
   options: { storeId?: string; tenantId?: string } = {},
 ): BillingRepository {
-  let entitlements = [...memoryTrialEntitlements];
+  let entitlements = [...memoryDefaultEntitlements];
   let entitlementEvents: BillingEntitlementEvent[] = [];
   const managedStoreId = options.storeId ?? "store_1";
   const managedTenantId = options.tenantId;
@@ -26,7 +19,7 @@ export function createMemoryBillingRepository(
   return {
     async activateSubscriptionSelection() {},
     async getOverview(input) {
-      return toOverview(
+      return toMemoryBillingOverview(
         input.storeId,
         input.tenantId,
         entitlements,
@@ -36,7 +29,7 @@ export function createMemoryBillingRepository(
       );
     },
     async getTenantOverview(input) {
-      const overview = toOverview(
+      const overview = toMemoryBillingOverview(
         managedStoreId,
         input.tenantId,
         entitlements,
@@ -44,22 +37,12 @@ export function createMemoryBillingRepository(
         "agency",
         input.currentActorCanManage,
       );
-      return toTenantOverview(overview);
+      return toMemoryTenantOverview(overview);
     },
     async storeExistsInTenant(input) {
       return (
         input.storeId === managedStoreId &&
         (managedTenantId === undefined || input.tenantId === managedTenantId)
-      );
-    },
-    async updateSubscriptionSelection(input) {
-      return toOverview(
-        input.storeId,
-        input.tenantId,
-        entitlements,
-        entitlementEvents,
-        input.billingManagedBy,
-        input.currentActorCanManage,
       );
     },
     async updateStoreEntitlement(input) {
@@ -94,7 +77,7 @@ export function createMemoryBillingRepository(
         ...entitlementEvents,
       ].slice(0, 25);
 
-      return toOverview(
+      return toMemoryBillingOverview(
         input.storeId,
         input.tenantId,
         entitlements,
@@ -103,90 +86,5 @@ export function createMemoryBillingRepository(
         input.currentActorCanManage,
       );
     },
-  };
-}
-
-function toOverview(
-  storeId: string,
-  tenantId: string,
-  entitlements: StoreEntitlement[],
-  entitlementEvents: BillingEntitlementEvent[],
-  billingManagedBy: "agency" | "store_owner" = "store_owner",
-  currentActorCanManage = true,
-): BillingOverview {
-  return createBillingOverview({
-    addons: memoryBillingAddons,
-    allocations: [
-      {
-        activeEntitlementCount: entitlements.filter(
-          (item) => item.status === "active" || item.status === "trialing",
-        ).length,
-        addonCount: 1,
-        monthlyAmountCents: 54899,
-        planCode: "growth",
-        planName: "Growth",
-        storeId: storeId as never,
-        storeName: "Loja principal",
-        storeSlug: "test-store",
-        subscriptionStatus: "trialing",
-      },
-    ],
-    authority: createBillingAuthority({
-      billingManagedBy,
-      currentActorCanManage,
-    }),
-    entitlementEvents,
-    entitlements,
-    financialSummary: {
-      monthlyRecurringCents: 54899,
-      nextDueAt: null,
-      openInvoiceCount: 0,
-      overdueInvoiceCount: 0,
-      paidThisPeriodCents: 0,
-    },
-    plans: memoryBillingPlans,
-    storeId: storeId as never,
-    subscription: {
-      currentPeriodEnd: new Date("2099-08-01T00:00:00.000Z"),
-      currentPeriodStart: null,
-      id: "subscription_memory",
-      plan: memoryBillingPlans[0] ?? null,
-      status: "trialing",
-    },
-    tenantId: tenantId as never,
-  });
-}
-
-function toTenantOverview(overview: BillingOverview): AgencyTenantOverview {
-  return {
-    addons: overview.addons,
-    allocations: overview.allocations,
-    authority: overview.authority,
-    chargePreview: overview.chargePreview,
-    entitlementEvents: overview.entitlementEvents,
-    financialSummary: overview.financialSummary,
-    plans: overview.plans,
-    stores: overview.allocations.map((allocation) => ({
-      activeEntitlementCount: allocation.activeEntitlementCount,
-      addonCount: allocation.addonCount,
-      createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      entitlementCount: overview.entitlements.length,
-      entitlementMatrix: overview.entitlementMatrix,
-      monthlyAmountCents: allocation.monthlyAmountCents,
-      planCode: allocation.planCode,
-      planName: allocation.planName,
-      storeId: allocation.storeId,
-      storeName: allocation.storeName,
-      storeSlug: allocation.storeSlug,
-      subscriptionStatus: allocation.subscriptionStatus,
-      vehicleCount: 3,
-    })),
-    subscription: overview.subscription,
-    tenant: {
-      tenantId: overview.tenantId,
-      tenantName: "Agency One",
-      tenantSlug: "agency-one",
-    },
-    tenantId: overview.tenantId,
   };
 }

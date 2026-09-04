@@ -3,6 +3,30 @@ import { createVehicleListing } from "./createVehicleListing.js";
 import { createContext, createInMemoryVehiclePorts } from "./testSupport.js";
 
 describe("VehicleService create listing denials", () => {
+  it("publishes a newly created listing by default", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts();
+
+    const listing = await createVehicleListing(
+      context,
+      { plate: "ABC1D23", title: "Civic" },
+      ports,
+    );
+
+    expect(listing).toMatchObject({
+      isVisibleOnPublicSite: true,
+      publicSlug: "civic-listing-1",
+      status: "published",
+    });
+    expect(ports.operationsRepository.statuses).toEqual([
+      expect.objectContaining({
+        fromStatus: "draft",
+        listingId: "listing_1",
+        toStatus: "published",
+      }),
+    ]);
+  });
+
   it("rejects listing creation without a store-scoped context and audits the denial", async () => {
     const context = {
       ...createContext(["inventory.create"]),
@@ -95,6 +119,39 @@ describe("VehicleService create listing denials", () => {
       ),
     ).rejects.toThrow("quota exceeded");
 
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("rejects incomplete FIPE identities before persistence", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts();
+    const create = vi.spyOn(ports.listingRepository, "create");
+
+    await expect(
+      createVehicleListing(
+        context,
+        {
+          catalog: {
+            brandCode: null,
+            brandName: "Volvo",
+            fipeCode: "029039-4",
+            fuel: "Gasolina",
+            modelCode: null,
+            modelName: "V40 T-4 2.0 Aut./Mec.",
+            modelYear: 2013,
+            priceCents: 6552600,
+            referenceMonth: "agosto de 2026",
+            source: "fipe",
+            vehicleType: "cars",
+            yearCode: null,
+            yearName: "2013 Gasolina",
+          },
+          plate: "AXD9H38",
+          title: "Volvo V40 T-4 2.0 Aut./Mec. 2013",
+        },
+        ports,
+      ),
+    ).rejects.toThrow("FIPE catalog identity is incomplete");
     expect(create).not.toHaveBeenCalled();
   });
 });

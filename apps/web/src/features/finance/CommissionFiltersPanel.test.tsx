@@ -8,6 +8,26 @@ import { initialCommissionFilters } from "./commissionWorkspaceModel";
 describe("CommissionFiltersPanel", () => {
   afterEach(() => cleanup());
 
+  it("renders FeatureToolbar with commission-filter-toolbar class and xl radius for accent corner alignment", () => {
+    const { container } = render(
+      <CommissionFiltersPanel
+        filters={initialCommissionFilters()}
+        hasFilters={false}
+        onChange={vi.fn()}
+        onClear={vi.fn()}
+        originOptions={[{ label: "Venda", value: "sale" }]}
+        sellerOptions={[{ label: "Ana", value: "seller-1" }]}
+      />,
+    );
+
+    const toolbar = container.querySelector<HTMLElement>(
+      ".commission-filter-toolbar",
+    );
+    expect(toolbar).toBeInTheDocument();
+    expect(toolbar).toHaveClass("feature-toolbar--radius-xl");
+    expect(toolbar).toHaveClass("glass-panel-branded");
+  });
+
   it("keeps the date range and commission filters on one desktop row", () => {
     const { container } = render(
       <CommissionFiltersPanel
@@ -27,7 +47,7 @@ describe("CommissionFiltersPanel", () => {
       ".datepicker-range-picker",
     );
 
-    expect(filterGrid).toHaveClass("xl:grid-cols-4");
+    expect(filterGrid?.className).toContain("xl:grid-cols-[minmax(0,1.45fr)");
     expect(dateRange).not.toBeNull();
     expect(within(dateRange!).getByText("De:")).toBeVisible();
     expect(within(dateRange!).getByText("Até:")).toBeVisible();

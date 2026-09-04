@@ -8,6 +8,7 @@ import {
   Search,
   Handshake,
 } from "lucide-react";
+import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { LeadFilters, CrmViewMode } from "./crmPipelineModels";
 import type { Pipeline, PipelineStage } from "./crmPipelineStorage";
 import { FILTER_CONFIGS, type CustomFilters } from "./CrmPipelineToolbarTypes";
@@ -86,11 +87,11 @@ export function CrmPipelineToolbar({
     <div className="crm-pipeline-toolbar relative z-30 flex min-w-0 flex-col gap-4 pb-2.5">
       {/* Active Pipeline Selector Tabs Row */}
       <div className="flex flex-col gap-3 border-b border-line/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex max-w-full min-w-0 flex-wrap items-center gap-1 pb-1 sm:pb-0">
+        <div className="flex max-w-full min-w-0 flex-wrap items-center gap-1 py-0.5 pb-1 sm:pb-0.5">
           {pipelines.map((p) => (
             <button
               className={
-                "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 text-xs font-black transition-all cursor-pointer " +
+                "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 text-xs font-black transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.97] " +
                 (p.id === activePipelineId
                   ? "bg-panel border border-line/60 text-app-text"
                   : "text-muted hover:text-app-text hover:bg-line/10")
@@ -103,7 +104,7 @@ export function CrmPipelineToolbar({
             </button>
           ))}
           <button
-            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-all"
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.97]"
             onClick={onCreatePipeline}
             type="button"
           >
@@ -223,7 +224,12 @@ export function CrmPipelineToolbar({
               onClick={() => setShowFasesDropdown(!showFasesDropdown)}
               type="button"
             >
-              <Eye className="size-3.5 text-muted" />
+              <AnimatedIconSwap
+                stateKey={showFasesDropdown}
+                variant="rotate-spin"
+              >
+                <Eye className="size-3.5 text-muted" />
+              </AnimatedIconSwap>
               <span>Fases</span>
               <span className="bg-line/20 rounded px-1 text-xs font-black">
                 {visibleStagesCount}/{stages.length}
@@ -266,29 +272,39 @@ export function CrmPipelineToolbar({
               aria-label="Exibir kanban"
               aria-pressed={viewMode === "kanban"}
               className={
-                "p-2 cursor-pointer " +
+                "p-2 cursor-pointer transition-all duration-150 hover:scale-105 active:scale-90 " +
                 (viewMode === "kanban"
-                  ? "text-accent bg-line/20"
+                  ? "text-accent bg-line/20 font-black"
                   : "text-muted hover:text-app-text hover:bg-line/25")
               }
               onClick={() => onChangeViewMode("kanban")}
               type="button"
             >
-              <Grid className="size-3.5" />
+              <AnimatedIconSwap
+                stateKey={viewMode === "kanban"}
+                variant="scale-fade"
+              >
+                <Grid className="size-3.5" />
+              </AnimatedIconSwap>
             </button>
             <button
               aria-label="Exibir lista"
               aria-pressed={viewMode === "list"}
               className={
-                "p-2 cursor-pointer " +
+                "p-2 cursor-pointer transition-all duration-150 hover:scale-105 active:scale-90 " +
                 (viewMode === "list"
-                  ? "text-accent bg-line/20"
+                  ? "text-accent bg-line/20 font-black"
                   : "text-muted hover:text-app-text hover:bg-line/25")
               }
               onClick={() => onChangeViewMode("list")}
               type="button"
             >
-              <List className="size-3.5" />
+              <AnimatedIconSwap
+                stateKey={viewMode === "list"}
+                variant="scale-fade"
+              >
+                <List className="size-3.5" />
+              </AnimatedIconSwap>
             </button>
           </div>
 

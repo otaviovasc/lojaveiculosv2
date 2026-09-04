@@ -1,0 +1,192 @@
+.crm-composer {
+  background: color-mix(
+    in srgb,
+    var(--color-app-elevated) 44%,
+    var(--color-panel)
+  );
+  display: block;
+  padding: 0.65rem 1rem max(0.65rem, env(safe-area-inset-bottom));
+  width: 100%;
+}
+
+.crm-composer-row {
+  align-items: flex-end;
+  gap: 0.625rem;
+  max-width: 100%;
+  width: 100%;
+}
+
+.crm-composer-textbox {
+  background: color-mix(in srgb, var(--color-app) 72%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 1.35rem;
+  box-shadow: inset 0 1px 2px 0
+    color-mix(in srgb, var(--color-text) 3%, transparent);
+  min-height: 2.85rem;
+}
+
+.crm-composer-textbox textarea {
+  line-height: 1.45;
+  max-height: 7.5rem;
+  min-height: 2rem;
+  overflow-y: auto;
+  padding: 0.35rem 0;
+  resize: none;
+}
+
+.crm-composer .crm-icon-action,
+.crm-composer-row > .crm-attach > .crm-icon-action,
+.crm-send-action {
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  height: 2.85rem;
+  width: 2.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.18s ease;
+}
+
+.crm-audio-action,
+.crm-audio-action:disabled {
+  background: var(--color-app);
+  border-color: var(--color-line);
+  color: var(--color-text);
+  opacity: 1;
+  box-shadow: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.crm-audio-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-app) 72%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
+  color: var(--color-text);
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+.crm-audio-action:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.crm-send-action:not(.crm-audio-action) {
+  background: var(--color-green-start);
+  border-color: var(--color-green-start);
+  color: var(--color-success-foreground);
+  box-shadow: none;
+}
+
+.crm-send-action:not(.crm-audio-action) svg {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-send-action:not(.crm-audio-action):hover:not(:disabled) {
+  background: color-mix(
+    in srgb,
+    var(--color-green-start) 88%,
+    var(--color-panel)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 88%,
+    var(--color-panel)
+  );
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+.crm-send-action:not(.crm-audio-action):hover:not(:disabled) svg {
+  transform: translate(1px, -1px) scale(1.08);
+}
+
+.crm-send-action:not(.crm-audio-action):active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.crm-send-action:not(.crm-audio-action):disabled {
+  opacity: 0.45;
+  filter: none;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.crm-composer-row > .crm-recording {
+  flex: 0 0 auto;
+  position: static;
+  transform: none;
+  transition: all 0.22s ease;
+}
+
+.crm-composer-row > .crm-recording-error {
+  max-width: 9rem;
+}
+
+.crm-composer-row > .crm-attach > .crm-icon-action {
+  height: 3.25rem;
+  width: 3.25rem;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-composer-row > .crm-attach > .crm-icon-action:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-2px);
+}
+
+.crm-disconnected {
+  align-items: center;
+  align-self: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  margin: auto;
+  max-width: 32rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.crm-disconnected-icon {
+  align-items: center;
+  background: var(--color-green-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-green-start) 28%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-success-strong);
+  display: inline-flex;
+  height: 4rem;
+  justify-content: center;
+  width: 4rem;
+}
+
+.crm-disconnected h2,
+.crm-disconnected p {
+  margin: 0.375rem 0 0;
+}
+
+.crm-disconnected h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+}
+
+.crm-disconnected p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.crm-disconnected > div > strong {
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}

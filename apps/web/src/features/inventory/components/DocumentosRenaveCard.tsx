@@ -6,7 +6,7 @@ export function DocumentosRenaveCard() {
   return (
     <section
       aria-labelledby="renave-card-title"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+      className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
     >
       <header className="flex items-center justify-between gap-3 border-b border-line pb-3">
         <h3
@@ -21,7 +21,7 @@ export function DocumentosRenaveCard() {
         </span>
       </header>
 
-      <div className="rounded-xl bg-warning/8 p-4">
+      <div className="vehicle-detail-notice rounded-xl bg-warning/8 p-4">
         <div className="flex items-start gap-3">
           <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
           <div className="grid gap-1.5">

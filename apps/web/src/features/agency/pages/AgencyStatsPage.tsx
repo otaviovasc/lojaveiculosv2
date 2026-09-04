@@ -1,85 +1,201 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { BarChart3, RefreshCcw, ShieldCheck } from "lucide-react";
 import {
-  BarChart3,
-  CheckCircle2,
-  CircleGauge,
-  DatabaseZap,
-  ShieldCheck,
-} from "lucide-react";
-
-const metricRequirements = [
-  {
-    description: "Eventos identificados por loja, origem e campanha.",
-    icon: DatabaseZap,
-    label: "Aquisição e tráfego",
-  },
-  {
-    description: "Leads e etapas comerciais conectados ao mesmo funil.",
-    icon: CircleGauge,
-    label: "Conversão comercial",
-  },
-  {
-    description: "Indicadores publicados somente após validação da fonte.",
-    icon: ShieldCheck,
-    label: "Qualidade dos dados",
-  },
-] as const;
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../../components/ui/FeatureLayout";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import type { AgencyStatsPeriod, AgencyStatsReport } from "../apiClient";
+import {
+  AgencyTenantSelector,
+  useAgencyTenantSelection,
+} from "../useAgencyTenantSelection";
+import {
+  AgencyStatsFilters,
+  AgencyStatsReportContent,
+} from "./AgencyStatsParts";
+import {
+  formatPeriod,
+  periodForDays,
+  readAgencyStatsFilters,
+} from "./AgencyStatsPage.model";
+import { createRuntimeAgencyStatsApi } from "./AgencyStatsPage.runtime";
 
 export function AgencyStatsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { agencyTenant, agencyTenants, selectAgencyTenant } =
+    useAgencyTenantSelection();
+  const filters = useMemo(
+    () => readAgencyStatsFilters(searchParams),
+    [searchParams],
+  );
+  const [draftPeriod, setDraftPeriod] = useState(filters.period);
+  const [report, setReport] = useState<AgencyStatsReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestVersion = useRef(0);
+  const visibleReport =
+    report?.tenantId === agencyTenant?.tenantId ? report : null;
+
+  useEffect(() => setDraftPeriod(filters.period), [filters.period]);
+
+  const loadStats = useCallback(async () => {
+    if (!agencyTenant) {
+      setLoading(false);
+      setReport(null);
+      return;
+    }
+    const version = ++requestVersion.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const api = await createRuntimeAgencyStatsApi();
+      const nextReport = await api.getStats(agencyTenant.tenantId, {
+        ...filters.period,
+        ...(filters.storeId ? { storeId: filters.storeId } : {}),
+      });
+      if (version === requestVersion.current) setReport(nextReport);
+    } catch (error) {
+      if (version === requestVersion.current) {
+        setLoadError(
+          formatApiErrorDisplay(
+            error,
+            "Não foi possível carregar as estatísticas da agência.",
+          ),
+        );
+      }
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
+    }
+  }, [agencyTenant, filters.period.from, filters.period.to, filters.storeId]);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
+
+  const updateFilters = useCallback(
+    (period: AgencyStatsPeriod, storeId = filters.storeId) => {
+      const next = new URLSearchParams();
+      next.set("from", period.from);
+      next.set("to", period.to);
+      if (storeId) next.set("storeId", storeId);
+      setSearchParams(next, { replace: true });
+    },
+    [filters.storeId, setSearchParams],
+  );
+
+  const selectedStore = visibleReport?.availableStores.find(
+    (store) => store.storeId === filters.storeId,
+  );
+
   return (
-    <div className="agency-stats-page animate-fade-in">
-      <header className="agency-stats-header">
-        <span>Desempenho da rede</span>
-        <h1>Estatísticas</h1>
-        <p>
-          Métricas consolidadas serão exibidas somente quando as fontes de cada
-          loja estiverem conectadas e validadas.
-        </p>
-      </header>
+    <FeaturePageShell
+      className="agency-stats-page relative animate-fade-in"
+      variant="content"
+    >
+      <div aria-hidden="true" className="agency-stats-ambient" />
+      <div aria-busy={loading || undefined} className="relative z-10 space-y-5">
+        <FeaturePageHeader
+          actions={
+            <AgencyTenantSelector
+              agencyTenant={agencyTenant}
+              agencyTenants={agencyTenants}
+              onChange={(tenantId) => {
+                updateFilters(filters.period, undefined);
+                selectAgencyTenant(tenantId);
+              }}
+            />
+          }
+          chip={
+            visibleReport
+              ? `${selectedStore?.storeName ?? "Rede completa"} · ${formatPeriod(filters.period)}`
+              : undefined
+          }
+          description="Vendas, leads e estoque consolidados diretamente dos registros operacionais das lojas."
+          eyebrow={
+            <>
+              <BarChart3 aria-hidden="true" className="size-4" />
+              Desempenho comercial
+            </>
+          }
+          title="Estatísticas da rede"
+        />
 
-      <section
-        aria-labelledby="agency-stats-unavailable-title"
-        className="agency-stats-unavailable"
-      >
-        <div className="agency-stats-unavailable__visual" aria-hidden="true">
-          <BarChart3 />
-          <span />
-          <span />
-          <span />
-        </div>
+        {!agencyTenant ? (
+          <FeatureEmptyState
+            body="Seu usuário não possui uma participação ativa em uma agência."
+            icon={ShieldCheck}
+            title="Acesso de agência necessário"
+            tone="warning"
+          />
+        ) : (
+          <>
+            <AgencyStatsFilters
+              draftPeriod={draftPeriod}
+              onApplyPeriod={() => updateFilters(draftPeriod)}
+              onDraftPeriodChange={setDraftPeriod}
+              onPeriodPreset={(days) => updateFilters(periodForDays(days))}
+              onStoreChange={(storeId) =>
+                updateFilters(
+                  filters.period,
+                  storeId === "all" ? undefined : storeId,
+                )
+              }
+              period={filters.period}
+              report={visibleReport}
+              {...(filters.storeId ? { storeId: filters.storeId } : {})}
+            />
 
-        <div className="agency-stats-unavailable__copy">
-          <span className="agency-stats-status">
-            <CheckCircle2 aria-hidden="true" />
-            Sem dados estimados
-          </span>
-          <h2 id="agency-stats-unavailable-title">
-            Painel avançado em preparação
-          </h2>
-          <p>
-            Ainda não há uma fonte analítica real conectada a esta tela. Por
-            isso, nenhum total, percentual ou tendência fictícia é apresentado.
-          </p>
-        </div>
+            {loading && !visibleReport ? (
+              <FeatureLoadingState
+                icon={BarChart3}
+                title="Consolidando dados reais da rede"
+              >
+                <p>Calculando vendas, leads e posição atual do estoque.</p>
+              </FeatureLoadingState>
+            ) : null}
 
-        <div className="agency-stats-requirements">
-          {metricRequirements.map(({ description, icon: Icon, label }) => (
-            <article key={label}>
-              <span aria-hidden="true">
-                <Icon />
-              </span>
-              <div>
-                <h3>{label}</h3>
-                <p>{description}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+            {loadError ? (
+              <FeatureAlert
+                action={
+                  <FeatureActionButton
+                    icon={RefreshCcw}
+                    isBusy={loading}
+                    label="Tentar novamente"
+                    onClick={() => void loadStats()}
+                  />
+                }
+                title={
+                  visibleReport
+                    ? "Não foi possível atualizar o recorte"
+                    : "Estatísticas indisponíveis"
+                }
+                tone="danger"
+              >
+                {loadError}
+              </FeatureAlert>
+            ) : null}
 
-        <p className="agency-stats-footnote" role="status">
-          Os primeiros números aparecerão aqui depois que a coleta, a janela de
-          comparação e a validação de eventos estiverem operacionais.
-        </p>
-      </section>
-    </div>
+            {loading && visibleReport ? (
+              <p className="agency-stats-refreshing" role="status">
+                <RefreshCcw aria-hidden="true" /> Atualizando o recorte sem
+                ocultar os dados anteriores
+              </p>
+            ) : null}
+
+            {visibleReport ? (
+              <AgencyStatsReportContent report={visibleReport} />
+            ) : null}
+          </>
+        )}
+      </div>
+    </FeaturePageShell>
   );
 }

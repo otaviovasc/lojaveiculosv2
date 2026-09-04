@@ -11,7 +11,7 @@ export type BillingProviderCustomerRecord = {
   id: string;
   name: string;
   provider: PaymentProvider;
-  providerCustomerId: string;
+  providerCustomerId: string | null;
 };
 
 export type BillingProviderSubscriptionRecord = {
@@ -21,19 +21,6 @@ export type BillingProviderSubscriptionRecord = {
   provider: PaymentProvider;
   providerSubscriptionId: string | null;
   status: "active" | "cancelled" | "expired" | "past_due" | "trialing";
-};
-
-export type BillingProviderCheckoutRecord = {
-  checkoutUrl: string;
-  expiresAt: Date | null;
-  externalReference: string;
-  id: string;
-  provider: PaymentProvider;
-  providerCheckoutId: string;
-  status: "cancelled" | "created" | "expired" | "paid";
-  storeId: string | null;
-  subscriptionId: string;
-  tenantId: string;
 };
 
 export type BillingProviderAccount = {
@@ -53,29 +40,23 @@ export type SaveBillingProviderCustomerInput = {
   billingCustomerId: string;
   provider: PaymentProvider;
   providerCustomerId: string;
+  storeId: StoreId;
+  tenantId: TenantId;
 };
 
 export type SaveBillingProviderSubscriptionInput = {
   currentPeriodEnd: Date | null;
   currentPeriodStart: Date | null;
+  expectedProviderSubscriptionId?: string | null;
+  expectedStatus?: BillingProviderSubscriptionRecord["status"];
+  observationStartedAt?: Date;
+  observedAt?: Date;
   provider: PaymentProvider;
-  providerSubscriptionId: string;
+  providerSubscriptionId: string | null;
   status: BillingProviderSubscriptionRecord["status"];
+  storeId: StoreId;
   subscriptionId: string;
-};
-
-export type SaveBillingProviderCheckoutInput = {
-  callbackUrls: Record<string, string>;
-  checkoutUrl: string;
-  expiresAt: Date | null;
-  externalReference: string;
-  provider: PaymentProvider;
-  providerCheckoutId: string;
-  raw: Record<string, unknown>;
-  status: BillingProviderCheckoutRecord["status"];
-  storeId: string | null;
-  subscriptionId: string;
-  tenantId: string;
+  tenantId: TenantId;
 };
 
 export type BillingProviderRepository = {
@@ -85,21 +66,9 @@ export type BillingProviderRepository = {
   saveProviderCustomer: (
     input: SaveBillingProviderCustomerInput,
   ) => Promise<BillingProviderCustomerRecord | null>;
-  saveProviderCheckout: (
-    input: SaveBillingProviderCheckoutInput,
-  ) => Promise<BillingProviderCheckoutRecord | null>;
   saveProviderSubscription: (
     input: SaveBillingProviderSubscriptionInput,
   ) => Promise<BillingProviderSubscriptionRecord | null>;
-};
-
-export type BillingProviderCheckoutSessionResult = {
-  checkoutUrl: string;
-  expiresAt: string | null;
-  externalReference: string;
-  provider: PaymentProvider;
-  providerCheckoutId: string;
-  subscriptionId: string;
 };
 
 export type BillingProviderSubscriptionSyncResult = {
@@ -107,8 +76,8 @@ export type BillingProviderSubscriptionSyncResult = {
   chargeTotalCents: number;
   nextDueDate: string;
   provider: PaymentProvider;
-  providerCustomerId: string;
-  providerSubscriptionId: string;
+  providerCustomerId: string | null;
+  providerSubscriptionId: string | null;
   status: BillingProviderSubscriptionRecord["status"];
   subscriptionId: string;
   synchronizedAt: string;

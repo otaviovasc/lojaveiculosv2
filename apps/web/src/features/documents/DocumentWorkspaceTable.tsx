@@ -1,21 +1,20 @@
-import { Download, FileSearch, Trash2, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import {
-  FeatureRowAction,
-  FeatureRowActions,
-  FeatureTableFrame,
-} from "../../components/ui/FeatureTable";
+import { FeatureTableFrame } from "../../components/ui/FeatureTable";
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingBadges";
 import { DocumentOriginBadge } from "./DocumentBadges";
-import { documentVehicleInfo } from "./documentDisplayModel";
 import {
-  documentFileLabel,
+  documentVehicleInfo,
+  formatFileSizeLabel,
+} from "./documentDisplayModel";
+import {
   documentKindBadge,
   documentStatusTone,
   formatDateTime,
 } from "./documentsWorkspaceModel";
 import { statusLabel } from "./documentLabels";
 import { DocumentWorkspaceMobileList } from "./DocumentWorkspaceMobileList";
+import { DocumentWorkspaceRowActions } from "./DocumentWorkspaceRowActions";
 import type { WorkspaceDocument } from "./types";
 
 export type DocumentsUploadListAction = {
@@ -64,17 +63,17 @@ export function DocumentsTable({
         <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
           <thead className="sticky top-0 z-20 bg-app text-xs font-black uppercase tracking-wider text-muted border-b border-line">
             <tr>
-              {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
-              <th className="min-w-56 px-4 py-3.5">Documento</th>
-              <th className="hidden min-w-28 px-4 py-3.5 xl:table-cell">
+              {showSelect ? <th className="px-3 py-2.5 w-10" /> : null}
+              <th className="min-w-56 px-3 py-2.5">Documento</th>
+              <th className="hidden min-w-28 px-3 py-2.5 xl:table-cell">
                 Origem
               </th>
-              <th className="documents-table-wide-only px-4 py-3.5">Unidade</th>
-              <th className="min-w-28 px-4 py-3.5">Tipo</th>
-              <th className="w-36 min-w-36 px-4 py-3.5">Status</th>
-              <th className="documents-table-wide-only px-4 py-3.5">Enviado</th>
-              <th className="hidden px-4 py-3.5 2xl:table-cell">Tamanho</th>
-              <th className="sticky right-0 z-10 w-40 min-w-40 bg-panel px-4 py-3.5 text-right">
+              <th className="documents-table-wide-only px-3 py-2.5">Unidade</th>
+              <th className="px-3 py-2.5">Tipo</th>
+              <th className="w-32 min-w-32 px-3 py-2.5">Status</th>
+              <th className="documents-table-wide-only px-3 py-2.5">Enviado</th>
+              <th className="hidden px-3 py-2.5 2xl:table-cell">Tamanho</th>
+              <th className="sticky right-0 z-10 w-36 min-w-36 bg-panel px-3 py-2.5 text-right">
                 Ações
               </th>
             </tr>
@@ -111,12 +110,12 @@ export function DocumentsTable({
                     "group cursor-pointer hover:bg-line/20 transition-all duration-150 " +
                     (isChecked ? "bg-accent-soft" : "")
                   }
-                  key={document.id}
+                  key={`${document.id}:${document.context.targetType}:${document.context.targetId}`}
                   onClick={() => onSelect(document)}
                 >
                   {showSelect ? (
                     <td
-                      className="px-3 py-3 whitespace-nowrap align-middle"
+                      className="px-3 py-2 whitespace-nowrap align-middle"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <input
@@ -133,7 +132,7 @@ export function DocumentsTable({
                   ) : null}
 
                   {/* Documento */}
-                  <td className="px-4 py-3 max-w-[20rem] align-middle">
+                  <td className="px-3 py-2 max-w-[20rem] align-middle">
                     <div
                       className={
                         "truncate font-black text-sm text-app-text group-hover:text-accent transition-colors " +
@@ -148,92 +147,60 @@ export function DocumentsTable({
                   </td>
 
                   {/* Origem */}
-                  <td className="hidden px-4 py-3 whitespace-nowrap align-middle xl:table-cell">
-                    <div className="flex items-center h-10">
-                      <DocumentOriginBadge document={document} />
-                    </div>
+                  <td className="hidden px-3 py-2 align-middle xl:table-cell">
+                    <DocumentOriginBadge document={document} />
                   </td>
 
                   {/* Unidade (placa Mercosul) */}
-                  <td className="documents-table-wide-only px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
-                      {vehicle?.plate ? (
-                        <MercosulPlateBadge plate={vehicle.plate} />
-                      ) : (
-                        <span className="text-xs font-black uppercase tracking-wider text-muted">
-                          Geral
-                        </span>
-                      )}
-                    </div>
+                  <td className="documents-table-wide-only px-3 py-2 whitespace-nowrap align-middle">
+                    {vehicle?.plate ? (
+                      <MercosulPlateBadge plate={vehicle.plate} />
+                    ) : (
+                      <span className="text-xs font-black uppercase tracking-wider text-muted">
+                        Geral
+                      </span>
+                    )}
                   </td>
 
                   {/* Tipo */}
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
-                      <span className="text-xs font-bold text-app-text">
-                        {documentKindBadge(document)}
-                      </span>
-                    </div>
+                  <td className="px-3 py-2 whitespace-nowrap align-middle">
+                    <span className="text-xs font-bold text-app-text">
+                      {documentKindBadge(document)}
+                    </span>
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
-                      <FeatureStatusBadge
-                        className="min-w-max whitespace-nowrap"
-                        tone={documentStatusTone(document.status)}
-                      >
-                        {statusLabel(document.status)}
-                      </FeatureStatusBadge>
-                    </div>
+                  <td className="px-3 py-2 whitespace-nowrap align-middle">
+                    <FeatureStatusBadge
+                      className="min-w-max whitespace-nowrap"
+                      tone={documentStatusTone(document.status)}
+                    >
+                      {statusLabel(document.status)}
+                    </FeatureStatusBadge>
                   </td>
 
                   {/* Enviado */}
-                  <td className="documents-table-wide-only px-4 py-3 whitespace-nowrap text-xs align-middle">
-                    <div className="font-black text-app-text">
-                      {formatDateTime(document.uploadedAt)}
-                    </div>
-                    {vehicle?.label ? (
-                      <div className="text-muted mt-0.5 font-bold truncate max-w-[140px]">
-                        {vehicle.label}
-                      </div>
-                    ) : null}
+                  <td className="documents-table-wide-only px-3 py-2 whitespace-nowrap text-xs font-bold text-app-text align-middle">
+                    {formatDateTime(document.uploadedAt)}
                   </td>
 
                   {/* Tamanho */}
-                  <td className="hidden px-4 py-3 whitespace-nowrap text-xs align-middle 2xl:table-cell">
-                    <div className="font-bold text-muted">
-                      {documentFileLabel(document)}
-                    </div>
+                  <td className="hidden px-3 py-2 whitespace-nowrap text-xs font-bold text-muted align-middle 2xl:table-cell">
+                    {formatFileSizeLabel(document.file.fileSizeBytes)}
                   </td>
 
                   {/* Ações */}
                   <td
-                    className="sticky right-0 w-40 min-w-40 bg-panel px-4 py-3 whitespace-nowrap text-right align-middle group-hover:bg-app-elevated"
+                    className="documents-table-actions-cell sticky right-0 w-36 min-w-36 bg-panel px-2.5 py-2 whitespace-nowrap text-right align-middle group-hover:bg-app-elevated"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <FeatureRowActions>
-                      <FeatureRowAction
-                        ariaLabel="Visualizar documento"
-                        icon={FileSearch}
-                        onClick={() => onSelect(document)}
-                        tooltip="Visualizar"
-                      />
-                      <FeatureRowAction
-                        ariaLabel="Baixar documento"
-                        disabled={isBusy}
-                        icon={Download}
-                        onClick={() => void onDownload(document.id)}
-                        tooltip="Baixar"
-                      />
-                      <FeatureRowAction
-                        ariaLabel="Excluir documento"
-                        disabled={isBusy || document.status === "voided"}
-                        icon={Trash2}
-                        onClick={() => onDelete(document)}
-                        tooltip="Excluir"
-                      />
-                    </FeatureRowActions>
+                    <DocumentWorkspaceRowActions
+                      document={document}
+                      isBusy={isBusy}
+                      onDelete={onDelete}
+                      onDownload={onDownload}
+                      onSelect={onSelect}
+                    />
                   </td>
                 </tr>
               );

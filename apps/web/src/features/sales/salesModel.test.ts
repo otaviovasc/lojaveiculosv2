@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   canPersistSaleWorkspaceEdits,
   createDraftFromContext,
+  formatDocumentKindLabel,
+  formatPaymentMethodLabel,
   parseSaleStartContext,
   paymentPrincipalTotal,
   reservationSignalPayment,
@@ -19,7 +21,7 @@ describe("sales model start context", () => {
   it("propagates vehicle media and identifiers into draft creation", () => {
     const mediaUrl = "https://cdn.example.com/vehicles/civic.jpg";
     window.location.hash =
-      `#/sales?leadId=lead_1&listingId=listing_1&unitId=unit_1` +
+      `#/sales?leadId=lead_1&listingId=listing_1&unitId=unit_1&sellerUserId=seller_7` +
       `&listingTitle=${encodeURIComponent("Honda Civic Touring")}` +
       `&unitLabel=EST-42&placa=TRD1E23&cor=Preto` +
       `&primaryMediaUrl=${encodeURIComponent(mediaUrl)}&priceCents=12990000`;
@@ -33,6 +35,7 @@ describe("sales model start context", () => {
       listingId: "listing_1",
       plate: "TRD1E23",
       primaryMediaUrl: mediaUrl,
+      sellerUserId: "seller_7",
       unitId: "unit_1",
     });
     expect(draft).toMatchObject({
@@ -63,6 +66,7 @@ describe("sales model start context", () => {
         "delivery_term",
         "power_of_attorney",
       ],
+      sellerUserId: "seller_7",
       unitId: "unit_1",
     });
   });
@@ -192,6 +196,43 @@ describe("sales model start context", () => {
       metadata: { methodReference: "Visa · autorização 123456" },
       method: "credit_card",
     });
+  });
+
+  it("translates payment method keys to Portuguese labels", () => {
+    expect(formatPaymentMethodLabel("credit_card")).toBe("Cartão de Crédito");
+    expect(formatPaymentMethodLabel("pix")).toBe("PIX");
+    expect(formatPaymentMethodLabel("cash")).toBe("Dinheiro em Espécie");
+    expect(formatPaymentMethodLabel("financing")).toBe(
+      "Financiamento Bancário",
+    );
+    expect(formatPaymentMethodLabel("trade_in")).toBe(
+      "Veículo na Troca (Trade-in)",
+    );
+    expect(formatPaymentMethodLabel("transfer")).toBe(
+      "Transferência (TED/DOC)",
+    );
+    expect(formatPaymentMethodLabel("boleto")).toBe("Boleto Bancário");
+    expect(formatPaymentMethodLabel("letter_of_credit")).toBe(
+      "Carta de Crédito (Consórcio)",
+    );
+    expect(formatPaymentMethodLabel("custom_method")).toBe("CUSTOM METHOD");
+  });
+
+  it("translates document kind keys to Portuguese labels", () => {
+    expect(formatDocumentKindLabel("sale_contract")).toBe(
+      "Contrato de Compra e Venda",
+    );
+    expect(formatDocumentKindLabel("sale_receipt")).toBe("Recibo de Venda");
+    expect(formatDocumentKindLabel("delivery_term")).toBe("Termo de Entrega");
+    expect(formatDocumentKindLabel("power_of_attorney")).toBe(
+      "Procuração de Transferência",
+    );
+    expect(formatDocumentKindLabel("buyer_acknowledgment")).toBe(
+      "Termo de recebimento",
+    );
+    expect(formatDocumentKindLabel("reservation_receipt")).toBe(
+      "Recibo de Sinal e Reserva",
+    );
   });
 });
 

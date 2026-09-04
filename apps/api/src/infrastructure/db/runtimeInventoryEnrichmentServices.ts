@@ -10,12 +10,19 @@ import {
   createDrizzleBillingQuotaGuard,
   type DrizzleBillingQuotaClient,
 } from "./billing/drizzleBillingQuotaGuard.js";
+import {
+  createDrizzleVehicleCatalogRepository,
+  type DrizzleVehicleCatalogClient,
+} from "./vehicleCatalog/drizzleVehicleCatalogRepository.js";
 
 export function createRuntimeInventoryEnrichmentServices(
   db: unknown,
   env: Record<string, string | undefined>,
 ): InventoryEnrichmentServices {
   return createInventoryEnrichmentServices({
+    catalogRepository: createDrizzleVehicleCatalogRepository(
+      db as DrizzleVehicleCatalogClient,
+    ),
     plateLookupCacheTtlMs: readPlateLookupCacheTtlMs(env),
     plateLookupRepository: createDrizzleVehiclePlateLookupRepository(
       db as DrizzleVehiclePlateLookupClient,

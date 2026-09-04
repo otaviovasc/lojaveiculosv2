@@ -1,10 +1,11 @@
-import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { and, asc, eq, exists, isNotNull, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   storeCustomPages,
   storeProfiles,
   storePublicSiteSettings,
   stores,
+  vehicleListings,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
@@ -19,6 +20,8 @@ import {
   toStorefrontPageUpdate,
   type StorefrontPageRow,
 } from "./drizzleStorefrontPageMapper.js";
+import { writeVehicleVitrine } from "./drizzleStorefrontVehicleVitrineWrite.js";
+import { hasRequiredVehicleVitrineBinding } from "./publicVehicleVitrinePrice.js";
 
 export type DrizzleStorefrontPageClient = PostgresJsDatabase<typeof schema>;
 
@@ -26,6 +29,8 @@ export function createDrizzleStorefrontPageRepository(
   db: DrizzleStorefrontPageClient,
 ): StorefrontPageRepository {
   return {
+    createOrReuseVehicleVitrine: (scope, input) =>
+      writeVehicleVitrine(db, scope, input),
     async createCustomPage(scope, input) {
       const [row] = await db
         .insert(storeCustomPages)
@@ -60,14 +65,38 @@ export function createDrizzleStorefrontPageRepository(
     async findPublicCustomPageBySlug(input) {
       const row = await selectPublicCustomPageRow(db, input);
       if (!row) return null;
-      const vehicles = await createDrizzlePublicStorefrontRepository(
+      if (!hasRequiredVehicleVitrineBinding(toStorefrontCustomPage(row.page)))
+        return null;
+      const publicRepository = createDrizzlePublicStorefrontRepository(
         db as unknown as DrizzlePublicStorefrontClient,
-      ).listPublicListings({
-        limit: 12,
+      );
+      const scope = {
         storeId: row.store.id as never,
         tenantId: row.store.tenantId as never,
+      };
+      const sourceListing = row.page.sourceListingId
+        ? await publicRepository.findPublicListingDetailById?.({
+            ...scope,
+            listingId: row.page.sourceListingId,
+          })
+        : null;
+      if (row.page.sourceListingId && !sourceListing) return null;
+      const sourceAskingPriceCents = row.page.sourceListingId
+        ? await findSourceAskingPriceCents(db, {
+            ...scope,
+            listingId: row.page.sourceListingId,
+          })
+        : null;
+      const vehicles = await publicRepository.listPublicListings({
+        limit: 12,
+        ...scope,
       });
-      return toPublicCustomPageSnapshot(row, vehicles);
+      return toPublicCustomPageSnapshot(
+        row,
+        vehicles,
+        sourceListing?.priceCents ?? null,
+        sourceAskingPriceCents,
+      );
     },
     async listCustomPages(scope) {
       const rows = await db
@@ -92,6 +121,28 @@ export function createDrizzleStorefrontPageRepository(
       return row ? toStorefrontCustomPage(row) : null;
     },
   };
+}
+
+async function findSourceAskingPriceCents(
+  db: DrizzleStorefrontPageClient,
+  input: { listingId: string; storeId: string; tenantId: string },
+) {
+  const [row] = await db
+    .select({ priceCents: vehicleListings.askingPriceCents })
+    .from(vehicleListings)
+    .where(
+      and(
+        eq(vehicleListings.id, input.listingId),
+        eq(vehicleListings.storeId, input.storeId),
+        eq(vehicleListings.tenantId, input.tenantId),
+        eq(vehicleListings.status, "published"),
+        eq(vehicleListings.isVisibleOnPublicSite, true),
+        eq(vehicleListings.isDeleted, false),
+        isNull(vehicleListings.deletedAt),
+      ),
+    )
+    .limit(1);
+  return row?.priceCents ?? null;
 }
 
 async function selectPublicCustomPageRow(
@@ -135,6 +186,26 @@ async function selectPublicCustomPageRow(
         isNull(storeCustomPages.deletedAt),
         eq(stores.isDeleted, false),
         isNull(stores.deletedAt),
+        or(
+          isNull(storeCustomPages.sourceListingId),
+          exists(
+            db
+              .select({ id: vehicleListings.id })
+              .from(vehicleListings)
+              .where(
+                and(
+                  eq(vehicleListings.id, storeCustomPages.sourceListingId),
+                  eq(vehicleListings.storeId, storeCustomPages.storeId),
+                  eq(vehicleListings.tenantId, storeCustomPages.tenantId),
+                  eq(vehicleListings.status, "published"),
+                  eq(vehicleListings.isVisibleOnPublicSite, true),
+                  eq(vehicleListings.isDeleted, false),
+                  isNotNull(vehicleListings.publicSlug),
+                  isNull(vehicleListings.deletedAt),
+                ),
+              ),
+          ),
+        ),
       ),
     )
     .limit(1);

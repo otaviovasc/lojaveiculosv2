@@ -8,6 +8,7 @@ import type {
 import { AccountProvisioningProviderError } from "../../domains/identity/services/AccountProvisioningService/serviceSupport.js";
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import {
+  createContextualAuditSink,
   createNoopAuditSink,
   createPolicyAwareAuditSink,
 } from "../../shared/auditSink.js";
@@ -22,6 +23,7 @@ import {
   HttpContextRequestPolicyError,
 } from "./httpContextErrors.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 import { readHttpRequestId } from "./requestMetadata.js";
 
 export type HttpAccountContext = {
@@ -43,15 +45,29 @@ export async function createHttpAccountContext(
   options: CreateHttpAccountContextOptions = {},
 ): Promise<HttpAccountContext> {
   const request = readRequestHeaders(context);
-  const logger =
+  const baseLogger =
     options.logger ??
     createConsoleServiceLogger({
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    });
+  const logger =
+    baseLogger.child?.({
+      component: "http",
       correlationId: request.correlationId,
       requestId: request.requestId,
-    });
+    }) ?? baseLogger;
   const audit = createPolicyAwareAuditSink({
     logger,
-    sink: options.audit ?? createNoopAuditSink(),
+    sink: createContextualAuditSink({
+      request,
+      sink: options.audit ?? createNoopAuditSink(),
+      source: {
+        component: "http",
+        environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+        service: "api",
+      },
+    }),
   });
   const clerkUserId = await resolveClerkUserId(
     context,
@@ -68,21 +84,29 @@ export async function createHttpAccountContext(
     );
   }
   const accountAuth = await resolveAccountAuthorization(profile, options);
+  const serviceContext = createServiceContext({
+    actor: {
+      externalId: profile.clerkUserId,
+      id: accountAuth.actorId,
+      kind: "user",
+    },
+    audit,
+    logger,
+    permissions: accountAuth.permissions,
+    request,
+    source: {
+      component: "http",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    },
+    ...(options.tenantId ? { tenantId: options.tenantId } : {}),
+  });
   return {
     profile,
-    serviceContext: createServiceContext({
-      actor: {
-        externalId: profile.clerkUserId,
-        id: accountAuth.actorId,
-        kind: "user",
-      },
-      audit,
-      logger,
-      permissions: accountAuth.permissions,
-      request,
-      source: { component: "http", service: "api" },
-      ...(options.tenantId ? { tenantId: options.tenantId } : {}),
-    }),
+    serviceContext: {
+      ...serviceContext,
+      platformAdmin: accountAuth.platformAdmin,
+    },
   };
 }
 
@@ -95,6 +119,7 @@ async function resolveAccountAuthorization(
     return {
       actorId: profile.clerkUserId,
       permissions: [...permissions],
+      platformAdmin: false,
     };
   }
 
@@ -106,7 +131,10 @@ async function resolveAccountAuthorization(
     user.id,
   );
   if (isPlatformAdmin) {
+    permissions.add("audit.read");
     permissions.add("billing.manage");
+    permissions.add("crm.messaging.support.manage");
+    permissions.add("financing.connection.manage");
     permissions.add("tenant.manage");
     permissions.add("store.manage");
   }
@@ -117,13 +145,17 @@ async function resolveAccountAuthorization(
       userId: user.id,
     });
     if (isAgency) {
+      permissions.add("analytics.read");
       permissions.add("billing.manage");
+      permissions.add("financing.connection.manage");
       permissions.add("store.manage");
+      permissions.add("users.manage");
     }
   }
   return {
     actorId: user.id,
     permissions: [...permissions],
+    platformAdmin: isPlatformAdmin,
   };
 }
 
@@ -210,7 +242,7 @@ function readRequestHeaders(context: Context) {
   return {
     correlationId,
     method: context.req.method,
-    path: context.req.path,
+    path: sanitizeHttpPath(context.req.path),
     requestId,
   };
 }

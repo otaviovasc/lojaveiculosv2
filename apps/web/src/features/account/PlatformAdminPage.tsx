@@ -1,4 +1,10 @@
-import { Building2, Loader2, RefreshCcw, UserPlus } from "lucide-react";
+import {
+  Activity,
+  Building2,
+  Loader2,
+  RefreshCcw,
+  UserPlus,
+} from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import {
@@ -99,6 +105,16 @@ export function PlatformAdminPage() {
   return (
     <FeaturePageShell className="max-w-4xl" variant="plain">
       <FeaturePageHeader
+        actions={
+          <a
+            aria-label="Abrir observabilidade"
+            className="documents-top-bar-action documents-top-bar-action--primary"
+            href="/platform/observability"
+          >
+            <Activity aria-hidden="true" className="size-4" />
+            <span>Abrir observabilidade</span>
+          </a>
+        }
         chip="Platform admin"
         description="Crie contas de agência e envie o primeiro convite pelo provedor de identidade."
         eyebrow="Operações internas"

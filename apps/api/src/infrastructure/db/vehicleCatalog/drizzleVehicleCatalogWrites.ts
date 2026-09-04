@@ -14,6 +14,7 @@ import {
   findVersion,
   findVersionByBrandId,
   findYear,
+  preserveVehicleBrandLogoUrl,
   requireRow,
   seen,
   slugify,
@@ -41,7 +42,7 @@ export function createDrizzleVehicleCatalogWrites(
       });
       const values = seen({
         isActive: true,
-        logoUrl: input.imageUrl ?? null,
+        logoUrl: preserveVehicleBrandLogoUrl(input.imageUrl, existing?.logoUrl),
         name: input.name,
         slug: slugify(input.name),
       });

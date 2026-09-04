@@ -109,7 +109,7 @@ VALUES
     null,
     'not_configured',
     null,
-    false,
+    true,
     null,
     'aurora',
     'Curadoria de seminovos da Rota 27 em Curitiba.',

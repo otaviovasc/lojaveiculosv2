@@ -53,7 +53,7 @@ export function PrintWrapper({
       aria-describedby={descriptionId}
       aria-labelledby={titleId}
       aria-modal="true"
-      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-app-elevated/95 p-4 backdrop-blur-md md:p-6 print:overflow-visible print:bg-transparent print:p-0 print:backdrop-blur-none"
+      className="vehicle-print-wrapper fixed inset-0 z-50 flex flex-col overflow-y-auto bg-app-elevated/95 p-4 backdrop-blur-md md:p-6 print:overflow-visible print:bg-transparent print:p-0 print:backdrop-blur-none"
       ref={dialogRef}
       role="dialog"
       tabIndex={-1}

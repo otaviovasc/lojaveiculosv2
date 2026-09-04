@@ -23,7 +23,7 @@ test.describe("CRM WhatsApp visits", () => {
       });
     });
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Visitas/ }).click();
 
     await expect(

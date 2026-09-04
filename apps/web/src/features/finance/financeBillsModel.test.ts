@@ -8,10 +8,15 @@ import {
   initialFinanceFilters,
   loadFinanceWorkspace,
   recurringEntryToDraft,
+  entryToDraft,
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
-import { formatFinanceCategory } from "./financeBillsFormat";
+import {
+  formatCurrency,
+  formatDate,
+  formatFinanceCategory,
+} from "./financeBillsFormat";
 import type { FinanceEntry, FinanceRecurringEntry } from "./types";
 
 describe("finance bills model", () => {
@@ -22,6 +27,12 @@ describe("finance bills model", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("preserves localized currency and date output", () => {
+    expect(formatCurrency(123_456)).toBe("R$\u00a01.234,56");
+    expect(formatDate("2026-06-22T12:00:00.000Z")).toBe("22/06/2026");
+    expect(formatDate(null)).toBe("Sem vencimento");
   });
 
   it("maps a paid draft to the V2 create entry flow payload", () => {
@@ -44,6 +55,32 @@ describe("finance bills model", () => {
       status: "paid",
       type: "expense",
     });
+  });
+
+  it("serializes and restores a specific vehicle-unit association", () => {
+    const input = toEntryInput({
+      ...createEntryDraft("expense"),
+      amount: "850",
+      category: "Manutenção",
+      name: "Revisão do veículo",
+      vehicleUnitId: "unit_42",
+    });
+
+    expect(input.links).toEqual([
+      { targetId: "unit_42", targetType: "vehicle_unit" },
+    ]);
+    expect(
+      entryToDraft({
+        ...entry("vehicle", "Revisão", "Manutenção", "pending", "2026-06-25"),
+        links: [
+          {
+            entryId: "vehicle",
+            targetId: "unit_42",
+            targetType: "vehicle_unit",
+          },
+        ],
+      }).vehicleUnitId,
+    ).toBe("unit_42");
   });
 
   it("maps recurrence settings to the V2 recurring entry contract", () => {
@@ -126,6 +163,37 @@ describe("finance bills model", () => {
     ).toEqual(["1"]);
   });
 
+  it("filters entries by one linked vehicle unit", () => {
+    const linked = {
+      ...entry("1", "Revisão", "Veículo", "pending", "2026-06-25"),
+      links: [
+        {
+          entryId: "1",
+          targetId: "unit_1",
+          targetType: "vehicle_unit" as const,
+        },
+      ],
+    };
+    const other = {
+      ...entry("2", "Seguro", "Veículo", "pending", "2026-06-25"),
+      links: [
+        {
+          entryId: "2",
+          targetId: "unit_2",
+          targetType: "vehicle_unit" as const,
+        },
+      ],
+    };
+
+    expect(
+      filterEntries([linked, other], {
+        ...initialFinanceFilters,
+        datePreset: "all",
+        vehicleUnitId: "unit_2",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
+  });
+
   it("keeps operational cash inputs independent from date filters", () => {
     const entries = [
       entry("overdue", "Aluguel", "Operacional", "pending", "2026-06-01"),
@@ -170,18 +238,28 @@ describe("finance bills model", () => {
   });
 
   it("formats vehicle cost categories created by inventory workflows", () => {
-    expect(formatFinanceCategory("vehicle_preparation")).toBe("Preparação");
-    expect(formatFinanceCategory("vehicle_acquisition")).toBe("Aquisição");
-    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo");
-    expect(formatFinanceCategory("vehicle_transport")).toBe("Transporte");
-    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas");
-    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos");
-    expect(formatFinanceCategory("vehicle_other")).toBe("Outros");
+    expect(formatFinanceCategory("vehicle_preparation")).toBe(
+      "Preparação do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_acquisition")).toBe(
+      "Aquisição de veículo",
+    );
+    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo do veículo");
+    expect(formatFinanceCategory("vehicle_transport")).toBe(
+      "Transporte do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas do veículo");
+    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos do veículo");
+    expect(formatFinanceCategory("vehicle_other")).toBe("Outros (veículo)");
 
-    expect(formatFinanceCategory("vehicle_maintenance")).toBe("Manutenção");
-    expect(formatFinanceCategory("vehicle_inspection")).toBe("Inspeção");
+    expect(formatFinanceCategory("vehicle_maintenance")).toBe(
+      "Manutenção do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_inspection")).toBe(
+      "Inspeção veicular",
+    );
     expect(formatFinanceCategory("vehicle_unknown_custom")).toBe(
-      "vehicle_unknown_custom",
+      "Vehicle unknown custom",
     );
   });
 

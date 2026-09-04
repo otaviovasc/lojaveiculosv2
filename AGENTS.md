@@ -163,6 +163,14 @@ Run from `lojaveiculosv2/` before handing work back:
 pnpm run validate
 ```
 
+The `validate:commit`, `validate:push`, and `validate:release` tiers run through
+`tools/quality/run-scoped-validation.mjs`. When every changed file is
+frontend-only (`apps/web/**` or `packages/design-system/**`), the tier replaces
+the repo-wide typecheck/lint/test/coverage/build steps with their
+`@lojaveiculosv2/web` equivalents, since backend code cannot be affected by the
+diff. Any change outside those paths runs the full tier. Force the full tier
+with `VALIDATION_SCOPE=full` or `--full`.
+
 For deploy smoke contracts, run:
 
 ```bash
@@ -172,3 +180,26 @@ pnpm run test:smoke:api
 Do not disable lint, tests, type checks, audit checks, or boundary checks to make
 a change pass. Fix the implementation or document a temporary exception in
 `docs/architecture.md`.
+
+## Deploy And Release Flow
+
+Railway auto-deploys from GitHub branches: pushing `staging` deploys the
+staging environment. Only staging is provisioned for now; the production
+environment is deferred, so merging into `main` deploys nothing yet.
+
+1. Work on a feature branch and open a PR as usual.
+2. Promote to staging with `pnpm run release:staging`. It runs
+   `release:verify`, merges the branch into `staging`, and pushes, which
+   triggers the staging deploy.
+3. Wait for the deploy to succeed, run `pnpm run release:smoke:staging`, and
+   test the flows on staging.
+4. When staging looks good, open the release PR with `pnpm run release:promote`
+   and merge it to keep `main` as the accepted baseline. Only PRs from
+   `staging` can merge into `main` (`main-source-guard` check plus branch
+   protection). This step is optional while production is not provisioned.
+5. Once production exists, merging into `main` will deploy it; then run
+   `pnpm run release:smoke:production` and watch logs.
+
+Never push directly to `main`: the pre-push hook and GitHub branch protection
+both block it. Full details, rollback, and post-deploy checks live in
+`docs/runbooks/deploy.md`.

@@ -82,6 +82,21 @@ describe("product database schema contract", () => {
     });
   });
 
+  it("supports canonical CRM messaging providers and channels", () => {
+    expect(schema.transportProvider.enumValues).toEqual([
+      "meta_cloud",
+      "zapi",
+      "olx",
+      "uazapi",
+    ]);
+    expect(schema.messagingChannel.enumValues).toEqual([
+      "whatsapp",
+      "instagram",
+      "olx_chat",
+    ]);
+    expect(schema.leadSource.enumValues).toContain("instagram");
+  });
+
   it("keeps shared timestamp and external-reference builders canonical", () => {
     const updateSql = schema.tenants.updatedAt.onUpdateFn?.();
 
@@ -102,5 +117,34 @@ describe("product database schema contract", () => {
       name: "provider_id",
     });
     expect(providerId?.getSQLType()).toBe("varchar(191)");
+  });
+
+  it("models billing catalog activation as one immutable database version", () => {
+    const config = getTableConfig(schema.billingCatalogVersions);
+
+    expect(schema.billingCatalogVersionStatus.enumValues).toEqual([
+      "staged",
+      "active",
+      "superseded",
+    ]);
+    expect(config.columns.map((column) => column.name)).toEqual(
+      expect.arrayContaining([
+        "activation_audit_claim_token",
+        "activation_audit_claimed_at",
+        "activation_audit_recorded_at",
+        "checksum",
+        "definition",
+        "previous_version",
+        "published_at",
+        "status",
+        "version",
+      ]),
+    );
+    expect(config.indexes.map((index) => index.config.name)).toEqual(
+      expect.arrayContaining([
+        "billing_catalog_versions_version_unique",
+        "billing_catalog_versions_single_active_unique",
+      ]),
+    );
   });
 });

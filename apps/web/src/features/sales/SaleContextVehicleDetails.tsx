@@ -1,16 +1,22 @@
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { Car, Image as ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import BorderGlow from "../../components/ui/BorderGlow";
 import type { SaleUnitOption } from "./saleContextOptions";
 
 export function SaleContextVehicleDetails({
   formatCurrency,
-  imageLoading,
   selectedUnitOption,
 }: {
   formatCurrency: (cents: number | null | undefined) => string;
-  imageLoading: boolean;
   selectedUnitOption: SaleUnitOption | undefined;
 }) {
+  const mediaUrl = selectedUnitOption?.primaryMediaUrl ?? null;
+  const [loadedMediaUrl, setLoadedMediaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setLoadedMediaUrl(null);
+  }, [mediaUrl]);
+  const imageLoading = Boolean(mediaUrl) && loadedMediaUrl !== mediaUrl;
   if (!selectedUnitOption) {
     return (
       <div className="rounded-xl border border-dashed border-line p-6 text-center text-xs font-bold text-muted flex flex-col items-center justify-center gap-2">
@@ -33,14 +39,18 @@ export function SaleContextVehicleDetails({
             <div className="absolute inset-0 bg-gradient-to-r from-line/20 to-line/50 animate-pulse flex items-center justify-center">
               <Car className="size-6 text-muted/40 animate-bounce" />
             </div>
-          ) : selectedUnitOption.primaryMediaUrl ? (
+          ) : null}
+          {mediaUrl ? (
             <img
               alt={selectedUnitOption.listingTitle}
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               onError={(event) => {
                 event.currentTarget.style.display = "none";
+                setLoadedMediaUrl(mediaUrl);
               }}
-              src={selectedUnitOption.primaryMediaUrl}
+              onLoad={() => setLoadedMediaUrl(mediaUrl)}
+              src={mediaUrl}
+              style={imageLoading ? { visibility: "hidden" } : undefined}
             />
           ) : (
             <div className="flex flex-col items-center justify-center text-muted/50 gap-1.5 p-3">
@@ -71,7 +81,8 @@ export function SaleContextVehicleDetails({
               : "Não informado"}
           </VehicleMeta>
           <VehicleMeta label="Cor">
-            {selectedUnitOption.colorName || "Não informado"}
+            {getVehicleColorLabel(selectedUnitOption.colorName) ||
+              "Não informado"}
           </VehicleMeta>
 
           <div className="text-xs col-span-2 md:col-span-3 border-t border-line/30 pt-2 flex items-center justify-between">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { CrmSelect } from "./CrmFormControls";
@@ -13,6 +13,7 @@ import type {
   ProductCrmLead,
 } from "./productCrmTypes";
 import { CrmLeadFinancialProducts } from "./CrmLeadFinancialProducts";
+import { CrmCredereOfficialPanel } from "./CrmCredereOfficialPanel";
 
 type Props = {
   lead: ProductCrmLead;
@@ -21,19 +22,32 @@ type Props = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
+  onOpenSimulationModal?: (() => void) | undefined;
 };
 
 export function CrmLeadDetailsFinanciamento({
   lead,
   onCreateActivity,
   vehicleOptions,
+  onOpenSimulationModal,
 }: Props) {
-  const initialValue =
+  const vehiclePriceCents =
     getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
-  const [val, setVal] = useState(initialValue / 100);
-  const [down, setDown] = useState((initialValue * 0.3) / 100);
+  const [val, setVal] = useState(vehiclePriceCents / 100);
+  const [down, setDown] = useState((vehiclePriceCents * 0.3) / 100);
   const [rate, setRate] = useState(1.39);
   const [months, setMonths] = useState(48);
+
+  // vehicleOptions/lead can resolve after the tab mounts (async inventory
+  // load) or change when navigating to another lead; resync the defaults
+  // whenever the resolved vehicle price changes.
+  const syncedPriceRef = useRef(vehiclePriceCents);
+  useEffect(() => {
+    if (vehiclePriceCents === syncedPriceRef.current) return;
+    syncedPriceRef.current = vehiclePriceCents;
+    setVal(vehiclePriceCents / 100);
+    setDown((vehiclePriceCents * 0.3) / 100);
+  }, [vehiclePriceCents]);
 
   const [financed, setFinanced] = useState(0);
   const [payment, setPayment] = useState(0);
@@ -86,13 +100,17 @@ export function CrmLeadDetailsFinanciamento({
 
   return (
     <div className="flex flex-col gap-6">
+      <CrmCredereOfficialPanel
+        lead={lead}
+        onOpenSimulationModal={onOpenSimulationModal}
+      />
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-black text-app-text">
-          Simulação de Financiamento
+          Estimativa interna (Tabela Price)
         </h3>
         <p className="text-xs font-bold text-muted">
-          Calcule as condições de financiamento do veículo de interesse do
-          cliente.
+          Faça uma estimativa local para conversa comercial. Nenhum banco é
+          consultado nesta seção.
         </p>
       </div>
 
@@ -141,7 +159,7 @@ export function CrmLeadDetailsFinanciamento({
               </span>
               <FeatureInput
                 max={10}
-                min={0.1}
+                min={0}
                 onChange={(e) => setRate(Number(e.target.value))}
                 step={0.01}
                 type="number"
@@ -163,14 +181,14 @@ export function CrmLeadDetailsFinanciamento({
               </span>
             </div>
 
-            <div className="flex justify-between items-end py-1">
-              <div className="flex flex-col">
+            <div className="flex flex-wrap justify-between items-end gap-2 py-1 min-w-0">
+              <div className="flex flex-col shrink-0">
                 <span className="text-xs font-black text-app-text">
                   Parcela Estimada:
                 </span>
                 <span className="text-xs font-bold text-muted">Price</span>
               </div>
-              <span className="text-2xl font-black text-accent-strong leading-none">
+              <span className="text-lg sm:text-xl md:text-2xl font-black text-accent-strong leading-tight break-words min-w-0">
                 {months}x de {formatBrl(payment)}
               </span>
             </div>
@@ -189,7 +207,7 @@ export function CrmLeadDetailsFinanciamento({
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
-            Salvar e Registrar Simulação
+            Registrar estimativa no lead
           </button>
         </div>
       </div>

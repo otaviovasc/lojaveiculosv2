@@ -1,48 +1,200 @@
 import { spawnSync } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import postgres from "postgres";
 import { assertKnownLocalDatabaseUrl } from "./local-database-safety.mjs";
 import { installFinanceAutoEntryParity } from "./install-finance-auto-entry-parity.mjs";
+import { installFiscalCatalogParity } from "./install-fiscal-catalog-parity.mjs";
 
-assertKnownLocalDatabaseUrl("DATABASE_URL");
+export const billingScopeForeignKeyNames = [
+  "billing_addon_contracts_item_scope_fk",
+  "billing_addon_contracts_payment_scope_fk",
+  "billing_addon_contracts_store_tenant_fk",
+  "billing_addon_contracts_subscription_tenant_fk",
+  "billing_provider_reconciliations_subscription_tenant_fk",
+];
 
-const force = process.argv.includes("--force");
-const databaseUrl =
-  process.env.DATABASE_URL ??
-  "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2";
-const sql = postgres(databaseUrl, { max: 1 });
+export const billingScopeIndexNames = [
+  "payments_scoped_identity_unique",
+  "subscription_items_scoped_identity_unique",
+  "subscriptions_id_tenant_unique",
+];
 
-try {
-  const tableState = await readAutomationTableState();
-  if (tableState.count === tableState.expected) {
-    await detachScopeForeignKeys();
-    await ensureScopeIndexes();
-  } else if (tableState.count !== 0) {
-    throw new Error(
-      `Automation schema is partially present (${tableState.count}/${tableState.expected} tables). Refusing an unsafe push.`,
-    );
-  }
+export const crmScopeForeignKeyNames = [
+  "crm_tags_scoped_connection_fk",
+  "provider_events_store_tenant_fk",
+  "provider_events_scoped_connection_fk",
+  "crm_webhook_effect_outbox_scoped_provider_event_fk",
+  "crm_webhook_effect_outbox_scoped_connection_fk",
+  "crm_webhook_effect_outbox_scoped_thread_fk",
+  "crm_webhook_effect_outbox_semantic_cycle_fk",
+  "crm_webhook_effect_outbox_semantic_message_fk",
+  "crm_outbound_intents_scoped_connection_fk",
+  "crm_outbound_intents_scoped_thread_fk",
+  "crm_outbound_intents_semantic_cycle_fk",
+  "crm_outbound_intents_semantic_message_fk",
+  "crm_scheduled_messages_scoped_connection_fk",
+  "crm_scheduled_messages_scoped_thread_fk",
+  "crm_campaigns_scoped_connection_fk",
+  "crm_campaign_recipients_scoped_connection_fk",
+  "crm_campaign_recipients_scoped_thread_fk",
+];
 
-  runDrizzlePush({ bootstrap: true });
-  await installFinanceAutoEntryParity(sql);
-  await verifyBootstrapState();
-  await installScopeForeignKeys();
-  await verifyFinalState();
-} catch (error) {
+export const canonicalCrmForeignKeyNames = [
+  "crm_channel_connections_store_tenant_fk",
+  "crm_channel_connection_members_store_tenant_fk",
+  "conversation_threads_store_tenant_fk",
+  "conversation_threads_semantic_connection_fk",
+  "conversation_cycles_store_tenant_fk",
+  "conversation_cycles_scoped_thread_fk",
+  "conversation_attendances_store_tenant_fk",
+  "conversation_attendances_scoped_thread_fk",
+  "conversation_attendances_semantic_cycle_fk",
+  "crm_messages_store_tenant_fk",
+  "crm_messages_semantic_connection_fk",
+  "crm_messages_semantic_thread_fk",
+  "crm_messages_semantic_cycle_fk",
+  "crm_lead_outcomes_scoped_origin_cycle_fk",
+];
+
+export const crmScopeIndexNames = [
+  "stores_id_tenant_unique",
+  "crm_channel_routing_policies_scope_channel_unique",
+  "external_account_authorizations_scope_id_unique",
+  "external_account_authorizations_semantic_id_unique",
+  "external_account_authorization_capabilities_scope_id_unique",
+  "crm_channel_connections_scope_id_unique",
+  "conversation_threads_scope_id_unique",
+  "conversation_cycles_scope_id_unique",
+  "conversation_cycles_thread_id_unique",
+  "crm_messages_semantic_id_unique",
+  "provider_events_scope_id_unique",
+];
+
+let force = false;
+let sql;
+
+if (isMainModule()) {
+  await main();
+}
+
+async function main() {
+  assertKnownLocalDatabaseUrl("DATABASE_URL");
+  force = process.argv.includes("--force");
+  const databaseUrl =
+    process.env.DATABASE_URL ??
+    "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2";
+  sql = postgres(databaseUrl, { max: 1 });
+
   try {
-    const tableState = await readAutomationTableState();
+    await pushProductSchema();
+  } finally {
+    await sql.end();
+  }
+}
+
+export async function pushProductSchema({
+  detachScopeForeignKeys: detachForeignKeys = detachScopeForeignKeys,
+  ensureAutomationScopeIndexes:
+    ensureAutomationIndexes = ensureAutomationScopeIndexes,
+  ensureBillingScopeIndexes: ensureBillingIndexes = ensureBillingScopeIndexes,
+  ensureCrmScopeIndexes: ensureCrmIndexes = ensureCrmScopeIndexes,
+  ensureFinancingScopeIndexes:
+    ensureFinancingIndexes = ensureFinancingScopeIndexes,
+  installFinanceAutoEntryParity:
+    installFinanceParity = installFinanceAutoEntryParity,
+  installFiscalCatalogParity: installFiscalParity = installFiscalCatalogParity,
+  installScopeForeignKeys: installForeignKeys = installScopeForeignKeys,
+  readAutomationTableState: readTableState = readAutomationTableState,
+  ensureSchemaUniqueIndexes: ensureUniqueIndexes = ensureSchemaUniqueIndexes,
+  runDrizzlePush: runPush = runDrizzlePush,
+  verifyBootstrapState: verifyBootstrap = verifyBootstrapState,
+  verifyFinalState: verifyFinal = verifyFinalState,
+} = {}) {
+  try {
+    const tableState = await readTableState();
     if (tableState.count === tableState.expected) {
-      await ensureScopeIndexes();
-      await installScopeForeignKeys();
+      await detachForeignKeys();
+      await ensureAutomationIndexes();
+      await ensureCrmIndexes();
+    } else if (tableState.count !== 0) {
+      throw new Error(
+        `Automation schema is partially present (${tableState.count}/${tableState.expected} tables). Refusing an unsafe push.`,
+      );
     }
-  } catch (restoreError) {
-    throw new AggregateError(
-      [error, restoreError],
-      "Product schema push failed and automation scope constraints could not be restored.",
+
+    let recoveredWithFinalPush = false;
+    try {
+      await runPush({ bootstrap: true });
+    } catch (error) {
+      if (error.code !== "42830") throw error;
+
+      const tableState = await readTableState();
+      if (tableState.count !== tableState.expected) throw error;
+
+      await ensureAutomationIndexes();
+      await ensureCrmIndexes();
+      await ensureFinancingIndexes();
+      await ensureBillingIndexes();
+      await ensureUniqueIndexes();
+      await runPush({ bootstrap: false });
+      recoveredWithFinalPush = true;
+    }
+    await installFinanceParity(sql);
+    await installFiscalParity(sql);
+    await ensureAutomationIndexes();
+    await ensureCrmIndexes();
+    await ensureFinancingIndexes();
+    await ensureBillingIndexes();
+    await verifyBootstrap();
+    if (!recoveredWithFinalPush) await installForeignKeys();
+    await verifyFinal();
+  } catch (error) {
+    try {
+      const tableState = await readTableState();
+      if (tableState.count === tableState.expected) {
+        await ensureAutomationIndexes();
+        await ensureCrmIndexes();
+        await ensureFinancingIndexes();
+        await ensureBillingIndexes();
+        await installForeignKeys();
+      }
+    } catch (restoreError) {
+      throw new AggregateError(
+        [error, restoreError],
+        "Product schema push failed and scope constraints could not be restored.",
+      );
+    }
+    throw error;
+  }
+}
+
+function isMainModule() {
+  return Boolean(
+    process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url,
+  );
+}
+
+function ensureSchemaUniqueIndexes() {
+  const tsxBinary = fileURLToPath(
+    new URL("../../apps/api/node_modules/.bin/tsx", import.meta.url),
+  );
+  const helper = fileURLToPath(
+    new URL("./ensure-product-schema-unique-indexes.ts", import.meta.url),
+  );
+  const result = spawnSync(tsxBinary, [helper], {
+    cwd: fileURLToPath(new URL("../..", import.meta.url)),
+    env: process.env,
+    encoding: "utf8",
+    stdio: ["inherit", "inherit", "pipe"],
+  });
+  const stderr = result.stderr ?? "";
+  if (stderr) process.stderr.write(stderr);
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(
+      `Schema unique-index bootstrap exited with status ${String(result.status)}.`,
     );
   }
-  throw error;
-} finally {
-  await sql.end();
 }
 
 function runDrizzlePush({ bootstrap }) {
@@ -53,7 +205,12 @@ function runDrizzlePush({ bootstrap }) {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      ...(bootstrap ? { DRIZZLE_AUTOMATION_BOOTSTRAP: "true" } : {}),
+      ...(bootstrap
+        ? {
+            DRIZZLE_AUTOMATION_BOOTSTRAP: "true",
+            DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP: "true",
+          }
+        : {}),
     },
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
@@ -63,13 +220,16 @@ function runDrizzlePush({ bootstrap }) {
   if (stderr) process.stderr.write(stderr);
   if (result.error) throw result.error;
   if (stderr.includes("PostgresError:")) {
-    throw new Error(
-      `${bootstrap ? "Automation bootstrap" : "Final schema"} push reported a PostgreSQL error.`,
+    const error = new Error(
+      `${bootstrap ? "Scoped foreign-key bootstrap" : "Final schema"} push reported a PostgreSQL error.`,
     );
+    const code = stderr.match(/code:\s*['"]([A-Z0-9]+)['"]/i)?.[1];
+    if (code) error.code = code;
+    throw error;
   }
   if (result.status !== 0) {
     throw new Error(
-      `${bootstrap ? "Automation bootstrap" : "Final schema"} push exited with status ${String(result.status)}.`,
+      `${bootstrap ? "Scoped foreign-key bootstrap" : "Final schema"} push exited with status ${String(result.status)}.`,
     );
   }
 }
@@ -90,7 +250,7 @@ async function readAutomationTableState() {
   return { count: rows.length, expected: expectedTables.length };
 }
 
-async function ensureScopeIndexes() {
+async function ensureAutomationScopeIndexes() {
   const legacyConstraintNames = [
     "automation_runs_id_scope_unique",
     "automation_steps_id_run_scope_unique",
@@ -125,17 +285,128 @@ async function detachScopeForeignKeys() {
         DROP CONSTRAINT IF EXISTS "automation_approvals_step_run_scope_fk";
       ALTER TABLE "automation_steps"
         DROP CONSTRAINT IF EXISTS "automation_steps_run_scope_fk";
+      ALTER TABLE IF EXISTS "crm_outbound_intents"
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_semantic_message_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_semantic_cycle_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_outbound_intents_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_webhook_effect_outbox"
+        DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_semantic_message_fk",
+        DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_semantic_cycle_fk",
+        DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_connection_fk",
+        DROP CONSTRAINT IF EXISTS "crm_webhook_effect_outbox_scoped_provider_event_fk";
+      ALTER TABLE IF EXISTS "crm_scheduled_messages"
+        DROP CONSTRAINT IF EXISTS "crm_scheduled_messages_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_scheduled_messages_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_campaign_recipients"
+        DROP CONSTRAINT IF EXISTS "crm_campaign_recipients_scoped_thread_fk",
+        DROP CONSTRAINT IF EXISTS "crm_campaign_recipients_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_campaigns"
+        DROP CONSTRAINT IF EXISTS "crm_campaigns_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "crm_tags"
+        DROP CONSTRAINT IF EXISTS "crm_tags_scoped_connection_fk";
+      ALTER TABLE IF EXISTS "provider_events"
+        DROP CONSTRAINT IF EXISTS "provider_events_scoped_connection_fk",
+        DROP CONSTRAINT IF EXISTS "provider_events_store_tenant_fk";
+      ALTER TABLE IF EXISTS "billing_provider_reconciliations"
+        DROP CONSTRAINT IF EXISTS "billing_provider_reconciliations_subscription_tenant_fk";
+      ALTER TABLE IF EXISTS "billing_addon_contracts"
+        DROP CONSTRAINT IF EXISTS "billing_addon_contracts_item_scope_fk",
+        DROP CONSTRAINT IF EXISTS "billing_addon_contracts_payment_scope_fk",
+        DROP CONSTRAINT IF EXISTS "billing_addon_contracts_store_tenant_fk",
+        DROP CONSTRAINT IF EXISTS "billing_addon_contracts_subscription_tenant_fk";
+      ALTER TABLE IF EXISTS "financing_inquiry_events"
+        DROP CONSTRAINT IF EXISTS "financing_inquiry_events_operation_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiry_events_inquiry_scope_fk";
+      ALTER TABLE IF EXISTS "financing_conditions"
+        DROP CONSTRAINT IF EXISTS "financing_conditions_inquiry_scope_fk";
+      ALTER TABLE IF EXISTS "financing_operation_requests"
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_inquiry_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_consent_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_mapping_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_inquiries"
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_consent_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_mapping_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_customer_consents"
+        DROP CONSTRAINT IF EXISTS "financing_customer_consents_store_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_store_banks"
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_banks_mapping_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_store_mappings"
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_mappings_store_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_mappings_account_scope_fk";
+      ALTER TABLE IF EXISTS "provider_oauth_transactions"
+        DROP CONSTRAINT IF EXISTS "provider_oauth_transactions_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_tokens"
+        DROP CONSTRAINT IF EXISTS "financing_provider_tokens_account_scope_fk";
     `);
   });
 }
 
+async function ensureCrmScopeIndexes() {
+  await sql.unsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "stores_id_tenant_unique"
+      ON "stores" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_channel_routing_policies_scope_channel_unique"
+      ON "crm_channel_routing_policies" ("tenant_id", "store_id", "channel");
+    CREATE UNIQUE INDEX IF NOT EXISTS "external_account_authorizations_scope_id_unique"
+      ON "external_account_authorizations" ("tenant_id", "store_id", "id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "external_account_authorizations_semantic_id_unique"
+      ON "external_account_authorizations" ("tenant_id", "store_id", "id", "provider", "broker");
+    CREATE UNIQUE INDEX IF NOT EXISTS "external_account_authorization_capabilities_scope_id_unique"
+      ON "external_account_authorization_capabilities" ("tenant_id", "store_id", "id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_channel_connections_scope_id_unique"
+      ON "crm_channel_connections" ("tenant_id", "store_id", "id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "conversation_threads_scope_id_unique"
+      ON "crm_conversation_threads" ("tenant_id", "store_id", "id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "conversation_cycles_scope_id_unique"
+      ON "crm_conversation_cycles" ("tenant_id", "store_id", "id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "conversation_cycles_thread_id_unique"
+      ON "crm_conversation_cycles" ("tenant_id", "store_id", "id", "thread_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_messages_semantic_id_unique"
+      ON "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "provider_events_scope_id_unique"
+      ON "provider_events" ("tenant_id", "store_id", "connection_id", "id");
+  `);
+  console.log("CRM scope indexes are ready for Drizzle foreign keys.");
+}
+
+async function ensureFinancingScopeIndexes() {
+  await sql.unsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "stores_id_tenant_unique"
+      ON "stores" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_provider_accounts_id_tenant_unique"
+      ON "financing_provider_accounts" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_provider_store_mappings_id_scope_unique"
+      ON "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_customer_consents_id_scope_unique"
+      ON "financing_customer_consents" ("id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_operation_requests_id_scope_unique"
+      ON "financing_operation_requests" ("id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_inquiries_id_scope_unique"
+      ON "financing_inquiries" ("id", "tenant_id", "store_id");
+  `);
+  console.log("Financing scope indexes are ready for Drizzle foreign keys.");
+}
+
+async function ensureBillingScopeIndexes() {
+  await sql.unsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "subscriptions_id_tenant_unique"
+      ON "subscriptions" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "subscription_items_scoped_identity_unique"
+      ON "subscription_items" ("id", "subscription_id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "payments_scoped_identity_unique"
+      ON "payments" ("id", "subscription_id", "tenant_id");
+  `);
+  console.log("Billing scope indexes are ready for Drizzle foreign keys.");
+}
+
 async function installScopeForeignKeys() {
+  await detachScopeForeignKeys();
   await sql.begin(async (transaction) => {
     await transaction.unsafe(`
-      ALTER TABLE "automation_approvals"
-        DROP CONSTRAINT IF EXISTS "automation_approvals_step_run_scope_fk";
-      ALTER TABLE "automation_steps"
-        DROP CONSTRAINT IF EXISTS "automation_steps_run_scope_fk";
       ALTER TABLE "automation_steps"
         ADD CONSTRAINT "automation_steps_run_scope_fk"
         FOREIGN KEY ("run_id", "tenant_id", "store_id")
@@ -146,6 +417,146 @@ async function installScopeForeignKeys() {
         FOREIGN KEY ("step_id", "run_id", "tenant_id", "store_id")
         REFERENCES "automation_steps" ("id", "run_id", "tenant_id", "store_id")
         ON DELETE CASCADE;
+      ALTER TABLE "crm_tags"
+        ADD CONSTRAINT "crm_tags_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id");
+      ALTER TABLE "provider_events"
+        ADD CONSTRAINT "provider_events_store_tenant_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id"),
+        ADD CONSTRAINT "provider_events_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id");
+      ALTER TABLE "crm_webhook_effect_outbox"
+        ADD CONSTRAINT "crm_webhook_effect_outbox_scoped_provider_event_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id", "provider_event_id")
+        REFERENCES "provider_events" ("tenant_id", "store_id", "connection_id", "id")
+        ON DELETE CASCADE,
+        ADD CONSTRAINT "crm_webhook_effect_outbox_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_webhook_effect_outbox_scoped_thread_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "thread_id")
+        REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_webhook_effect_outbox_semantic_cycle_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "cycle_id", "thread_id")
+        REFERENCES "crm_conversation_cycles" ("tenant_id", "store_id", "id", "thread_id"),
+        ADD CONSTRAINT "crm_webhook_effect_outbox_semantic_message_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "message_id", "cycle_id", "thread_id")
+        REFERENCES "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
+      ALTER TABLE "crm_outbound_intents"
+        ADD CONSTRAINT "crm_outbound_intents_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_outbound_intents_scoped_thread_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "thread_id")
+        REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_outbound_intents_semantic_cycle_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "cycle_id", "thread_id")
+        REFERENCES "crm_conversation_cycles" ("tenant_id", "store_id", "id", "thread_id"),
+        ADD CONSTRAINT "crm_outbound_intents_semantic_message_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "message_id", "cycle_id", "thread_id")
+        REFERENCES "crm_messages" ("tenant_id", "store_id", "id", "cycle_id", "thread_id");
+      ALTER TABLE "crm_scheduled_messages"
+        ADD CONSTRAINT "crm_scheduled_messages_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_scheduled_messages_scoped_thread_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "thread_id")
+        REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id");
+      ALTER TABLE "crm_campaigns"
+        ADD CONSTRAINT "crm_campaigns_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "selected_connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id");
+      ALTER TABLE "crm_campaign_recipients"
+        ADD CONSTRAINT "crm_campaign_recipients_scoped_connection_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
+        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id"),
+        ADD CONSTRAINT "crm_campaign_recipients_scoped_thread_fk"
+        FOREIGN KEY ("tenant_id", "store_id", "thread_id")
+        REFERENCES "crm_conversation_threads" ("tenant_id", "store_id", "id");
+      ALTER TABLE "billing_provider_reconciliations"
+        ADD CONSTRAINT "billing_provider_reconciliations_subscription_tenant_fk"
+        FOREIGN KEY ("subscription_id", "tenant_id")
+        REFERENCES "subscriptions" ("id", "tenant_id");
+      ALTER TABLE "billing_addon_contracts"
+        ADD CONSTRAINT "billing_addon_contracts_store_tenant_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id"),
+        ADD CONSTRAINT "billing_addon_contracts_subscription_tenant_fk"
+        FOREIGN KEY ("subscription_id", "tenant_id")
+        REFERENCES "subscriptions" ("id", "tenant_id"),
+        ADD CONSTRAINT "billing_addon_contracts_item_scope_fk"
+        FOREIGN KEY ("subscription_item_id", "subscription_id", "tenant_id", "store_id")
+        REFERENCES "subscription_items" ("id", "subscription_id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "billing_addon_contracts_payment_scope_fk"
+        FOREIGN KEY ("activated_by_payment_id", "subscription_id", "tenant_id")
+        REFERENCES "payments" ("id", "subscription_id", "tenant_id");
+      ALTER TABLE "financing_provider_store_mappings"
+        ADD CONSTRAINT "financing_provider_store_mappings_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id")
+        ON DELETE CASCADE,
+        ADD CONSTRAINT "financing_provider_store_mappings_store_scope_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_provider_store_banks"
+        ADD CONSTRAINT "financing_provider_store_banks_mapping_scope_fk"
+        FOREIGN KEY ("mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_provider_tokens"
+        ADD CONSTRAINT "financing_provider_tokens_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "provider_oauth_transactions"
+        ADD CONSTRAINT "provider_oauth_transactions_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id");
+      ALTER TABLE "financing_customer_consents"
+        ADD CONSTRAINT "financing_customer_consents_store_scope_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_inquiries"
+        ADD CONSTRAINT "financing_inquiries_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id"),
+        ADD CONSTRAINT "financing_inquiries_mapping_scope_fk"
+        FOREIGN KEY ("store_mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_inquiries_consent_scope_fk"
+        FOREIGN KEY ("consent_id", "tenant_id", "store_id")
+        REFERENCES "financing_customer_consents" ("id", "tenant_id", "store_id");
+      ALTER TABLE "financing_operation_requests"
+        ADD CONSTRAINT "financing_operation_requests_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id"),
+        ADD CONSTRAINT "financing_operation_requests_mapping_scope_fk"
+        FOREIGN KEY ("mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_operation_requests_consent_scope_fk"
+        FOREIGN KEY ("consent_id", "tenant_id", "store_id")
+        REFERENCES "financing_customer_consents" ("id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_operation_requests_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id");
+      ALTER TABLE "financing_conditions"
+        ADD CONSTRAINT "financing_conditions_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_inquiry_events"
+        ADD CONSTRAINT "financing_inquiry_events_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id")
+        ON DELETE CASCADE,
+        ADD CONSTRAINT "financing_inquiry_events_operation_scope_fk"
+        FOREIGN KEY ("operation_request_id", "tenant_id", "store_id")
+        REFERENCES "financing_operation_requests" ("id", "tenant_id", "store_id");
     `);
   });
 }
@@ -158,6 +569,13 @@ async function verifyBootstrapState() {
   const expectedIndexes = [
     "automation_runs_id_scope_unique",
     "automation_steps_id_run_scope_unique",
+    ...billingScopeIndexNames,
+    ...crmScopeIndexNames,
+    "financing_customer_consents_id_scope_unique",
+    "financing_inquiries_id_scope_unique",
+    "financing_operation_requests_id_scope_unique",
+    "financing_provider_accounts_id_tenant_unique",
+    "financing_provider_store_mappings_id_scope_unique",
   ];
   const rows = await sql`
     select indexname
@@ -169,10 +587,10 @@ async function verifyBootstrapState() {
   const missing = expectedIndexes.filter((name) => !actual.has(name));
   if (missing.length) {
     throw new Error(
-      `Automation bootstrap scope indexes are missing: ${missing.join(", ")}`,
+      `Bootstrap scoped parent indexes are missing: ${missing.join(", ")}`,
     );
   }
-  console.log("Automation bootstrap tables and scope indexes verified.");
+  console.log("Bootstrap tables and scoped parent indexes verified.");
 }
 
 async function verifyFinalState() {
@@ -181,6 +599,25 @@ async function verifyFinalState() {
     "automation_approvals_proposal_digest_sha256",
     "automation_approvals_step_run_scope_fk",
     "automation_steps_run_scope_fk",
+    ...billingScopeForeignKeyNames,
+    ...canonicalCrmForeignKeyNames,
+    ...crmScopeForeignKeyNames,
+    "financing_conditions_inquiry_scope_fk",
+    "financing_customer_consents_store_scope_fk",
+    "financing_inquiries_account_scope_fk",
+    "financing_inquiries_consent_scope_fk",
+    "financing_inquiries_mapping_scope_fk",
+    "financing_inquiry_events_inquiry_scope_fk",
+    "financing_inquiry_events_operation_scope_fk",
+    "financing_operation_requests_account_scope_fk",
+    "financing_operation_requests_consent_scope_fk",
+    "financing_operation_requests_inquiry_scope_fk",
+    "financing_operation_requests_mapping_scope_fk",
+    "financing_provider_store_banks_mapping_scope_fk",
+    "financing_provider_store_mappings_account_scope_fk",
+    "financing_provider_store_mappings_store_scope_fk",
+    "financing_provider_tokens_account_scope_fk",
+    "provider_oauth_transactions_account_scope_fk",
   ];
   const rows = await sql`
     select conname
@@ -191,12 +628,19 @@ async function verifyFinalState() {
   const missing = expectedConstraints.filter((name) => !actual.has(name));
   if (missing.length) {
     throw new Error(
-      `Automation scope constraints are missing after db push: ${missing.join(", ")}`,
+      `Scope constraints are missing after db push: ${missing.join(", ")}`,
     );
   }
   const expectedIndexes = [
     "automation_runs_id_scope_unique",
     "automation_steps_id_run_scope_unique",
+    ...billingScopeIndexNames,
+    ...crmScopeIndexNames,
+    "financing_customer_consents_id_scope_unique",
+    "financing_inquiries_id_scope_unique",
+    "financing_operation_requests_id_scope_unique",
+    "financing_provider_accounts_id_tenant_unique",
+    "financing_provider_store_mappings_id_scope_unique",
   ];
   const indexRows = await sql`
     select indexname
@@ -210,8 +654,8 @@ async function verifyFinalState() {
   );
   if (missingIndexes.length) {
     throw new Error(
-      `Automation scope indexes are missing after db push: ${missingIndexes.join(", ")}`,
+      `Scope indexes are missing after db push: ${missingIndexes.join(", ")}`,
     );
   }
-  console.log("Automation scope constraints verified in the local product DB.");
+  console.log("Scope constraints verified in the local product DB.");
 }

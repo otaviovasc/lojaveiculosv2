@@ -1,9 +1,10 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 export type LogoVariant =
+  | "auto"
   | "black"
   | "black-red"
   | "full"
@@ -18,7 +19,7 @@ export type LogoVariant =
   | "white-red";
 
 interface LogoProps {
-  variant?: "auto" | LogoVariant;
+  variant?: LogoVariant;
   alt?: string | undefined;
   className?: string | undefined;
   fallbackText?: string | undefined;
@@ -41,8 +42,9 @@ const LOGO_PATHS = {
   "white-red": "/icons/lv-logo-white-red.svg",
 };
 
-function resolveLogoVariant(variant: "auto" | LogoVariant): LogoVariant {
-  return variant === "auto" ? "full" : variant;
+function readCurrentTheme(): "dark" | "light" {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
 export function Logo({
@@ -51,8 +53,28 @@ export function Logo({
   className,
   src,
 }: LogoProps) {
-  const resolvedVariant = resolveLogoVariant(variant);
-  const fallbackSrc = LOGO_PATHS[resolvedVariant];
+  const [activeTheme, setActiveTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    setActiveTheme(readCurrentTheme());
+    const observer = new MutationObserver(() => {
+      setActiveTheme(readCurrentTheme());
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const resolvedVariant =
+    variant === "auto"
+      ? activeTheme === "dark"
+        ? "full-white"
+        : "full"
+      : variant;
+
+  const fallbackSrc = LOGO_PATHS[resolvedVariant] ?? LOGO_PATHS["full-white"];
 
   return (
     <img

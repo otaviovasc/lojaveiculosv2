@@ -66,6 +66,26 @@ describe("vehicle workflow documents", () => {
     ).toBe("Comprador Cliente {{vehicle.title}} adquiriu Fiat Toro.");
   });
 
+  it("includes the buyer acknowledgment in the default sale document bundle", () => {
+    const sold = buildSoldDocuments({
+      buyer,
+      listing,
+      sale,
+      unit,
+    });
+
+    expect(sold.map((document) => document.kind)).toEqual([
+      "sale_contract",
+      "sale_receipt",
+      "delivery_term",
+      "power_of_attorney",
+      "buyer_acknowledgment",
+    ]);
+    expect(sold.at(-1)?.title).toBe(
+      "Termo de recebimento de documentos e itens - Ana Cliente",
+    );
+  });
+
   it("builds only the selected sale document bundle", () => {
     const sold = buildSoldDocuments({
       buyer,

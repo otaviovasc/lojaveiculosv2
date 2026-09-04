@@ -1,23 +1,42 @@
-import { and, eq, inArray, isNull, or, gt } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, gt, lte } from "drizzle-orm";
 import {
-  addons,
   planFeatures,
   storeEntitlementEvents,
   storeEntitlements,
   subscriptionItems,
+  subscriptions,
 } from "@lojaveiculosv2/db";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function projectSelectedEntitlements(
   db: DrizzleBillingClient,
   input: {
-    source: "billing_checkout" | "billing_selection";
+    source: "billing_checkout" | "billing_plan_hire" | "billing_selection";
     storeId: string;
     subscriptionId: string;
     tenantId: string;
   },
 ) {
   const now = new Date();
+  const [subscription] = await db
+    .select({
+      currentPeriodEnd: subscriptions.currentPeriodEnd,
+      status: subscriptions.status,
+    })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.id, input.subscriptionId),
+        eq(subscriptions.tenantId, input.tenantId),
+      ),
+    )
+    .limit(1);
+  const subscriptionGrantsAccess =
+    subscription?.status === "active" ||
+    (subscription?.status === "past_due" &&
+      Boolean(
+        subscription.currentPeriodEnd && subscription.currentPeriodEnd > now,
+      ));
   const items = await db
     .select()
     .from(subscriptionItems)
@@ -25,22 +44,20 @@ export async function projectSelectedEntitlements(
       and(
         eq(subscriptionItems.subscriptionId, input.subscriptionId),
         eq(subscriptionItems.storeId, input.storeId),
+        or(
+          isNull(subscriptionItems.startsAt),
+          lte(subscriptionItems.startsAt, now),
+        ),
         or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
       ),
     );
   const planIds = items.flatMap((item) => (item.planId ? [item.planId] : []));
-  const addonIds = items.flatMap((item) =>
-    item.addonId ? [item.addonId] : [],
-  );
-  const [features, addonRows, current] = await Promise.all([
+  const [features, current] = await Promise.all([
     planIds.length
       ? db
           .select()
           .from(planFeatures)
           .where(inArray(planFeatures.planId, planIds))
-      : [],
-    addonIds.length
-      ? db.select().from(addons).where(inArray(addons.id, addonIds))
       : [],
     db
       .select()
@@ -52,12 +69,15 @@ export async function projectSelectedEntitlements(
         ),
       ),
   ]);
-  const selected = new Set([
-    ...features
-      .filter((feature) => feature.included === 1)
-      .map((feature) => feature.featureKey),
-    ...addonRows.map((addon) => addon.featureKey),
-  ]);
+  const selected = new Set(
+    subscriptionGrantsAccess
+      ? [
+          ...features
+            .filter((feature) => feature.included === 1)
+            .map((feature) => feature.featureKey),
+        ]
+      : [],
+  );
 
   for (const entitlement of current) {
     if (selected.has(entitlement.featureKey)) continue;
@@ -67,10 +87,21 @@ export async function projectSelectedEntitlements(
   }
   for (const featureKey of selected) {
     const entitlement = current.find((item) => item.featureKey === featureKey);
-    if (entitlement && entitlement.source !== "billing_catalog") continue;
+    if (entitlement && shouldPreserveExternalEntitlement(entitlement, now))
+      continue;
     if (entitlement?.status === "active" && !entitlement.endsAt) continue;
     await writeEntitlement(db, input, featureKey, "active", now);
   }
+}
+
+export function shouldPreserveExternalEntitlement(
+  entitlement: Pick<typeof storeEntitlements.$inferSelect, "endsAt" | "source">,
+  now: Date,
+) {
+  return (
+    entitlement.source !== "billing_catalog" &&
+    (!entitlement.endsAt || entitlement.endsAt > now)
+  );
 }
 
 async function writeEntitlement(

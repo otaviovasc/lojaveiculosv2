@@ -116,6 +116,7 @@ function createPorts(): FinanceServicePorts & {
 function context(permissions: string[] = ["finance.create"]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["finance"],
     permissions,
     request: { requestId: "request_1" },
     storeId: "store_1",

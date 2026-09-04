@@ -89,12 +89,12 @@ async function openWhatsappConversation(
   },
 ) {
   await page.goto(
-    `/crm#/crm?surface=whatsapp&crm_session=${encodeURIComponent(
+    `/crm#/crm?surface=conversations&cycleId=${encodeURIComponent(
       input.sessionId,
     )}`,
   );
   await expect(
-    page.getByPlaceholder("Buscar por contato, telefone ou mensagem"),
+    page.getByPlaceholder("Pesquisar por nome ou telefone"),
   ).toBeVisible();
   await expect(
     page.getByLabel("Detalhe da conversa").getByText(input.contactName),
@@ -118,22 +118,23 @@ async function expectOperatorActions(page: Page) {
   await expect(page.getByRole("button", { name: "Concluir" })).toBeVisible();
 
   await page.getByLabel("Selecionar conversa").first().click();
+  const bulkActions = page.getByLabel("Ações em massa");
   await expect(
-    page.getByLabel("Atribuir conversas selecionadas"),
+    bulkActions.getByLabel("Alterar atendente das conversas selecionadas"),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Concluir conversas selecionadas" }),
+    bulkActions.getByRole("button", { exact: true, name: "Concluir" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", {
-      name: "Marcar conversas selecionadas como lidas",
-    }),
+    bulkActions.getByRole("button", { exact: true, name: "Lidas" }),
   ).toBeVisible();
 }
 
 async function expectReadOnlyActions(page: Page) {
+  await page.getByRole("tab", { name: "Integrações" }).click();
+  await page.getByRole("tab", { exact: true, name: "Eventos" }).click();
   const failedSummary = page.getByRole("button", {
-    name: /1 evento ZAPI com atenção/,
+    name: /1 evento de provedor com atenção/,
   });
   await expect(failedSummary).toBeVisible();
   await failedSummary.click();
@@ -141,6 +142,7 @@ async function expectReadOnlyActions(page: Page) {
   await expect(page.getByRole("button", { name: "Reprocessar" })).toHaveCount(
     0,
   );
+  await page.getByRole("tab", { name: "Conversas" }).click();
   await expect(page.getByText("Somente leitura")).toBeVisible();
   await expect(
     page.getByText("Seu perfil pode acompanhar esta conversa"),
@@ -158,16 +160,15 @@ async function expectReadOnlyActions(page: Page) {
   await expect(page.getByRole("button", { name: "Concluir" })).toHaveCount(0);
 
   await page.getByLabel("Selecionar conversa").first().click();
+  const bulkActions = page.getByLabel("Ações em massa");
   await expect(
-    page.getByRole("button", {
-      name: "Marcar conversas selecionadas como lidas",
-    }),
+    bulkActions.getByRole("button", { exact: true, name: "Lidas" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Atribuir conversas selecionadas")).toHaveCount(
-    0,
-  );
   await expect(
-    page.getByRole("button", { name: "Concluir conversas selecionadas" }),
+    bulkActions.getByLabel("Alterar atendente das conversas selecionadas"),
+  ).toHaveCount(0);
+  await expect(
+    bulkActions.getByRole("button", { exact: true, name: "Concluir" }),
   ).toHaveCount(0);
 }
 

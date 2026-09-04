@@ -163,7 +163,7 @@ function isCurrentRecurringLine(
 }
 
 function itemTypeLabel(itemType: "addon" | "plan") {
-  return itemType === "plan" ? "Plano" : "Add-on";
+  return itemType === "plan" ? "Plano" : "Serviço adicional histórico";
 }
 
 function factorPercent(value: number) {

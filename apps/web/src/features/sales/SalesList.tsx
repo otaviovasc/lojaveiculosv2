@@ -27,8 +27,14 @@ export function SalesList({
   const [selectedSale, setSelectedSale] = useState<SaleRecord | null>(null);
   const [saleToDelete, setSaleToDelete] = useState<SaleRecord | null>(null);
   const [sortBy, setSortBy] = useState<SalesSortOption>("date_desc");
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [endDate, setEndDate] = useState<Date | null>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  });
 
   const filteredSales = useMemo(
     () => filterSales(sales, { endDate, filter, search, startDate }),

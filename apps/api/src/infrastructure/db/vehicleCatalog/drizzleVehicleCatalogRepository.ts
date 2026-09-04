@@ -13,8 +13,10 @@ import type { VehicleCatalogRepository } from "../../../domains/vehicle/ports/ve
 import {
   findBrand,
   findModelFamily,
+  findModelFamilyById,
   findVersion,
   findYear,
+  mapVehicleCatalogSnapshot,
   requireRow,
 } from "./drizzleVehicleCatalogSupport.js";
 import { createDrizzleVehicleCatalogWrites } from "./drizzleVehicleCatalogWrites.js";
@@ -56,22 +58,48 @@ export function createDrizzleVehicleCatalogRepository(
       if (!year) return null;
       const brand = await findBrand(db, input);
       if (!brand) return null;
-      return {
-        brandCode: input.brandCode,
-        brandLogoUrl: brand.logoUrl,
-        brandName: brand.name,
-        fipeCode: year.fipeCode,
-        fuel: year.fuel,
-        modelCode: version.fipeCode,
-        modelName: version.name,
-        modelYear: year.modelYear,
-        priceCents: year.priceCents,
-        referenceMonth: year.referenceMonth,
-        source: "fipe",
-        vehicleType: input.vehicleType,
-        yearCode: year.fipeYearCode,
-        yearName: year.name,
-      };
+      const modelFamily = await findModelFamilyById(db, version.modelFamilyId);
+      return mapVehicleCatalogSnapshot({ brand, modelFamily, version, year });
+    },
+    async listSnapshotsByFipeReference(input) {
+      const rows = await db
+        .select({
+          brand: vehicleCatalogBrands,
+          modelFamily: vehicleCatalogModelFamilies,
+          version: vehicleCatalogVersions,
+          year: vehicleCatalogYears,
+        })
+        .from(vehicleCatalogYears)
+        .innerJoin(
+          vehicleCatalogVersions,
+          eq(vehicleCatalogVersions.id, vehicleCatalogYears.versionId),
+        )
+        .innerJoin(
+          vehicleCatalogModelFamilies,
+          eq(
+            vehicleCatalogModelFamilies.id,
+            vehicleCatalogVersions.modelFamilyId,
+          ),
+        )
+        .innerJoin(
+          vehicleCatalogBrands,
+          eq(vehicleCatalogBrands.id, vehicleCatalogVersions.brandId),
+        )
+        .where(
+          and(
+            eq(vehicleCatalogYears.fipeCode, input.fipeCode),
+            eq(vehicleCatalogBrands.vehicleType, input.vehicleType),
+            eq(vehicleCatalogBrands.isActive, true),
+            eq(vehicleCatalogVersions.isActive, true),
+            eq(vehicleCatalogYears.isActive, true),
+            ...(input.modelYear === null
+              ? []
+              : [eq(vehicleCatalogYears.modelYear, input.modelYear)]),
+          ),
+        );
+      return rows.map(({ brand, modelFamily, version, year }) =>
+        mapVehicleCatalogSnapshot({ brand, modelFamily, version, year }),
+      );
     },
     async listBrands(input) {
       const rows = await db

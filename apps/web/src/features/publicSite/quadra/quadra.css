@@ -1,0 +1,4531 @@
+/* QUADRA classic renderer: literal V1 storefront styling, isolated from
+   Aurora and from the authenticated website editor. */
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"] {
+  --quadra-accent: var(--sf-accent);
+  --quadra-accent-hover: color-mix(in srgb, var(--sf-accent) 90%, #000);
+  --quadra-primary: #101828;
+  --quadra-secondary: #667085;
+  background: #fff !important;
+  color: var(--quadra-primary) !important;
+  font-family: "Titillium Web", "Space Grotesk", system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"] *,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"] *::before,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"] *::after {
+  box-sizing: border-box;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-container {
+  margin-inline: auto;
+  max-width: 1300px;
+  padding-inline: 1rem;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-classic__main {
+  background: #fff;
+  overflow-x: hidden;
+  padding-bottom: 8rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-accent-text {
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header {
+  background: transparent;
+  left: 0;
+  padding-block: 1rem;
+  position: fixed;
+  right: 0;
+  top: 0;
+  transition: all 300ms ease;
+  width: 100%;
+  z-index: 50;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header--scrolled {
+  background: #fff;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding-block: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__inner,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__brand-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__brand-row {
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__inner {
+  flex-direction: column;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__logo-link {
+  align-items: center;
+  display: flex;
+  height: 64px;
+  max-width: max-content;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__logo {
+  height: 64px;
+  max-width: 55vw;
+  object-fit: contain;
+  transition: opacity 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__logo:hover {
+  opacity: 0.8;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__store-name {
+  color: #101828;
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__phone {
+  align-items: center;
+  color: #6b7280;
+  display: none;
+  font-size: var(--font-size-xs);
+  gap: 0.375rem;
+  margin-left: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__phone:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__nav-link:hover {
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__menu-button {
+  background: transparent;
+  border: 0;
+  color: #000;
+  cursor: pointer;
+  display: grid;
+  padding: 0;
+  place-items: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__nav {
+  align-items: center;
+  background: #f8f4fc;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: 1.5rem;
+  max-height: 0;
+  overflow: hidden;
+  text-align: center;
+  text-transform: uppercase;
+  transition: all 150ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__nav--open {
+  max-height: 24rem;
+  padding: 2rem 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-header__nav-link {
+  color: #000;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-next-section {
+  bottom: 1.5rem;
+  color: var(--quadra-accent);
+  left: 50%;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 45;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-next-section
+  > span {
+  align-items: center;
+  animation: quadra-bounce 1s infinite;
+  background: rgb(255 255 255 / 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  box-shadow: none;
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero {
+  align-items: center;
+  background: rgb(178 183 194 / 0.1);
+  display: flex;
+  min-height: 100vh;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__content {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__grid {
+  align-items: center;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__copy {
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__copy
+  h1 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__copy
+  p {
+  color: #4b5563;
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__image-wrap {
+  height: 300px;
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__image {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-hero__image-placeholder {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border-radius: 1rem;
+  height: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  height: 60px;
+  margin-top: 2rem;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search
+  form {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  padding-inline: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search__field {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search__field
+  > svg {
+  color: var(--quadra-accent);
+  flex: 0 0 auto;
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search
+  input {
+  background: transparent;
+  border: 0;
+  color: var(--quadra-primary);
+  flex: 1;
+  font-size: var(--font-size-base);
+  min-width: 0;
+  outline: none;
+  padding-block: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search
+  button,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-button {
+  align-items: center;
+  background: var(--quadra-accent);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  transition: all 300ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search
+  button:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-button--accent:hover {
+  background: var(--quadra-accent-hover);
+  box-shadow: none;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-search
+  button
+  svg {
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner {
+  padding-top: var(--tenant-header-height, 80px);
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__viewport {
+  aspect-ratio: 1920 / 630;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__link,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__image {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__image {
+  object-fit: cover;
+  transition: transform 500ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__link:hover
+  .quadra-banner__image {
+  transform: scale(1.05);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__arrow,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow {
+  align-items: center;
+  background: rgb(255 255 255 / 0.9);
+  border: 0;
+  border-radius: 999px;
+  color: var(--quadra-primary);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__arrow {
+  box-shadow: none;
+  height: 3rem;
+  opacity: 0;
+  transition: all 300ms ease;
+  width: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__viewport:hover
+  .quadra-banner__arrow,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__viewport:focus-within
+  .quadra-banner__arrow,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__arrow:focus-visible {
+  opacity: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__arrow--prev,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow--prev {
+  left: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__arrow--next,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow--next {
+  right: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__dots,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__dots {
+  align-items: center;
+  bottom: 1.5rem;
+  display: flex;
+  gap: 0.375rem;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__dots
+  button {
+  background: rgb(255 255 255 / 0.5);
+  border: 0;
+  border-radius: 999px;
+  height: 0.75rem;
+  padding: 0;
+  transition: all 300ms ease;
+  width: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__dots
+  button.is-active {
+  background: var(--quadra-accent);
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__search {
+  margin-top: -2rem;
+  position: relative;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-banner__search
+  .quadra-search {
+  margin-top: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-cars {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  padding-block: 7rem;
+  scroll-margin-top: var(--tenant-header-height, 80px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-cars__grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  transition: all 300ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card:focus-visible {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  outline: none;
+  transform: translateY(-0.25rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__media {
+  flex: 0 0 auto;
+  height: 240px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__media
+  > img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card:hover
+  .quadra-car-card__media
+  > img {
+  transform: scale(1.05);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__placeholder {
+  align-items: center;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__placeholder
+  > span {
+  align-items: center;
+  background: rgb(255 255 255 / 0.5);
+  border-radius: 999px;
+  display: flex;
+  height: 4rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  width: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__placeholder
+  small {
+  color: #9ca3af;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__badge {
+  background: var(--quadra-accent);
+  border-radius: 999px;
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  top: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow {
+  background: rgb(0 0 0 / 0.5);
+  color: #fff;
+  height: 2rem;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card:hover
+  .quadra-car-card__arrow,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card:focus-within
+  .quadra-car-card__arrow {
+  opacity: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow--prev {
+  left: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__arrow--next {
+  right: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__dots {
+  bottom: 0.5rem;
+  gap: 0.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__dots
+  span {
+  background: rgb(255 255 255 / 0.5);
+  border-radius: 999px;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__dots
+  span.is-active {
+  background: #fff;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__content
+  h3 {
+  color: #111827;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__content
+  > p {
+  color: #4b5563;
+  font-size: var(--font-size-sm);
+  margin: 0 0 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__price {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__details {
+  align-items: center;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  font-size: var(--font-size-sm);
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-car-card__hint {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--quadra-accent);
+  cursor: pointer;
+  display: block;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-top: 1rem;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-cars__empty {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-lg);
+  padding-block: 3rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-section-heading {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-section-heading
+  h2,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact
+  > .quadra-container
+  > h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-section-heading
+  > p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 48rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about {
+  background: #fff;
+  margin-block: 3rem 7rem;
+  scroll-margin-top: var(--tenant-header-height, 80px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__main {
+  align-items: center;
+  display: grid;
+  gap: 3rem;
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__copy
+  h3 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__copy
+  p {
+  color: var(--quadra-secondary);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-button {
+  border-radius: 16px;
+  min-height: 4rem;
+  padding-inline: 2rem;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-button--primary {
+  background: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--quadra-accent) 5%, transparent),
+    color-mix(in srgb, var(--quadra-accent) 10%, transparent)
+  );
+  border-radius: 1.5rem;
+  padding: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual-content {
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual-content
+  > span,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  > span,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__heading-icon,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author
+  > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--quadra-accent) 10%, transparent);
+  border-radius: 999px;
+  color: var(--quadra-accent);
+  display: flex;
+  justify-content: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual-content
+  > span {
+  height: 6rem;
+  margin: 0 auto 1.5rem;
+  width: 6rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual-content
+  > span
+  svg {
+  height: 3rem;
+  width: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual
+  h4 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__visual
+  p,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  p {
+  color: var(--quadra-secondary);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__features {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 300ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  transform: translateY(-0.25rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  > span {
+  height: 4rem;
+  margin: 0 auto 1rem;
+  width: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  > span
+  svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  h4 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-about__feature
+  p {
+  font-size: var(--font-size-sm);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials {
+  background: linear-gradient(135deg, #f9fafb, #fff, #f9fafb);
+  padding-block: 4rem;
+  scroll-margin-top: var(--tenant-header-height, 80px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__heading-icon {
+  height: 4rem;
+  margin: 0 auto 1rem;
+  width: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__heading-icon
+  svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__slider {
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__viewport {
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__track {
+  display: flex;
+  gap: 1.5rem;
+  transition: transform 300ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  display: flex;
+  flex: 0 0 100%;
+  flex-direction: column;
+  max-height: 520px;
+  min-height: 480px;
+  padding: 1.5rem;
+  transition: all 300ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card:hover {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  transform: translateY(-0.5rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__image {
+  border-radius: 0.75rem;
+  height: 12rem;
+  margin-bottom: 1.5rem;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author
+  > span {
+  flex: 0 0 auto;
+  height: 3rem;
+  width: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card
+  h3 {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--quadra-primary);
+  display: -webkit-box;
+  font-size: var(--font-size-lg);
+  margin: 0 0 0.25rem;
+  overflow: hidden;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author
+  p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-xs);
+  margin: 0 0 0.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author
+  div
+  div {
+  color: var(--quadra-accent);
+  display: flex;
+  gap: 0.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__author
+  div
+  div
+  svg {
+  fill: currentColor;
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__quote {
+  flex: 1;
+  min-height: 120px;
+  position: relative;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card__watermark {
+  color: var(--quadra-accent);
+  height: 4rem;
+  left: -0.5rem;
+  opacity: 0.1;
+  position: absolute;
+  top: -0.5rem;
+  width: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonial-card
+  blockquote {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  color: var(--quadra-secondary);
+  display: -webkit-box;
+  line-height: 1.625;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding-top: 2.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__pagination
+  button {
+  appearance: none;
+  background: var(--quadra-accent);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 10px;
+  opacity: 0.3;
+  padding: 0;
+  width: 10px;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-testimonials__pagination
+  button.is-active {
+  opacity: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact {
+  padding-block: 4rem;
+  scroll-margin-top: var(--tenant-header-height, 80px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact
+  > .quadra-container
+  > h2 {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__grid {
+  align-items: start;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: auto;
+  max-width: 48rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__grid
+  > div:first-child
+  p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.75;
+  margin: 0 0 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__buttons {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__buttons
+  .quadra-button {
+  min-height: 60px;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__buttons
+  svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__info,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map {
+  background: #f9fafb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__info
+  h3,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map
+  h3 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__info
+  > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__info
+  p {
+  color: var(--quadra-secondary);
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map {
+  margin-top: 2rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map-heading {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  padding: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map-heading
+  h3,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map-heading
+  p {
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map-heading
+  p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__map
+  iframe {
+  border: 0;
+  display: block;
+  height: 480px;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-contact__email-cta {
+  align-items: center;
+  color: var(--quadra-accent);
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer {
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer
+  > .quadra-container {
+  padding-block: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer--compact
+  > .quadra-container {
+  padding-block: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__grid {
+  display: grid;
+  gap: 4rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer
+  h3 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-lg);
+  margin: 0 0 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__store-logo {
+  height: 3rem;
+  margin-bottom: 1.5rem;
+  object-fit: contain;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__store-name {
+  display: block;
+  font-size: var(--font-size-lg);
+  margin-bottom: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__address {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts
+  > a {
+  align-items: center;
+  color: var(--quadra-secondary);
+  display: flex;
+  gap: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contact-icon {
+  align-items: center;
+  background: var(--quadra-accent);
+  border-radius: 999px;
+  color: #fff;
+  display: flex;
+  flex: 0 0 auto;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contact-icon
+  svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts
+  > a
+  > span:last-child,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts
+  > a
+  > span:last-child
+  > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts
+  strong {
+  color: var(--quadra-secondary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__contacts
+  > a
+  > span:last-child
+  > span {
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__signature {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 3rem;
+  padding-top: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__platform {
+  align-items: flex-end;
+  color: var(--quadra-secondary);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  gap: 0.75rem;
+  margin-left: auto;
+  width: max-content;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-footer__platform
+  img {
+  height: 2.5rem;
+  object-fit: contain;
+  width: 6.25rem;
+}
+
+@keyframes quadra-bounce {
+  0%,
+  100% {
+    transform: translateY(-20%);
+  }
+  50% {
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 640px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-cars__grid,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-about__features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-contact__buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonials__track {
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-about__main,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-contact__grid,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-footer__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-contact__grid {
+    max-width: none;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-about__features {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonial-card {
+    flex-basis: calc((100% - 2rem) / 2);
+  }
+}
+
+@media (min-width: 1280px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-header__inner {
+    flex-direction: row;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonials__track {
+    gap: 2.5rem;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonial-card {
+    flex-basis: calc((100% - 5rem) / 3);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-header__brand-row {
+    justify-content: flex-start;
+    width: auto;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-header__phone {
+    display: flex;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-header__menu-button {
+    display: none;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-header__nav {
+    background: transparent;
+    flex-direction: row;
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    gap: 2rem;
+    margin-left: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    text-align: left;
+    text-transform: none;
+    width: max-content;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero {
+    min-height: 90vh;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__content {
+    min-height: 90vh;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__copy {
+    text-align: left;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__copy
+    h1 {
+    font-size: calc(var(--font-size-5xl) * 1.2);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__copy
+    p {
+    font-size: var(--font-size-lg);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-hero__image-wrap {
+    height: 400px;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-search {
+    height: 96px;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-search
+    button {
+    font-size: var(--font-size-base);
+    padding: 0.75rem 2rem;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-cars__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-section-heading
+    > p,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-contact__grid
+    > div:first-child
+    p {
+    font-size: var(--font-size-lg);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-about__visual {
+    padding: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonials__track,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-testimonial-card {
+    transition: none;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-next-section
+    > span {
+    animation: none;
+  }
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__lead-form {
+  background: var(--quadra-surface);
+  border: 1px solid var(--quadra-line);
+  box-shadow: var(--shadow-panel);
+  margin: 3rem auto 0;
+  max-width: 36rem;
+  padding: clamp(1.5rem, 4vw, 2rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__lead-form
+  h3 {
+  color: var(--quadra-ink);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* QUADRA landing page: the client-used V1 Modern template. The classic scope
+   above remains available only to the migrated vehicle detail renderer. */
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"] {
+  --quadra-accent: var(--sf-accent);
+  --quadra-accent-readable: var(--sf-accent-readable, var(--sf-accent));
+  --quadra-ink: #101010;
+  --quadra-muted: #606060;
+  --quadra-surface: #ffffff;
+  --quadra-subtle: #f4f4f2;
+  --quadra-line: rgb(16 16 16 / 0.14);
+  background: var(--quadra-surface);
+  color: var(--quadra-ink);
+  font-family: "Titillium Web", "Space Grotesk", system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"] *,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::before,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::after {
+  box-sizing: border-box;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-container {
+  margin-inline: auto;
+  max-width: 1320px;
+  padding-inline: clamp(1.25rem, 4vw, 4rem);
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-modern__main {
+  background: var(--quadra-surface);
+  overflow: hidden;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-accent-text {
+  color: var(--quadra-accent-readable);
+  display: block;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-modern-divider {
+  background: var(--quadra-accent);
+  height: 3px;
+  margin-bottom: 1rem;
+  width: 3.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-modern-button {
+  align-items: center;
+  border: 2px solid currentColor;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  justify-content: center;
+  letter-spacing: 0.12em;
+  min-height: 3.25rem;
+  padding: 0.8rem 1.5rem;
+  text-transform: uppercase;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-modern-button:hover {
+  transform: translateY(-2px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-modern-button--accent {
+  background: var(--quadra-accent);
+  border-color: var(--quadra-accent);
+  color: var(--sf-inverse);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__stage
+  .quadra-accent-text,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials
+  .quadra-accent-text {
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header {
+  color: #ffffff;
+  left: 0;
+  padding-block: 1rem;
+  position: fixed;
+  right: 0;
+  top: 0;
+  transition:
+    background-color 220ms ease,
+    padding 220ms ease,
+    box-shadow 220ms ease;
+  z-index: 70;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header--scrolled {
+  background: rgb(12 12 12 / 0.94);
+  box-shadow: var(--shadow-panel);
+  padding-block: 0.45rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__inner,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__brand-row,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__phones {
+  align-items: center;
+  display: flex;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__inner,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__brand-row {
+  justify-content: space-between;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__brand-row {
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__logo-link {
+  align-items: center;
+  display: flex;
+  flex: none;
+  min-height: 3rem;
+  max-width: max-content;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__logo {
+  filter: brightness(0) invert(1);
+  max-height: 4rem;
+  max-width: min(15rem, 50vw);
+  object-fit: contain;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__store-name {
+  color: inherit;
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__phones {
+  gap: 0.8rem;
+  margin-left: auto;
+  padding-inline: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__phone {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.35rem;
+  opacity: 0.88;
+  white-space: nowrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__nav {
+  align-items: center;
+  display: flex;
+  gap: clamp(1rem, 2.4vw, 2.5rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__nav-link {
+  color: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding-block: 0.8rem;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__nav-link::after {
+  background: var(--quadra-accent);
+  bottom: 0.35rem;
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__menu-button,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-header__mobile-phones {
+  display: none;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__stage {
+  background: #101010;
+  color: #ffffff;
+  height: max(42rem, 75vh);
+  min-height: 42rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__media,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__overlay {
+  inset: 0;
+  position: absolute;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__media
+  img,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__media
+  video {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__overlay {
+  background: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.88) 0%,
+    rgb(0 0 0 / 0.54) 50%,
+    rgb(0 0 0 / 0.14) 100%
+  );
+  z-index: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  padding-bottom: 3rem;
+  padding-top: 8rem;
+  position: relative;
+  z-index: 2;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__content-grid {
+  align-items: center;
+  display: grid;
+  gap: clamp(2rem, 7vw, 7rem);
+  grid-template-columns: minmax(0, 1.3fr) minmax(17rem, 0.7fr);
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__copy {
+  max-width: 48rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__copy
+  h1 {
+  color: #ffffff;
+  font-size: clamp(
+    var(--font-size-4xl),
+    6vw,
+    calc(var(--font-size-5xl) * 1.45)
+  );
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__copy
+  p {
+  color: rgb(255 255 255 / 0.78);
+  font-size: var(--font-size-lg);
+  margin: 1.25rem 0 2rem;
+  max-width: 40rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs {
+  backdrop-filter: blur(12px);
+  background: rgb(8 8 8 / 0.75);
+  border-left: 3px solid var(--quadra-accent);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs-eyebrow {
+  color: var(--quadra-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div {
+  align-items: center;
+  border-bottom: 1px solid rgb(255 255 255 / 0.12);
+  display: flex;
+  gap: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div
+  > span {
+  align-items: center;
+  color: var(--quadra-accent);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  p {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  small {
+  color: rgb(255 255 255 / 0.65);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  strong {
+  color: #ffffff;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div.is-accent
+  small {
+  color: var(--quadra-accent);
+  font-weight: 800;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__specs
+  > div.is-accent
+  strong {
+  color: var(--quadra-accent);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__arrow {
+  align-items: center;
+  background: rgb(0 0 0 / 0.48);
+  border: 1px solid rgb(255 255 255 / 0.35);
+  color: #ffffff;
+  display: flex;
+  height: 3rem;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  z-index: 4;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__arrow--prev {
+  left: 1rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__arrow--next {
+  right: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__pagination {
+  bottom: 2rem;
+  display: flex;
+  gap: 0.5rem;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__pagination
+  button {
+  background: rgb(255 255 255 / 0.32);
+  border: 0;
+  height: 3px;
+  overflow: hidden;
+  padding: 0;
+  width: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-hero__pagination
+  button
+  span {
+  animation: quadra-modern-progress linear forwards;
+  background: var(--quadra-accent);
+  display: block;
+  height: 100%;
+  transform-origin: left;
+}
+
+@keyframes quadra-modern-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact {
+  padding-block: clamp(5rem, 9vw, 9rem);
+  scroll-margin-top: calc(var(--tenant-header-height, 80px) + 1rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials {
+  scroll-margin-top: calc(var(--tenant-header-height, 80px) + 1rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__heading,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__heading {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__heading
+  span,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__heading
+  span,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__heading
+  > span {
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__heading
+  h2,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__heading
+  h2,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__heading
+  h2 {
+  font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-5xl));
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0.35rem 0 0;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__heading
+  p {
+  color: var(--quadra-muted);
+  margin: 0.8rem 0 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card {
+  background: var(--quadra-surface);
+  border: 1px solid var(--quadra-line);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card:hover {
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-5px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__media {
+  aspect-ratio: 16 / 10;
+  background: #1b1b1b;
+  overflow: hidden;
+  position: relative;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__media
+  img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card:hover
+  .quadra-car-card__media
+  img {
+  transform: scale(1.035);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__overlay {
+  background: linear-gradient(180deg, transparent 48%, rgb(0 0 0 / 0.72));
+  inset: 0;
+  position: absolute;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__badge,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__fuel {
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.65rem;
+  position: absolute;
+  text-transform: uppercase;
+  top: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__badge {
+  background: var(--quadra-accent);
+  color: var(--sf-inverse);
+  left: 1rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__fuel {
+  background: rgb(0 0 0 / 0.64);
+  color: #fff;
+  right: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__arrow {
+  align-items: center;
+  background: rgb(0 0 0 / 0.56);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  color: #fff;
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: opacity 160ms ease;
+  width: 2.5rem;
+  z-index: 2;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card:hover
+  .quadra-car-card__arrow,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card:focus-within
+  .quadra-car-card__arrow {
+  opacity: 1;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__arrow--prev {
+  left: 0.75rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__arrow--next {
+  right: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__dots {
+  bottom: 0.8rem;
+  display: flex;
+  gap: 0.35rem;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__dots
+  span {
+  background: rgb(255 255 255 / 0.55);
+  height: 3px;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__dots
+  .is-active {
+  background: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__content {
+  padding: 1.4rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__content
+  h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  line-height: 1.05;
+  margin: 0;
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__content
+  > p {
+  color: var(--quadra-muted);
+  margin: 0.55rem 0 0;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__price {
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  margin-top: 1.15rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__details {
+  border-block: 1px solid var(--quadra-line);
+  color: var(--quadra-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-block: 0.8rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint {
+  background: transparent;
+  border: 0;
+  color: var(--quadra-accent-readable);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-top: 1rem;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint::before {
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint:focus-visible {
+  outline: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-car-card__hint:focus-visible::before {
+  outline: 3px solid var(--quadra-accent);
+  outline-offset: -3px;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-cars__empty {
+  border: 1px solid var(--quadra-line);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials {
+  background: #111111;
+  color: #ffffff;
+  padding-block: clamp(5rem, 9vw, 8rem);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__arrows {
+  display: flex;
+  gap: 0.75rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__arrows
+  button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  color: #fff;
+  display: flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__viewport {
+  overflow: hidden;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__track {
+  display: flex;
+  gap: 2.5rem;
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card {
+  background: #1a1a1a;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  display: flex;
+  flex: 0 0 calc((100% - 5rem) / 3);
+  min-height: 22rem;
+  overflow: hidden;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card__image {
+  height: auto;
+  object-fit: cover;
+  width: 36%;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card__stars {
+  color: var(--quadra-accent);
+  display: flex;
+  gap: 0.25rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card__stars
+  svg {
+  fill: currentColor;
+  height: 1rem;
+  width: 1rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card
+  blockquote {
+  color: rgb(255 255 255 / 0.82);
+  display: -webkit-box;
+  font-size: var(--font-size-base);
+  line-height: 1.65;
+  margin: 1.25rem 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card
+  footer {
+  margin-top: auto;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card
+  h3 {
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonial-card
+  footer
+  span {
+  color: rgb(255 255 255 / 0.52);
+  font-size: var(--font-size-sm);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__pagination {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__pagination
+  button {
+  background: rgb(255 255 255 / 0.28);
+  border: 0;
+  height: 3px;
+  width: 2rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-testimonials__pagination
+  .is-active {
+  background: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about {
+  background: var(--quadra-subtle);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__row {
+  align-items: center;
+  display: grid;
+  gap: clamp(3rem, 8vw, 8rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__row
+  + .quadra-about__row {
+  margin-top: clamp(5rem, 10vw, 10rem);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__eyebrow {
+  color: var(--quadra-accent-readable);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about
+  h2,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about
+  h3 {
+  font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-5xl));
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0.6rem 0 1.25rem;
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__copy
+  p,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__why
+  > p {
+  color: var(--quadra-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1.7;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__copy
+  .quadra-modern-button {
+  margin-top: 1.5rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__image {
+  min-height: 30rem;
+  position: relative;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__image::before {
+  border: 3px solid var(--quadra-accent);
+  content: "";
+  inset: 1.4rem -1.4rem -1.4rem 1.4rem;
+  position: absolute;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__image
+  img {
+  box-shadow: var(--shadow-raised);
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 2rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features
+  article {
+  background: var(--quadra-surface);
+  border-left: 3px solid var(--quadra-accent);
+  padding: 1.25rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features
+  article
+  > span {
+  color: var(--quadra-accent-readable);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features
+  svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features
+  h4 {
+  font-size: var(--font-size-base);
+  margin: 0.55rem 0 0.25rem;
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-about__features
+  p {
+  color: var(--quadra-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__heading {
+  margin-bottom: 3rem;
+  max-width: 48rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__heading
+  p {
+  color: var(--quadra-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1.65;
+  margin: 0.8rem 0 0;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__layout {
+  display: grid;
+  gap: 2rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__layout.has-map {
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card {
+  align-items: center;
+  background: var(--quadra-subtle);
+  border-left: 3px solid transparent;
+  color: var(--quadra-ink);
+  display: flex;
+  flex: 1 1 calc(50% - 0.5rem);
+  gap: 1rem;
+  min-width: 12rem;
+  padding: 1.2rem;
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  a.quadra-contact-card:hover {
+  border-left-color: var(--quadra-accent);
+  transform: translateX(3px);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card--wide {
+  flex: 1 1 100%;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  > span {
+  align-items: center;
+  background: var(--quadra-accent);
+  color: var(--sf-inverse);
+  display: flex;
+  flex: none;
+  height: 2.8rem;
+  justify-content: center;
+  width: 2.8rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  p {
+  min-width: 0;
+  margin: 0;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  strong,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  strong {
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact-card
+  small {
+  color: var(--quadra-muted);
+  font-size: var(--font-size-sm);
+  margin-top: 0.2rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__map {
+  background: var(--quadra-subtle);
+  min-height: 28rem;
+  overflow: hidden;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__map
+  iframe {
+  border: 0;
+  height: 100%;
+  min-height: 28rem;
+  width: 100%;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__map-placeholder {
+  align-items: center;
+  color: var(--quadra-muted);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  min-height: 28rem;
+  padding: 2rem;
+  text-align: center;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__map-placeholder
+  svg {
+  color: var(--quadra-accent-readable);
+  height: 3rem;
+  margin-bottom: 1rem;
+  width: 3rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-contact__map-placeholder
+  strong {
+  color: var(--quadra-ink);
+  font-size: var(--font-size-lg);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer {
+  background: #0d0d0d;
+  color: #fff;
+  padding-top: 5rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__grid {
+  display: grid;
+  gap: 4rem;
+  grid-template-columns: 1.4fr 0.7fr 1fr;
+  padding-bottom: 4rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__identity
+  img {
+  filter: brightness(0) invert(1);
+  max-height: 5rem;
+  object-fit: contain;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__identity
+  > strong {
+  font-size: var(--font-size-2xl);
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer
+  h3 {
+  color: var(--quadra-accent);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.12em;
+  margin: 0 0 1.2rem;
+  text-transform: uppercase;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer
+  nav,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__contacts {
+  display: grid;
+  gap: 0.7rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer
+  a,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer
+  p {
+  color: rgb(255 255 255 / 0.68);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__identity
+  p,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__contacts
+  a,
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__contacts
+  p {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.6rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer
+  svg {
+  color: var(--quadra-accent);
+  flex: none;
+  height: 1rem;
+  margin-top: 0.15rem;
+  width: 1rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__bottom {
+  align-items: center;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.48);
+  display: flex;
+  font-size: var(--font-size-xs);
+  justify-content: space-between;
+  padding-block: 1.5rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__bottom
+  a {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-footer__bottom
+  img {
+  height: 1.25rem;
+  width: auto;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-whatsapp-button {
+  align-items: center;
+  background: #25d366;
+  bottom: 1.5rem;
+  color: #fff;
+  display: flex;
+  height: 3.75rem;
+  justify-content: center;
+  position: fixed;
+  right: 1.5rem;
+  transition: transform 180ms ease;
+  width: 3.75rem;
+  z-index: 60;
+}
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+  .quadra-whatsapp-button:hover {
+  transform: translateY(-3px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"]:has(
+    .public-storefront-theme-toggle
+  )
+  .quadra-whatsapp-button {
+  bottom: 4.75rem;
+}
+
+/* Dark appearance must beat the !important light-token overrides from
+   publicSite.css (.public-storefront[data-storefront]) so inherited heading
+   colors (section titles, about copy) stay readable on dark surfaces. */
+.public-storefront[data-preset="quadra"][data-quadra-modern="true"][data-color-scheme="dark"] {
+  --quadra-ink: #f5f5f2;
+  --quadra-muted: #aaa9a4;
+  --quadra-surface: #111210;
+  --quadra-subtle: #191a17;
+  --quadra-line: rgb(255 255 255 / 0.13);
+  background: var(--quadra-surface) !important;
+  color: var(--quadra-ink) !important;
+}
+
+@media (max-width: 1279px) {
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__phones {
+    display: none;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-testimonial-card {
+    flex-basis: calc((100% - 2rem) / 2);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-testimonials__track {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__inner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__brand-row {
+    width: 100%;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__menu-button {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    display: flex;
+    padding: 0;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__nav {
+    align-items: stretch;
+    background: rgb(10 10 10 / 0.98);
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    margin-inline: -1.25rem;
+    padding: 1rem 1.25rem 1.5rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__nav--open {
+    display: flex;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__mobile-phones {
+    border-bottom: 1px solid rgb(255 255 255 / 0.14);
+    display: grid;
+    gap: 0.7rem;
+    margin-bottom: 0.6rem;
+    padding-bottom: 1rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-header__mobile-phones
+    .quadra-header__phone {
+    display: flex;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__specs {
+    display: none;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-cars__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__row {
+    gap: 4rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-contact__layout.has-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-whatsapp-button {
+    display: none;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__stage {
+    height: 42rem;
+    min-height: 42rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__overlay {
+    background: linear-gradient(180deg, rgb(0 0 0 / 0.44), rgb(0 0 0 / 0.86));
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__copy
+    h1 {
+    font-size: clamp(var(--font-size-3xl), 13vw, var(--font-size-5xl));
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-hero__arrow {
+    display: none;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-cars__heading,
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-testimonials__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-cars__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-testimonial-card {
+    flex-basis: 100%;
+    min-height: 20rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-testimonials__track {
+    gap: 1.5rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__row,
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__row--reverse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__row--reverse
+    .quadra-about__image {
+    order: 2;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__image {
+    min-height: 23rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__image::before {
+    inset: 0.8rem -0.6rem -0.8rem 0.6rem;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-about__features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-contact__cards {
+    flex-direction: column;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-contact-card {
+    flex: 1 1 100%;
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-footer__grid {
+    gap: 2.5rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"]
+    .quadra-footer__bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"] *,
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::before,
+  .public-storefront[data-preset="quadra"][data-quadra-modern="true"] *::after {
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Tenant-selected dark appearance. Fullscreen media/dialog surfaces retain the
+   original V1 treatment for predictable contrast and focus behavior. */
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"] {
+  --quadra-primary: #f5f7fa;
+  --quadra-secondary: #a8b0bd;
+  background: #0c1016 !important;
+  color: var(--quadra-primary) !important;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-classic__main,
+    .quadra-hero,
+    .quadra-cars,
+    .quadra-about,
+    .quadra-testimonials,
+    .quadra-contact,
+    .quadra-detail,
+    .quadra-detail__main,
+    .quadra-detail-related
+  ) {
+  background: #0c1016;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-header--scrolled,
+    .quadra-header__nav,
+    .quadra-car-card,
+    .quadra-cars__empty,
+    .quadra-about__feature,
+    .quadra-testimonial-card,
+    .quadra-contact__info,
+    .quadra-contact__map,
+    .quadra-detail-header,
+    .quadra-detail__content,
+    .quadra-detail-contact,
+    .quadra-detail-description,
+    .quadra-detail-tabs__panel,
+    .quadra-detail-related__card,
+    .quadra-detail-seller,
+    .quadra-detail-specs__item
+  ) {
+  background: #151b24;
+  border-color: #303947;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-header__store-name,
+    .quadra-header__menu-button,
+    .quadra-header__nav-link,
+    .quadra-car-card__content h3,
+    .quadra-section-heading,
+    .quadra-about h2,
+    .quadra-contact h2,
+    .quadra-detail h1,
+    .quadra-detail h2,
+    .quadra-detail h3,
+    .quadra-detail-header__back,
+    .quadra-detail-header__store,
+    .quadra-detail-tabs__tab,
+    .quadra-footer a
+  ) {
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-header__phone,
+    .quadra-car-card__content p,
+    .quadra-car-card__details,
+    .quadra-car-card__hint,
+    .quadra-about p,
+    .quadra-testimonial-card__quote,
+    .quadra-contact p,
+    .quadra-detail p,
+    .quadra-detail-seller__address,
+    .quadra-detail-seller__hours
+  ) {
+  color: var(--quadra-secondary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-search,
+    .quadra-search__field,
+    .quadra-detail-form__field input,
+    .quadra-detail-form__field textarea
+  ) {
+  background: #151b24;
+  border-color: #303947;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-footer {
+  background: #080b10;
+  border-color: #303947;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__document {
+  align-items: center;
+  background: #f3f4f6;
+  color: var(--quadra-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__document
+  svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__document
+  span {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-share {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-share
+  button {
+  align-items: center;
+  background: var(--quadra-accent);
+  border: 0;
+  border-radius: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-share
+  button:hover {
+  background: var(--quadra-accent-hover);
+  transform: scale(1.05);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-share
+  button
+  svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-share
+  p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related {
+  margin-top: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related
+  > h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-2xl);
+  margin: 0 0 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__card {
+  background: #fff;
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  transition:
+    box-shadow 300ms ease,
+    transform 300ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__card:hover {
+  box-shadow: none;
+  transform: translateY(-0.25rem);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__image {
+  align-items: center;
+  background: #f3f4f6;
+  color: var(--quadra-secondary);
+  display: flex;
+  height: 12rem;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__image
+  img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__card:hover
+  .quadra-detail-related__image
+  img {
+  transform: scale(1.05);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__body {
+  padding: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__body
+  h3 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-base);
+  margin: 0 0 0.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__body
+  > p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__body
+  > div {
+  color: var(--quadra-secondary);
+  display: flex;
+  font-size: var(--font-size-sm);
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-related__body
+  > strong {
+  color: var(--quadra-accent);
+  font-size: var(--font-size-lg);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal {
+  align-items: center;
+  backdrop-filter: blur(4px);
+  background: rgb(0 0 0 / 0.6);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 100;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__panel {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.35);
+  max-height: calc(100vh - 2rem);
+  max-width: 28rem;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__close {
+  align-items: center;
+  background: rgb(255 255 255 / 0.16);
+  border: 0;
+  border-radius: 9999px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  z-index: 3;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__close
+  svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__accent {
+  background: linear-gradient(
+    135deg,
+    var(--quadra-accent),
+    var(--quadra-accent-hover)
+  );
+  height: 8rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__content {
+  padding: 0 1.5rem 1.5rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__content
+  > img {
+  border: 4px solid #fff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2);
+  height: 8rem;
+  margin: -2rem auto 1rem;
+  object-fit: cover;
+  width: 8rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__content
+  h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-xl);
+  margin: 0 0 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__content
+  > p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal__content
+  > strong {
+  color: var(--quadra-accent);
+  display: block;
+  font-size: var(--font-size-2xl);
+  margin-bottom: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact-modal
+  .quadra-detail-contact__actions {
+  display: grid;
+  margin-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-related__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-related__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-related__card,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-related__image
+    img,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-share
+    button {
+    transition: none;
+  }
+}
+
+/* QUADRA classic vehicle detail: direct V1 detail-page composition. */
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail {
+  background: #fff;
+  color: var(--quadra-primary);
+  min-height: 100vh;
+  padding-bottom: 6rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header {
+  background: #fff;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  min-height: 96px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__inner {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 96px;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--quadra-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-base);
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  transition: color 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__back:hover {
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__back
+  svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__store {
+  align-items: center;
+  display: flex;
+  font-weight: 700;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-header__store
+  img {
+  height: 64px;
+  max-width: 160px;
+  object-fit: contain;
+  width: auto;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__content {
+  padding-block: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__layout {
+  align-items: start;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__main {
+  display: grid;
+  gap: 2rem;
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__stage {
+  aspect-ratio: 16 / 9;
+  background: #f3f4f6;
+  border-radius: 1rem;
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__media,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__fullscreen-media {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__empty {
+  align-items: center;
+  color: var(--quadra-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  justify-content: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__empty
+  svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__expand,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__close {
+  align-items: center;
+  background: rgb(0 0 0 / 0.6);
+  border: 0;
+  border-radius: 9999px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+  position: absolute;
+  transition: background 200ms ease;
+  z-index: 4;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__expand:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__close:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__expand {
+  right: 1rem;
+  top: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__expand
+  svg,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous
+  svg,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next
+  svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous {
+  left: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next {
+  right: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__previous:disabled,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__next:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__counter {
+  background: rgb(0 0 0 / 0.5);
+  border-radius: 9999px;
+  bottom: 1rem;
+  color: #fff;
+  font-size: var(--font-size-xs);
+  padding: 0.25rem 0.75rem;
+  position: absolute;
+  right: 1rem;
+  z-index: 3;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__group {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  color: var(--quadra-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__group[aria-selected="true"] {
+  border-color: var(--quadra-accent);
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnails {
+  background: #f9fafb;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail {
+  background: #f3f4f6;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  flex: 0 0 5rem;
+  height: 4rem;
+  opacity: 0.7;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  transition: opacity 200ms ease;
+  width: 5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail:hover,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail[aria-pressed="true"] {
+  border-color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail-media {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__thumbnail
+  > svg {
+  color: #fff;
+  height: 1rem;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__dialog {
+  align-items: center;
+  background: rgb(0 0 0 / 0.95);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 2rem;
+  position: fixed;
+  z-index: 100;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__dialog-media {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__fullscreen-media {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__close {
+  right: 1rem;
+  top: 1rem;
+  z-index: 110;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__close
+  svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-gallery__dialog
+  .quadra-detail-gallery__counter {
+  bottom: 1rem;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__vehicle-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__vehicle-header
+  h1 {
+  color: var(--quadra-primary);
+  font-size: clamp(var(--font-size-2xl), 5vw, calc(var(--font-size-5xl) * 1.2));
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__vehicle-header
+  > p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__tags
+  span {
+  background: var(--quadra-accent);
+  border-radius: 9999px;
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-tabs {
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-tabs__tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--quadra-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  padding: 0.75rem 0.25rem;
+  transition: color 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-tabs__tab[aria-selected="true"] {
+  border-bottom-color: var(--quadra-accent);
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-tabs__panel {
+  display: grid;
+  gap: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail__price {
+  color: var(--quadra-accent);
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs__item {
+  align-items: center;
+  background: #fff;
+  border-radius: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs__item
+  > svg {
+  color: var(--quadra-accent);
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs__item
+  div {
+  min-width: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs__item
+  span {
+  color: var(--quadra-secondary);
+  display: block;
+  font-size: var(--font-size-xs);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-specs__item
+  strong {
+  color: var(--quadra-primary);
+  display: block;
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-description
+  h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-xl);
+  margin: 0 0 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-description
+  p {
+  color: var(--quadra-secondary);
+  line-height: 1.75;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+  padding: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact
+  h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-xl);
+  margin: 0 0 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__actions {
+  display: none;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action {
+  align-items: center;
+  border: 0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  gap: 0.75rem;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action:hover {
+  transform: translateY(-1px);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action
+  svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action--whatsapp {
+  background: var(--quadra-accent);
+  color: #fff;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action--whatsapp:hover {
+  background: var(--quadra-accent-hover);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action--interest {
+  background: var(--quadra-primary);
+  color: #fff;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action--phone {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__action--phone:hover {
+  background: #f9fafb;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__status {
+  border-top: 1px solid #e5e7eb;
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-contact__status
+  span {
+  color: var(--quadra-primary);
+  font-weight: 500;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__field {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__field
+  span {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form
+  input,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form
+  textarea {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  color: var(--quadra-primary);
+  font: inherit;
+  outline: none;
+  padding: 0.75rem 1rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form
+  input:focus,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form
+  textarea:focus {
+  border-color: var(--quadra-accent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--quadra-accent) 18%, transparent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__submit {
+  align-items: center;
+  background: var(--quadra-accent);
+  border: 0;
+  border-radius: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  gap: 0.75rem;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  transition: background 200ms ease;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__submit:hover {
+  background: var(--quadra-accent-hover);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__submit
+  svg {
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__success,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__error {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__success {
+  color: var(--quadra-accent);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-form__error {
+  color: #dc2626;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__identity {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__identity
+  img {
+  height: 4rem;
+  object-fit: contain;
+  width: 4rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__identity
+  h2 {
+  color: var(--quadra-primary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__identity
+  p {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0.25rem 0 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__links {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__links
+  a {
+  align-items: center;
+  color: var(--quadra-accent);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__links
+  svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__hours,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-seller__address {
+  color: var(--quadra-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-mobile-actions {
+  align-items: center;
+  bottom: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  left: 50%;
+  padding-inline: 0.5rem;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-mobile-actions
+  a {
+  align-items: center;
+  background: var(--quadra-primary);
+  border-radius: 9999px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+  color: #fff;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-mobile-actions
+  a
+  svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-mobile-actions__whatsapp {
+  background: #22c55e !important;
+  border-radius: 1rem !important;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-mobile-actions__whatsapp
+  span {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-state {
+  align-items: center;
+  color: var(--quadra-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 16rem;
+  text-align: center;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-state
+  > svg {
+  color: var(--quadra-accent);
+  height: 2rem;
+  width: 2rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-detail-state
+  button {
+  align-items: center;
+  background: var(--quadra-accent);
+  border: 0;
+  border-radius: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+  .quadra-spin {
+  animation: quadra-detail-spin 1s linear infinite;
+}
+
+@keyframes quadra-detail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 768px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-specs {
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-specs__item {
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-specs__item
+    strong {
+    font-size: var(--font-size-base);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-contact__actions {
+    display: grid;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-form__field--wide,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-form__submit {
+    grid-column: 1 / -1;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-mobile-actions {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail__layout {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-gallery__stage {
+    aspect-ratio: auto;
+    height: 500px;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-contact {
+    position: sticky;
+    top: 7.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-contact__action,
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-detail-header__back {
+    transition: none;
+  }
+
+  .public-storefront[data-preset="quadra"][data-quadra-classic="true"]
+    .quadra-spin {
+    animation: none;
+  }
+}
+
+/* Detail styles are appended after the shared appearance block, so dark-mode
+   surface overrides must follow them to keep the copied V1 page legible. */
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-detail-header,
+    .quadra-detail__content,
+    .quadra-detail-contact,
+    .quadra-detail-description,
+    .quadra-detail-tabs__panel,
+    .quadra-detail-related__card,
+    .quadra-detail-seller,
+    .quadra-detail-specs__item,
+    .quadra-detail-mobile-actions
+  ) {
+  background: #151b24;
+  border-color: #303947;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-detail h1,
+    .quadra-detail h2,
+    .quadra-detail h3,
+    .quadra-detail-header__back,
+    .quadra-detail-header__store,
+    .quadra-detail-tabs__tab,
+    .quadra-detail-specs__item strong,
+    .quadra-detail-contact__status span
+  ) {
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  :where(
+    .quadra-detail p,
+    .quadra-detail-form__field span,
+    .quadra-detail-specs__item span,
+    .quadra-detail-contact__status,
+    .quadra-detail-seller__address,
+    .quadra-detail-seller__hours
+  ) {
+  color: var(--quadra-secondary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-detail-form
+  input,
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-detail-form
+  textarea {
+  background: #0c1016;
+  border-color: #303947;
+  color: var(--quadra-primary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-detail-form
+  :where(input, textarea)::placeholder {
+  color: var(--quadra-secondary);
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-detail-contact__action--interest {
+  background: #303947;
+  color: #fff;
+}
+
+.public-storefront[data-preset="quadra"][data-quadra-classic="true"][data-color-scheme="dark"]
+  .quadra-detail-contact__action--phone {
+  background: #151b24;
+  border-color: #4b5563;
+  color: var(--quadra-primary);
+}

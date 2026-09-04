@@ -1,0 +1,474 @@
+/* Fiscal issue wizard (Spedy emission composer) — premium checkout language,
+   aligned with billing-panels.css and the credere workspace panes. */
+
+.fiscal-issue {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Hero ------------------------------------------------------------ */
+
+.fiscal-issue-hero {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-line) 70%, transparent);
+  overflow: hidden;
+  padding-bottom: 1.5rem;
+  position: relative;
+}
+
+.fiscal-issue-blob {
+  background: var(--color-accent-strong);
+  border-radius: 9999px;
+  filter: blur(120px);
+  height: 16rem;
+  opacity: 0.15;
+  pointer-events: none;
+  position: absolute;
+  right: -4rem;
+  top: -6rem;
+  width: 16rem;
+}
+
+.fiscal-issue-watermark {
+  bottom: -2.5rem;
+  color: var(--color-accent-strong);
+  height: 10rem;
+  opacity: 0.1;
+  pointer-events: none;
+  position: absolute;
+  right: -1rem;
+  stroke-width: 1.1;
+  transform: rotate(-12deg);
+  width: 10rem;
+}
+
+.fiscal-issue-eyebrow {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent-strong) 25%, transparent);
+  border-radius: 9999px;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  letter-spacing: 0.12em;
+  padding: 0.3rem 0.75rem;
+  text-transform: uppercase;
+}
+
+.fiscal-issue-title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 950;
+  letter-spacing: -0.035em;
+  margin-top: 0.75rem;
+}
+
+.fiscal-issue-subtitle {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-top: 0.35rem;
+  max-width: 42rem;
+}
+
+/* Stepper ------------------------------------------------------------ */
+
+.fiscal-stepper {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fiscal-stepper-tabs {
+  background: color-mix(in srgb, var(--color-panel) 75%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.fiscal-step {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: calc(var(--surface-radius-2xl) - 6px);
+  color: var(--color-muted);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiscal-step {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
+}
+
+.fiscal-step:hover {
+  color: var(--color-text);
+}
+
+.fiscal-step:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.fiscal-step--active {
+  background: var(--color-panel);
+  border-color: var(--color-line);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+}
+
+.fiscal-step-label {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.fiscal-step-index {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-muted) 14%, transparent);
+  border-radius: 9999px;
+  color: var(--color-muted);
+  display: grid;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  height: 1.75rem;
+  place-items: center;
+  width: 1.75rem;
+}
+
+.fiscal-step--active .fiscal-step-index {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+/* The number stays in the accessibility tree (opacity only) so the tab keeps
+   its stable accessible name while the check icon takes over visually. */
+.fiscal-step-num,
+.fiscal-step-check {
+  grid-area: 1 / 1;
+}
+
+.fiscal-step-check {
+  height: 0.95rem;
+  opacity: 0;
+  width: 0.95rem;
+}
+
+.fiscal-step-label.is-done .fiscal-step-index {
+  background: color-mix(in srgb, var(--color-success-strong) 16%, transparent);
+  color: var(--color-success-strong);
+}
+
+.fiscal-step-label.is-done .fiscal-step-num {
+  opacity: 0;
+}
+
+.fiscal-step-label.is-done .fiscal-step-check {
+  opacity: 1;
+}
+
+.fiscal-step-text {
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fiscal-stepper-progress {
+  background: color-mix(in srgb, var(--color-line) 65%, transparent);
+  border-radius: 9999px;
+  height: 0.3rem;
+  overflow: hidden;
+}
+
+.fiscal-stepper-progress-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-accent-strong)
+  );
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiscal-stepper-progress-fill {
+    transition: width 240ms ease;
+  }
+}
+
+/* Step panes ------------------------------------------------------------ */
+
+.fiscal-pane {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.fiscal-pane-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.fiscal-pane-kicker {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fiscal-pane-meta {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.5rem;
+}
+
+/* Origin cards ------------------------------------------------------------ */
+
+.fiscal-origin-card {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-panel) 75%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fiscal-origin-card {
+    transition:
+      border-color 160ms ease,
+      transform 160ms ease;
+  }
+
+  .fiscal-origin-card:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.fiscal-origin-card:not(:disabled):hover {
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent-strong) 45%,
+    var(--color-line)
+  );
+}
+
+.fiscal-origin-card:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.fiscal-origin-card[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent-strong) 55%,
+    var(--color-line)
+  );
+}
+
+/* Item cards ------------------------------------------------------------ */
+
+.fiscal-item-card {
+  background: color-mix(in srgb, var(--color-panel) 75%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.fiscal-item-card-header {
+  align-items: center;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-line) 60%, transparent);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+}
+
+.fiscal-item-card-title {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fiscal-total-bar {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent-strong) 25%, transparent);
+  border-radius: var(--radius-lg);
+  display: flex;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+}
+
+.fiscal-total-bar-label {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fiscal-total-bar-value {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+/* Field subgroups (vehicle/tax sections) ------------------------------------------------------------ */
+
+.fiscal-field-subgroup {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fiscal-field-subgroup + .fiscal-field-subgroup {
+  border-top: 1px dashed color-mix(in srgb, var(--color-line) 75%, transparent);
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+}
+
+.fiscal-field-subgroup-title {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fiscal-field-subgroup-title svg {
+  color: var(--color-accent-strong);
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+/* Footer navigation ------------------------------------------------------------ */
+
+.fiscal-issue-footer {
+  align-items: center;
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding-top: 1.25rem;
+}
+
+/* Review dialog ------------------------------------------------------------ */
+
+.fiscal-review-summary {
+  background: color-mix(in srgb, var(--color-panel) 75%, var(--color-app));
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.fiscal-review-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.fiscal-review-row + .fiscal-review-row {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+  padding-top: 0.85rem;
+}
+
+.fiscal-review-label {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fiscal-review-value {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.fiscal-review-value--total {
+  color: var(--color-accent-strong);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.fiscal-review-warning {
+  align-items: flex-start;
+  background: color-mix(
+    in srgb,
+    var(--color-warning-strong) 10%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning-strong) 40%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+.fiscal-review-warning svg {
+  color: var(--color-warning-strong);
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+/* Small screens: stack the stepper tabs vertically. */
+@media (max-width: 640px) {
+  .fiscal-stepper-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

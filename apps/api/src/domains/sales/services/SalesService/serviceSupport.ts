@@ -13,18 +13,23 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
+import { assertEntitlement } from "../../../../shared/authorization.js";
 import type {
   SaleRecord,
   SalesRepository,
   SaleScope,
 } from "../../ports/salesRepository.js";
+import type { CrmSaleOutcomePort } from "../../ports/crmSaleOutcomePort.js";
 import { findReservationSignalPayment } from "../../salePaymentSignals.js";
 import {
   collectMissingSalePaymentFields,
   hasSaleBuyerName,
 } from "../../salePaymentReadiness.js";
+import { collectMissingSaleTradeInFields } from "../../saleTradeInReadiness.js";
+import { readRequiredDocumentKinds } from "../../saleDocumentPolicy.js";
 
 export type SalesServicePorts = {
+  crmSaleOutcomePort?: CrmSaleOutcomePort;
   salesRepository: SalesRepository;
 };
 
@@ -77,7 +82,13 @@ export class SaleDraftDeletionStateError extends Error {
 
 export class SaleReferenceError extends Error {
   constructor(readonly reference: "lead" | "vehicle_unit" | "unknown") {
-    super(referenceMessage(reference));
+    super(
+      reference === "lead"
+        ? "Referenced lead was not found."
+        : reference === "vehicle_unit"
+          ? "Referenced vehicle unit was not found."
+          : "Referenced sales record dependency was not found.",
+    );
     this.name = "SaleReferenceError";
   }
 }
@@ -103,14 +114,6 @@ export { SalePaymentCompensationRequiredError } from "../../salePaymentCompensat
 
 export type SaleReadinessPurpose = "close" | "reserve";
 
-function referenceMessage(reference: "lead" | "vehicle_unit" | "unknown") {
-  if (reference === "lead") return "Referenced lead was not found.";
-  if (reference === "vehicle_unit") {
-    return "Referenced vehicle unit was not found.";
-  }
-  return "Referenced sales record dependency was not found.";
-}
-
 export function getSalesRepository(
   ports: SalesServicePorts | undefined,
 ): SalesRepository {
@@ -122,6 +125,7 @@ export function requireSaleScope(context: ServiceContext): SaleScope {
   if (!context.storeId || !context.tenantId) {
     throw new Error("Sales service requires tenant and store scope.");
   }
+  assertEntitlement(context, "sales");
   return { storeId: context.storeId, tenantId: context.tenantId };
 }
 
@@ -173,8 +177,12 @@ export function collectMissingSaleFields(
   if (sale.salePriceCents && principalTotal < sale.salePriceCents) {
     missing.push("payment_principal_coverage");
   }
+  if (sale.salePriceCents && principalTotal > sale.salePriceCents) {
+    missing.push("payment_principal_exceeds_sale_price");
+  }
 
   missing.push(...collectMissingSalePaymentFields(sale.payments));
+  missing.push(...collectMissingSaleTradeInFields(sale));
 
   for (const kind of readRequiredDocumentKinds(sale.documentPolicySnapshot)) {
     if (!sale.selectedDocumentKinds.includes(kind)) {
@@ -231,19 +239,4 @@ export async function auditSalesServiceEvent(
     ...(context.request ? { request: context.request } : {}),
     ...(context.source ? { source: context.source } : {}),
   });
-}
-
-function readRequiredDocumentKinds(
-  snapshot: Record<string, unknown>,
-): readonly string[] {
-  const direct = snapshot.requiredDocumentKinds;
-  if (Array.isArray(direct)) {
-    return direct.filter((value): value is string => typeof value === "string");
-  }
-  const policy = snapshot.policy;
-  if (!policy || typeof policy !== "object") return [];
-  const required = (policy as { requiredDocumentKinds?: unknown })
-    .requiredDocumentKinds;
-  if (!Array.isArray(required)) return [];
-  return required.filter((value): value is string => typeof value === "string");
 }

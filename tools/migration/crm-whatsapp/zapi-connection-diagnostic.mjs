@@ -3,8 +3,8 @@ import { dirname, join, resolve } from "node:path";
 
 class DiagnosticError extends Error {}
 
-const envPath = resolve(".env");
-loadEnvFile(envPath);
+const envPath = [resolve(".env"), resolve("../..", ".env")].find(existsSync);
+if (envPath) loadEnvFile(envPath);
 
 const args = parseArgs(process.argv.slice(2));
 const runRealE2e = process.env.RUN_ZAPI_E2E === "true";
@@ -17,9 +17,9 @@ if (!runRealE2e && !args.force) {
 
 const config = {
   apiBaseUrl: requiredEnv("CRM_ZAPI_API_BASE_URL"),
-  instanceId: requiredEnv("CRM_ZAPI_TEST_INSTANCE_ID"),
-  instanceToken: requiredEnv("CRM_ZAPI_TEST_INSTANCE_TOKEN"),
-  clientToken: requiredEnv("CRM_ZAPI_TEST_CLIENT_TOKEN"),
+  ...readConnectionCredentials(
+    args.credentialsFile ?? requiredEnv("CRM_ZAPI_CONNECTION_FILE"),
+  ),
   pairPhone: args.pairPhone ?? process.env.CRM_ZAPI_TEST_PAIR_PHONE ?? "",
 };
 
@@ -49,18 +49,22 @@ try {
   ]);
 
   if (connectedPhone) {
-    console.log(`connectedPhone: ${connectedPhone}`);
+    console.log(
+      `connectedPhone: ${mask(normalizePhone(connectedPhone), 2, 2)}`,
+    );
   }
 
-  if (isConnected(status)) {
+  if (args.statusOnly) {
+    console.log("\nPairing checks: skipped (--status-only)");
+  } else if (isConnected(status)) {
     console.log("\nInstance is already connected.");
   } else {
     await writeQrImage(instanceBaseUrl, config, outputDir);
   }
 
-  if (config.pairPhone) {
-    await printPhoneCode(instanceBaseUrl, config);
-  } else {
+  if (!args.statusOnly && config.pairPhone) {
+    await writePhoneCode(instanceBaseUrl, config, outputDir);
+  } else if (!args.statusOnly) {
     console.log("\nPhone pairing code: skipped");
     console.log(
       "Pass --pair-phone 55XXXXXXXXXXX or set CRM_ZAPI_TEST_PAIR_PHONE to request one.",
@@ -98,7 +102,12 @@ function parseEnvLine(line) {
 }
 
 function parseArgs(rawArgs) {
-  const parsed = { force: false, pairPhone: undefined };
+  const parsed = {
+    credentialsFile: undefined,
+    force: false,
+    pairPhone: undefined,
+    statusOnly: false,
+  };
 
   for (let index = 0; index < rawArgs.length; index += 1) {
     const arg = rawArgs[index];
@@ -107,6 +116,19 @@ function parseArgs(rawArgs) {
     }
     if (arg === "--force") {
       parsed.force = true;
+      continue;
+    }
+    if (arg === "--status-only") {
+      parsed.statusOnly = true;
+      continue;
+    }
+    if (arg === "--credentials-file") {
+      const value = rawArgs[index + 1];
+      if (!value || value.startsWith("--")) {
+        fail("--credentials-file requires a path.");
+      }
+      parsed.credentialsFile = value;
+      index += 1;
       continue;
     }
     if (arg === "--pair-phone") {
@@ -122,6 +144,23 @@ function parseArgs(rawArgs) {
   }
 
   return parsed;
+}
+
+function readConnectionCredentials(path) {
+  let value;
+  try {
+    value = JSON.parse(readFileSync(resolve(path), "utf8"));
+  } catch {
+    fail("CRM_ZAPI_CONNECTION_FILE must point to a readable JSON file.");
+  }
+  const credentials = {};
+  for (const key of ["instanceId", "instanceToken", "clientToken"]) {
+    const credential =
+      typeof value?.[key] === "string" ? value[key].trim() : "";
+    if (!credential) fail(`Z-API connection credential ${key} is required.`);
+    credentials[key] = credential;
+  }
+  return credentials;
 }
 
 function requiredEnv(name) {
@@ -192,7 +231,7 @@ async function writeQrImage(instanceBaseUrl, config, outputPath) {
   if (contentType.startsWith("image/")) {
     const extension = contentType.includes("jpeg") ? "jpg" : "png";
     const file = join(outputPath, `test-instance-qr.${extension}`);
-    writeFileSync(file, bytes);
+    writeFileSync(file, bytes, { mode: 0o600 });
     console.log("\nQR code");
     console.log(`image: ${file}`);
     return;
@@ -208,7 +247,7 @@ async function writeQrImage(instanceBaseUrl, config, outputPath) {
   if (qrImage) {
     const { buffer, extension } = qrImage;
     const file = join(outputPath, `test-instance-qr.${extension}`);
-    writeFileSync(file, buffer);
+    writeFileSync(file, buffer, { mode: 0o600 });
     console.log(`image: ${file}`);
     return;
   }
@@ -216,16 +255,15 @@ async function writeQrImage(instanceBaseUrl, config, outputPath) {
   const qrPayload = findQrPayload(payload);
   if (qrPayload) {
     const file = join(outputPath, "test-instance-qr-payload.txt");
-    writeFileSync(file, qrPayload);
+    writeFileSync(file, qrPayload, { mode: 0o600 });
     console.log(`payload: ${file}`);
-    console.log("payloadPreview: " + summarizeText(qrPayload, 120));
     return;
   }
 
   console.log("No QR image or payload found in ZAPI response.");
 }
 
-async function printPhoneCode(instanceBaseUrl, config) {
+async function writePhoneCode(instanceBaseUrl, config, outputPath) {
   const phone = normalizePhone(config.pairPhone);
   if (!phone) return;
 
@@ -242,7 +280,10 @@ async function printPhoneCode(instanceBaseUrl, config) {
 
   console.log("\nPhone pairing code");
   if (code) {
-    console.log(`code: ${code}`);
+    mkdirSync(outputPath, { recursive: true });
+    const file = join(outputPath, "test-instance-phone-code.txt");
+    writeFileSync(file, `${code}\n`, { mode: 0o600 });
+    console.log(`code: received and written to ${file}`);
   } else {
     printJsonSummary(response, ["connected", "status", "message", "error"]);
     console.log("No pairing code found in ZAPI response.");

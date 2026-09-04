@@ -142,6 +142,37 @@ Unavailable or simulated regulatory/provider capabilities must say explicitly
 that no official operation occurred. They must never show a synthetic success
 state.
 
+### CRM commercial decision — 2026-08
+
+- **Segment and outcome:** the initial ICP gets a store-scoped CRM inbox when
+  its effective plan includes `crm`, with Z-API retained as a transport under
+  that entitlement rather than as a separately purchased integration.
+- **Billing:** the immutable `2026-08-v3` catalog is the only source of plan
+  prices and capabilities. Free is permanent; paid plans activate only after a
+  plan hire has verified payment evidence and atomically projected its
+  effective contract. There are no active feature add-ons or Z-API billing
+  items. The dealership pays Meta directly; Loja pays any provider costs under
+  its plan margin policy.
+- **Plan changes:** the server persists a plan hire before contacting Asaas,
+  correlates checkout and later payment events with the hire and provider
+  identifiers, and exposes activation/reconciliation state while polling.
+  Unmatched events remain pending reconciliation. Paid access is never
+  activated from a browser callback alone.
+- **Setup authority:** only an entitled, authorized store actor or explicitly
+  scoped support actor may enter Z-API credentials. The write-only form accepts
+  the store-scoped `instanceId`, `instanceToken`, and `clientToken`; each value
+  is encrypted with tenant/store/purpose-bound context. Existing imported
+  connections marked `credentials_incomplete` preserve history but require
+  re-entry before provider I/O. Webhook configuration is backend/support
+  managed and never customer-facing.
+- **Leading metrics:** CRM activation time, verified first conversation,
+  provider failure rate, reconciliation age, and support minutes per active
+  store.
+- **Degraded state:** pending payment, activation pending, reconciliation
+  failed, credentials incomplete, disconnected, or provider unavailable are
+  explicit states. None imply a message was sent or an official channel is
+  active.
+
 ## Roadmap Decision Test
 
 Each proposed initiative gets a one-page decision record with:
@@ -258,7 +289,7 @@ Track:
 - GRR and NRR;
 - MRR, new MRR, expansion, contraction, voluntary churn, involuntary churn;
 - annual-prepay share;
-- plan/add-on/provider gross margin;
+- plan/provider gross margin;
 - implementation revenue and delivery margin;
 - support minutes and provider cost per active store.
 
@@ -365,7 +396,8 @@ and product policy.
   rewrite it.
 - Entitlements are a projection of contract/subscription items plus explicit,
   audited exceptions with an expiry.
-- Every trial has `starts_at`, `ends_at`, and an automatic state transition.
+- Free is a permanent effective contract with no trial expiry. Paid access is
+  created only through a verified plan-hire lifecycle.
 - Every paid provider cost has an allowance, pass-through, or explicit margin
   policy.
 - Enforce user, store, stock, lookup, message, fiscal, integration, storage, and
@@ -380,8 +412,9 @@ and product policy.
 
 ## Go-To-Market Model
 
-Until retention is proven, prefer paid, founder-led implementation over an
-unbounded free trial.
+Until retention is proven, prefer paid, founder-led implementation while
+keeping the permanent Free contract limited to its published quotas and
+capabilities.
 
 Sales motion:
 

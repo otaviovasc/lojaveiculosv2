@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorPage } from "./ErrorPage";
+import { recoverFromStaleLazyImport } from "./lazyImportRecovery";
 
 /**
  * Crash containment for the app shell and for individual module surfaces.
@@ -20,6 +21,7 @@ export class AppErrorBoundary extends Component<
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
+    if (recoverFromStaleLazyImport(error)) return;
     console.error("[ui:error-boundary]", {
       componentStack: info.componentStack ?? undefined,
       message: error.message,

@@ -77,6 +77,7 @@ export const updateListingDetailsSchema = z.object({
 export const attachUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
+  renavam: z.string().trim().min(1).max(32).nullable().optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });
@@ -84,6 +85,7 @@ export const attachUnitSchema = z.object({
 export const updateUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
+  renavam: z.string().trim().min(1).max(32).nullable().optional(),
   status: z.enum(unitStatuses).optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
@@ -91,10 +93,11 @@ export const updateUnitSchema = z.object({
 export const catalogQuerySchema = z.object({
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
 });
-
 export const catalogSnapshotQuerySchema = z.object({
   brandCode: z.string().trim().min(1),
   modelCode: z.string().trim().min(1),
+  modelFamilyCode: z.string().trim().min(1).optional(),
+  modelFamilyName: z.string().trim().min(1).optional(),
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
   yearCode: z.string().trim().min(1),
 });
@@ -174,21 +177,6 @@ export const unpublishListingSchema = z.object({
   reason: z.string().trim().min(1).nullable().optional(),
 });
 
-export const costSchema = z.object({
-  amountCents: z.number().int().positive(),
-  costDate: z.coerce.date().optional(),
-  description: z.string().trim().min(1).nullable().optional(),
-  kind: z.enum([
-    "acquisition",
-    "fee",
-    "other",
-    "preparation",
-    "repair",
-    "tax",
-    "transport",
-  ]),
-});
-
 const checklistItemSchema = z.object({
   id: z.string().trim().min(1).optional(),
   label: z.string().trim().min(1).max(160),
@@ -214,10 +202,14 @@ export const updateChecklistSchema = z.object({
 
 const buyerSchema = z.object({
   address: z.string().trim().min(1).nullable().optional(),
+  cep: z.string().trim().min(1).nullable().optional(),
+  city: z.string().trim().min(1).nullable().optional(),
+  district: z.string().trim().min(1).nullable().optional(),
   document: z.string().trim().min(1).nullable().optional(),
   email: z.string().trim().email().nullable().optional(),
   name: z.string().trim().min(1),
   phone: z.string().trim().min(1).nullable().optional(),
+  state: z.string().trim().min(1).nullable().optional(),
 });
 
 export const reserveUnitSchema = z.object({

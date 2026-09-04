@@ -52,8 +52,11 @@ export async function resolveStoreContext(
     billingManagedBy: access.billingManagedBy,
     role: access.role,
   });
+  const { displayName: _untrustedDisplayName, ...authenticatedActor } =
+    input.actor;
   const actor: ServiceActor = {
-    ...input.actor,
+    ...authenticatedActor,
+    ...(access.userName?.trim() ? { displayName: access.userName.trim() } : {}),
     externalId: input.actor.externalId ?? input.clerkUserId,
     id: access.userId,
   };
@@ -76,6 +79,7 @@ export async function resolveStoreContext(
     logger: input.logger,
     membershipRole: access.role,
     permissions,
+    platformAdmin: false,
     requestId: input.requestId,
     storeId: access.storeId,
     tenantId: access.tenantId,
@@ -96,5 +100,8 @@ function resolveBillingAuthorityPermissions(input: {
     return permissions;
   }
 
-  return permissions.filter((permission) => permission !== "billing.manage");
+  return permissions.filter(
+    (permission) =>
+      !["billing.manage", "financing.connection.manage"].includes(permission),
+  );
 }

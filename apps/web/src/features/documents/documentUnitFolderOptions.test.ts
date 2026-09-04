@@ -14,6 +14,7 @@ describe("document unit folder options", () => {
         label: "Fiat Toro Volcano",
         listingId: "listing_1",
         plate: "ABC1D23",
+        status: "available",
         targetType: "vehicle_unit",
         unitId: "unit_1",
       }),
@@ -28,6 +29,7 @@ describe("document unit folder options", () => {
       plate: null,
       primaryMediaUrl: null,
       stockNumber: null,
+      status: null,
       targetType: "vehicle_unit",
       unitId: "unit_1",
       vin: null,
@@ -80,6 +82,7 @@ function summary(): InventoryListingSummary {
   };
 
   return {
+    leadsCount: 0,
     listing: {
       catalog: null,
       commercialTags: [],

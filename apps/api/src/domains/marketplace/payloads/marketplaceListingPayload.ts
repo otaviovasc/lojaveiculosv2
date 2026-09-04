@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type {
   MarketplaceListingProjection,
   MarketplaceProvider,
@@ -11,6 +12,7 @@ export type ProviderListingPayload = {
 };
 
 export function createProviderListingPayload(input: {
+  externalId?: string | null;
   listing: MarketplaceListingProjection;
   provider: MarketplaceProvider;
   settings: Record<string, unknown>;
@@ -18,7 +20,7 @@ export function createProviderListingPayload(input: {
   if (input.provider === "mercado_livre") {
     return createMercadoLivrePayload(input.listing, input.settings);
   }
-  return createOlxPayload(input.listing, input.settings);
+  return createOlxPayload(input.listing, input.settings, input.externalId);
 }
 
 function createMercadoLivrePayload(
@@ -78,6 +80,7 @@ function mercadoLivreAttributes(listing: MarketplaceListingProjection) {
 function createOlxPayload(
   listing: MarketplaceListingProjection,
   settings: Record<string, unknown>,
+  externalId: string | null | undefined,
 ): ProviderListingPayload {
   const categoryId = olxCategory(listing.vehicleType);
   const mapping = objectSetting(settings, "providerMapping");
@@ -106,15 +109,17 @@ function createOlxPayload(
     ...(listing.condition === "new" ? { zero_km: "1" } : {}),
   };
   const body = {
-    body: (listing.description ?? listing.title).slice(0, 6000),
+    Body: normalizedText(listing.description ?? listing.title, 6000),
+    Phone: phone,
+    Subject: normalizedText(listing.title, 90),
     category: categoryId,
-    id: listing.listingId,
-    images: listing.mediaUrls,
+    id: externalId
+      ? assertOlxProviderListingId(externalId)
+      : createOlxProviderListingId(listing.listingId),
+    images: normalizedOlxImages(listing.mediaUrls),
     operation: "insert",
-    params,
-    ...(phone ? { phone } : {}),
+    ...(Object.keys(params).length ? { params } : {}),
     price: listing.priceCents ? Math.round(listing.priceCents / 100) : 0,
-    subject: listing.title.slice(0, 90),
     type: "s",
     ...(zipCode ? { zipcode: zipCode } : {}),
   };
@@ -130,6 +135,28 @@ function createOlxPayload(
   };
 }
 
+export function createOlxProviderListingId(listingId: string) {
+  const digest = createHash("sha256").update(listingId).digest("hex");
+  return `lv_${digest.slice(0, 16)}`;
+}
+
+export function assertOlxProviderListingId(value: string) {
+  if (!/^[A-Za-z0-9_{}-]{1,19}$/.test(value)) {
+    throw new Error("Invalid OLX provider listing id.");
+  }
+  return value;
+}
+
+function normalizedOlxImages(values: readonly string[]) {
+  return [
+    ...new Set(values.map((value) => value.trim()).filter(Boolean)),
+  ].slice(0, 20);
+}
+
+function normalizedText(value: string, maxLength: number) {
+  return value.trim().slice(0, maxLength);
+}
+
 function olxCategory(value: MarketplaceListingProjection["vehicleType"]) {
   if (value === "motorcycles") return 2060;
   if (value === "trucks") return 2040;
@@ -140,11 +167,11 @@ function olxFuelType(value: MarketplaceListingProjection["fuelType"]) {
   if (!value) return null;
   const labels = {
     diesel: "5",
-    electric: "6",
+    electric: "7",
     ethanol: "2",
     flex: "3",
     gasoline: "1",
-    hybrid: "7",
+    hybrid: "6",
     other: null,
   } satisfies Record<NonNullable<typeof value>, string | null>;
   return labels[value];

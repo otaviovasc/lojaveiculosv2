@@ -1,6 +1,9 @@
-import { Ban, Pencil, Repeat2 } from "lucide-react";
+import { Ban, CalendarClock, Pencil, Repeat2 } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import {
+  FeatureEmptyState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import { financeStatusLabels } from "./FinanceFormParts";
 import {
@@ -22,34 +25,64 @@ export function FinanceRecurringBillsPanel({
   onCancel?: (entry: FinanceRecurringEntry) => void;
   onEdit?: (entry: FinanceRecurringEntry) => void;
 }) {
+  const isEmpty = items.length === 0;
+  const sectionLayout = isEmpty
+    ? {
+        className: "flex h-full flex-col",
+        headerClassName: "p-5",
+        padding: "none" as const,
+      }
+    : { padding: "default" as const };
+
   return (
     <FeatureSection
+      {...sectionLayout}
       description="Regras recorrentes com próximo vencimento, frequência e valor."
       icon={<Repeat2 className="size-5" />}
       title="Recorrências"
     >
-      <div className="mt-3 grid gap-2">
-        {items.length ? (
+      <div
+        className={
+          isEmpty
+            ? "min-h-0 flex-1"
+            : "mt-3 grid gap-x-8 gap-y-1 md:grid-cols-2"
+        }
+      >
+        {!isEmpty ? (
           items.map((entry) => {
             const exhaustedAt = entry.metadata?.exhaustedAt;
             const occurrences = entry.metadata?.occurrences;
             const generatedCount = entry.metadata?.generatedCount;
             return (
-              <article
-                className="rounded-lg border border-line bg-app p-3 finance-recurring-card"
-                key={entry.id}
-              >
-                <div className="flex items-start justify-between gap-3">
+              <article className="finance-recurring-card" key={entry.id}>
+                <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0">
                     <strong className="block truncate text-sm font-black text-app-text">
                       {entry.name}
                     </strong>
-                    <span className="text-xs font-bold text-muted">
+                    <span className="finance-recurring-card__meta">
                       {recurrenceLabel(entry)} ·{" "}
                       {formatFinanceCategory(entry.category)}
                     </span>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <strong className="finance-recurring-card__amount shrink-0">
+                    {formatCurrency(entry.amountCents)}
+                  </strong>
+                </div>
+                <div className="finance-recurring-card__foot">
+                  <span className="finance-recurring-card__due">
+                    <CalendarClock aria-hidden="true" className="size-3.5" />
+                    {formatDate(entry.nextDueAt)}
+                    {typeof occurrences === "number" ? (
+                      <em>
+                        {typeof generatedCount === "number"
+                          ? generatedCount
+                          : 0}{" "}
+                        de {occurrences} gerados
+                      </em>
+                    ) : null}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
                     <FeatureStatusBadge
                       size="dense"
                       tone={exhaustedAt ? "success" : "neutral"}
@@ -59,7 +92,7 @@ export function FinanceRecurringBillsPanel({
                         : financeStatusLabels[entry.status]}
                     </FeatureStatusBadge>
                     {canUpdate && (onEdit || onCancel) ? (
-                      <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1">
                         {onEdit ? (
                           <FeatureRowAction
                             ariaLabel={`Editar recorrência ${entry.name}`}
@@ -77,29 +110,21 @@ export function FinanceRecurringBillsPanel({
                             tooltip="Cancelar"
                           />
                         ) : null}
-                      </div>
+                      </span>
                     ) : null}
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-xs font-bold text-muted">
-                  <span>{formatDate(entry.nextDueAt)}</span>
-                  {typeof occurrences === "number" ? (
-                    <span>
-                      {typeof generatedCount === "number" ? generatedCount : 0}{" "}
-                      de {occurrences} gerados
-                    </span>
-                  ) : null}
-                  <span className="text-sm font-black text-app-text tabular-nums">
-                    {formatCurrency(entry.amountCents)}
                   </span>
                 </div>
               </article>
             );
           })
         ) : (
-          <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-            Nenhuma recorrência cadastrada.
-          </p>
+          <FeatureEmptyState
+            body="Cadastre uma recorrência para acompanhar os próximos vencimentos."
+            className="h-full w-full"
+            density="compact"
+            icon={Repeat2}
+            title="Nenhuma recorrência encontrada"
+          />
         )}
       </div>
     </FeatureSection>

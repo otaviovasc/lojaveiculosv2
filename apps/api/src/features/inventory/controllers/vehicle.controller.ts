@@ -11,7 +11,6 @@ import {
 } from "./vehicle.controller.http.js";
 import {
   attachUnitSchema,
-  costSchema,
   createListingSchema,
   descriptionSchema,
   listListingsQuerySchema,
@@ -39,6 +38,7 @@ import {
   type CreateInventoryFeatureOptions,
 } from "./vehicle.controller.options.js";
 import { registerInventoryAiStudioRoutes } from "./vehicle.aiStudio.controller.js";
+import { registerInventoryCostRoutes } from "./vehicle.cost.controller.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 export type {
@@ -177,19 +177,6 @@ export function createInventoryFeature(
     }),
   );
 
-  inventoryFeature.post("/units/:unitId/costs", async (context) =>
-    handle(context, async () => {
-      const input = await parseJson(context, costSchema);
-      const serviceContext = await createContext(context);
-      const result = await services.addVehicleCost(serviceContext, {
-        ...input,
-        unitId: context.req.param("unitId"),
-      });
-
-      return context.json(result, 201);
-    }),
-  );
-
   inventoryFeature.put("/listings/:listingId/unit", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, attachUnitSchema);
@@ -217,6 +204,7 @@ export function createInventoryFeature(
   );
 
   registerInventoryMediaRoutes(inventoryFeature, services, createContext);
+  registerInventoryCostRoutes(inventoryFeature, services, createContext);
   registerInventoryAiStudioRoutes(inventoryFeature, services, createContext);
   registerInventoryUnitRoutes(inventoryFeature, services, createContext);
   registerInventoryCatalogRoutes(inventoryFeature, services, createContext);

@@ -152,7 +152,7 @@ export function SettingsStoreProfilePanel({
               </span>
             }
           >
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid items-start gap-4 md:grid-cols-3">
               <FeatureField
                 className="settings-profile-field md:col-span-2"
                 label="Nome fantasia"
@@ -225,7 +225,7 @@ export function SettingsStoreProfilePanel({
               </span>
             }
           >
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid items-start gap-4 md:grid-cols-3">
               <FeatureField
                 className="settings-profile-field md:col-span-3"
                 label="E-mail de contato"
@@ -305,7 +305,7 @@ export function SettingsStoreProfilePanel({
               </span>
             }
           >
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid items-start gap-4 md:grid-cols-4">
               <FeatureField
                 className="settings-profile-field"
                 error={zipLookup.kind === "error" ? zipLookup.message : null}

@@ -1,102 +1,91 @@
 import { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import {
-  ProtectedRoute,
-  SessionBootstrapPage,
-  SignInPage,
-  SignUpPage,
-} from "../features/account/AuthPages";
-import { FeatureLoadingState } from "../components/ui/FeatureStates";
+import { AppBootScreen } from "../components/ui";
+import { DelayedFallback } from "../components/ui/DelayedFallback";
 import { adminRoutePaths } from "./adminRoutePaths";
 import {
-  AgencyBillingPage,
-  AgencyCreateStorePage,
-  AgencyDashboardPage,
-  AgencyLayout,
-  AgencyStatsPage,
+  AuthenticatedRoutes,
+  ClerkAuthProvider,
   LandingPage,
-  OwnerOnboardingPage,
-  PlatformAdminPage,
   PublicCustomPageRoute,
   PublicStorefrontPage,
 } from "./AppLazyRoutes";
 import { PublicStorefrontSlugGuard } from "./PublicStorefrontSlugGuard";
-import { StoreAdminRoute } from "./StoreAdminRoute";
 import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
   return (
     <Suspense
       fallback={
-        <FeatureLoadingState
-          className="min-h-screen"
-          title="Carregando experiência"
-        />
+        <DelayedFallback>
+          <AppBootScreen title="Carregando experiência" />
+        </DelayedFallback>
       }
     >
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} />
-        <Route
-          path="/auth/session"
-          element={
-            <ProtectedRoute access="signed-in">
-              <SessionBootstrapPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute access="onboarding">
-              <OwnerOnboardingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/admin"
-          element={
-            <ProtectedRoute access="platform">
-              <PlatformAdminPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agency/admin"
-          element={
-            <ProtectedRoute access="agency">
-              <AgencyLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AgencyDashboardPage />} />
-          <Route path="stats" element={<AgencyStatsPage />} />
-          <Route path="unified-billing" element={<AgencyBillingPage />} />
-          <Route path="create-store" element={<AgencyCreateStorePage />} />
-        </Route>
-        {adminRoutePaths.map((path) => (
-          <Route element={<StoreAdminRoute />} key={path} path={path} />
-        ))}
-        <Route
-          path="/:storeSlug/p/:pageSlug"
-          element={
-            <PublicStorefrontSlugGuard reservedFallback={<StoreAdminRoute />}>
-              <PublicCustomPageRoute />
-            </PublicStorefrontSlugGuard>
-          }
-        />
-        <Route
-          path="/:storeSlug"
-          element={
-            <PublicStorefrontSlugGuard reservedFallback={<StoreAdminRoute />}>
-              <PublicStorefrontPage />
-            </PublicStorefrontSlugGuard>
-          }
-        />
-        <Route path="/p/:pageSlug" element={<PublicCustomPageRoute />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <ClerkAuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/sign-in/*"
+            element={<AuthenticatedRoutes section="sign-in" />}
+          />
+          <Route
+            path="/sign-up/*"
+            element={<AuthenticatedRoutes section="sign-up" />}
+          />
+          <Route
+            path="/auth/session/*"
+            element={<AuthenticatedRoutes section="session-bootstrap" />}
+          />
+          <Route
+            path="/onboarding/*"
+            element={<AuthenticatedRoutes section="onboarding" />}
+          />
+          <Route
+            path="/platform/observability/*"
+            element={<AuthenticatedRoutes section="platform-observability" />}
+          />
+          <Route
+            path="/platform/admin/*"
+            element={<AuthenticatedRoutes section="platform-admin" />}
+          />
+          <Route
+            path="/agency/admin/*"
+            element={<AuthenticatedRoutes section="agency-admin" />}
+          />
+          {adminRoutePaths
+            .filter((path) => path !== "/")
+            .map((path) => (
+              <Route
+                element={<AuthenticatedRoutes section="store-admin" />}
+                key={path}
+                path={`${path}/*`}
+              />
+            ))}
+          <Route
+            path="/:storeSlug/p/:pageSlug"
+            element={
+              <PublicStorefrontSlugGuard
+                reservedFallback={<AuthenticatedRoutes section="store-admin" />}
+              >
+                <PublicCustomPageRoute />
+              </PublicStorefrontSlugGuard>
+            }
+          />
+          <Route
+            path="/:storeSlug"
+            element={
+              <PublicStorefrontSlugGuard
+                reservedFallback={<AuthenticatedRoutes section="store-admin" />}
+              >
+                <PublicStorefrontPage />
+              </PublicStorefrontSlugGuard>
+            }
+          />
+          <Route path="/p/:pageSlug" element={<PublicCustomPageRoute />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </ClerkAuthProvider>
     </Suspense>
   );
 }

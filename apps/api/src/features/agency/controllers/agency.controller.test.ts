@@ -1,18 +1,18 @@
+import type { AuditEvent } from "@lojaveiculosv2/audit";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import type { AuditEvent } from "@lojaveiculosv2/audit";
-import type { AgencyTenantOverview } from "../../../domains/billing/ports/billingRepository.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
-import { createBillingServices } from "../../billing/controllers/billingServices.js";
+import { currentBillingCatalog } from "../../../domains/billing/catalog/currentBillingCatalog.js";
+import { createMemoryBillingPlanHireRepository } from "../../billing/adapters/memory/billingPlanHireRepository.js";
 import { createMemoryBillingProviderRepository } from "../../billing/adapters/memory/billingProviderRepository.js";
 import { createMemoryBillingRepository } from "../../billing/adapters/memory/billingRepository.js";
 import { createMemoryBillingWebhookRepository } from "../../billing/adapters/memory/billingWebhookRepository.js";
 import { createMemoryPaymentProviderGateway } from "../../billing/adapters/memory/paymentProviderGateway.js";
+import { createBillingServices } from "../../billing/controllers/billingServices.js";
 import { createAgencyFeature } from "./agency.controller.js";
 
 const tenantId = "11111111-1111-4111-8111-111111111111";
 const storeId = "22222222-2222-4222-8222-222222222222";
-const otherStoreId = "33333333-3333-4333-8333-333333333333";
 
 describe("agency controller", () => {
   it("lets an agency tenant member read overview without store slug", async () => {
@@ -30,9 +30,6 @@ describe("agency controller", () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "agency.tenant_overview.read" }),
     );
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "agency.tenant_billing.read" }),
-    );
   });
 
   it("reads provider status with tenant-scoped audit", async () => {
@@ -46,6 +43,7 @@ describe("agency controller", () => {
     expect(await response.json()).toMatchObject({
       configured: true,
       provider: "asaas",
+      webhookConfigured: true,
     });
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -55,126 +53,89 @@ describe("agency controller", () => {
     );
   });
 
-  it("syncs the agency tenant subscription from persisted charge preview", async () => {
+  it("creates and polls a store-scoped plan hire", async () => {
     const audit = createAudit();
     const app = createTestApp(audit);
-    const response = await app.request(
-      `/api/v1/agency/tenants/${tenantId}/billing/provider/subscription/sync`,
-      {
-        body: JSON.stringify({ billingType: "PIX" }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      chargeTotalCents: 54899,
-      provider: "asaas",
-      status: "active",
-    });
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "billing.provider_subscription.sync",
-        criticality: "critical",
-        storeId: null,
-        tenantId,
-      }),
-    );
-  });
-
-  it("creates hosted checkouts for agency tenant billing", async () => {
-    const audit = createAudit();
-    const app = createTestApp(audit);
-    const response = await app.request(
-      `/api/v1/agency/tenants/${tenantId}/billing/provider/checkout`,
-      {
-        body: JSON.stringify({ billingTypes: ["CREDIT_CARD"] }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      checkoutUrl:
-        "https://sandbox.asaas.com/checkoutSession/show?id=chk_memory_asaas",
-      providerCheckoutId: "chk_memory_asaas",
-      subscriptionId: "subscription_memory",
-    });
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "billing.provider_checkout.create",
-        criticality: "critical",
-        storeId: null,
-        tenantId,
-      }),
-    );
-  });
-
-  it("updates a managed store entitlement with critical agency audit", async () => {
-    const audit = createAudit();
-    const app = createTestApp(audit);
-    const response = await app.request(
-      `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/entitlements/crm`,
+    const createResponse = await app.request(
+      `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-hires`,
       {
         body: JSON.stringify({
-          featureKey: "crm",
-          reason: "Agency billing test",
-          status: "suspended",
+          billingTypes: ["PIX"],
+          idempotencyKey: "agency-hire-route-1",
+          planId: "83262608-0000-4000-8000-000000000003",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    expect(createResponse.status).toBe(201);
+    const hire = (await createResponse.json()) as { id: string };
+    expect(hire).toMatchObject({
+      phase: "payment_pending",
+      planSnapshot: { code: "operacao" },
+      quotedCents: 39700,
+      status: "payment_pending",
+      storeId,
+      tenantId,
+    });
+
+    const pollResponse = await app.request(
+      `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-hires/${hire.id}`,
+    );
+    expect(pollResponse.status).toBe(200);
+    await expect(pollResponse.json()).resolves.toMatchObject({ id: hire.id });
+  });
+
+  it("does not expose Escala quote approval to agency accounts", async () => {
+    const app = createTestApp(createAudit());
+
+    const response = await app.request(
+      `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes/quote_1/approve`,
+      {
+        body: JSON.stringify({
+          expiresAt: "2026-09-30T00:00:00.000Z",
+          quotedCents: 89700,
         }),
         headers: { "content-type": "application/json" },
         method: "PATCH",
       },
     );
 
-    expect(response.status).toBe(200);
-    const bodyJson: unknown = await response.json();
-    const body = bodyJson as AgencyTenantOverview;
-    const [firstStore] = body.stores;
-    expect(firstStore).toBeDefined();
-    expect(firstStore?.entitlementMatrix).toContainEqual(
-      expect.objectContaining({
-        featureKey: "crm",
-        status: "suspended",
-      }),
-    );
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "agency.store_entitlement.update",
-        criticality: "critical",
-        storeId,
-        tenantId,
-      }),
-    );
+    expect(response.status).toBe(404);
   });
 
-  it("does not mutate an entitlement for a store outside the tenant", async () => {
-    const audit = createAudit();
-    const app = createTestApp(audit);
-    const response = await app.request(
-      `/api/v1/agency/tenants/${tenantId}/stores/${otherStoreId}/entitlements/crm`,
-      {
-        body: JSON.stringify({ featureKey: "crm", status: "suspended" }),
-        headers: { "content-type": "application/json" },
-        method: "PATCH",
-      },
-    );
+  it("denies the platform approval route to a common agency account", async () => {
+    const app = createTestApp(createAudit());
+    const quote = await requestEscalaQuote(app);
 
-    expect(response.status).toBe(404);
-    const body = (await response.json()) as Record<string, unknown>;
-    expect(body).toMatchObject({
-      code: "BILLING_STORE_NOT_FOUND",
-      message: "Managed store was not found.",
+    const response = await approveEscalaQuote(app, quote.id);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "AUTHORIZATION_DENIED",
     });
-    expect(body.requestId).toEqual(expect.any(String));
-    expect(audit.record).not.toHaveBeenCalledWith(
-      expect.objectContaining({ action: "agency.store_entitlement.update" }),
-    );
+  });
+
+  it("approves an Escala quote through the platform-admin route", async () => {
+    const app = createTestApp(createAudit(), true);
+    const quote = await requestEscalaQuote(app);
+
+    const response = await approveEscalaQuote(app, quote.id);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      id: quote.id,
+      quotedCents: 89700,
+      status: "approved",
+    });
   });
 });
 
-function createTestApp(audit: ReturnType<typeof createAudit>) {
+function createTestApp(
+  audit: ReturnType<typeof createAudit>,
+  platformAdmin = false,
+) {
   const app = new Hono();
   app.route(
     "/api/v1/agency",
@@ -186,21 +147,25 @@ function createTestApp(audit: ReturnType<typeof createAudit>) {
           emailVerified: true,
           name: "Seed Agency",
         },
-        serviceContext: createServiceContext({
-          actor: {
-            externalId: "clerk_seed_agency",
-            id: "user_agency",
-            kind: "user",
-          },
-          audit,
-          billingManagedBy: "agency",
-          permissions: ["billing.manage", "store.manage"],
-          request: { requestId: "request_1" },
-          tenantId: scope.tenantId,
-        }),
+        serviceContext: {
+          ...createServiceContext({
+            actor: {
+              externalId: "clerk_seed_agency",
+              id: "user_agency",
+              kind: "user",
+            },
+            audit,
+            billingManagedBy: "agency",
+            permissions: ["billing.manage", "store.manage"],
+            request: { requestId: "request_1" },
+            tenantId: scope.tenantId,
+          }),
+          platformAdmin,
+        },
       }),
       services: createBillingServices({
         ports: {
+          billingPlanHireRepository: createMemoryBillingPlanHireRepository(),
           billingProviderRepository: createMemoryBillingProviderRepository(),
           billingRepository: createMemoryBillingRepository({
             storeId,
@@ -215,6 +180,37 @@ function createTestApp(audit: ReturnType<typeof createAudit>) {
     }),
   );
   return app;
+}
+
+async function requestEscalaQuote(app: Hono) {
+  const escala = currentBillingCatalog.plans.find(
+    (plan) => plan.code === "escala",
+  );
+  if (!escala) throw new Error("Escala test plan is unavailable.");
+  const response = await app.request(
+    `/api/v1/agency/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes`,
+    {
+      body: JSON.stringify({ planId: escala.id }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  expect(response.status).toBe(201);
+  return (await response.json()) as { id: string };
+}
+
+function approveEscalaQuote(app: Hono, quoteId: string) {
+  return app.request(
+    `/api/v1/agency/platform/tenants/${tenantId}/stores/${storeId}/billing/plan-quotes/${quoteId}/approve`,
+    {
+      body: JSON.stringify({
+        expiresAt: "2026-09-30T00:00:00.000Z",
+        quotedCents: 89700,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "PATCH",
+    },
+  );
 }
 
 function createAudit() {

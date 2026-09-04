@@ -1,5 +1,6 @@
 import { FolderOpen, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { DocumentsApi } from "./apiClient";
 import { InventorySelect } from "../inventory/components/InventoryFormParts";
@@ -325,29 +326,28 @@ export function DocumentUploadDialog({
         </div>
       ) : null}
 
-      <footer className="documents-upload-actions">
-        <button
-          className="documents-upload-button"
+      <footer className="documents-upload-actions flex items-center justify-end gap-2.5 pt-4 border-t border-line">
+        <FeatureActionButton
           disabled={isUploading}
+          label="Cancelar"
           onClick={onClose}
-          type="button"
-        >
-          Cancelar
-        </button>
-        <button
-          className="documents-upload-button documents-upload-button--primary"
+        />
+        <FeatureActionButton
           disabled={!canUpload}
+          icon={Upload}
+          isBusy={isUploading}
+          label={
+            isUploading
+              ? "Anexando..."
+              : items.length <= 1
+                ? "Salvar documento"
+                : `Salvar ${items.length} documentos`
+          }
           onClick={() => {
             void uploadDocuments();
           }}
-          type="button"
-        >
-          {isUploading
-            ? "Anexando..."
-            : items.length <= 1
-              ? "Salvar documento"
-              : `Salvar ${items.length} documentos`}
-        </button>
+          variant="primary"
+        />
       </footer>
     </DocumentsDialogShell>
   );

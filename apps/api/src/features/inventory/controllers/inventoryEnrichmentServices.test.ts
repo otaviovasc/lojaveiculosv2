@@ -64,7 +64,7 @@ describe("createInventoryEnrichmentServices", () => {
       plate: "lkw8015",
     });
 
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({
       plate: "LKW8015",
       source: "apibrasil",
@@ -73,39 +73,16 @@ describe("createInventoryEnrichmentServices", () => {
   });
 
   it("stores and reuses fresh plate lookup results", async () => {
-    const lookup = {
-      fipe: null,
-      metadata: [],
-      plate: "ABC1D23",
-      source: "apibrasil" as const,
-      vehicle: {
-        aspiration: null,
-        bodyType: null,
-        brand: "Fiat",
-        chassis: null,
-        city: null,
-        color: "Branca",
-        engine: null,
-        fuel: "Flex",
-        manufactureYear: 2023,
-        mileageKm: null,
-        model: "Strada",
-        modelYear: 2023,
-        origin: null,
-        power: null,
-        state: null,
-        transmission: null,
-        vehicleType: null,
-        version: "Ranch",
-      },
-    };
+    const lookup = createPlateLookupResponse();
     const repository = createLookupRepository();
+    const quotaGuard = createDurableQuotaGuard();
     const plateProvider = {
       lookupPlate: vi.fn(async () => lookup),
     };
     const services = createInventoryEnrichmentServices({
       plateLookupRepository: repository,
       plateProvider,
+      quotaGuard,
     });
 
     await expect(
@@ -117,6 +94,56 @@ describe("createInventoryEnrichmentServices", () => {
 
     expect(plateProvider.lookupPlate).toHaveBeenCalledTimes(1);
     expect(repository.upsert).toHaveBeenCalledTimes(1);
+    expect(quotaGuard.reserveUsage).toHaveBeenCalledTimes(1);
+    expect(quotaGuard.markUsageStarted).toHaveBeenCalledTimes(1);
+    expect(quotaGuard.finalizeUsage).toHaveBeenCalledTimes(1);
+    expect(quotaGuard.finalizeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "succeeded" }),
+    );
+  });
+
+  it("counts a provider failure and preserves the original provider error", async () => {
+    const quotaGuard = createDurableQuotaGuard();
+    const providerError = new Error("provider unavailable");
+    const plateProvider = {
+      lookupPlate: vi.fn().mockRejectedValue(providerError),
+    };
+    const services = createInventoryEnrichmentServices({
+      plateProvider,
+      quotaGuard,
+    });
+
+    await expect(
+      services.lookupPlate(createContext(), { plate: "ABC1D23" }),
+    ).rejects.toBe(providerError);
+
+    expect(quotaGuard.finalizeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureCode: "Error",
+        outcome: "provider_failed",
+      }),
+    );
+  });
+
+  it("releases a reservation when provider I/O cannot be marked as started", async () => {
+    const quotaGuard = createDurableQuotaGuard();
+    quotaGuard.markUsageStarted.mockRejectedValue(new Error("database failed"));
+    const plateProvider = {
+      lookupPlate: vi.fn(async () => createPlateLookupResponse()),
+    };
+    const services = createInventoryEnrichmentServices({
+      plateProvider,
+      quotaGuard,
+    });
+
+    await expect(
+      services.lookupPlate(createContext(), { plate: "ABC1D23" }),
+    ).rejects.toThrow("database failed");
+
+    expect(plateProvider.lookupPlate).not.toHaveBeenCalled();
+    expect(quotaGuard.finalizeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "released" }),
+    );
   });
 });
 
@@ -163,5 +190,54 @@ function toLookupRecord(
     response: input.response,
     storeId: input.storeId,
     tenantId: input.tenantId,
+  };
+}
+
+function createDurableQuotaGuard() {
+  return {
+    assertAvailable: vi.fn(),
+    finalizeUsage: vi.fn().mockResolvedValue(undefined),
+    markUsageStarted: vi.fn().mockResolvedValue(undefined),
+    reserveUsage: vi
+      .fn()
+      .mockResolvedValue({ reservationId: "quota_reservation_1" }),
+  };
+}
+
+function createPlateLookupResponse() {
+  return {
+    catalogIdentity: {
+      candidates: [],
+      catalog: null,
+      reason: "fipe_not_found" as const,
+      status: "unresolved" as const,
+    },
+    fipe: null,
+    fipeCandidates: [],
+    lookupVersion: 2 as const,
+    metadata: [],
+    plate: "ABC1D23",
+    source: "apibrasil" as const,
+    vehicle: {
+      aspiration: null,
+      bodyType: null,
+      brand: "Fiat",
+      chassis: null,
+      city: null,
+      color: "Branca",
+      doors: null,
+      engine: null,
+      fuel: "Flex",
+      manufactureYear: 2023,
+      mileageKm: null,
+      model: "Strada",
+      modelYear: 2023,
+      origin: null,
+      power: null,
+      state: null,
+      transmission: null,
+      vehicleType: null,
+      version: "Ranch",
+    },
   };
 }

@@ -156,10 +156,38 @@ describe("document operations", () => {
     expect(oldDownload.downloadUrl).toContain("generated/contract.pdf");
   });
 
-  it("refuses to replace a specialized workflow PDF with another renderer", async () => {
+  it("regenerates the branded workflow PDF for react-pdf documents", async () => {
     const repository = createTestDocumentRepository();
     const document = await seedDocument(repository, {
       renderer: "react-pdf",
+    });
+    const objectStorage = createTestObjectStorage();
+
+    const regenerated = await regenerateDocument(
+      createContext(),
+      { documentId: document.id },
+      { documentRepository: repository, objectStorage },
+    );
+
+    expect(regenerated.status).toBe("issued");
+    expect(objectStorage.putObject).toHaveBeenCalledOnce();
+    const upload = vi.mocked(objectStorage.putObject).mock.calls[0]?.[0];
+    expect(
+      Buffer.from((upload?.body as Uint8Array).subarray(0, 4)).toString("utf8"),
+    ).toBe("%PDF");
+    await expect(
+      repository.listVersions({
+        documentId: document.id,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toHaveLength(2);
+  });
+
+  it("refuses to regenerate a document from an unknown renderer", async () => {
+    const repository = createTestDocumentRepository();
+    const document = await seedDocument(repository, {
+      renderer: "legacy-unknown-renderer",
     });
     const objectStorage = createTestObjectStorage();
 

@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   fiscalDocumentSnapshots,
   fiscalDocuments,
@@ -9,6 +9,7 @@ import type {
   CreateFiscalDocumentInput,
   CreateFiscalSnapshotInput,
   UpdateFiscalDocumentStatusInput,
+  UpsertProviderFiscalDocumentInput,
 } from "../../../domains/fiscal/ports/fiscalRepository.js";
 import type { DrizzleFiscalClient } from "./drizzleFiscalRepository.js";
 import {
@@ -53,7 +54,7 @@ export async function getOverview(
   db: DrizzleFiscalClient,
   input: { storeId: string; tenantId: string },
 ) {
-  const [documents, events] = await Promise.all([
+  const [documents, events, summaryRows] = await Promise.all([
     db
       .select()
       .from(fiscalDocuments)
@@ -66,8 +67,23 @@ export async function getOverview(
       .where(scopedEvents(input))
       .orderBy(desc(fiscalEvents.occurredAt))
       .limit(50),
+    db
+      .select({
+        cancelled: countStatuses(["cancelled"]),
+        failed: countStatuses(["error", "failed", "rejected"]),
+        issued: countStatuses(["authorized", "issued"]),
+        pending: countStatuses(["draft", "processing", "queued"]),
+      })
+      .from(fiscalDocuments)
+      .where(scopedDocuments(input)),
   ]);
-  return toOverview(input, documents.map(toDocument), events);
+  const summary = summaryRows[0] ?? {
+    cancelled: 0,
+    failed: 0,
+    issued: 0,
+    pending: 0,
+  };
+  return toOverview(input, documents.map(toDocument), events, summary);
 }
 
 export async function getDocument(
@@ -120,6 +136,44 @@ export async function updateDocumentStatus(
   return toDocument(row);
 }
 
+export async function upsertProviderDocument(
+  db: DrizzleFiscalClient,
+  input: UpsertProviderFiscalDocumentInput,
+) {
+  const [existing] = await db
+    .select()
+    .from(fiscalDocuments)
+    .where(
+      and(
+        scopedDocuments(input),
+        eq(fiscalDocuments.provider, "spedy"),
+        eq(fiscalDocuments.providerDocumentId, input.providerDocumentId),
+      ),
+    )
+    .limit(1);
+  if (existing) {
+    return updateDocumentStatus(db, {
+      documentId: existing.id,
+      providerDocumentId: input.providerDocumentId,
+      status: input.status,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+      ...(input.accessKey !== undefined ? { accessKey: input.accessKey } : {}),
+      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+    });
+  }
+  return createDocument(db, {
+    documentKind: input.documentKind,
+    documentType: input.documentType,
+    providerDocumentId: input.providerDocumentId,
+    status: input.status,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+    ...(input.accessKey !== undefined ? { accessKey: input.accessKey } : {}),
+    ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+  });
+}
+
 function toInsert(input: CreateFiscalDocumentInput) {
   return {
     accessKey: input.accessKey ?? null,
@@ -156,6 +210,12 @@ function scopedDocument(
   input: { storeId: string; tenantId: string },
 ) {
   return and(eq(fiscalDocuments.id, documentId), scopedDocuments(input));
+}
+
+function countStatuses(
+  statuses: (typeof fiscalDocuments.status.enumValues)[number][],
+) {
+  return sql<number>`count(*) filter (where ${inArray(fiscalDocuments.status, statuses)})::int`;
 }
 
 async function insertEvent(

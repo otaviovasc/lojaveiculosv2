@@ -1,19 +1,21 @@
 import { Car, ImageIcon, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
+import { ActionDialog } from "./CrmActionDialogFrame";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
 import type {
   CrmWhatsappSendVehicleInput,
-  CrmWhatsappVehicleOption,
-  CrmWhatsappVehicleQuery,
-} from "./crmWhatsappTypes";
+  CrmVehicleOption,
+  CrmVehicleQuery,
+} from "./crmConversationTypes";
 
 export type VehicleDialogSend = (
-  input: Omit<CrmWhatsappSendVehicleInput, "sessionId">,
+  input: Omit<CrmWhatsappSendVehicleInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type VehicleDialogLoader = (
-  input?: CrmWhatsappVehicleQuery,
-) => Promise<readonly CrmWhatsappVehicleOption[]>;
+  input?: CrmVehicleQuery,
+) => Promise<readonly CrmVehicleOption[]>;
 
 const blockedStatuses = new Set(["sold", "delivered", "inactive"]);
 
@@ -32,9 +34,8 @@ export function VehicleDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
-  const [vehicles, setVehicles] = useState<readonly CrmWhatsappVehicleOption[]>(
-    [],
-  );
+  const [mediaLimit, setMediaLimit] = useState("4");
+  const [vehicles, setVehicles] = useState<readonly CrmVehicleOption[]>([]);
   const loadRef = useRef(onLoadVehicles);
   const filteredVehicles = useMemo(
     () => filterVehicles(vehicles, query),
@@ -86,7 +87,7 @@ export function VehicleDialog({
         try {
           const accepted = await onSend({
             listingId: selectedVehicle.listingId,
-            mediaLimit: 4,
+            mediaLimit: Number(mediaLimit),
             ...(selectedVehicle.mileageLabel
               ? { mileageLabel: selectedVehicle.mileageLabel }
               : {}),
@@ -109,9 +110,9 @@ export function VehicleDialog({
           setIsSaving(false);
         }
       }}
-      title="Enviar veiculo"
+      title="Enviar veículo"
     >
-      <label className="crm-whatsapp-search-field">
+      <label className="crm-search-field">
         Buscar no estoque
         <span>
           <Search aria-hidden="true" />
@@ -125,12 +126,12 @@ export function VehicleDialog({
       </label>
 
       {isLoading ? (
-        <div className="crm-whatsapp-catalog-loading">
+        <div className="crm-catalog-loading">
           <Loader2 className="crm-spin" />
-          Carregando estoque
+          Carregando estoque...
         </div>
       ) : (
-        <div className="crm-whatsapp-vehicle-picker">
+        <div className="crm-vehicle-picker">
           {filteredVehicles.map((vehicle) => (
             <VehicleOptionButton
               key={vehicle.unitId ?? vehicle.listingId}
@@ -140,12 +141,41 @@ export function VehicleDialog({
             />
           ))}
           {!filteredVehicles.length ? (
-            <p className="crm-whatsapp-action-error">
-              Nenhum veiculo encontrado no estoque.
+            <p className="crm-action-error">
+              Nenhum veículo encontrado no estoque.
             </p>
           ) : null}
         </div>
       )}
+
+      {selectedVehicle ? (
+        <>
+          <FeatureField
+            hint="Fotos e vídeos enviados junto com a ficha do veículo."
+            label="Mídias por envio"
+          >
+            <FeatureSelect
+              ariaLabel="Quantidade de mídias por envio"
+              disabled={disabled || isSaving}
+              onChange={setMediaLimit}
+              options={[
+                { label: "1 mídia", value: "1" },
+                { label: "4 mídias", value: "4" },
+                { label: "8 mídias", value: "8" },
+              ]}
+              value={mediaLimit}
+            />
+          </FeatureField>
+          <div className="crm-vehicle-summary-preview">
+            <strong>Prévia da mensagem</strong>
+            <p>{buildVehicleSummaryPreview(selectedVehicle)}</p>
+            <small>
+              {Math.min(selectedVehicle.mediaCount, Number(mediaLimit))} de{" "}
+              {selectedVehicle.mediaCount} mídia(s) anexada(s)
+            </small>
+          </div>
+        </>
+      ) : null}
     </ActionDialog>
   );
 }
@@ -157,7 +187,7 @@ function VehicleOptionButton({
 }: {
   onSelect: (id: string) => void;
   selected: boolean;
-  vehicle: CrmWhatsappVehicleOption;
+  vehicle: CrmVehicleOption;
 }) {
   const disabled = blockedStatuses.has(vehicle.status);
   const detail = [
@@ -168,39 +198,36 @@ function VehicleOptionButton({
   return (
     <button
       aria-pressed={selected}
-      className="crm-whatsapp-vehicle-option"
+      className="crm-vehicle-option cursor-pointer"
       disabled={disabled}
       onClick={() => onSelect(vehicle.unitId ?? vehicle.listingId)}
       type="button"
     >
-      <span className="crm-whatsapp-vehicle-thumb">
+      <span className="crm-vehicle-thumb">
         {vehicle.thumbnailUrl ? (
           <img alt="" src={vehicle.thumbnailUrl} />
         ) : (
           <ImageIcon aria-hidden="true" />
         )}
       </span>
-      <span className="crm-whatsapp-vehicle-copy">
+      <span className="crm-vehicle-copy">
         <strong>{vehicle.title}</strong>
-        <small>{detail.join(" · ") || "Veiculo do estoque"}</small>
+        <small>{detail.join(" · ") || "Veículo do estoque"}</small>
         <small>
           {[vehicle.plate, vehicle.stockNumber, vehicle.colorName]
             .filter(Boolean)
             .join(" · ") || "Sem placa cadastrada"}
         </small>
       </span>
-      <span className="crm-whatsapp-vehicle-meta">
+      <span className="crm-vehicle-meta">
         <span data-status={vehicle.status}>{statusLabel(vehicle.status)}</span>
-        <small>{vehicle.mediaCount} foto(s)</small>
+        <small>{vehicle.mediaCount} mídia(s)</small>
       </span>
     </button>
   );
 }
 
-function filterVehicles(
-  vehicles: readonly CrmWhatsappVehicleOption[],
-  query: string,
-) {
+function filterVehicles(vehicles: readonly CrmVehicleOption[], query: string) {
   const needle = query.trim().toLocaleLowerCase("pt-BR");
   if (!needle) return vehicles;
   return vehicles.filter((vehicle) =>
@@ -220,13 +247,20 @@ function filterVehicles(
   );
 }
 
+function buildVehicleSummaryPreview(vehicle: CrmVehicleOption) {
+  const details = [vehicle.yearLabel, vehicle.mileageLabel, vehicle.priceLabel]
+    .filter(Boolean)
+    .join(" · ");
+  return details ? `${vehicle.title} — ${details}` : vehicle.title;
+}
+
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     acquired: "Comprado",
-    available: "Disponivel",
+    available: "Disponível",
     delivered: "Entregue",
     inactive: "Inativo",
-    in_preparation: "Preparacao",
+    in_preparation: "Preparação",
     reserved: "Reservado",
     sold: "Vendido",
   };

@@ -19,6 +19,7 @@ export function DocumentsWorkspaceDialogs({
   deleteDocument,
   documentToDelete,
   documents,
+  hasMoreDocuments,
   isDocumentActionBusy,
   isUploadDialogOpen,
   linkDocument,
@@ -29,6 +30,7 @@ export function DocumentsWorkspaceDialogs({
   onUpdateDocument,
   runtimeApi,
   selectedKey,
+  selectedTotalDocumentCount,
   setDocumentToDelete,
   setIsUploadDialogOpen,
   setLinkDocument,
@@ -39,6 +41,7 @@ export function DocumentsWorkspaceDialogs({
   deleteDocument: () => Promise<void>;
   documentToDelete: WorkspaceDocument | null;
   documents: readonly WorkspaceDocument[];
+  hasMoreDocuments: boolean;
   isDocumentActionBusy: boolean;
   isUploadDialogOpen: boolean;
   linkDocument: WorkspaceDocument | null;
@@ -52,6 +55,7 @@ export function DocumentsWorkspaceDialogs({
   ) => Promise<WorkspaceDocument | null>;
   runtimeApi: DocumentsApi | null;
   selectedKey: DocumentsFolderKey;
+  selectedTotalDocumentCount: number;
   setDocumentToDelete: (doc: WorkspaceDocument | null) => void;
   setIsUploadDialogOpen: (open: boolean) => void;
   setLinkDocument: (doc: WorkspaceDocument | null) => void;
@@ -63,16 +67,19 @@ export function DocumentsWorkspaceDialogs({
     <>
       {mobileTab === "pastas" ? (
         <DocumentsDialogShell
-          backdropClassName="md:hidden"
+          backdropClassName="documents-mobile-folders-backdrop"
           className="documents-mobile-folders"
           onClose={() => onMobileTabChange("documentos")}
           title="Pastas de documentos"
         >
           <DocumentsFolderSidebar
+            countsAreFolderScoped
             documents={documents}
+            hasMoreDocuments={hasMoreDocuments}
             isLoading={unitFoldersStatus === "loading"}
             onSelect={onSelectFolder}
             selectedKey={selectedKey}
+            selectedTotalDocumentCount={selectedTotalDocumentCount}
             vehicleOptions={vehicleOptions}
           />
         </DocumentsDialogShell>

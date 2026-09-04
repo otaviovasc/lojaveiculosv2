@@ -23,9 +23,9 @@
   --color-warning-foreground: var(--color-warning-contrast);
   background: var(--color-background);
 }
-/* Force light theme on all public-facing tenant interfaces and page builders */
-.public-light-surface,
-.public-storefront,
+/* Default light theme for builders and light storefront appearances. */
+.public-light-surface:not([data-storefront]),
+.public-storefront[data-color-scheme="light"],
 .page-builder-renderer {
   color-scheme: light !important;
   /* Basic light theme variables - override dark theme root */
@@ -74,7 +74,7 @@
   /* Soft utility overrides */
   --color-accent-soft: color-mix(
     in oklab,
-    var(--color-accent, #e11f26) 10%,
+    var(--color-accent) 10%,
     transparent
   ) !important;
 
@@ -86,11 +86,122 @@
   overflow-x: hidden;
 }
 
+.public-storefront[data-color-scheme="dark"] {
+  color-scheme: dark;
+  --color-app: #151515 !important;
+  --color-app-elevated: #4a4444 !important;
+  --color-panel: #2a2424 !important;
+  --color-text: #f4efee !important;
+  --color-app-text: #f4efee !important;
+  --color-muted: #e8e3e2 !important;
+  --color-muted-foreground: #e8e3e2 !important;
+  --color-line: #4a4444 !important;
+  --color-line-strong: #a09898 !important;
+  --color-inverse: #151515 !important;
+  --public-accent-foreground-light: #f4efee !important;
+  --public-accent-foreground-dark: #151515 !important;
+  background: var(--color-app) !important;
+  color: var(--color-text) !important;
+}
+
+.public-storefront-theme-toggle {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  bottom: 1rem;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--sf-body-font);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  position: fixed;
+  right: 1rem;
+  z-index: 80;
+}
+
+.public-storefront-theme-toggle:hover {
+  border-color: var(--color-accent);
+}
+
+.public-storefront-theme-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.public-storefront-theme-toggle svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.public-storefront:has(.quadra-detail-mobile-actions)
+  .public-storefront-theme-toggle {
+  bottom: 5.75rem;
+}
+
+@media (max-width: 480px) {
+  .public-storefront-theme-toggle__label {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .public-storefront-theme-toggle {
+    border-radius: 50%;
+    justify-content: center;
+    padding: 0;
+    width: 2.75rem;
+  }
+}
+
 .public-light-surface :where(a, button, input, textarea, select),
 .public-storefront :where(a, button, input, textarea, select),
 .page-builder-renderer :where(a, button, input, textarea, select) {
   transition-duration: 260ms;
   transition-timing-function: var(--public-ease);
+}
+
+/* Storefront v1: resolved --sf-* tokens are the source of truth inside the
+   storefront scope. Page-builder custom pages keep the plain light surface. */
+.public-storefront[data-storefront] {
+  --color-app: var(--sf-surface) !important;
+  --color-app-elevated: var(--sf-surface) !important;
+  --color-panel: var(--sf-surface-raised) !important;
+  --color-text: var(--sf-ink) !important;
+  --color-app-text: var(--sf-ink) !important;
+  --color-muted: var(--sf-ink-muted) !important;
+  --color-muted-foreground: var(--sf-ink-muted) !important;
+  --color-accent: var(--sf-accent) !important;
+  --color-accent-soft: var(--sf-accent-soft) !important;
+  --color-accent-strong: var(--sf-accent-strong) !important;
+  --color-accent-readable: var(--sf-accent-readable) !important;
+  --color-accent-contrast: var(--sf-inverse);
+  --color-inverse: var(--sf-inverse);
+  --public-storefront-heading-font: var(--sf-heading-font);
+  background: var(--sf-surface) !important;
+  color: var(--sf-ink) !important;
+  font-family: var(--sf-body-font);
+}
+
+/* Hover micro-interactions follow the motion profile (120 ms). */
+.public-storefront[data-storefront] :where(a, button, input, textarea, select) {
+  transition-duration: var(--sf-motion-micro, 120ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-storefront[data-storefront] {
+    --sf-motion-hero: 0ms;
+    --sf-motion-micro: 0ms;
+    --sf-motion-section: 0ms;
+  }
 }
 
 .public-media-thumb {
@@ -99,12 +210,6 @@
 
 .public-media-thumb[data-selected="true"] {
   border-color: var(--color-accent);
-}
-
-.public-storefront-hero,
-.public-storefront-stock {
-  display: grid;
-  gap: 1.5rem;
 }
 
 .public-storefront :where(h1, h2, h3),
@@ -224,6 +329,207 @@
   }
 }
 
+/* Vehicle vitrines use the custom-page blocks with a cinematic, Quadra-inspired
+   composition. The variant is opt-in so manually built pages keep their layout. */
+.page-builder-renderer[data-page-variant="vehicle-vitrine"] {
+  background: #f4efee !important;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="marquee"]
+  > div {
+  background: #151515;
+  border-color: #4a4444;
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="marquee"]
+  span {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  > section {
+  background: #151515;
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  .public-storefront-shell {
+  min-height: min(48rem, calc(100svh - 4rem));
+  max-width: 90rem;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  h1 {
+  color: #f4efee;
+  text-wrap: balance;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  h1
+  + p,
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  a
+  + span {
+  color: #a09898;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  img {
+  aspect-ratio: 16 / 11;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="hero"]
+  .group.relative {
+  border-color: #4a4444;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="vehicle_specs"]
+  > section {
+  background: #f4efee;
+  border-color: #e8e3e2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="vehicle_specs"]
+  .grid.max-w-4xl
+  > div {
+  background: var(--color-warm-white);
+  border-color: #e8e3e2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  > section {
+  background: #151515;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  h2 {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  h2
+  + p {
+  color: #a09898;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  .mt-10 {
+  grid-auto-flow: dense;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  .mt-10
+  > button:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="gallery"]
+  button {
+  background: #151515;
+  border-color: #4a4444;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="scroll_zoom"]
+  > section {
+  background: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="scroll_zoom"]
+  img {
+  min-height: 24rem;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="contact_section"]
+  form {
+  background: var(--color-warm-white);
+  border-color: #e8e3e2;
+  box-shadow: var(--shadow-panel);
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  > section {
+  background: #151515;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  .public-storefront-shell
+  > div {
+  background: #151515;
+  border-color: #4a4444;
+  box-shadow: var(--shadow-panel);
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  h2 {
+  color: #f4efee;
+}
+
+.page-builder-renderer[data-page-variant="vehicle-vitrine"]
+  [data-page-builder-block="cta"]
+  h2
+  + p {
+  color: #a09898;
+}
+
+@media (min-width: 1024px) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="hero"]
+    .public-storefront-shell {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="gallery"]
+    .mt-10
+    > button:first-child {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    [data-page-builder-block="scroll_zoom"]
+    img {
+    min-height: 18rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    :where(img, a, button),
+  .page-builder-renderer[data-page-variant="vehicle-vitrine"]
+    .page-builder-marquee-track {
+    animation: none;
+    transition: none;
+  }
+}
+
 @keyframes page-builder-style-fade-in {
   from {
     opacity: 0;
@@ -268,16 +574,6 @@
   }
 }
 
-main[data-layout="classic"] .public-storefront-hero,
-main[data-layout="quadra"] .public-storefront-hero {
-  gap: 1.5rem;
-}
-
-main[data-layout="classic"] .public-storefront-stock,
-main[data-layout="quadra"] .public-storefront-stock {
-  gap: 1.5rem;
-}
-
 @media (min-width: 768px) {
   .page-builder-two-column {
     grid-template-columns: var(--page-builder-two-column-template);
@@ -286,24 +582,5 @@ main[data-layout="quadra"] .public-storefront-stock {
   .page-builder-two-column--reverse-mobile .page-builder-two-column-left,
   .page-builder-two-column--reverse-mobile .page-builder-two-column-right {
     order: initial;
-  }
-
-  .public-storefront-stock {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .public-storefront-hero {
-    grid-template-columns: 1.15fr 0.85fr;
-  }
-
-  .public-storefront-stock {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  main[data-layout="classic"] .public-storefront-hero,
-  main[data-layout="quadra"] .public-storefront-hero {
-    grid-template-columns: 1fr;
   }
 }

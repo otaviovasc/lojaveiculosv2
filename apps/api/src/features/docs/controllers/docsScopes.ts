@@ -1,5 +1,6 @@
 export const openApiScopes = {
   "analytics.read": "Read commercial analytics dashboards.",
+  "dashboard.read": "Read the core operational home dashboard.",
   "compliance.manage": "Read and operate LGPD/security posture controls.",
   "fiscal.manage": "Operate fiscal provider and NF-e document lifecycle.",
   "finance.read": "Read finance entries, summaries, and rules.",
@@ -9,6 +10,11 @@ export const openApiScopes = {
     "Request uploads and attach documents to finance entries.",
   "finance.auto_entries.manage":
     "Create, update, pause, and archive automatic finance entry rules.",
+  "financing.connection.manage":
+    "Manage agency Credere OAuth connection and store mappings.",
+  "financing.simulation.create": "Create store-scoped financing simulations.",
+  "financing.simulation.read":
+    "Read and refresh store-scoped financing simulations.",
   "inventory.read": "Read vehicle inventory.",
   "inventory.create": "Create vehicle inventory records.",
   "inventory.update_description": "Edit descriptive vehicle fields.",
@@ -23,6 +29,10 @@ export const openApiScopes = {
   "inventory.media_update": "Reorder media and edit media visibility.",
   "inventory.media_delete": "Delete vehicle media and cleanup objects.",
   "inventory.cost_create": "Create vehicle costs and linked finance entries.",
+  "inventory.cost_update":
+    "Correct vehicle costs and synchronize linked finance entries.",
+  "inventory.cost_void":
+    "Void vehicle costs with a reason while preserving history.",
   "inventory.checklist_read": "Read vehicle readiness checklists.",
   "inventory.checklist_update":
     "Create and update vehicle readiness checklists.",

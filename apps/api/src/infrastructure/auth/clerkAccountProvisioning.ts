@@ -53,7 +53,10 @@ export function createClerkInvitationSender(options: {
         publicMetadata: input.metadata,
         ...(options.redirectUrl ? { redirectUrl: options.redirectUrl } : {}),
       });
-      return { clerkInvitationId: invitation.id };
+      return {
+        acceptUrl: invitation.url ?? null,
+        clerkInvitationId: invitation.id,
+      };
     },
   };
 }

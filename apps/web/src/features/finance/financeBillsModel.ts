@@ -41,18 +41,20 @@ export type FinanceFilters = {
   sellerUserId: "all" | string;
   source: FinanceSourceFilter;
   status: "all" | FinanceEntryStatus;
+  vehicleUnitId: "all" | string;
   window?: FinanceDatePreset;
 };
 
 export const initialFinanceFilters: FinanceFilters = {
   dateFrom: "",
-  datePreset: "next30",
+  datePreset: "thisMonth",
   dateTo: "",
   query: "",
   sellerUserId: "all",
   source: "all",
   status: "all",
-  window: "next30",
+  vehicleUnitId: "all",
+  window: "thisMonth",
 };
 
 export async function loadFinanceWorkspace(
@@ -115,6 +117,16 @@ export function filterEntries(
       return false;
     }
     if (filters.source !== "all" && entrySourceKey(entry) !== filters.source) {
+      return false;
+    }
+    if (
+      filters.vehicleUnitId !== "all" &&
+      !entry.links?.some(
+        (link) =>
+          link.targetType === "vehicle_unit" &&
+          link.targetId === filters.vehicleUnitId,
+      )
+    ) {
       return false;
     }
     const searchableText =

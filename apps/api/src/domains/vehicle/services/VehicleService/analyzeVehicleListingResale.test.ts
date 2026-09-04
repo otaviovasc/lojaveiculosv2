@@ -4,7 +4,10 @@ import {
   createListing,
 } from "../../testSupportVehicleServiceFixtures.js";
 import { createInMemoryVehiclePorts } from "../../testSupportVehicleServiceInventoryPorts.js";
+import { addVehicleCost } from "./addVehicleCost.js";
 import { analyzeVehicleListingResale } from "./analyzeVehicleListingResale.js";
+import { attachVehicleUnit } from "./attachVehicleUnit.js";
+import { voidVehicleCost } from "./voidVehicleCost.js";
 
 describe("analyzeVehicleListingResale", () => {
   it("persists the provider-identified analysis on the scoped listing", async () => {
@@ -43,8 +46,8 @@ describe("analyzeVehicleListingResale", () => {
     }));
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
     const context = createContext(["inventory.resale_analysis_generate"]);
 
@@ -63,16 +66,76 @@ describe("analyzeVehicleListingResale", () => {
     );
     expect(updated.resaleAnalysis).toMatchObject({
       dealRiskScore: 28,
-      provider: { model: "gpt-5.4-mini", name: "openai" },
+      provider: {
+        model: "openai/gpt-5.4-mini",
+        name: "openrouter",
+      },
     });
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "vehicle_listing.resale_analysis.generate",
         entityId: "listing_1",
         outcome: "succeeded",
-        provider: { name: "openai" },
+        provider: { name: "openrouter" },
       }),
     );
+  });
+
+  it("excludes voided acquisition costs from the provider request", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const context = createContext([
+      "inventory.create",
+      "inventory.cost_create",
+      "inventory.cost_void",
+      "inventory.resale_analysis_generate",
+    ]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
+    await addVehicleCost(
+      context,
+      { amountCents: 7000000, kind: "acquisition", unitId: unit.id },
+      ports,
+    );
+    const duplicate = await addVehicleCost(
+      context,
+      { amountCents: 99000000, kind: "acquisition", unitId: unit.id },
+      ports,
+    );
+    await voidVehicleCost(
+      context,
+      {
+        costId: duplicate.id,
+        reason: "Custo de aquisicao duplicado",
+        unitId: unit.id,
+      },
+      ports,
+    );
+    const analyze = vi.fn(async () => ({
+      dealRiskScore: 20,
+      riskLevel: "low" as const,
+      suggestedDescription: "Boa margem.",
+      summary: "Aquisicao consistente.",
+      topics: [],
+    }));
+    ports.resaleAnalysisProvider = {
+      analyze,
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
+    };
+
+    await analyzeVehicleListingResale(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
+
+    expect(analyze).toHaveBeenCalledWith(
+      expect.objectContaining({ acquisitionPriceCents: 7000000 }),
+    );
+    expect(ports.operationsRepository.costs).toHaveLength(2);
   });
 
   it("rejects read-only actors before invoking the provider", async () => {
@@ -80,8 +143,8 @@ describe("analyzeVehicleListingResale", () => {
     const analyze = vi.fn();
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
 
     await expect(
@@ -94,20 +157,20 @@ describe("analyzeVehicleListingResale", () => {
     expect(analyze).not.toHaveBeenCalled();
   });
 
-  it("rejects stores without simulations before invoking the provider", async () => {
+  it("rejects stores without AI access before invoking the provider", async () => {
     const ports = createInMemoryVehiclePorts([createListing()]);
     const analyze = vi.fn();
     ports.resaleAnalysisProvider = {
       analyze,
-      model: "gpt-5.4-mini",
-      name: "openai",
+      model: "openai/gpt-5.4-mini",
+      name: "openrouter",
     };
     const context = createContext(["inventory.resale_analysis_generate"]);
     context.entitlements = [];
 
     await expect(
       analyzeVehicleListingResale(context, { listingId: "listing_1" }, ports),
-    ).rejects.toThrow("Missing entitlement: simulations");
+    ).rejects.toThrow("Missing entitlement: ai");
     expect(analyze).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { crmWhatsappPermissionDescriptors } from "./crmWhatsappPermissionCatalog.js";
+import { crmPermissionDescriptors } from "./crmPermissionCatalog.js";
 import { permission, type PermissionGroup } from "./permissionCatalogTypes.js";
 
 export const crmPermissionGroup: PermissionGroup = {
@@ -17,7 +17,31 @@ export const crmPermissionGroup: PermissionGroup = {
       "Configurar canais, filas e integrações de mensagens.",
       "medium",
     ),
-    ...crmWhatsappPermissionDescriptors,
+    permission(
+      "crm.consent.record",
+      "Registrar consentimento",
+      "Registrar evidência versionada de consentimento ou retirada de consentimento.",
+      "high",
+    ),
+    permission(
+      "crm.contact.merge",
+      "Mesclar contatos",
+      "Mesclar e desfazer a mesclagem de identidades canônicas de clientes.",
+      "high",
+    ),
+    permission(
+      "crm.contact_identity.dispute",
+      "Contestar identidade",
+      "Marcar uma identidade de contato como disputada com evidência auditável.",
+      "high",
+    ),
+    permission(
+      "crm.contact_identity.verify",
+      "Verificar identidade",
+      "Confirmar uma identidade de contato com evidência auditável.",
+      "high",
+    ),
+    ...crmPermissionDescriptors,
     permission(
       "lead.read",
       "Visualizar contatos",
@@ -81,6 +105,12 @@ export const platformPermissionGroup: PermissionGroup = {
       "medium",
     ),
     permission(
+      "dashboard.read",
+      "Painel inicial",
+      "Consultar o resumo operacional exibido na página inicial da loja.",
+      "low",
+    ),
+    permission(
       "billing.manage",
       "Assinatura e faturamento",
       "Gerenciar mensalidade, faturas e planos da plataforma.",
@@ -120,6 +150,24 @@ export const platformPermissionGroup: PermissionGroup = {
       "fiscal.document.cancel",
       "Cancelar documentos fiscais",
       "Solicitar cancelamento de documentos fiscais emitidos.",
+      "high",
+    ),
+    permission(
+      "fiscal.provider.configure",
+      "Configurar integração fiscal",
+      "Criar e sincronizar a empresa da loja no provedor fiscal.",
+      "high",
+    ),
+    permission(
+      "fiscal.certificate.manage",
+      "Gerenciar certificado fiscal",
+      "Enviar ou substituir o certificado A1 usado pelo provedor fiscal.",
+      "high",
+    ),
+    permission(
+      "fiscal.defaults.confirm",
+      "Confirmar padrões fiscais",
+      "Revisar e confirmar os padrões tributários usados nas emissões.",
       "high",
     ),
     permission(

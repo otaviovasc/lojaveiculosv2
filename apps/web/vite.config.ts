@@ -16,6 +16,10 @@ const apiProxy = {
       : {}),
     target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://localhost:8787",
   },
+  "/llms.txt": {
+    changeOrigin: true,
+    target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://localhost:8787",
+  },
 };
 
 const workspaceRoot = fileURLToPath(new URL("../..", import.meta.url));

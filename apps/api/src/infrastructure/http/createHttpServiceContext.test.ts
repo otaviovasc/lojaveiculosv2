@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AuditEvent } from "@lojaveiculosv2/audit";
 import type {
   StoreAccessRecord,
   StoreAccessRepository,
@@ -12,13 +13,13 @@ describe("createHttpServiceContext", () => {
   });
 
   it("keeps public routes on the existing placeholder context", async () => {
+    const audit = { record: vi.fn(async (_event: AuditEvent) => undefined) };
     const context = await captureContext(
       new Request("https://api.local/health", {
         headers: { "x-request-id": "req_public" },
       }),
     );
-
-    const serviceContext = await createHttpServiceContext(context);
+    const serviceContext = await createHttpServiceContext(context, { audit });
 
     expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
     expect(serviceContext.permissions).toEqual([
@@ -27,8 +28,25 @@ describe("createHttpServiceContext", () => {
       "public_storefront.read",
     ]);
     expect(serviceContext.storeId).toBeNull();
+    await serviceContext.audit.record({
+      action: "health.read",
+      actor: serviceContext.actor,
+      entityId: "health",
+      entityType: "system",
+      requestId: serviceContext.requestId,
+      storeId: serviceContext.storeId,
+      tenantId: serviceContext.tenantId,
+    });
+    const [[publicAuditEvent]] = audit.record.mock.calls as unknown as [
+      [AuditEvent],
+    ];
+    expect(publicAuditEvent).toMatchObject({
+      action: "health.read",
+      correlationId: "req_public",
+      request: { requestId: "req_public" },
+      source: { service: "api" },
+    });
   });
-
   it("resolves authenticated store context from identity headers", async () => {
     const access: StoreAccessRecord = {
       billingManagedBy: "store_owner",
@@ -38,11 +56,12 @@ describe("createHttpServiceContext", () => {
       storeId: "store_1" as never,
       tenantId: "tenant_1" as never,
       userId: "user_1" as never,
+      userName: "  Otavio Vasconcelos  ",
     };
     const repository = {
       findByClerkUserAndStoreSlug: vi.fn(async () => access),
     };
-    const audit = { record: vi.fn(async () => undefined) };
+    const audit = { record: vi.fn(async (_event: AuditEvent) => undefined) };
     const context = await captureContext(
       new Request("https://api.local/api/v1/inventory/listings", {
         headers: {
@@ -53,29 +72,42 @@ describe("createHttpServiceContext", () => {
         },
       }),
     );
-
     const serviceContext = await createHttpServiceContext(context, {
       audit,
       repository,
     });
 
     expect(serviceContext.actor).toEqual({
+      displayName: "Otavio Vasconcelos",
       externalId: "clerk_1",
       id: "user_1",
       kind: "user",
     });
     expect(serviceContext.permissions).toContain("inventory.update_price");
+    expect(serviceContext).toMatchObject({ entitlements: ["crm"] });
     expect(serviceContext.storeId).toBe("store_1");
     expect(repository.findByClerkUserAndStoreSlug).toHaveBeenCalledWith({
       clerkUserId: "clerk_1",
       storeSlug: "demo",
     });
+    const [[identityAuditEvent]] = audit.record.mock.calls as unknown as [
+      [AuditEvent],
+    ];
+    expect(identityAuditEvent).toMatchObject({
+      action: "identity.context.resolve",
+      correlationId: "req_1",
+      request: {
+        method: "GET",
+        path: "/api/v1/inventory/listings",
+        requestId: "req_1",
+      },
+      source: { component: "http", service: "api" },
+    });
   });
-
   it("falls back to the public storefront subdomain for store scope", async () => {
     const access: StoreAccessRecord = {
       billingManagedBy: "store_owner",
-      entitlements: ["subdomain"],
+      entitlements: ["storefront"],
       overrides: [],
       role: "owner",
       storeId: "store_1" as never,
@@ -102,7 +134,6 @@ describe("createHttpServiceContext", () => {
       storeSlug: "demo",
     });
   });
-
   it("resolves authenticated context from a verified Clerk bearer token", async () => {
     vi.stubEnv("APP_ENV", "production");
     const access: StoreAccessRecord = {

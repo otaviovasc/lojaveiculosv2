@@ -6,8 +6,12 @@ import type {
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
 export type { SalePaymentStatus } from "@lojaveiculosv2/shared";
 export type SaleDocumentKind =
-  "delivery_term" | "power_of_attorney" | "sale_contract" | "sale_receipt";
-export const saleFinancingRanks = ["R1", "R2", "R3", "R4", "R5"] as const;
+  | "buyer_acknowledgment"
+  | "delivery_term"
+  | "power_of_attorney"
+  | "sale_contract"
+  | "sale_receipt";
+export const saleFinancingRanks = ["R0", "R1", "R2", "R3", "R4", "R5"] as const;
 export type SaleFinancingRank = (typeof saleFinancingRanks)[number];
 
 export type SaleFinancingSnapshot = Record<string, unknown> & {
@@ -131,16 +135,17 @@ export type SalesListQuery = {
 };
 
 export type SaleStartContext = {
-  buyerEmail?: string;
-  buyerName?: string;
-  buyerPhone?: string;
-  leadId?: string;
-  listingId?: string;
-  listingTitle?: string;
-  priceCents?: number;
-  unitId?: string;
-  unitLabel?: string;
-  plate?: string;
-  colorName?: string;
-  primaryMediaUrl?: string;
+  buyerEmail?: string | undefined;
+  buyerName?: string | undefined;
+  buyerPhone?: string | undefined;
+  leadId?: string | undefined;
+  listingId?: string | undefined;
+  listingTitle?: string | undefined;
+  priceCents?: number | undefined;
+  sellerUserId?: string | undefined;
+  unitId?: string | undefined;
+  unitLabel?: string | undefined;
+  plate?: string | undefined;
+  colorName?: string | undefined;
+  primaryMediaUrl?: string | undefined;
 };

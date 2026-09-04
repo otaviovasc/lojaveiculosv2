@@ -22,6 +22,7 @@ import type {
   PublicStorefrontCustomPageSnapshot,
   StorefrontPageUpdateInput,
 } from "../../../domains/storefront/ports/storefrontPageRepository.js";
+import { applyPublicVehicleVitrinePrice } from "./publicVehicleVitrinePrice.js";
 
 export type StorefrontPageRow = typeof storeCustomPages.$inferSelect;
 export type StorefrontPageUpdateRecord = Partial<
@@ -53,6 +54,7 @@ export function toStorefrontCustomPage(
     secretToken: row.secretToken,
     seo: toObject<StorefrontBuilderSeo>(row.seo),
     slug: row.slug,
+    sourceListingId: row.sourceListingId,
     title: row.title,
     visible: row.isPublished,
   };
@@ -90,11 +92,21 @@ export function toStorefrontPageUpdate(
 export function toPublicCustomPageSnapshot(
   row: StorefrontPagePublicRow,
   vehicles: readonly StorefrontBuilderVehicle[],
+  sourcePriceCents: number | null = null,
+  sourceAskingPriceCents: number | null = sourcePriceCents,
 ): PublicStorefrontCustomPageSnapshot {
+  const page = toStorefrontCustomPage(row.page);
   return {
     config: toBuilderConfig(row),
     contact: toContact(row.profile),
-    page: toStorefrontCustomPage(row.page),
+    page: row.page.sourceListingId
+      ? applyPublicVehicleVitrinePrice(
+          page,
+          sourcePriceCents,
+          sourceAskingPriceCents,
+        )
+      : page,
+    sourceListingId: row.page.sourceListingId,
     sitePublished: row.publicSite.isPublished,
     store: toPublicStore(row),
     vehicles,

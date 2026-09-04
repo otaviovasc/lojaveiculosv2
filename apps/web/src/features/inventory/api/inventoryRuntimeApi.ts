@@ -3,6 +3,7 @@ import type { InventoryAuth } from "../model/types";
 import {
   createRuntimeActorAuth,
   createRuntimeAuthHeaders,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../../account/runtimeAuth";
@@ -12,7 +13,7 @@ export async function createInventoryApiOptions(): Promise<CreateInventoryApiOpt
 
   return {
     auth: createInventoryAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readInventoryBaseUrl(),
   };
 }

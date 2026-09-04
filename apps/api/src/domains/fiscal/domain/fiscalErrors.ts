@@ -5,6 +5,20 @@ export class FiscalDocumentNotFoundError extends Error {
   }
 }
 
+export class FiscalDocumentCancellationNotAllowedError extends Error {
+  constructor(readonly status: string) {
+    super(`Fiscal document cannot be cancelled while its status is ${status}.`);
+    this.name = "FiscalDocumentCancellationNotAllowedError";
+  }
+}
+
+export class FiscalDocumentRepeatNotAllowedError extends Error {
+  constructor(readonly status: string) {
+    super(`Fiscal document cannot be repeated while its status is ${status}.`);
+    this.name = "FiscalDocumentRepeatNotAllowedError";
+  }
+}
+
 export class FiscalRecipientNotFoundError extends Error {
   constructor(recipientId: string) {
     super(`Fiscal recipient not found: ${recipientId}`);

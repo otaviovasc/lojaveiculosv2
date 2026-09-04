@@ -25,7 +25,7 @@ export async function analyzeVehicleListingResale(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
-  assertEntitlement(context as StoreScopedServiceContext, "simulations");
+  assertEntitlement(context as StoreScopedServiceContext, "ai");
   const repository = getListingRepository(ports);
   const listing = await findScopedListing(context, repository, input.listingId);
   const provider = ports?.resaleAnalysisProvider;
@@ -41,7 +41,7 @@ export async function analyzeVehicleListingResale(
     : [];
   const [costs, acquisition] = await Promise.all([
     ports?.operationsRepository
-      ? getOperationsRepository(ports).listCostsByUnitIds({
+      ? getOperationsRepository(ports).listActiveCostsByUnitIds({
           ...scope,
           unitIds: units.map((unit) => unit.id),
         })

@@ -1,5 +1,4 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type {
   VehicleListing,
   VehicleMedia,
@@ -7,7 +6,8 @@ import type {
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import { testNow } from "../../../domains/vehicle/testSupportVehicleServiceFixtures.js";
 import { createInMemoryVehiclePorts } from "../../../domains/vehicle/testSupportVehicleServiceInventoryPorts.js";
-import type { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import type { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
 
 export const storeId = "store_1" as StoreId;
 export const tenantId = "tenant_1" as TenantId;
@@ -26,13 +26,13 @@ export function createVehicleInventory(
   return vehiclePorts;
 }
 
-export function seedSession(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+export function seedCycle(
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
   suffix: string,
 ) {
   return whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Ola",
@@ -40,6 +40,7 @@ export function seedSession(
     externalId: `inbound-vehicle-${suffix}`,
     metadata: {},
     providerTimestamp: new Date("2026-07-02T20:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,
@@ -49,23 +50,16 @@ export function seedSession(
 }
 
 export function createZapiConnection(
-  overrides: Partial<CrmConnection> = {},
-): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  overrides: Parameters<
+    typeof createConfiguredZapiTestConnection
+  >[0]["overrides"] = {},
+) {
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+    overrides,
+  });
 }
 
 function createVehicleListing(): VehicleListing {

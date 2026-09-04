@@ -221,7 +221,7 @@ export const inventorySchemas = {
     type: "string",
     enum: vehicleDocumentKinds,
     description:
-      "Vehicle document kind, including reservation_receipt and sale bundle documents: sale_contract, sale_receipt, delivery_term, power_of_attorney.",
+      "Vehicle document kind, including reservation_receipt and sale bundle documents: sale_contract, sale_receipt, delivery_term, power_of_attorney, buyer_acknowledgment.",
   },
 } as const;
 

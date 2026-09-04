@@ -1,0 +1,1 @@
+ALTER TABLE "store_public_site_settings" ALTER COLUMN "is_published" SET DEFAULT true;

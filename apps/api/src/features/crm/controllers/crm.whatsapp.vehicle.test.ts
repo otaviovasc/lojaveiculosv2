@@ -1,21 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type {
-  CrmWhatsappSendMediaInput,
-  CrmWhatsappSendTextInput,
-} from "../../../domains/crm/ports/crmWhatsappGateway.js";
-import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+  CrmMessagingSendMediaInput,
+  CrmMessagingSendTextInput,
+} from "../../../domains/crm/ports/crmMessagingGateway.js";
+import { CrmMessagingGatewayError } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import {
-  createTestApp,
-  expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createTestApp, expectApiError } from "./crm.controller.testSupport.js";
 import {
   connectionId,
   createVehicleInventory,
   createZapiConnection,
-  seedSession,
+  seedCycle,
   storeId,
   tenantId,
   vehicleListingId,
@@ -24,8 +21,8 @@ import {
 
 describe("CRM WhatsApp vehicle sending", () => {
   it("sends a vehicle package from scoped inventory media", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "vehicle");
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "vehicle");
     const vehiclePorts = createVehicleInventory([
       {
         displayOrder: 2,
@@ -41,7 +38,7 @@ describe("CRM WhatsApp vehicle sending", () => {
     const sendMedia = vi.fn(
       async (
         _connection: CrmConnection,
-        _input: CrmWhatsappSendMediaInput,
+        _input: CrmMessagingSendMediaInput,
       ) => ({
         externalId: `zapi-media-${sendMedia.mock.calls.length + 1}`,
         providerTimestamp: new Date("2026-07-02T20:04:00.000Z"),
@@ -49,7 +46,10 @@ describe("CRM WhatsApp vehicle sending", () => {
       }),
     );
     const sendText = vi.fn(
-      async (_connection: CrmConnection, _input: CrmWhatsappSendTextInput) => ({
+      async (
+        _connection: CrmConnection,
+        _input: CrmMessagingSendTextInput,
+      ) => ({
         externalId: "zapi-vehicle-summary-1",
         providerTimestamp: new Date("2026-07-02T20:04:05.000Z"),
         raw: { ok: true },
@@ -59,8 +59,8 @@ describe("CRM WhatsApp vehicle sending", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
-      crmWhatsappGateway: { sendMedia, sendText },
-      crmWhatsappRepository: whatsappRepository,
+      crmMessagingGateway: { sendMedia, sendText },
+      crmConversationRepository: whatsappRepository,
       vehicleInventory: {
         listingRepository: vehiclePorts.listingRepository,
         mediaRepository: vehiclePorts.mediaRepository!,
@@ -72,10 +72,13 @@ describe("CRM WhatsApp vehicle sending", () => {
       body: JSON.stringify({
         listingId: vehicleListingId,
         mediaLimit: 4,
-        sessionId: inbound.session.id,
+        cycleId: inbound.conversationCycle.id,
         unitId: vehicleUnitId,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "vehicle-package-1",
+      },
       method: "POST",
     });
 
@@ -90,7 +93,7 @@ describe("CRM WhatsApp vehicle sending", () => {
       }),
     );
     expect(
-      readMockInput<CrmWhatsappSendMediaInput>(sendMedia, 0, 1).caption,
+      readMockInput<CrmMessagingSendMediaInput>(sendMedia, 0, 1).caption,
     ).toContain("Audi A4 Prestige Plus 2022");
     expect(sendMedia).toHaveBeenNthCalledWith(
       2,
@@ -105,9 +108,10 @@ describe("CRM WhatsApp vehicle sending", () => {
       expect.objectContaining({ phone: "5511999999999" }),
     );
     expect(
-      readMockInput<CrmWhatsappSendTextInput>(sendText, 0, 1).text,
+      readMockInput<CrmMessagingSendTextInput>(sendText, 0, 1).text,
     ).toContain("R$");
     await expect(response.json()).resolves.toMatchObject({
+      clientRequestId: "vehicle-package-1",
       content: "Audi A4 Prestige Plus 2022",
       externalId: "zapi-vehicle-summary-1",
       metadata: {
@@ -124,8 +128,8 @@ describe("CRM WhatsApp vehicle sending", () => {
   });
 
   it("does not send summary text when provider fails after one media send", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "vehicle-partial");
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "vehicle-partial");
     const vehiclePorts = createVehicleInventory([
       {
         displayOrder: 1,
@@ -139,9 +143,12 @@ describe("CRM WhatsApp vehicle sending", () => {
       },
     ]);
     const sendMedia = vi.fn(
-      async (_connection: CrmConnection, _input: CrmWhatsappSendMediaInput) => {
+      async (
+        _connection: CrmConnection,
+        _input: CrmMessagingSendMediaInput,
+      ) => {
         if (sendMedia.mock.calls.length === 2) {
-          throw new CrmWhatsappGatewayError("ZAPI media upload failed");
+          throw new CrmMessagingGatewayError("ZAPI media upload failed");
         }
         return {
           externalId: "zapi-media-1",
@@ -151,7 +158,10 @@ describe("CRM WhatsApp vehicle sending", () => {
       },
     );
     const sendText = vi.fn(
-      async (_connection: CrmConnection, _input: CrmWhatsappSendTextInput) => ({
+      async (
+        _connection: CrmConnection,
+        _input: CrmMessagingSendTextInput,
+      ) => ({
         externalId: "zapi-vehicle-summary-1",
         providerTimestamp: new Date("2026-07-02T20:04:05.000Z"),
         raw: { ok: true },
@@ -161,8 +171,8 @@ describe("CRM WhatsApp vehicle sending", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
-      crmWhatsappGateway: { sendMedia, sendText },
-      crmWhatsappRepository: whatsappRepository,
+      crmMessagingGateway: { sendMedia, sendText },
+      crmConversationRepository: whatsappRepository,
       vehicleInventory: {
         listingRepository: vehiclePorts.listingRepository,
         mediaRepository: vehiclePorts.mediaRepository!,
@@ -174,7 +184,7 @@ describe("CRM WhatsApp vehicle sending", () => {
       body: JSON.stringify({
         listingId: vehicleListingId,
         mediaLimit: 4,
-        sessionId: inbound.session.id,
+        cycleId: inbound.conversationCycle.id,
         unitId: vehicleUnitId,
       }),
       headers: { "Content-Type": "application/json" },
@@ -193,7 +203,7 @@ describe("CRM WhatsApp vehicle sending", () => {
     const messages = await whatsappRepository.listMessages({
       limit: 10,
       offset: 0,
-      sessionId: inbound.session.id,
+      cycleId: inbound.conversationCycle.id,
       storeId,
       tenantId,
     });

@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import {
   contrastRatio as contrastRatioFromRgb,
   getContrastColorForText,
+  getReadableColorOnBackground,
   getTextColorForBackground,
   parseHexColor as parseHexColorToRgb,
   relativeLuminance as relativeLuminanceFromRgb,
@@ -50,6 +51,29 @@ describe("color contrast helpers", () => {
 
   it("uses dark text on bright solid stage colors", () => {
     expect(getTextColorForBackground(hex("eab308"))).toBe(hex("151515"));
+  });
+
+  it("keeps storefront accent text branded while meeting surface contrast", () => {
+    const readable = getReadableColorOnBackground(hex("c9a84c"), hex("f8f5f0"));
+
+    expect(readable).not.toBe(hex("c9a84c"));
+    expect(contrastRatio(readable, hex("f8f5f0"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("preserves invalid or already-readable colors and chooses a light target on dark surfaces", () => {
+    expect(getReadableColorOnBackground("not-a-color", hex("ffffff"))).toBe(
+      "not-a-color",
+    );
+    expect(getReadableColorOnBackground(hex("000000"), "not-a-color")).toBe(
+      hex("000000"),
+    );
+    expect(getReadableColorOnBackground(hex("000000"), hex("ffffff"))).toBe(
+      hex("000000"),
+    );
+
+    const readable = getReadableColorOnBackground(hex("111111"), hex("151515"));
+    expect(readable).not.toBe(hex("111111"));
+    expect(contrastRatio(readable, hex("151515"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("uses light text on dark solid stage colors", () => {

@@ -144,6 +144,7 @@ function storeRecord(
       "automation",
       "analytics",
       "compliance",
+      "plate_lookup",
     ] as const,
     role,
     storeId: "store_1" as never,

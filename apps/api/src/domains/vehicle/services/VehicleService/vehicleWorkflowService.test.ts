@@ -70,7 +70,7 @@ describe("VehicleService workflow documents", () => {
     );
   });
 
-  it("sells a vehicle and emits the four sale documents", async () => {
+  it("sells a vehicle and emits the five sale documents", async () => {
     const context = createContext(["inventory.create", "inventory.sell"]);
     const ports = createInMemoryVehiclePorts([
       createListing({ status: "published", unitIds: ["unit_1"] }),
@@ -117,6 +117,7 @@ describe("VehicleService workflow documents", () => {
       "sale_receipt",
       "delivery_term",
       "power_of_attorney",
+      "buyer_acknowledgment",
     ]);
     expect(ports.financeRepository.entries).toEqual([
       expect.objectContaining({

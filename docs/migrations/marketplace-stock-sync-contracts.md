@@ -1,6 +1,6 @@
 # Marketplace Stock Sync Contracts
 
-Status: frozen for implementation. Date: 2026-07-08
+Status: implemented contract. Updated: 2026-08-14
 
 ## Product Rules
 
@@ -10,11 +10,22 @@ Status: frozen for implementation. Date: 2026-07-08
 - `marketplace_provider_taxonomies` stores provider category/attribute contract cache only; it is not a vehicle brand/model/year source.
 - Payloads map from `vehicle_listings.metadata.catalog` plus listing fields.
 - Sync mirrors public V2 stock: publish, update, and unpublish when hidden, sold out, unpublished, archived, or deleted.
-- Sync is manual/operator-triggered; no background worker.
+- Sync is manual/operator-triggered and creates durable jobs. A bounded worker
+  performs provider effects and reconciles asynchronous provider status.
 - Tests must not make live provider calls.
 - OLX uses the known Autoupload contract defaults and fails closed when client
   credentials are missing or an explicit contract override is invalid.
-- Never persist or return tokens, secrets, raw provider payloads, or sensitive customer data.
+- Never return tokens, secrets, raw provider payloads, or sensitive customer
+  data. OLX import-status tokens are encrypted as private job state, scoped to
+  the originating account/job, and never enter metadata, logs, audit, or HTTP DTOs.
+
+The target segment is dealerships publishing V2 public inventory to an
+authorized marketplace account. The outcome is truthful publication state
+without duplicate submissions; leading measures are terminal reconciliation
+rate and age of the oldest submitted job. The `marketplace` entitlement gates
+new effects, while reconciliation of already-submitted effects remains an
+operational recovery action. Product support owns manual recovery when the
+provider token expires or the originating account identity is unavailable.
 
 ## Routes
 
@@ -47,6 +58,7 @@ type MarketplaceSyncJobRetryResponse = {
   job: MarketplaceJob;
   previousJobId: string;
 };
+type MarketplaceSyncJobReconcileResponse = MarketplaceJob;
 ```
 
 Required endpoints:
@@ -54,9 +66,13 @@ Required endpoints:
 - `POST /integrations/{provider}/stock-sync/preview`
 - `POST /integrations/{provider}/stock-sync/run`
 - `POST /sync-jobs/{jobId}/retry`
+- `POST /sync-jobs/{jobId}/reconcile`
 
 Existing single-job routes remain, but metadata must be strictly validated and
-known marketplace failures must not return `MARKETPLACE_REQUEST_ERROR`.
+known marketplace failures must not return `MARKETPLACE_REQUEST_ERROR`. A
+direct single-job command requires a client-generated UUID `metadata.commandId`;
+repeating that command returns the same durable job instead of creating another
+provider effect.
 
 ## Overview And Projection
 
@@ -110,7 +126,7 @@ fields, store phone/CEP, selected unit plate, public slug, media/unit, and stock
 
 ```ts
 type MarketplaceStockPlanDecision =
-  "publish" | "update" | "unpublish" | "no_op" | "blocked";
+  "publish" | "update" | "unpublish" | "no_op" | "pending" | "blocked";
 type MarketplaceListingBlockerCode =
   | "MARKETPLACE_LISTING_NOT_PUBLIC"
   | "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS"
@@ -138,8 +154,9 @@ type MarketplaceStockPlanItem = {
 };
 type MarketplaceStockPlan = {
   blocked: number;
-  items: MarketplaceStockPlanItem[];
+  items: MarketplaceStockPlanItem[]; // actionable or blocked rows only
   noOp: number;
+  pending: number;
   publish: number;
   total: number;
   unpublish: number;
@@ -154,7 +171,10 @@ Planner rules:
 - Local listing hidden, sold, unpublished, archived, or deleted with provider
   row: `unpublish`.
 - Blocked local listing with no provider row: `blocked`.
-- Non-provider-relevant local listing with no provider row: `no_op`.
+- A listing with a queued, running, or provider-submitted job: `pending`; no
+  duplicate job is created by another stock batch.
+- Non-provider-relevant local listing with no provider row is excluded from the
+  customer-facing total. `noOp` remains zero for this actionable preview.
 - Missing FIPE catalog or unresolved mappings block before provider IO.
 
 ## Provider Gateway
@@ -176,6 +196,9 @@ type MarketplaceProviderGateway = {
   runListingSync: (
     input: MarketplacePublishInput,
   ) => Promise<MarketplacePublishResult>;
+  reconcileListingSync?: (
+    input: MarketplaceListingReconciliationInput,
+  ) => Promise<MarketplaceListingReconciliationResult>;
 };
 ```
 
@@ -193,7 +216,14 @@ listing path `/autoupload/import`, account check path
 JSON body. Missing `OLX_CLIENT_ID` or `OLX_CLIENT_SECRET` returns
 `MARKETPLACE_PROVIDER_NOT_CONFIGURED`; an invalid explicit contract override
 returns `MARKETPLACE_PROVIDER_CONTRACT_MISSING`.
-OLX publish/update requires store phone, store CEP, and selected unit plate for used vehicles; missing values block before provider IO.
+OLX publish/update requires store phone, store CEP, and selected unit plate for used vehicles; missing values block before provider IO. A synchronous
+`statusCode=0` means submitted, not published. The worker polls the private
+import token, keeps the integrator ad id distinct from OLX `list_id`, and only
+marks success after an exact accepted insert/update or accepted delete result.
+Pending, queued, provider lag, rate limits, and unknown transport outcomes stay
+submitted with bounded backoff. Refused/error results become terminal failures;
+expired or unrecoverable confirmation becomes explicit manual recovery and is
+never blindly resent.
 
 ## Stable Errors
 
@@ -234,9 +264,10 @@ raw provider payloads, customer message bodies, or raw DB rows.
 ```ts
 type MarketplaceJobMetadata = {
   batchId?: string;
-  externalId?: string;
+  commandId?: string;
   listingId?: string;
-  planDecision?: "publish" | "update" | "unpublish" | "no_op" | "blocked";
+  planDecision?:
+    "publish" | "update" | "unpublish" | "no_op" | "pending" | "blocked";
   providerRequest?: {
     attributeIds?: string[];
     categoryId?: string;
@@ -244,6 +275,9 @@ type MarketplaceJobMetadata = {
   };
   providerResult?: {
     externalId?: string | null;
+    listingUrl?: string | null;
+    message?: string | null;
+    providerListingId?: string | null;
     providerRequestId?: string | null;
     providerStatus?: string | null;
   };
@@ -251,6 +285,10 @@ type MarketplaceJobMetadata = {
   stockSync?: true;
 };
 ```
+
+`externalId`, provider request/result evidence, dispatch leases, and OLX import
+tokens are server-owned state. HTTP callers cannot supply them. The overview
+may expose sanitized provider evidence only after the server records it.
 
 Audit events: preview, queue, run, retry, success, failure, and partial failure
 under the `marketplace.stock_sync.*` / `marketplace.sync_job.*` namespaces.

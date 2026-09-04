@@ -1,34 +1,27 @@
-import {
-  DollarSign,
-  Car,
-  Globe,
-  MessageSquare,
-  MoreVertical,
-} from "lucide-react";
-import type { DragEvent, MouseEvent } from "react";
+import { Car, Globe, MessageSquare, MoreVertical } from "lucide-react";
+import type { DragEvent } from "react";
 import { formatLeadName } from "./crmPipelineModels";
-import {
-  formatLeadOwner,
-  formatLeadTimelineLabel,
-  getLinkedLeadVehicles,
-} from "./crmLeadData";
+import { formatLeadTimelineLabel, getLinkedLeadVehicles } from "./crmLeadData";
+import { useCrmLeadOwnerName } from "./useCrmLeadOwnerName";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
 import { sourceLabels } from "./crmPipelineConfig";
+import { readLeadAvatarUrl } from "./crmLeadAvatar";
 
 type Props = {
   lead: ProductCrmLead;
+  onChatClick: (lead: ProductCrmLead) => void;
   onDragStart: (leadId: string) => void;
   onSelectLead: (leadId: string) => void;
-  onSimulateClick: (lead: ProductCrmLead) => void;
+  onSimulateClick?: (lead: ProductCrmLead) => void;
   vehicleOptions: LeadVehicleOption[];
 };
 
 export function CrmLeadCard({
   lead,
+  onChatClick,
   onDragStart,
   onSelectLead,
-  onSimulateClick,
   vehicleOptions,
 }: Props) {
   const leadName = formatLeadName(lead).toUpperCase();
@@ -40,6 +33,10 @@ export function CrmLeadCard({
       .map((word) => word.charAt(0))
       .join("") || "?";
   const vehicles = getLinkedLeadVehicles(lead, vehicleOptions);
+  const hasPhone = Boolean(lead.buyerPhone?.trim());
+  const ownerName = useCrmLeadOwnerName(lead);
+  const ownerLabel =
+    ownerName === undefined ? "…" : (ownerName ?? "Sem responsável");
 
   const displayVehicles = vehicles.slice(0, 2);
   const remainingCount = vehicles.length - displayVehicles.length;
@@ -49,26 +46,49 @@ export function CrmLeadCard({
     onDragStart(lead.id);
   };
 
-  const handleSimulate = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onSimulateClick(lead);
-  };
-
   return (
     <article
-      className="glass-panel-branded p-4 rounded-lg border border-line/60 bg-panel hover:bg-panel hover:shadow-lg transition-all cursor-pointer flex flex-col gap-2.5 group relative overflow-hidden text-left"
+      className="glass-panel-branded shrink-0 p-4 rounded-lg border border-line/60 bg-panel hover:bg-panel hover:shadow-lg transition-all cursor-pointer flex flex-col gap-2.5 group relative overflow-hidden text-left"
       draggable
       onClick={() => onSelectLead(lead.id)}
       onDragStart={handleDragStart}
     >
       {/* Defined card header */}
-      <header className="-mx-4 -mt-4 flex items-center gap-2 border-b border-line/50 bg-line/10 px-4 py-2.5">
-        <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line/50 bg-app-elevated text-xs font-black text-app-text">
-          {leadInitials}
-        </span>
+      <header className="-mx-4 -mt-4 rounded-t-[7px] flex items-center gap-2 border-b border-line/50 bg-line/10 px-4 py-2.5">
+        {readLeadAvatarUrl(lead) ? (
+          <img
+            alt={leadName}
+            className="size-7 shrink-0 rounded-full border border-line/50 object-cover bg-app-elevated"
+            src={readLeadAvatarUrl(lead) as string}
+            loading="lazy"
+          />
+        ) : (
+          <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line/50 bg-app-elevated text-xs font-black text-app-text">
+            {leadInitials}
+          </span>
+        )}
         <h4 className="min-w-0 flex-1 truncate font-black text-xs text-app-text tracking-wider">
           {leadName}
         </h4>
+        <button
+          aria-label={
+            hasPhone
+              ? `Abrir chat de ${formatLeadName(lead)}`
+              : `${formatLeadName(lead)} não tem telefone para chat`
+          }
+          className="p-1 rounded hover:bg-line/20 text-muted hover:text-app-text cursor-pointer shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+          disabled={!hasPhone}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (hasPhone) onChatClick(lead);
+          }}
+          title={
+            hasPhone ? "Abrir chat no CRM" : "Lead sem telefone cadastrado"
+          }
+          type="button"
+        >
+          <MessageSquare aria-hidden="true" className="size-3.5" />
+        </button>
         <button
           aria-label={`Abrir detalhes de ${formatLeadName(lead)}`}
           className="p-1 rounded hover:bg-line/20 text-muted hover:text-app-text cursor-pointer shrink-0"
@@ -82,8 +102,8 @@ export function CrmLeadCard({
         </button>
       </header>
 
-      {/* SLA warning indicator */}
-      <div className="flex items-center gap-1 text-xs font-bold leading-none text-danger">
+      {/* Last interaction timestamp */}
+      <div className="flex items-center gap-1 text-xs font-bold leading-none text-muted">
         <span>{formatLeadTimelineLabel(lead)}</span>
       </div>
 
@@ -147,7 +167,7 @@ export function CrmLeadCard({
       {/* Bottom Owner and Source Row */}
       <div className="flex items-center justify-between gap-2 border-t border-line/20 pt-2 mt-1">
         <div className="min-w-0 flex items-center gap-1 text-xs font-bold text-muted truncate">
-          <span>{formatLeadOwner(lead)}</span>
+          <span>{ownerLabel}</span>
           <span>·</span>
           <span className="truncate">{sourceLabels[lead.source]}</span>
         </div>
@@ -159,19 +179,6 @@ export function CrmLeadCard({
           )}
         </div>
       </div>
-
-      {/* Low-profile Simulation Button */}
-      <button
-        className="w-full inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-line/60 bg-app-elevated px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors mt-0.5"
-        onClick={handleSimulate}
-        type="button"
-      >
-        <DollarSign
-          aria-hidden="true"
-          className="size-3 shrink-0 text-success-strong"
-        />
-        <span>Simular financiamento</span>
-      </button>
     </article>
   );
 }

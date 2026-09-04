@@ -1,0 +1,97 @@
+@import "./crmTags.css";
+@import "./crmTagDraft.css";
+
+.crm-schedule-dialog {
+  width: min(42rem, 100%);
+}
+
+.crm-schedule-dialog .crm-schedule-error {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #ef4444 35%, var(--color-line));
+  border-radius: var(--radius-md);
+  color: #dc2626;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+}
+
+:root[data-theme="dark"] .crm-schedule-dialog .crm-schedule-error,
+.dark .crm-schedule-dialog .crm-schedule-error {
+  color: #f87171;
+}
+
+.crm-schedule-dialog .crm-schedule-form {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.crm-schedule-dialog .crm-schedule-form label {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.375rem;
+  text-transform: uppercase;
+}
+
+.crm-schedule-dialog .crm-schedule-form input,
+.crm-schedule-dialog .crm-schedule-form textarea {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font: inherit;
+  min-height: 2.5rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem;
+}
+
+.crm-schedule-dialog .crm-schedule-form textarea {
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.crm-schedule-dialog .crm-schedule-form .crm-action {
+  justify-self: end;
+}
+
+.crm-schedule-dialog .crm-schedule-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crm-schedule-dialog .crm-schedule-toolbar strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-right: auto;
+  text-transform: uppercase;
+}
+
+.crm-schedule-dialog .crm-schedule-empty {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px dashed color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin: 0;
+  padding: 0.75rem;
+}

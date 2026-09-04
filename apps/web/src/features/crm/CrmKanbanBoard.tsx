@@ -1,4 +1,4 @@
-import { useState, useEffect, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { getTextColorForBackground } from "../../lib/colors";
 import { CrmLeadCard } from "./CrmLeadCard";
@@ -16,8 +16,12 @@ type Props = {
   viewLeads: ProductCrmLead[];
   onQuickAddDeal: (stageId: string) => void;
   onSimulateClick: (lead: ProductCrmLead) => void;
+  onChatClick: (lead: ProductCrmLead) => void;
   onAddStage: () => void;
   onEditStage?: (stage: PipelineStage) => void;
+  onLoadMoreStage: (stageId: string) => Promise<void>;
+  loadingStageIds: Set<string>;
+  stageTotals: Record<string, number>;
 };
 
 export function CrmKanbanBoard({
@@ -29,8 +33,12 @@ export function CrmKanbanBoard({
   viewLeads,
   onQuickAddDeal,
   onSimulateClick,
+  onChatClick,
   onAddStage,
   onEditStage,
+  onLoadMoreStage,
+  loadingStageIds,
+  stageTotals,
 }: Props) {
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
@@ -40,7 +48,6 @@ export function CrmKanbanBoard({
   const [activeMenuStageId, setActiveMenuStageId] = useState<string | null>(
     null,
   );
-
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -97,13 +104,15 @@ export function CrmKanbanBoard({
 
   return (
     <section
-      className="flex gap-4 overflow-x-auto pb-4 select-none min-h-[500px] items-start"
+      className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 select-none min-h-[500px] items-start"
       aria-label="CRM Kanban Board"
     >
       {stages
         .filter((s) => visibleStages[s.id] !== false)
         .map((stage) => {
           const stageLeads = getLeadsForStage(stage.id, stage.status);
+          const stageTotal = stageTotals[stage.id] ?? stageLeads.length;
+          const hiddenCount = Math.max(0, stageTotal - stageLeads.length);
           const isCollapsed = collapsedStages[stage.id] === true;
           const isOver = dragOverStageId === stage.id;
           const stageBadgeTextColor = getTextColorForBackground(stage.color);
@@ -143,7 +152,7 @@ export function CrmKanbanBoard({
                   </span>
                 </div>
                 <div className="size-5 rounded-full bg-line/25 border border-line/40 text-muted text-xs font-black flex items-center justify-center shrink-0">
-                  {stageLeads.length}
+                  {stageTotal}
                 </div>
               </div>
             );
@@ -152,7 +161,7 @@ export function CrmKanbanBoard({
           return (
             <article
               className={
-                "w-72 shrink-0 glass-panel-branded border rounded-xl flex flex-col max-h-[580px] bg-panel/30 transition-all " +
+                "w-72 shrink-0 glass-panel-branded border rounded-xl flex flex-col max-h-[min(760px,85vh)] bg-panel/30 transition-all " +
                 (isOver
                   ? "border-accent ring-2 ring-accent/20 scale-[1.01]"
                   : "border-line/60")
@@ -182,7 +191,7 @@ export function CrmKanbanBoard({
                       className="text-xs font-black leading-none rounded-full px-1.5 py-0.5 shrink-0"
                       style={{ backgroundColor: `${stageBadgeTextColor}26` }}
                     >
-                      {stageLeads.length}
+                      {stageTotal}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -238,11 +247,12 @@ export function CrmKanbanBoard({
               </header>
 
               {/* Card List */}
-              <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[440px]">
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 min-h-[440px]">
                 {stageLeads.map((lead) => (
                   <CrmLeadCard
                     key={lead.id}
                     lead={lead}
+                    onChatClick={onChatClick}
                     onDragStart={setDraggedLeadId}
                     onSelectLead={onSelectLead}
                     onSimulateClick={onSimulateClick}
@@ -253,6 +263,13 @@ export function CrmKanbanBoard({
                   <div className="flex flex-1 items-center justify-center text-center text-xs font-bold text-muted border border-dashed border-line/30 rounded-lg">
                     Nenhum item.
                   </div>
+                )}
+                {hiddenCount > 0 && (
+                  <KanbanLoadMore
+                    isLoading={loadingStageIds.has(stage.id)}
+                    remaining={hiddenCount}
+                    onLoadMore={() => void onLoadMoreStage(stage.id)}
+                  />
                 )}
               </div>
 
@@ -294,5 +311,47 @@ export function CrmKanbanBoard({
         </button>
       </div>
     </section>
+  );
+}
+
+function KanbanLoadMore({
+  isLoading,
+  remaining,
+  onLoadMore,
+}: {
+  isLoading: boolean;
+  remaining: number;
+  onLoadMore: () => void;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onLoadMoreRef.current();
+        }
+      },
+      { root: sentinel.closest(".overflow-y-auto"), rootMargin: "120px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="shrink-0" ref={sentinelRef}>
+      <button
+        className="w-full py-1.5 text-xs font-black uppercase text-muted hover:text-accent border border-dashed border-line/40 rounded-lg transition-colors cursor-pointer"
+        disabled={isLoading}
+        onClick={onLoadMore}
+        type="button"
+      >
+        {isLoading ? "Carregando..." : `Mostrar mais (${remaining})`}
+      </button>
+    </div>
   );
 }

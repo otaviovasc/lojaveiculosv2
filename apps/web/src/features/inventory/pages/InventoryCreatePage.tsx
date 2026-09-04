@@ -27,15 +27,17 @@ import {
   saveInventoryCreateDraft,
   type InventoryCreateDraft,
 } from "../model/inventoryCreateDraft";
-import { useInventoryCreateStores } from "./useInventoryCreateStores";
+import {
+  useInventoryCreateStores,
+  type InventoryCreateStoreOption,
+} from "./useInventoryCreateStores";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisResponse,
 } from "../model/enrichmentTypes";
 import {
-  canAutoAnalyzePlateLookup,
   createResaleAnalysisInput,
-  hasEnoughDataForAnalysis,
+  getCreateResaleAnalysisReadiness,
 } from "../model/inventoryEnrichment";
 import type { Loadable } from "../components/InventoryCreateEnrichmentParts";
 import { getApiErrorDisplay } from "../../../lib/apiErrors";
@@ -65,8 +67,6 @@ export function InventoryCreatePage({
   const [analysisState, setAnalysisState] = useState<
     Loadable<InventoryResaleAnalysisResponse>
   >({ kind: "idle" });
-  const [autoRunAnalysis, setAutoRunAnalysis] = useState(false);
-
   const stores = useInventoryCreateStores(setForm);
 
   useEffect(() => {
@@ -75,20 +75,15 @@ export function InventoryCreatePage({
       return;
     }
 
-    const selectedStore = stores.find((s) => s.id === form.storeId);
-    const storeSlug = selectedStore?.slug || undefined;
-
-    void createInventoryApiOptions().then((options) => {
-      setRuntimeApi(
-        createInventoryApi({
-          ...options,
-          auth: {
-            ...options.auth,
-            ...(storeSlug ? { storeSlug } : {}),
-          },
-        }),
-      );
-    });
+    let active = true;
+    void createInventoryCreateRuntimeApi(stores, form.storeId).then(
+      (nextApi) => {
+        if (active) setRuntimeApi(nextApi);
+      },
+    );
+    return () => {
+      active = false;
+    };
   }, [api, form.storeId, stores]);
 
   useEffect(() => {
@@ -102,32 +97,6 @@ export function InventoryCreatePage({
       mediaFileNames: media.map((item) => item.file.name),
     });
   }, [form, media, savedDraft]);
-
-  useEffect(() => {
-    if (!autoRunAnalysis || !runtimeApi || !lookup) return;
-    if (!hasEnoughDataForAnalysis(form, lookup)) return;
-    setAutoRunAnalysis(false);
-    setAnalysisState({ kind: "loading" });
-    void runtimeApi
-      .analyzeResale(createResaleAnalysisInput(form, lookup))
-      .then((value) => {
-        setAnalysisState({ kind: "success", value });
-        setForm((current) =>
-          current.description.trim()
-            ? current
-            : { ...current, description: value.suggestedDescription },
-        );
-      })
-      .catch((error: unknown) => {
-        setAnalysisState({
-          kind: "error",
-          ...getApiErrorDisplay(
-            error,
-            "Nao foi possivel gerar a analise agora.",
-          ),
-        });
-      });
-  }, [autoRunAnalysis, form, lookup, runtimeApi, setForm]);
 
   useEffect(
     () => () => {
@@ -175,15 +144,17 @@ export function InventoryCreatePage({
     (result: InventoryPlateLookupResponse) => {
       setLookup(result);
       setAnalysisState({ kind: "idle" });
-      if (canAutoAnalyzePlateLookup(result)) {
-        setAutoRunAnalysis(true);
-      }
     },
     [],
   );
 
   const handleGenerateAnalysis = useCallback(async () => {
-    if (!runtimeApi) return;
+    if (
+      !runtimeApi ||
+      !getCreateResaleAnalysisReadiness(form, lookup).isReady
+    ) {
+      return;
+    }
     setAnalysisState({ kind: "loading" });
     try {
       const value = await runtimeApi.analyzeResale(
@@ -203,24 +174,23 @@ export function InventoryCreatePage({
     }
   }, [form, lookup, runtimeApi, setForm]);
 
-  const handleCreated = useCallback((_detail: InventoryListingDetail) => {
-    clearInventoryCreateDraft();
-    setSavedDraft(null);
-  }, []);
+  const handleCreated = useCallback(
+    (_detail: InventoryListingDetail) => {
+      clearInventoryCreateDraft();
+      setSavedDraft(null);
+      if (onBack) {
+        onBack();
+      } else if (typeof window !== "undefined") {
+        window.location.href = "/inventory";
+      }
+    },
+    [onBack],
+  );
 
   const resolveInventoryApi = useCallback(async () => {
-    if (runtimeApi) return runtimeApi;
-    const selectedStore = stores.find((s) => s.id === form.storeId);
-    const storeSlug = selectedStore?.slug || undefined;
-    const options = await createInventoryApiOptions();
-    return createInventoryApi({
-      ...options,
-      auth: {
-        ...options.auth,
-        ...(storeSlug ? { storeSlug } : {}),
-      },
-    });
-  }, [runtimeApi, form.storeId, stores]);
+    if (api) return api;
+    return createInventoryCreateRuntimeApi(stores, form.storeId);
+  }, [api, form.storeId, stores]);
 
   const { handleRetryMedia, handleSubmit, submitState } =
     useInventoryCreateSubmit({
@@ -229,10 +199,11 @@ export function InventoryCreatePage({
       onCreated: handleCreated,
       resolveApi: resolveInventoryApi,
     });
+  const analysisReadiness = getCreateResaleAnalysisReadiness(form, lookup);
 
   return (
-    <main className="content-frame animate-fade-in text-app-text">
-      <div className="flex flex-col gap-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
+    <main className="content-frame !px-2 sm:!px-3 lg:!px-4 !pt-2 sm:!pt-3 !pb-6 animate-fade-in text-app-text">
+      <div className="flex flex-col gap-2 pb-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl font-black tracking-wide uppercase lg:text-3xl">
             Cadastrar Veículo
@@ -287,14 +258,28 @@ export function InventoryCreatePage({
           onRetryMedia={() => void handleRetryMedia()}
           isSubmitting={submitState.kind === "submitting"}
           analysisState={analysisState}
-          canAnalyze={Boolean(
-            runtimeApi && hasEnoughDataForAnalysis(form, lookup),
-          )}
+          analysisReadiness={analysisReadiness}
+          canAnalyze={Boolean(runtimeApi && analysisReadiness.isReady)}
           onGenerateAnalysis={() => void handleGenerateAnalysis()}
         />
       </form>
     </main>
   );
+}
+
+export async function createInventoryCreateRuntimeApi(
+  stores: readonly InventoryCreateStoreOption[],
+  storeId: string,
+) {
+  const selectedStore = stores.find((store) => store.id === storeId);
+  const options = await createInventoryApiOptions();
+  return createInventoryApi({
+    ...options,
+    auth: {
+      ...options.auth,
+      ...(selectedStore ? { storeSlug: selectedStore.slug } : {}),
+    },
+  });
 }
 
 function createCatalogTitle(catalog: InventoryFormState["catalog"]) {

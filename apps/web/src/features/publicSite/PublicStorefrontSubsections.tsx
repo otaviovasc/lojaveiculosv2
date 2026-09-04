@@ -1,16 +1,5 @@
-import {
-  Star,
-  UserRound,
-  Sparkles,
-  CheckCircle2,
-  ShieldCheck,
-  MessageCircle,
-} from "lucide-react";
-import {
-  readString,
-  readTestimonials,
-  type VisibleStorefrontSection,
-} from "./publicStorefrontTheme";
+import { UserRound, Sparkles } from "lucide-react";
+import { readString, readTestimonials } from "./publicStorefrontTheme";
 import type {
   PublicStorefrontData,
   PublicStorefrontSettingsData,
@@ -24,7 +13,7 @@ export function AboutSection({
   const theme = data.settings.site.theme;
   const imageUrl = readString(theme.aboutImageUrl);
   return (
-    <section className="border-b border-line bg-panel">
+    <section className="border-b border-line bg-panel" id="sobre">
       <div className="public-storefront-shell grid gap-12 px-6 py-16 md:grid-cols-2 md:py-20 lg:py-24">
         <div className="flex min-w-0 flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
@@ -37,26 +26,6 @@ export function AboutSection({
             {readString(theme.aboutText) ??
               "Atendimento diferenciado, estoque selecionado e canais oficiais para garantir a melhor experiência na compra do seu veículo."}
           </p>
-
-          {/* Trust points */}
-          <div className="mt-8 grid gap-4 grid-cols-2">
-            <div className="p-4 rounded-xl border border-line bg-app">
-              <span className="block text-lg font-extrabold text-accent">
-                100%
-              </span>
-              <span className="block text-xs font-black uppercase text-muted tracking-wider mt-1">
-                Laudo Aprovado
-              </span>
-            </div>
-            <div className="p-4 rounded-xl border border-line bg-app">
-              <span className="block text-lg font-extrabold text-accent">
-                Garantia
-              </span>
-              <span className="block text-xs font-black uppercase text-muted tracking-wider mt-1">
-                Procedência
-              </span>
-            </div>
-          </div>
         </div>
 
         {imageUrl ? (
@@ -101,15 +70,6 @@ export function TestimonialsSection({
                 className="public-editorial-card rounded-lg p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
                 key={testimonial.id}
               >
-                <div className="flex gap-1 text-accent">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Star
-                      key={i}
-                      aria-hidden="true"
-                      className="size-3.5 fill-current"
-                    />
-                  ))}
-                </div>
                 <p className="mt-4 text-xs font-semibold leading-relaxed text-app-text italic">
                   "{testimonial.quote}"
                 </p>
@@ -135,9 +95,6 @@ export function TestimonialsSection({
                       </span>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-accent-soft px-2 py-0.5 text-xs font-black uppercase tracking-widest text-accent/70">
-                    Cliente Verificado
-                  </span>
                 </div>
               </article>
             );
@@ -147,16 +104,6 @@ export function TestimonialsSection({
     </section>
   );
 }
-
-export const proofItems = [
-  {
-    icon: CheckCircle2,
-    key: "featured",
-    label: "Procedência & Laudo Aprovado",
-  },
-  { icon: ShieldCheck, key: "trust", label: "Lojista Credenciado" },
-  { icon: MessageCircle, key: "financing", label: "Financiamento Facilitado" },
-];
 
 export function BrandMark({
   logoUrl,
@@ -177,20 +124,4 @@ export function BrandMark({
       <Sparkles aria-hidden="true" className="size-4" />
     </div>
   );
-}
-
-export function createVisibleProofItems(
-  sections: readonly VisibleStorefrontSection[],
-) {
-  const types = new Set(sections.map((s) => s.type));
-  return proofItems.filter((item) => {
-    if (item.key === "featured")
-      return (
-        types.has("featured") ||
-        types.has("all_properties") ||
-        types.has("search")
-      );
-    if (item.key === "financing") return types.has("contact");
-    return true;
-  });
 }

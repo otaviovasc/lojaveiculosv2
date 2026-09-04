@@ -205,7 +205,7 @@ export function FeatureList({
   return (
     <div
       className={cx(
-        "flex flex-col gap-3",
+        "flex flex-col gap-3 [&>*]:shrink-0",
         inset === "scroll" && "-mr-1 pr-1",
         className,
       )}

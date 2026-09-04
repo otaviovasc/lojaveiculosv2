@@ -1,8 +1,14 @@
 import { Percent } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import { FinanceField, FinanceInput, FinancePanel } from "./FinanceFormParts";
+import {
+  FinanceField,
+  FinanceInput,
+  FinancePanel,
+  FinanceSelect,
+} from "./FinanceFormParts";
 import { formatCurrency } from "./financeBillsFormat";
+import { commissionCategories } from "./financeEntryDraftModel";
 import type { CommissionRule } from "./types";
 
 export type CommissionDraft = {
@@ -91,16 +97,28 @@ export function CommissionRulesPanel({
               onSubmit={(event) => void submitRule(event)}
             >
               <FinanceField label="Nome">
-                <FinanceInput name="name" required />
+                <FinanceInput
+                  name="name"
+                  placeholder="Ex: Comissão Padrão de Vendas"
+                  required
+                />
               </FinanceField>
               <FinanceField label="Categoria">
-                <FinanceInput name="category" required />
+                <FinanceSelect
+                  defaultValue="Venda"
+                  name="category"
+                  options={commissionCategories.map((category) => ({
+                    label: category,
+                    value: category,
+                  }))}
+                />
               </FinanceField>
               <FinanceField label="%">
                 <FinanceInput
                   max="100"
                   min="0.01"
                   name="percent"
+                  placeholder="1,50"
                   required
                   step="0.01"
                   type="number"

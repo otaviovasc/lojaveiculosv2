@@ -24,8 +24,8 @@ export function createHttpIntegrationServiceContext(
   const logger =
     options.logger ??
     createConsoleServiceLogger({
-      correlationId: request.correlationId,
-      requestId: request.requestId,
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
     });
 
   return createServiceContext({
@@ -38,7 +38,11 @@ export function createHttpIntegrationServiceContext(
     logger,
     permissions: input.permissions,
     request,
-    source: { component: "http-webhook", service: "api" },
+    source: {
+      component: "http-webhook",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    },
     storeId: input.storeId ?? null,
     tenantId: input.tenantId ?? null,
   });

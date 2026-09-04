@@ -9,7 +9,11 @@ import type {
 
 export type BillingManagedBy = "agency" | "store_owner";
 
+export type StoreAccessOrigin =
+  "direct_store_membership" | "tenant_agency_fallback";
+
 export type StoreAccessRecord = {
+  accessOrigin?: StoreAccessOrigin;
   billingManagedBy: BillingManagedBy;
   entitlements: readonly EntitlementKey[];
   overrides: readonly {
@@ -20,6 +24,7 @@ export type StoreAccessRecord = {
   storeId: StoreId;
   tenantId: TenantId;
   userId: UserId;
+  userName?: string | null;
 };
 
 export type StoreAccessRepository = {

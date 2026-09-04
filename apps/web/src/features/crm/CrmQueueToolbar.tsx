@@ -1,0 +1,353 @@
+import {
+  Archive,
+  CheckCheck,
+  CheckSquare,
+  Headset,
+  Hourglass,
+  Plus,
+  Tags,
+  Wrench,
+} from "lucide-react";
+import type { ReactNode } from "react";
+import { Morphicon } from "../../components/ui/Morphicon";
+import {
+  QueueQuickFilterRow,
+  QueueTagFilterMenu,
+} from "./CrmQueueToolbarParts";
+import { useDragToScroll } from "../../lib/useDragToScroll";
+import { CrmConnectionFilter } from "./CrmConnectionFilter";
+import type {
+  CrmAssignableMember,
+  CrmHumanAttendanceState,
+  CrmProviderConnection,
+  CrmConversationCycleCounts,
+  CrmConversationCycleFilter,
+  CrmConversationCycleStatus,
+  CrmTag,
+} from "./crmConversationTypes";
+
+export function CrmQueueToolbar({
+  archivedOnly = false,
+  assignableMembers,
+  availableTags,
+  children,
+  canAssign,
+  canManageConnections,
+  canManageTags,
+  canReadUnassigned = false,
+  connectionId,
+  connectionFilterId,
+  connections,
+  currentUserId,
+  onArchivedOnlyChange,
+  onConnectionFilterChange,
+  onHumanAttendanceFilterChange,
+  onManageConnections,
+  onManageTags,
+  onOtherAssigneeChange,
+  onQuickFilterChange,
+  onSearch,
+  onSelectionModeChange,
+  onStartConversation,
+  onStatusFilterChange,
+  onTagFilterToggle,
+  onUnreadOnlyChange,
+  otherAssigneeId,
+  humanAttendanceFilter,
+  quickFilter,
+  search,
+  selectedTagIds,
+  selectedCount,
+  selectionMode,
+  conversationCycleCounts,
+  sessionCount,
+  statusFilter,
+  startConversationUnavailableReason,
+  unreadOnly,
+  canStartConversation,
+}: {
+  archivedOnly?: boolean;
+  assignableMembers: CrmAssignableMember[];
+  availableTags: CrmTag[];
+  children?: ReactNode;
+  canAssign: boolean;
+  canManageConnections: boolean;
+  canManageTags: boolean;
+  canReadUnassigned?: boolean;
+  canStartConversation: boolean;
+  connectionId: string | number | null;
+  connectionFilterId: string | null;
+  connections: CrmProviderConnection[];
+  currentUserId: string | null;
+  onArchivedOnlyChange?: (archivedOnly: boolean) => void;
+  onConnectionFilterChange: (connectionId: string | null) => void;
+  onHumanAttendanceFilterChange: (state: CrmHumanAttendanceState | "") => void;
+  onManageConnections: () => void;
+  onManageTags: () => void;
+  onOtherAssigneeChange: (assigneeId: string | null) => void;
+  onQuickFilterChange: (filter: CrmConversationCycleFilter) => void;
+  onSearch: (value: string) => void;
+  onSelectionModeChange: (enabled: boolean) => void;
+  onStartConversation: () => void;
+  onStatusFilterChange: (status: CrmConversationCycleStatus | "") => void;
+  onTagFilterToggle: (tagId: string) => void;
+  onUnreadOnlyChange: (unreadOnly: boolean) => void;
+  otherAssigneeId: string | null;
+  humanAttendanceFilter: CrmHumanAttendanceState | "";
+  quickFilter: CrmConversationCycleFilter;
+  search: string;
+  selectedTagIds: string[];
+  selectedCount: number;
+  selectionMode: boolean;
+  conversationCycleCounts: CrmConversationCycleCounts;
+  sessionCount: number;
+  statusFilter: CrmConversationCycleStatus | "";
+  startConversationUnavailableReason?: string | null;
+  unreadOnly: boolean;
+}) {
+  const smartFiltersDragRef = useDragToScroll<HTMLDivElement>();
+  void sessionCount;
+
+  return (
+    <header className="crm-toolbar">
+      <div className="crm-toolbar-top">
+        <div className="crm-toolbar-title-wrap">
+          <h2 aria-label="CRM">Conversas</h2>
+        </div>
+        <div className="crm-toolbar-actions">
+          <CrmConnectionFilter
+            canAssign={canAssign}
+            canReadUnassigned={canReadUnassigned}
+            connectionFilterId={connectionFilterId}
+            connections={connections}
+            currentUserId={currentUserId}
+            fallbackConnectionId={connectionId}
+            onChange={onConnectionFilterChange}
+            onSetup={onManageConnections}
+          />
+          <button
+            aria-label="Gerenciar etiquetas"
+            className="crm-icon-action"
+            disabled={!canManageTags}
+            onClick={onManageTags}
+            title="Gerenciar etiquetas"
+            type="button"
+          >
+            <Tags aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Gerenciar conexões de mensagens"
+            className="crm-icon-action"
+            disabled={!canManageConnections}
+            onClick={onManageConnections}
+            title="Gerenciar conexões de mensagens"
+            type="button"
+          >
+            <Wrench aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Nova conversa"
+            className="crm-toolbar-new-conversation"
+            disabled={!canStartConversation}
+            onClick={onStartConversation}
+            title={startConversationUnavailableReason ?? "Nova conversa"}
+            type="button"
+          >
+            <Plus aria-hidden="true" />
+            <span>Nova conversa</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={
+          selectionMode
+            ? "crm-search-row crm-search-row-selection-active"
+            : "crm-search-row"
+        }
+      >
+        <label className="crm-search">
+          <Morphicon
+            active={Boolean(search)}
+            aria-hidden="true"
+            className="crm-search-icon"
+            name="search-close"
+            size={15}
+          />
+          <input
+            aria-label="Pesquisar conversas por nome ou telefone"
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder="Pesquisar por nome ou telefone..."
+            value={search}
+          />
+          {search ? (
+            <button
+              aria-label="Limpar pesquisa"
+              className="crm-search-clear"
+              onClick={() => onSearch("")}
+              type="button"
+            >
+              <Morphicon
+                active={true}
+                aria-hidden="true"
+                name="check-cross"
+                size={12}
+              />
+            </button>
+          ) : null}
+        </label>
+        <button
+          aria-label={
+            selectionMode ? "Cancelar seleção" : "Selecionar conversas"
+          }
+          aria-pressed={selectionMode}
+          className={
+            selectionMode
+              ? "crm-icon-action crm-selection-action crm-selection-action-active"
+              : "crm-icon-action crm-selection-action"
+          }
+          onClick={() => onSelectionModeChange(!selectionMode)}
+          title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
+          type="button"
+        >
+          {selectionMode ? (
+            <Morphicon
+              active={true}
+              aria-hidden="true"
+              name="check-cross"
+              size={15}
+            />
+          ) : (
+            <CheckSquare aria-hidden="true" />
+          )}
+          {selectedCount > 0 ? (
+            <span className="crm-selection-badge">{selectedCount}</span>
+          ) : null}
+        </button>
+      </div>
+
+      <QueueQuickFilterRow
+        assignableMembers={assignableMembers}
+        canAssign={canAssign}
+        canReadUnassigned={canReadUnassigned}
+        currentUserId={currentUserId}
+        onOtherAssigneeChange={onOtherAssigneeChange}
+        onQuickFilterChange={onQuickFilterChange}
+        otherAssigneeId={otherAssigneeId}
+        quickFilter={quickFilter}
+        conversationCycleCounts={conversationCycleCounts}
+      />
+
+      <div
+        className="crm-smart-filters"
+        aria-label="Filtros inteligentes"
+        ref={smartFiltersDragRef}
+        role="group"
+      >
+        <button
+          aria-pressed={unreadOnly}
+          className={
+            unreadOnly
+              ? "crm-smart-filter crm-smart-filter-unread crm-smart-filter-active"
+              : "crm-smart-filter crm-smart-filter-unread"
+          }
+          onClick={() => onUnreadOnlyChange(!unreadOnly)}
+          type="button"
+        >
+          <i aria-hidden="true" />
+          Não lidas
+          {conversationCycleCounts.unread > 0 ? (
+            <span>{conversationCycleCounts.unread}</span>
+          ) : null}
+        </button>
+        <button
+          aria-pressed={humanAttendanceFilter === "WAITING_HUMAN"}
+          className={
+            humanAttendanceFilter === "WAITING_HUMAN"
+              ? "crm-smart-filter crm-smart-filter-waiting-human crm-smart-filter-active"
+              : "crm-smart-filter crm-smart-filter-waiting-human"
+          }
+          onClick={() =>
+            onHumanAttendanceFilterChange(
+              humanAttendanceFilter === "WAITING_HUMAN" ? "" : "WAITING_HUMAN",
+            )
+          }
+          type="button"
+        >
+          <Hourglass aria-hidden="true" />
+          Aguardando Humano
+          {conversationCycleCounts.waitingHuman > 0 ? (
+            <span>{conversationCycleCounts.waitingHuman}</span>
+          ) : null}
+        </button>
+        <button
+          aria-pressed={humanAttendanceFilter === "IN_HUMAN_SERVICE"}
+          className={
+            humanAttendanceFilter === "IN_HUMAN_SERVICE"
+              ? "crm-smart-filter crm-smart-filter-in-human-service crm-smart-filter-active"
+              : "crm-smart-filter crm-smart-filter-in-human-service"
+          }
+          onClick={() =>
+            onHumanAttendanceFilterChange(
+              humanAttendanceFilter === "IN_HUMAN_SERVICE"
+                ? ""
+                : "IN_HUMAN_SERVICE",
+            )
+          }
+          type="button"
+        >
+          <Headset aria-hidden="true" />
+          Em atendimento Humano
+          {conversationCycleCounts.inHumanService > 0 ? (
+            <span>{conversationCycleCounts.inHumanService}</span>
+          ) : null}
+        </button>
+        <QueueTagFilterMenu
+          availableTags={availableTags}
+          onTagFilterToggle={onTagFilterToggle}
+          selectedTagIds={selectedTagIds}
+        />
+        <button
+          aria-pressed={statusFilter === "COMPLETED"}
+          className={
+            statusFilter === "COMPLETED"
+              ? "crm-smart-filter crm-smart-filter-active"
+              : "crm-smart-filter"
+          }
+          onClick={() =>
+            onStatusFilterChange(
+              statusFilter === "COMPLETED" ? "" : "COMPLETED",
+            )
+          }
+          type="button"
+        >
+          <CheckCheck aria-hidden="true" />
+          Concluídos
+          {conversationCycleCounts.statuses.COMPLETED > 0 ? (
+            <span>{conversationCycleCounts.statuses.COMPLETED}</span>
+          ) : null}
+        </button>
+        {onArchivedOnlyChange ? (
+          <button
+            aria-pressed={archivedOnly}
+            className={
+              archivedOnly
+                ? "crm-smart-filter crm-smart-filter-active"
+                : "crm-smart-filter"
+            }
+            onClick={() => onArchivedOnlyChange(!archivedOnly)}
+            type="button"
+          >
+            <Archive aria-hidden="true" />
+            Arquivadas
+            {archivedOnly && conversationCycleCounts.total > 0 ? (
+              <span>{conversationCycleCounts.total}</span>
+            ) : null}
+          </button>
+        ) : null}
+      </div>
+
+      {children}
+    </header>
+  );
+}

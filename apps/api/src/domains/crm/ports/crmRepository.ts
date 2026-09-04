@@ -15,11 +15,12 @@ export type LeadSource =
   | "external_api"
   | "manual"
   | "olx"
+  | "instagram"
   | "whatsapp"
   | "other";
 
 export type LeadActivityType =
-  "note" | "call" | "whatsapp" | "email" | "status_change" | "task";
+  "note" | "call" | "message" | "email" | "status_change" | "task";
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
@@ -68,9 +69,20 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string;
+  pipelineStageId?: string;
   source: LeadSource;
   storeId: StoreId;
   tenantId: TenantId;
+};
+
+export type CreateIdempotentCrmLeadInput = CreateCrmLeadInput & {
+  sourceIdentityKey: string;
+};
+
+export type CreateIdempotentCrmLeadResult = {
+  created: boolean;
+  lead: CrmLead;
 };
 
 export type UpdateCrmLeadInput = {
@@ -111,14 +123,37 @@ export type CreateIdempotentLeadActivityResult = {
 };
 
 export type ListCrmLeadsInput = {
+  cursor?: CrmLeadCursor;
   listingId?: string;
   limit: number;
   offset?: number;
+  pipelineId?: string;
+  pipelineStageId?: string;
   search?: string;
   source?: LeadSource;
   status?: LeadStatus;
   storeId: StoreId;
   tenantId: TenantId;
+};
+
+export type CrmLeadCursor = {
+  id: string;
+  updatedAt: Date;
+};
+
+export type CountCrmLeadsInput = Omit<
+  ListCrmLeadsInput,
+  "cursor" | "limit" | "offset"
+>;
+
+export type ListCrmLeadBoardInput = CountCrmLeadsInput & {
+  stageLimit: number;
+};
+
+export type CrmLeadBoardStage = {
+  items: readonly CrmLead[];
+  pipelineStageId: string;
+  total: number;
 };
 
 export type ListLeadActivitiesInput = {
@@ -134,6 +169,9 @@ export type CrmRepository = {
     input: CreateIdempotentLeadActivityInput,
   ) => Promise<CreateIdempotentLeadActivityResult>;
   createLead: (input: CreateCrmLeadInput) => Promise<CrmLead>;
+  createLeadIdempotently: (
+    input: CreateIdempotentCrmLeadInput,
+  ) => Promise<CreateIdempotentCrmLeadResult>;
   findLeadById: (input: {
     leadId: string;
     storeId: StoreId;
@@ -154,9 +192,13 @@ export type CrmRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<number>;
+  countLeads: (input: CountCrmLeadsInput) => Promise<number>;
   listActivities: (
     input: ListLeadActivitiesInput,
   ) => Promise<readonly CrmLeadActivity[]>;
+  listLeadBoard: (
+    input: ListCrmLeadBoardInput,
+  ) => Promise<readonly CrmLeadBoardStage[]>;
   listLeads: (input: ListCrmLeadsInput) => Promise<readonly CrmLead[]>;
   updateLead: (input: UpdateCrmLeadInput) => Promise<CrmLead>;
 };

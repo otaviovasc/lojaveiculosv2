@@ -11,11 +11,13 @@ import type {
   UpdateLinkedDocumentInput,
   UpsertDocumentTemplateInput,
 } from "./ports/documentRepository.js";
+import { DocumentLinkUniquenessConflictError } from "./ports/documentRepository.js";
 import {
   defaultTemplate,
   listDefaultDocumentTemplates,
   mergeDocumentTemplate,
 } from "./templates/documentTemplateDefaults.js";
+import { listTestDocuments } from "./testSupportDocumentList.js";
 
 export type TestDocumentRepository = DocumentRepository & {
   documents: LinkedDocument[];
@@ -29,6 +31,20 @@ export function createTestDocumentRepository(): TestDocumentRepository {
   return {
     documents,
     async create(input: CreateLinkedDocumentInput) {
+      if (
+        input.targetType === "finance_entry" &&
+        input.linkRole === "finance_entry_receipt" &&
+        documents.some(
+          (document) =>
+            document.linkRole === input.linkRole &&
+            document.storeId === input.storeId &&
+            document.targetId === input.targetId &&
+            document.targetType === input.targetType &&
+            document.tenantId === input.tenantId,
+        )
+      ) {
+        throw new DocumentLinkUniquenessConflictError();
+      }
       const now = new Date();
       const document: LinkedDocument = {
         ...input,
@@ -73,25 +89,7 @@ export function createTestDocumentRepository(): TestDocumentRepository {
       return findDocument(documents, input) ?? null;
     },
     async list(input: ListDocumentsInput) {
-      const search = input.search?.trim().toLowerCase();
-      return documents
-        .filter(
-          (document) =>
-            document.storeId === input.storeId &&
-            document.tenantId === input.tenantId &&
-            (!input.kind || document.kind === input.kind) &&
-            (!input.status || document.status === input.status) &&
-            (!input.targetId || document.targetId === input.targetId) &&
-            (!input.targetType || document.targetType === input.targetType) &&
-            (!search ||
-              document.title.toLowerCase().includes(search) ||
-              document.fileName.toLowerCase().includes(search)),
-        )
-        .sort(
-          (left, right) =>
-            right.uploadedAt.getTime() - left.uploadedAt.getTime(),
-        )
-        .slice(0, input.limit ?? 100);
+      return listTestDocuments(documents, input);
     },
     async listByTarget(input: ListLinkedDocumentsInput) {
       return documents.filter(

@@ -16,6 +16,8 @@ import type {
   UpdateInventoryChecklistInput,
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
+  UpdateInventoryCostInput,
+  VoidInventoryCostInput,
 } from "../model/types";
 import type {
   InventoryPlateLookupResponse,
@@ -41,6 +43,16 @@ export type InventoryApi = {
   addCost: (
     unitId: string,
     input: CreateInventoryCostInput,
+  ) => Promise<InventoryListingDetail>;
+  updateCost: (
+    unitId: string,
+    costId: string,
+    input: UpdateInventoryCostInput,
+  ) => Promise<InventoryListingDetail>;
+  voidCost: (
+    unitId: string,
+    costId: string,
+    input: VoidInventoryCostInput,
   ) => Promise<InventoryListingDetail>;
   createChecklist: (
     unitId: string,
@@ -68,6 +80,10 @@ export type InventoryApi = {
   listListingAuditEvents: (
     listingId: string,
   ) => Promise<readonly InventoryAuditEvent[]>;
+  publishListing: (
+    listingId: string,
+    input?: { publicSlug?: string | null; reason?: string | null },
+  ) => Promise<InventoryListingDetail>;
   listChecklists: (unitId: string) => Promise<readonly InventoryChecklist[]>;
   listChecklistOverview: (
     input?: InventoryChecklistOverviewInput,

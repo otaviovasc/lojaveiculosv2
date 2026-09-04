@@ -7,9 +7,12 @@ import type { CrmLead } from "../../../domains/crm/ports/crmRepository.js";
 type ListingSummary = InventoryListingListResponse["items"][number];
 type ListingDetail = InventoryListingDetailResponse;
 
-export function toExternalVehicleListItem(item: ListingSummary) {
+export function toExternalVehicleListItem(
+  item: ListingSummary,
+  publicPriceCents: number | null = null,
+) {
   const listing = item.listing;
-  const units = item.units;
+  const units = publicUnits(item.units);
 
   return {
     availability: {
@@ -29,7 +32,7 @@ export function toExternalVehicleListItem(item: ListingSummary) {
     },
     mileageKm: listing.mileageKm,
     object: "vehicle",
-    priceCents: listing.priceCents,
+    priceCents: publicPriceCents,
     specs: toSpecs(listing),
     status: listing.status,
     title: listing.title,
@@ -42,19 +45,23 @@ export function toExternalVehicleListItem(item: ListingSummary) {
   } as const;
 }
 
-export function toExternalVehicleDetail(detail: ListingDetail) {
+export function toExternalVehicleDetail(
+  detail: ListingDetail,
+  publicPriceCents: number | null = null,
+) {
   const listing = detail.listing;
   const publicMedia = orderedPublicMedia(detail);
 
   return {
     ...toExternalVehicleListItem({
+      leadsCount: 0,
       listing,
       mediaCount: detail.media.length,
       primaryPublicMediaUrl: publicMedia[0]?.url ?? null,
       primaryMediaUrl: publicMedia[0]?.url ?? null,
       primaryUnit: detail.units[0] ?? null,
       publicMediaCount: publicMedia.length,
-      units: detail.units,
+      units: publicUnits(detail.units),
     }),
     media: publicMedia.map((item) => ({
       altText: item.altText,
@@ -63,23 +70,22 @@ export function toExternalVehicleDetail(detail: ListingDetail) {
       order: item.displayOrder,
       url: item.url,
     })),
-    priceHistory: detail.priceHistory.map((entry) => ({
-      changedAt: entry.changedAt,
-      newPriceCents: entry.newPriceCents,
-      oldPriceCents: entry.oldPriceCents,
-      reason: entry.reason,
-    })),
+    priceHistory:
+      publicPriceCents === null
+        ? []
+        : detail.priceHistory.map((entry) => ({
+            changedAt: entry.changedAt,
+            newPriceCents: entry.newPriceCents,
+            oldPriceCents: entry.oldPriceCents,
+          })),
     statusHistory: detail.statusHistory.map((entry) => ({
       changedAt: entry.changedAt,
       fromStatus: entry.fromStatus,
-      reason: entry.reason,
       toStatus: entry.toStatus,
     })),
-    units: detail.units.map((unit) => ({
+    units: publicUnits(detail.units).map((unit) => ({
       colorName: unit.colorName,
-      id: unit.id,
       status: unit.status,
-      stockNumber: unit.stockNumber,
     })),
   } as const;
 }
@@ -95,7 +101,7 @@ export function toExternalLead(lead: CrmLead) {
     id: lead.id,
     lastInteractionAt: lead.lastInteractionAt?.toISOString() ?? null,
     listingId: lead.listingId,
-    metadata: lead.metadata,
+    metadata: publicLeadMetadata(lead.metadata),
     object: "lead",
     source: lead.source,
     status: lead.status,
@@ -139,6 +145,21 @@ function toColors(units: ListingSummary["units"]) {
     counts.set(unit.colorName, (counts.get(unit.colorName) ?? 0) + 1);
   }
   return [...counts.entries()].map(([name, quantity]) => ({ name, quantity }));
+}
+
+function publicUnits(units: ListingSummary["units"]) {
+  return units.filter(
+    (unit) => unit.status === "available" || unit.status === "reserved",
+  );
+}
+
+function publicLeadMetadata(metadata: Record<string, unknown>) {
+  return {
+    ...(typeof metadata.message === "string"
+      ? { message: metadata.message }
+      : {}),
+    ...(typeof metadata.title === "string" ? { title: metadata.title } : {}),
+  };
 }
 
 function toSpecs(listing: ListingSummary["listing"]) {

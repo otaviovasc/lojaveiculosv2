@@ -6,18 +6,25 @@ import {
   HttpContextAuthenticationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { createHttpIntegrationServiceContext } from "../../../infrastructure/http/httpIntegrationServiceContext.js";
-import { BillingWebhookValidationError } from "../../../domains/billing/readModels/billingWebhookErrors.js";
+import { BillingWebhookAuthenticationError } from "../../../domains/billing/readModels/billingWebhookErrors.js";
+import type { BillingWebhookRateLimiter } from "../../../domains/billing/ports/billingWebhookRateLimiter.js";
+import { createDefaultAsaasWebhookRateLimiter } from "../../../infrastructure/billing/asaasWebhookRateLimiter.js";
 import {
   BillingRequestValidationError,
   handleBilling,
 } from "./billing.controller.errors.js";
 import {
-  createBillingProviderCheckoutSchema,
-  syncBillingProviderSubscriptionSchema,
-  updateBillingSelectionSchema,
-  updateEntitlementSchema,
+  createBillingPlanHireSchema,
+  requestBillingPlanQuoteSchema,
 } from "./billing.controller.schemas.js";
-import { billingServices, type BillingServices } from "./billingServices.js";
+import {
+  unavailableBillingServices,
+  type BillingServices,
+} from "./billingServices.js";
+import {
+  parseBoundedAsaasWebhook,
+  rateLimitAsaasWebhook,
+} from "./billingWebhookHttpSecurity.js";
 
 export type BillingContextFactory = (
   context: Context,
@@ -27,13 +34,14 @@ export type CreateBillingFeatureOptions = {
   contextFactory?: BillingContextFactory;
   services?: BillingServices;
   webhookContextFactory?: BillingContextFactory;
+  webhookRateLimiter?: BillingWebhookRateLimiter;
 };
 
 export function createBillingFeature(
   options: CreateBillingFeatureOptions = {},
 ) {
   const feature = new Hono();
-  const services = options.services ?? billingServices;
+  const services = options.services ?? unavailableBillingServices;
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const webhookContextFactory =
@@ -44,6 +52,8 @@ export function createBillingFeature(
         displayName: "Asaas",
         permissions: ["billing.webhook.ingest"],
       }));
+  const webhookRateLimiter =
+    options.webhookRateLimiter ?? createDefaultAsaasWebhookRateLimiter();
 
   feature.get("/overview", async (context) =>
     handleBilling(context, async () => {
@@ -65,106 +75,68 @@ export function createBillingFeature(
     }),
   );
 
-  feature.put("/selection", async (context) =>
+  feature.post("/plan-hires", async (context) =>
     handleBilling(context, async () => {
-      const input = await parseJson(context, updateBillingSelectionSchema);
+      const input = await parseJson(context, createBillingPlanHireSchema);
       const serviceContext = await createProtectedContext(
         context,
         contextFactory,
       );
       return context.json(
-        await services.updateSelection(serviceContext, input),
-      );
-    }),
-  );
-
-  feature.post("/provider/subscription/sync", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(
-        context,
-        syncBillingProviderSubscriptionSchema,
-      );
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json(
-        await services.syncProviderSubscription(serviceContext, {
-          ...(input.billingType ? { billingType: input.billingType } : {}),
-          ...(input.nextDueDate
-            ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-            : {}),
-          ...(typeof input.updatePendingPayments === "boolean"
-            ? { updatePendingPayments: input.updatePendingPayments }
-            : {}),
-        }),
-      );
-    }),
-  );
-
-  feature.post("/provider/checkout", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(
-        context,
-        createBillingProviderCheckoutSchema,
-      );
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      return context.json(
-        await services.createProviderCheckout(serviceContext, {
+        await services.createPlanHire(serviceContext, {
+          idempotencyKey: input.idempotencyKey,
+          planId: input.planId,
+          ...(input.quoteId ? { quoteId: input.quoteId } : {}),
           ...(input.billingTypes ? { billingTypes: input.billingTypes } : {}),
-          ...(input.minutesToExpire
-            ? { minutesToExpire: input.minutesToExpire }
-            : {}),
-          ...(input.nextDueDate
-            ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
-            : {}),
           returnPath: "/billing",
         }),
+        201,
+      );
+    }),
+  );
+
+  feature.get("/plan-hires/:hireId", async (context) =>
+    handleBilling(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.getPlanHire(serviceContext, context.req.param("hireId")),
+      );
+    }),
+  );
+
+  feature.post("/plan-quotes", async (context) =>
+    handleBilling(context, async () => {
+      const input = await parseJson(context, requestBillingPlanQuoteSchema);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.requestPlanQuote(serviceContext, input.planId),
+        201,
       );
     }),
   );
 
   feature.post("/webhooks/asaas", async (context) =>
     handleBilling(context, async () => {
+      const webhookToken = context.req.header("asaas-access-token") ?? null;
+      if (!webhookToken || !services.verifyAsaasWebhookToken(webhookToken)) {
+        throw new BillingWebhookAuthenticationError(
+          "Invalid Asaas webhook token.",
+        );
+      }
+      await rateLimitAsaasWebhook(context, webhookRateLimiter, webhookToken);
       const serviceContext = await webhookContextFactory(context);
-      const payload = await parseWebhookJson(context);
+      const payload = await parseBoundedAsaasWebhook(context);
       return context.json(
         await services.processAsaasWebhook(serviceContext, {
           payload,
           provider: "asaas",
-          webhookToken: context.req.header("asaas-access-token") ?? null,
-        }),
-      );
-    }),
-  );
-
-  feature.patch("/entitlements/:featureKey", async (context) =>
-    handleBilling(context, async () => {
-      const input = await parseJson(context, updateEntitlementSchema);
-      const serviceContext = await createProtectedContext(
-        context,
-        contextFactory,
-      );
-      const featureKey = context.req.param("featureKey");
-      if (featureKey !== input.featureKey) {
-        throw new BillingRequestValidationError("Feature key route mismatch.");
-      }
-
-      return context.json(
-        await services.updateEntitlement(serviceContext, {
-          featureKey: input.featureKey,
-          status: input.status,
-          ...(input.endsAt !== undefined
-            ? { endsAt: parseDateOrNull(input.endsAt) }
-            : {}),
-          ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
-          ...(input.reason !== undefined ? { reason: input.reason } : {}),
-          ...(input.startsAt !== undefined
-            ? { startsAt: parseDateOrNull(input.startsAt) }
-            : {}),
+          webhookToken,
         }),
       );
     }),
@@ -194,20 +166,3 @@ async function parseJson<Schema extends z.ZodType>(
     throw new BillingRequestValidationError("Request body is invalid.");
   }
 }
-
-async function parseWebhookJson(
-  context: Context,
-): Promise<Record<string, unknown>> {
-  try {
-    const input: unknown = await context.req.json();
-    if (input && typeof input === "object" && !Array.isArray(input)) {
-      return input as Record<string, unknown>;
-    }
-  } catch {
-    // Normalized below.
-  }
-  throw new BillingWebhookValidationError("Webhook body is invalid.");
-}
-
-const parseDateOrNull = (value: string | null): Date | null =>
-  value ? new Date(value) : null;

@@ -7,6 +7,8 @@ import {
   externalUpdateLeadSchema,
 } from "./externalApiRuntime.schemas.js";
 import {
+  assertExternalRuntimeEntitlement,
+  bindValidatedExternalApiRequest,
   createIntegrationContext,
   handleRuntime,
   parseJson,
@@ -34,10 +36,11 @@ export function registerExternalLeadRoutes(
         context,
         input.contextFactory,
       );
+      assertExternalRuntimeEntitlement(serviceContext, "crm");
       const limit = query.limit;
       const offset = query.offset ?? (query.page - 1) * limit;
       const leadSearch = query.search ?? query.q ?? query.phone;
-      const leads = await input.crm.listLeads(serviceContext, {
+      const leadPage = await input.crm.listLeads(serviceContext, {
         limit,
         offset,
         ...(query.listingId ? { listingId: query.listingId } : {}),
@@ -46,8 +49,8 @@ export function registerExternalLeadRoutes(
         ...(query.status ? { status: query.status } : {}),
       });
       return context.json({
-        data: leads.map(toExternalLead),
-        pagination: createPagination(query.page, limit, offset, leads.length),
+        data: leadPage.items.map(toExternalLead),
+        pagination: createPagination(query.page, limit, offset, leadPage.total),
       });
     }),
   );
@@ -55,10 +58,12 @@ export function registerExternalLeadRoutes(
     handleRuntime(context, async () => {
       const inputBody = await parseJson(context, externalCreateLeadSchema);
       assertLeadHasBuyerSignal(inputBody);
+      bindValidatedExternalApiRequest(context, inputBody);
       const serviceContext = await createIntegrationContext(
         context,
         input.contextFactory,
       );
+      assertExternalRuntimeEntitlement(serviceContext, "crm");
       const lead = await input.crm.createLead(
         serviceContext,
         cleanCreateLeadInput(inputBody),
@@ -72,6 +77,7 @@ export function registerExternalLeadRoutes(
         context,
         input.contextFactory,
       );
+      assertExternalRuntimeEntitlement(serviceContext, "crm");
       const lead = await input.crm.getLead(serviceContext, {
         leadId: context.req.param("leadId"),
       });
@@ -81,10 +87,12 @@ export function registerExternalLeadRoutes(
   feature.patch("/leads/:leadId", (context) =>
     handleRuntime(context, async () => {
       const inputBody = await parseJson(context, externalUpdateLeadSchema);
+      bindValidatedExternalApiRequest(context, inputBody);
       const serviceContext = await createIntegrationContext(
         context,
         input.contextFactory,
       );
+      assertExternalRuntimeEntitlement(serviceContext, "crm");
       const lead = await input.crm.updateLead(serviceContext, {
         ...cleanUpdateLeadInput(inputBody),
         leadId: context.req.param("leadId"),

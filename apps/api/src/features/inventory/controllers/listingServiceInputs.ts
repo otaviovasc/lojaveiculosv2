@@ -14,6 +14,7 @@ export function cleanAttachInput(
 
   if (input.plate !== undefined) result.plate = input.plate;
   if (input.colorName !== undefined) result.colorName = input.colorName;
+  if (input.renavam !== undefined) result.renavam = input.renavam;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
   if (input.vin !== undefined) result.vin = input.vin;
 
@@ -84,6 +85,9 @@ export function cleanUpdateListingInput(
   };
 
   if (input.catalog !== undefined) result.catalog = input.catalog;
+  if (input.commercialTags !== undefined) {
+    result.commercialTags = input.commercialTags;
+  }
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
   if (input.engineAspiration !== undefined) {
@@ -108,6 +112,7 @@ export function cleanUpdateListingInput(
     result.transmission = input.transmission;
   }
   if (input.trimName !== undefined) result.trimName = input.trimName;
+  if (input.videoUrl !== undefined) result.videoUrl = input.videoUrl;
 
   return result;
 }
@@ -121,6 +126,7 @@ export function cleanUpdateUnitInput(
 
   if (input.colorName !== undefined) result.colorName = input.colorName;
   if (input.plate !== undefined) result.plate = input.plate;
+  if (input.renavam !== undefined) result.renavam = input.renavam;
   if (input.status !== undefined) result.status = input.status;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
   if (input.vin !== undefined) result.vin = input.vin;

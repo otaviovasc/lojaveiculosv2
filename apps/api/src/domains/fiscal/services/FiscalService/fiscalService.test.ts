@@ -204,6 +204,7 @@ describe("FiscalService", () => {
       repeatRequiresReview: true,
       repeatedFromDocumentId: issued.id,
     });
+    expect(draft.metadata).not.toHaveProperty("sourceProviderDocumentId");
     expect(draft.providerDocumentId).toBeNull();
   });
 });
@@ -224,6 +225,6 @@ function createFiscalContext() {
       storeId: "store_1",
       tenantId: "tenant_1",
     }),
-    entitlements: ["nfe"],
+    entitlements: ["fiscal"],
   };
 }

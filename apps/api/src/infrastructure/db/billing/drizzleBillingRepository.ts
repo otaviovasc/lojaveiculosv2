@@ -1,37 +1,33 @@
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   storeEntitlements,
   storeEntitlementEvents,
   stores,
-  subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   BillingOverview,
   BillingRepository,
-  BillingSubscription,
-  StoreEntitlement,
 } from "../../../domains/billing/ports/billingRepository.js";
 import {
   createBillingAuthority,
   createBillingOverview,
 } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import { getTenantOverview } from "./drizzleAgencyBillingOverviewSupport.js";
-import {
-  findPlan,
-  findTenantSubscription,
-  listAddons,
-  listPlans,
-} from "./drizzleBillingCatalogSupport.js";
+import { findActiveBillingCatalogVersion } from "./drizzleActiveBillingCatalog.js";
+import { listAddons, listPlans } from "./drizzleBillingCatalogSupport.js";
 import {
   getFinancialSummary,
   listChargeables,
   listEntitlementEvents,
 } from "./drizzleBillingOverviewSupport.js";
 import { listStoreScopedAllocations } from "./drizzleStoreBillingAllocationSupport.js";
-import { updateStoreSubscriptionSelection } from "./drizzleBillingSelection.js";
 import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
+import {
+  findSubscription,
+  listEntitlements,
+} from "./drizzleBillingRepositoryReads.js";
 
 export type DrizzleBillingClient = PostgresJsDatabase<typeof schema>;
 
@@ -64,13 +60,6 @@ export function createDrizzleBillingRepository(
         )
         .limit(1);
       return Boolean(store);
-    },
-    async updateSubscriptionSelection(input) {
-      return db.transaction(async (tx) => {
-        const txDb = tx as DrizzleBillingClient;
-        await updateStoreSubscriptionSelection(txDb, input);
-        return getOverview(txDb, input);
-      });
     },
     async updateStoreEntitlement(input) {
       return db.transaction(async (tx) => {
@@ -131,10 +120,11 @@ async function getOverview(
     tenantId: string;
   },
 ): Promise<BillingOverview> {
+  const catalogVersion = await findActiveBillingCatalogVersion(db);
   const [addons, billingPlans, entitlements, subscription, events] =
     await Promise.all([
-      listAddons(db),
-      listPlans(db),
+      listAddons(db, catalogVersion),
+      listPlans(db, catalogVersion),
       listEntitlements(db, input),
       findSubscription(db, input),
       listEntitlementEvents(db, input),
@@ -165,65 +155,4 @@ async function getOverview(
     subscription,
     tenantId: input.tenantId as never,
   });
-}
-
-async function listEntitlements(
-  db: DrizzleBillingClient,
-  input: { storeId: string; tenantId: string },
-): Promise<StoreEntitlement[]> {
-  const rows = await db
-    .select()
-    .from(storeEntitlements)
-    .where(
-      and(
-        eq(storeEntitlements.storeId, input.storeId),
-        eq(storeEntitlements.tenantId, input.tenantId),
-      ),
-    )
-    .limit(100);
-
-  return rows.map((row) => ({
-    endsAt: row.endsAt,
-    featureKey: row.featureKey as never,
-    metadata: toRecord(row.metadata),
-    source: row.source,
-    startsAt: row.startsAt,
-    status: row.status,
-  }));
-}
-
-async function findSubscription(
-  db: DrizzleBillingClient,
-  input: { storeId: string; tenantId: string },
-): Promise<BillingSubscription | null> {
-  const subscription = await findTenantSubscription(db, input);
-  if (!subscription) return null;
-
-  const [item] = await db
-    .select()
-    .from(subscriptionItems)
-    .where(
-      and(
-        eq(subscriptionItems.subscriptionId, subscription.id),
-        eq(subscriptionItems.itemType, "plan"),
-        or(
-          eq(subscriptionItems.storeId, input.storeId),
-          isNull(subscriptionItems.storeId),
-        ),
-      ),
-    )
-    .orderBy(desc(subscriptionItems.createdAt))
-    .limit(1);
-  const plan = item?.planId ? await findPlan(db, item.planId) : null;
-
-  return {
-    ...subscription,
-    plan,
-  };
-}
-
-function toRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }

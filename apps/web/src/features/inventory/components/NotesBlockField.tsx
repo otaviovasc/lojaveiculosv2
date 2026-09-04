@@ -35,6 +35,7 @@ export function NotesBlockField({
           </span>
         </div>
         <button
+          aria-label={isEditing ? `Salvar ${label}` : `Editar ${label}`}
           type="button"
           onClick={(e) => {
             e.stopPropagation();
@@ -46,10 +47,10 @@ export function NotesBlockField({
             }
           }}
           className={
-            "size-6 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer " +
+            "size-9 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer " +
             (isEditing
               ? "bg-accent text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground"
-              : "text-muted hover:text-accent-soft-foreground bg-transparent hover:bg-accent-soft")
+              : "text-muted hover:text-accent-strong bg-transparent hover:bg-accent-soft")
           }
           title={isEditing ? "Salvar" : "Editar"}
         >

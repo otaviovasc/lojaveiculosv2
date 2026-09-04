@@ -3,38 +3,51 @@ import {
   CalendarClock,
   PackageCheck,
   WalletCards,
+  Building2,
+  History,
 } from "lucide-react";
 import type { BillingOverview, BillingStoreAllocation } from "./types";
 import { BillingSummaryCard as SummaryCard } from "./BillingSummaryCard";
 import { featureLabels, isEnabled, money, statusLabels } from "./billingFormat";
-
-export { BillingPlanComposition } from "./BillingPlanComposition";
+import { Badge } from "../../components/ui/badge";
 
 export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
-  const activePackages = overview.entitlementMatrix.filter(
-    (row) => !row.includedInPlan && isEnabled(row.status),
+  const includedCapabilities = overview.entitlementMatrix.filter(
+    (row) => row.includedInPlan && isEnabled(row.status),
   ).length;
 
   return (
     <section className="billing-summary-grid">
       <SummaryCard
-        icon={<BadgeCheck aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--accent"
+        decorativeIcon
+        icon={<BadgeCheck aria-hidden="true" className="size-7" />}
         label="Plano atual"
+        showIcon={false}
         value={overview.subscription?.plan?.name ?? "Sem plano"}
       />
       <SummaryCard
-        icon={<WalletCards aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--success"
+        decorativeIcon
+        icon={<WalletCards aria-hidden="true" className="size-7" />}
         label="Investimento mensal"
+        showIcon={false}
         value={money(overview.financialSummary.monthlyRecurringCents)}
       />
       <SummaryCard
-        icon={<PackageCheck aria-hidden="true" className="size-5" />}
-        label="Pacotes adicionais"
-        value={`${activePackages} ativo${activePackages === 1 ? "" : "s"}`}
+        className="billing-kpi-card billing-kpi-card--info"
+        decorativeIcon
+        icon={<PackageCheck aria-hidden="true" className="size-7" />}
+        label="Recursos do plano"
+        showIcon={false}
+        value={`${includedCapabilities} ativo${includedCapabilities === 1 ? "" : "s"}`}
       />
       <SummaryCard
-        icon={<CalendarClock aria-hidden="true" className="size-5" />}
+        className="billing-kpi-card billing-kpi-card--warning"
+        decorativeIcon
+        icon={<CalendarClock aria-hidden="true" className="size-7" />}
         label="Próxima renovação"
+        showIcon={false}
         value={periodEndLabel(overview.subscription?.currentPeriodEnd)}
       />
     </section>
@@ -57,9 +70,12 @@ export function BillingAllocationTable({
   return (
     <section className="billing-panel">
       <header className="billing-panel-header">
-        <div>
-          <h3>Alocação por loja</h3>
-          <p>Composição do plano e investimento mensal de cada operação.</p>
+        <div className="flex items-center gap-2">
+          <Building2 className="size-5 text-accent-strong" />
+          <div>
+            <h3>Alocação por loja</h3>
+            <p>Composição do plano e investimento mensal de cada operação.</p>
+          </div>
         </div>
       </header>
       <div
@@ -73,27 +89,52 @@ export function BillingAllocationTable({
               <th>Loja</th>
               <th>Plano</th>
               <th>Status</th>
-              <th>Pacotes</th>
               <th>Mensal</th>
             </tr>
           </thead>
           <tbody>
-            {allocations.map((allocation) => (
-              <tr key={allocation.storeId}>
-                <td>{allocation.storeName}</td>
-                <td>{allocation.planName ?? "Sem plano"}</td>
-                <td>
-                  {subscriptionStatusLabel(allocation.subscriptionStatus)}
+            {allocations.length ? (
+              allocations.map((allocation) => (
+                <tr key={allocation.storeId}>
+                  <td className="font-bold text-foreground">
+                    {allocation.storeName}
+                  </td>
+                  <td>{allocation.planName ?? "Sem plano"}</td>
+                  <td>
+                    <Badge
+                      variant={statusBadgeVariant(
+                        allocation.subscriptionStatus,
+                      )}
+                    >
+                      {subscriptionStatusLabel(allocation.subscriptionStatus)}
+                    </Badge>
+                  </td>
+                  <td className="font-black text-accent-strong">
+                    {money(allocation.monthlyAmountCents)}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-muted">
+                  Nenhuma loja alocada individualmente neste contrato.
                 </td>
-                <td>{allocation.addonCount}</td>
-                <td>{money(allocation.monthlyAmountCents)}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
     </section>
   );
+}
+
+function statusBadgeVariant(
+  status: BillingStoreAllocation["subscriptionStatus"],
+): "success" | "secondary" | "destructive" | "warning" | "default" {
+  if (status === "active") return "success";
+  if (status === "trialing") return "warning";
+  if (status === "past_due") return "destructive";
+  return "secondary";
 }
 
 function subscriptionStatusLabel(
@@ -104,7 +145,7 @@ function subscriptionStatusLabel(
     cancelled: "Encerrada",
     expired: "Expirada",
     past_due: "Pagamento pendente",
-    trialing: "Em teste",
+    trialing: "Contrato legado",
   } as const;
   return status ? labels[status] : "Sem assinatura";
 }
@@ -117,29 +158,61 @@ export function BillingEventList({
   return (
     <section className="billing-panel">
       <header className="billing-panel-header">
-        <div>
-          <h3>Histórico de recursos</h3>
-          <p>Mudanças recentes feitas no faturamento.</p>
+        <div className="flex items-center gap-2">
+          <History className="size-5 text-accent-strong" />
+          <div>
+            <h3>Histórico de recursos</h3>
+            <p>Mudanças recentes feitas no faturamento e acessos.</p>
+          </div>
         </div>
       </header>
       <div className="billing-event-list">
         {events.length ? (
           events.map((event) => (
             <article className="billing-event" key={event.id}>
-              <strong>{featureLabels[event.featureKey]}</strong>
-              <span>
-                {event.previousStatus
-                  ? statusLabels[event.previousStatus]
-                  : "Novo"}{" "}
-                {"->"} {statusLabels[event.nextStatus]}
-              </span>
-              <p>{event.reason ?? event.source}</p>
+              <div className="billing-event-header">
+                <strong>{featureLabels[event.featureKey]}</strong>
+                <span className="billing-event-date">
+                  {formatDate(event.createdAt)}
+                </span>
+              </div>
+              <div className="billing-event-transition">
+                <Badge variant="outline">
+                  {event.previousStatus
+                    ? statusLabels[event.previousStatus]
+                    : "Novo"}
+                </Badge>
+                <span className="text-muted text-xs">→</span>
+                <Badge variant="default">
+                  {statusLabels[event.nextStatus]}
+                </Badge>
+              </div>
+              {event.reason || event.source ? (
+                <p className="billing-event-reason">
+                  {event.reason ?? event.source}
+                </p>
+              ) : null}
             </article>
           ))
         ) : (
-          <p className="billing-muted">Nenhuma alteração registrada.</p>
+          <p className="billing-muted">
+            Nenhuma alteração registrada até o momento.
+          </p>
         )}
       </div>
     </section>
   );
+}
+
+function formatDate(isoString: string) {
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(isoString));
+  } catch {
+    return isoString;
+  }
 }

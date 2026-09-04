@@ -73,8 +73,10 @@ function createSettings(
     },
     profile: {
       addressCity: "Sao Paulo",
+      addressDistrict: null,
       addressLine1: "Av. Paulista",
       addressLine2: null,
+      addressNumber: null,
       addressState: "SP",
       addressZipCode: "01310-930",
       businessHours: { text: "Segunda a Sexta, 9h as 18h" },

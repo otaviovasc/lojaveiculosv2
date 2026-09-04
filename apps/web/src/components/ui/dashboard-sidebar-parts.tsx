@@ -1,4 +1,5 @@
 import {
+  Check,
   ChevronDown,
   Moon,
   PanelLeftClose,
@@ -6,8 +7,8 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { useState } from "react";
-import type { ComponentType } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { AppTheme } from "../../app/theme";
 import { Logo } from "./logo";
 
@@ -20,6 +21,12 @@ export type DashboardSidebarItem<Id extends string = string> = {
   group?: string;
 };
 
+export type SidebarWorkspaceOption = {
+  id: string;
+  meta?: string;
+  name: string;
+};
+
 export function SidebarWorkspace({
   collapsed,
   iconUrl,
@@ -27,7 +34,10 @@ export function SidebarWorkspace({
   meta,
   name,
   onClose,
+  onWorkspaceSelect,
   theme,
+  workspaceId,
+  workspaces,
 }: {
   collapsed: boolean;
   iconUrl?: string | null | undefined;
@@ -35,20 +45,142 @@ export function SidebarWorkspace({
   meta: string;
   name: string;
   onClose: (() => void) | undefined;
+  onWorkspaceSelect?: ((workspaceId: string) => void) | undefined;
   theme: AppTheme;
+  workspaceId?: string | undefined;
+  workspaces?: readonly SidebarWorkspaceOption[] | undefined;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeOptionIndex, setActiveOptionIndex] = useState(0);
+  const pickerId = useId();
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const compactLogoUrl = iconUrl ?? logoUrl;
+  const availableWorkspaces =
+    workspaces?.length && workspaceId
+      ? workspaces
+      : [{ id: workspaceId ?? "current", meta, name }];
+  const canSwitch = Boolean(
+    availableWorkspaces.length > 1 && onWorkspaceSelect,
+  );
+
+  useEffect(() => {
+    if (isOpen) optionRefs.current[activeOptionIndex]?.focus();
+  }, [activeOptionIndex, isOpen]);
+
+  const closePicker = (restoreTrigger = false) => {
+    setIsOpen(false);
+    if (restoreTrigger) triggerRef.current?.focus();
+  };
+
+  const togglePicker = () => {
+    if (isOpen) {
+      closePicker();
+      return;
+    }
+    const selectedIndex = availableWorkspaces.findIndex(
+      (workspace) => workspace.id === workspaceId,
+    );
+    setActiveOptionIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setIsOpen(true);
+  };
+
+  const focusOption = (index: number) => {
+    const normalized =
+      (index + availableWorkspaces.length) % availableWorkspaces.length;
+    setActiveOptionIndex(normalized);
+    optionRefs.current[normalized]?.focus();
+  };
+
+  const onPickerKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowDown") nextIndex = activeOptionIndex + 1;
+    if (event.key === "ArrowUp") nextIndex = activeOptionIndex - 1;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = availableWorkspaces.length - 1;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closePicker(true);
+      return;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    focusOption(nextIndex);
+  };
+
+  const selectWorkspace = (nextWorkspaceId: string) => {
+    closePicker();
+    if (nextWorkspaceId !== workspaceId) onWorkspaceSelect?.(nextWorkspaceId);
+  };
+
+  const pickerMenu = isOpen ? (
+    <>
+      <button
+        aria-hidden="true"
+        className="workspace-sidebar__picker-backdrop"
+        onClick={() => closePicker()}
+        tabIndex={-1}
+        type="button"
+      />
+      <div
+        aria-label="Lojas disponíveis"
+        className="workspace-sidebar__picker-menu"
+        id={pickerId}
+        onKeyDown={onPickerKeyDown}
+        role="menu"
+      >
+        {availableWorkspaces.map((workspace, index) => {
+          const active = workspace.id === workspaceId;
+          return (
+            <button
+              aria-checked={active}
+              className={`workspace-sidebar__picker-option${active ? " is-active" : ""}`}
+              key={workspace.id}
+              onClick={() => selectWorkspace(workspace.id)}
+              ref={(node) => {
+                optionRefs.current[index] = node;
+              }}
+              role="menuitemradio"
+              tabIndex={index === activeOptionIndex ? 0 : -1}
+              type="button"
+            >
+              <span className="workspace-sidebar__picker-option-copy">
+                <strong>{workspace.name}</strong>
+                {workspace.meta ? <span>{workspace.meta}</span> : null}
+              </span>
+              {active ? <Check aria-hidden="true" /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  ) : null;
 
   if (collapsed) {
     return (
-      <div className="workspace-sidebar__brand workspace-sidebar__brand--compact">
-        <Logo
-          alt={name}
-          className="workspace-sidebar__compact-logo"
-          src={compactLogoUrl}
-          variant={theme === "dark" ? "icon-white" : "icon"}
-        />
+      <div
+        className={`workspace-sidebar__brand workspace-sidebar__brand--compact${isOpen ? " is-store-picker-open" : ""}`}
+      >
+        <button
+          aria-controls={canSwitch ? pickerId : undefined}
+          aria-expanded={canSwitch ? isOpen : undefined}
+          aria-haspopup={canSwitch ? "menu" : undefined}
+          aria-label={canSwitch ? `Trocar loja. Atual: ${name}` : name}
+          className="workspace-sidebar__compact-workspace-trigger"
+          disabled={!canSwitch}
+          onClick={togglePicker}
+          ref={triggerRef}
+          type="button"
+        >
+          <Logo
+            alt=""
+            className="workspace-sidebar__compact-logo"
+            src={compactLogoUrl}
+            variant={theme === "dark" ? "icon-white" : "icon"}
+          />
+        </button>
+        {pickerMenu}
       </div>
     );
   }
@@ -69,9 +201,13 @@ export function SidebarWorkspace({
       <div className="workspace-sidebar__store-row">
         <div className="workspace-sidebar__store-picker">
           <button
+            aria-controls={canSwitch ? pickerId : undefined}
             aria-expanded={isOpen}
+            aria-haspopup={canSwitch ? "menu" : undefined}
             className="workspace-sidebar__store-trigger"
-            onClick={() => setIsOpen((current) => !current)}
+            disabled={!canSwitch}
+            onClick={togglePicker}
+            ref={triggerRef}
             type="button"
           >
             <span className="workspace-sidebar__store-identity">
@@ -91,40 +227,15 @@ export function SidebarWorkspace({
                 </span>
               </span>
             </span>
-            <ChevronDown
-              aria-hidden="true"
-              className={isOpen ? "is-open" : undefined}
-            />
+            {canSwitch ? (
+              <ChevronDown
+                aria-hidden="true"
+                className={isOpen ? "is-open" : undefined}
+              />
+            ) : null}
           </button>
 
-          {isOpen ? (
-            <>
-              <button
-                aria-label="Fechar seletor de loja"
-                className="workspace-sidebar__picker-backdrop"
-                onClick={() => setIsOpen(false)}
-                type="button"
-              />
-              <div className="workspace-sidebar__picker-menu">
-                <button
-                  className="workspace-sidebar__picker-option is-active"
-                  onClick={() => setIsOpen(false)}
-                  type="button"
-                >
-                  {name}
-                </button>
-                <div className="workspace-sidebar__picker-divider" />
-                <button
-                  className="workspace-sidebar__picker-option"
-                  onClick={() => setIsOpen(false)}
-                  type="button"
-                >
-                  <span aria-hidden="true">+</span>
-                  Criar loja
-                </button>
-              </div>
-            </>
-          ) : null}
+          {pickerMenu}
         </div>
 
         {onClose ? (
@@ -206,7 +317,7 @@ export function SidebarFooterActions({
             : "Alternar para tema escuro"
         }
         aria-pressed={theme === "dark"}
-        className="workspace-sidebar__footer-button"
+        className={`workspace-sidebar__footer-button${isCompact ? " is-compact" : ""}`}
         onClick={onThemeToggle}
         title={theme === "dark" ? "Tema claro" : "Tema escuro"}
         type="button"
@@ -224,7 +335,7 @@ export function SidebarFooterActions({
       {onCollapsedChange && (
         <button
           aria-label={isCompact ? "Expandir sidebar" : "Recolher sidebar"}
-          className="workspace-sidebar__collapse-button"
+          className={`workspace-sidebar__collapse-button${isCompact ? " is-compact" : ""}`}
           onClick={() => onCollapsedChange(!isCompact)}
           title={isCompact ? "Expandir" : "Recolher"}
           type="button"

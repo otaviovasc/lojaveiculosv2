@@ -1,0 +1,131 @@
+import { describe, expect, it } from "vitest";
+import {
+  conditionResultRenderKey,
+  formatBankName,
+  formatCredereReason,
+  getCredereReasonGuidance,
+  groupRepeatedRefusals,
+  simulationSnapshotsEqual,
+  simulationStatusLabel,
+} from "./simulationPresentation";
+import type { CredereSimulation, CredereSimulationCondition } from "./types";
+
+describe("Credere simulation presentation", () => {
+  it("groups repeated bank refusals without losing affected terms", () => {
+    const grouped = groupRepeatedRefusals([
+      condition({ installments: 48 }),
+      condition({ installments: 24 }),
+      condition({ installments: 48 }),
+    ]);
+
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0]).toMatchObject({
+      affectedInstallments: [24, 48],
+      occurrences: 3,
+    });
+  });
+
+  it("explains the provider reasons that need operator action or patience", () => {
+    expect(
+      getCredereReasonGuidance("Pré-análise em andamento para este CPF"),
+    ).toMatchObject({ title: "Pré-análise já em andamento" });
+    expect(
+      getCredereReasonGuidance("Código Molicar inválido para o ano"),
+    ).toMatchObject({ title: "Veículo não validado na base Molicar" });
+  });
+
+  it("does not expose unknown provider enums as product copy", () => {
+    expect(simulationStatusLabel("provider_new_state")).toBe(
+      "Status informado pelo provedor",
+    );
+  });
+
+  it("builds semantic render keys that survive condition reordering", () => {
+    const bv24 = condition({ installments: 24, totalAmountCents: 72_000_00 });
+    const bv48 = condition({ installments: 48, totalAmountCents: 81_000_00 });
+
+    expect(conditionResultRenderKey([bv24, bv48], 0)).toBe(
+      conditionResultRenderKey([bv48, bv24], 1),
+    );
+    expect(conditionResultRenderKey([bv24, bv48], 1)).toBe(
+      conditionResultRenderKey([bv48, bv24], 0),
+    );
+  });
+
+  it("disambiguates genuinely duplicated condition keys by occurrence", () => {
+    const duplicate = condition({ installments: 48 });
+    const conditions = [duplicate, { ...duplicate }];
+
+    expect(conditionResultRenderKey(conditions, 0)).not.toBe(
+      conditionResultRenderKey(conditions, 1),
+    );
+  });
+
+  it("recognizes unchanged polling snapshots without hiding real changes", () => {
+    const previous = simulation({
+      conditions: [condition({ installments: 48 })],
+    });
+
+    expect(simulationSnapshotsEqual(previous, structuredClone(previous))).toBe(
+      true,
+    );
+  });
+
+  it("translates bank codes and acronyms to official friendly names", () => {
+    expect(formatBankName("Pan")).toBe("Banco PAN");
+    expect(formatBankName("BV")).toBe("BV Financeira");
+    expect(formatBankName("santander")).toBe("Santander Financiamentos");
+    expect(formatBankName("itau")).toBe("Itaú Auto");
+    expect(formatBankName("bradesco")).toBe("Bradesco Financiamentos");
+    expect(formatBankName("safra")).toBe("Banco Safra");
+  });
+
+  it("translates technical and snake_case refusal codes to clear Portuguese", () => {
+    expect(formatCredereReason("credit_condition_not_found")).toBe(
+      "Condição de crédito não encontrada para este perfil",
+    );
+    expect(formatCredereReason("no_margin_available")).toBe(
+      "Sem margem de crédito disponível",
+    );
+    expect(formatCredereReason("score_insufficient")).toBe(
+      "Score insuficiente para a política do banco",
+    );
+  });
+});
+
+function condition(
+  overrides: Partial<CredereSimulationCondition>,
+): CredereSimulationCondition {
+  return {
+    bankCode: "655",
+    bankName: "Banco BV",
+    downPaymentCents: null,
+    firstInstallmentCents: null,
+    installments: 36,
+    preApprovalStatus: null,
+    reason: "Pré-análise em andamento",
+    reasonIdentifier: null,
+    status: "rejected",
+    summary: null,
+    totalAmountCents: null,
+    ...overrides,
+  };
+}
+
+function simulation(overrides: Partial<CredereSimulation>): CredereSimulation {
+  return {
+    conditions: [],
+    createdAt: "2026-08-11T12:00:00.000Z",
+    id: "simulation_1",
+    leadId: null,
+    leadName: null,
+    listingId: null,
+    providerRequestId: null,
+    reason: null,
+    status: "processing",
+    success: null,
+    unitId: null,
+    vehicleTitle: null,
+    ...overrides,
+  };
+}

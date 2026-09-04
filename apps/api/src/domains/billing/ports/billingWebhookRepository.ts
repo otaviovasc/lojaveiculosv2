@@ -3,7 +3,12 @@ import type { BillingSubscription } from "./billingRepository.js";
 
 export type BillingProvider = "asaas";
 export type BillingProviderEventStatus =
-  "failed" | "ignored" | "processed" | "received";
+  | "failed"
+  | "ignored"
+  | "pending_reconciliation"
+  | "processed"
+  | "processing"
+  | "received";
 
 export type BillingProviderWebhookEvent = {
   createdAt: Date;
@@ -12,6 +17,9 @@ export type BillingProviderWebhookEvent = {
   eventType: string;
   id: string;
   payload: Record<string, unknown>;
+  processingAttempts: number;
+  processingStartedAt: Date | null;
+  processingToken: string | null;
   processedAt: Date | null;
   provider: BillingProvider;
   providerEventId: string;
@@ -45,17 +53,25 @@ export type UpsertBillingProviderPaymentInput = {
   paidAt: Date | null;
   provider: BillingProvider;
   providerCustomerId: string | null;
+  providerEvidenceVerified?: boolean;
+  providerCheckoutId?: string | null;
   providerPaymentId: string;
+  providerEventId: string;
+  providerEventOccurredAt?: Date | null;
   providerSubscriptionId: string | null;
   raw: Record<string, unknown>;
+  requestId?: string;
   status: BillingPaymentWebhookStatus;
 };
 
 export type SyncBillingProviderSubscriptionInput = {
   currentPeriodEnd: Date | null;
+  eventOccurredAt?: Date | null;
+  externalReference: string | null;
   provider: BillingProvider;
+  providerEventId?: string;
   providerSubscriptionId: string;
-  status: BillingSubscription["status"];
+  status: BillingSubscription["status"] | "unknown";
 };
 
 export type SyncBillingProviderCheckoutInput = {
@@ -70,7 +86,7 @@ export type SyncBillingProviderCheckoutInput = {
 
 export type BillingProviderSyncResult = {
   reason?: string;
-  status: "ignored" | "synced";
+  status: "ignored" | "pending_reconciliation" | "synced";
   storeId: StoreId | null;
   tenantId: TenantId | null;
 };
@@ -78,12 +94,19 @@ export type BillingProviderSyncResult = {
 export type UpdateBillingProviderWebhookEventStatusInput = {
   errorMessage?: string | null;
   eventId: string;
-  status: Exclude<BillingProviderEventStatus, "received">;
+  processingToken?: string;
+  status: Exclude<BillingProviderEventStatus, "processing" | "received">;
   storeId?: StoreId | null;
   tenantId?: TenantId | null;
 };
 
 export type BillingWebhookRepository = {
+  claimForProcessing: (input: {
+    eventId: string;
+    processingStartedAt: Date;
+    processingToken: string;
+    staleBefore: Date;
+  }) => Promise<BillingProviderWebhookEvent | null>;
   recordReceived: (
     input: RecordBillingProviderWebhookEventInput,
   ) => Promise<RecordBillingProviderWebhookEventResult>;

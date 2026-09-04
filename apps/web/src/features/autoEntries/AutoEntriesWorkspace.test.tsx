@@ -29,6 +29,7 @@ describe("AutoEntriesWorkspace", () => {
   it("shows the returned standard commission without inventing a numeric default", async () => {
     const rule = standardCommissionRule();
     const api = autoEntryApi([rule]);
+    const user = userEvent.setup();
 
     render(
       <AutoEntriesWorkspace
@@ -44,26 +45,16 @@ describe("AutoEntriesWorkspace", () => {
         name: "Lançamentos automáticos",
       }),
     ).toBeVisible();
-    expect(
-      await screen.findByRole("heading", {
-        name: "Cobertura da automação",
-      }),
-    ).toBeVisible();
-    expect(screen.getByText("Receita da venda preservada")).toBeVisible();
-    const standardCard = screen
-      .getByRole("heading", { name: "Comissão padrão da venda" })
-      .closest("section");
-    expect(standardCard).not.toBeNull();
-    expect(
-      within(standardCard as HTMLElement).getByText(
-        "100% sobre a comissão informada na venda",
-      ),
-    ).toBeVisible();
     expect(screen.getByText("Exceção por vendedor")).toBeVisible();
     const overview = screen
       .getByRole("heading", { name: "Visão geral das regras" })
       .closest("section");
     expect(overview).not.toBeNull();
+    await user.click(
+      within(overview as HTMLElement).getByRole("button", {
+        name: "Expandir visão geral das regras",
+      }),
+    );
     expect(
       within(overview as HTMLElement).getByText("Comissão padrão da venda"),
     ).toBeVisible();
@@ -165,7 +156,7 @@ describe("AutoEntriesWorkspace", () => {
     expect(screen.getAllByRole("dialog")).toHaveLength(2);
   });
 
-  it("does not show readiness data while rules are loading or unavailable", async () => {
+  it("shows error state when rules fail to load", async () => {
     let rejectLoad: ((reason?: unknown) => void) | undefined;
     const api = autoEntryApi([]);
     vi.mocked(api.listRules).mockImplementation(
@@ -179,18 +170,41 @@ describe("AutoEntriesWorkspace", () => {
       <AutoEntriesWorkspace api={api} grantedPermissions={["finance.read"]} />,
     );
 
-    expect(
-      screen.queryByRole("heading", { name: "Cobertura da automação" }),
-    ).not.toBeInTheDocument();
     rejectLoad?.(new Error("offline"));
     expect(
       await screen.findByRole("heading", {
         name: "Lançamentos indisponíveis",
       }),
     ).toBeVisible();
-    expect(
-      screen.queryByRole("heading", { name: "Cobertura da automação" }),
-    ).not.toBeInTheDocument();
+  });
+
+  it("shows a toast message when a rule is toggled", async () => {
+    const activeRule = autoEntryRule();
+    const pausedRule = { ...activeRule, status: "inactive" as const };
+    const api = autoEntryApi([activeRule]);
+    vi.mocked(api.updateRule).mockResolvedValue(pausedRule);
+    const user = userEvent.setup();
+
+    render(
+      <AutoEntriesWorkspace
+        api={api}
+        grantedPermissions={["finance.read", "finance.auto_entries.manage"]}
+        sellerOptions={[]}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole("tab", { name: "Personalizadas" }),
+    );
+
+    await user.click(
+      await screen.findByRole("switch", {
+        name: "Ativar regra Comissão padrão",
+      }),
+    );
+
+    const toast = await screen.findByRole("status");
+    expect(toast).toHaveTextContent("Regra pausada.");
   });
 });
 

@@ -1,4 +1,4 @@
-import { and, desc, eq, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { leads } from "@lojaveiculosv2/db";
 import { whatsappPhoneLookupCandidates } from "../../../domains/crm/whatsapp/whatsappPhone.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
@@ -20,6 +20,7 @@ export async function findLeadByPhoneInDatabase(
         eq(leads.storeId, input.storeId),
         eq(leads.tenantId, input.tenantId),
         eq(leads.isDeleted, false),
+        notInArray(leads.status, ["won", "lost", "archived"]),
         or(...phonePredicates(input.buyerPhone)),
       ),
     )

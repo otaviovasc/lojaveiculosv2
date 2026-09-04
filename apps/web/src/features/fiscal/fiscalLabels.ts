@@ -1,3 +1,4 @@
+import type { FeatureStatusTone } from "../../components/ui/FeatureStates";
 import type { FiscalDocument } from "./types";
 
 const documentTypeLabels: Record<string, string> = {
@@ -35,6 +36,23 @@ export function getFiscalDocumentTypeLabel(documentType: string) {
 
 export function getFiscalDocumentStatusLabel(status: FiscalDocument["status"]) {
   return documentStatusLabels[status];
+}
+
+export function getFiscalDocumentKindLabel(
+  documentKind: FiscalDocument["documentKind"],
+) {
+  return documentKind === "nfse" ? "NFS-e" : "NF-e";
+}
+
+export function getFiscalDocumentStatusTone(
+  status: FiscalDocument["status"],
+): FeatureStatusTone {
+  if (status === "authorized" || status === "issued") return "success";
+  if (status === "error" || status === "failed" || status === "rejected") {
+    return "danger";
+  }
+  if (status === "cancelled") return "neutral";
+  return "warning";
 }
 
 export function getFiscalConfigurationLabels(keys: readonly string[]) {

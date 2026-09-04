@@ -8,7 +8,6 @@ import {
 } from "./createVehicleMedia.js";
 import { getVehicleListingDetail } from "./getVehicleListingDetail.js";
 import { getVehicleListing } from "./getVehicleListing.js";
-import { listVehicleListings } from "./listVehicleListings.js";
 import { requestVehicleMediaUpload } from "./requestVehicleMediaUpload.js";
 import { updateVehicleDescription } from "./updateVehicleDescription.js";
 import { updateVehiclePrice } from "./updateVehiclePrice.js";
@@ -98,6 +97,23 @@ describe("VehicleService", () => {
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "vehicle_listing.status.change" }),
     );
+  });
+
+  it("stores optional unit identifiers as null when the form sends blanks", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = createInMemoryVehiclePorts([createListing()]);
+
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "   ", vin: "   " },
+      ports,
+    );
+
+    expect(unit).toMatchObject({
+      plate: "ABC1D23",
+      stockNumber: null,
+      vin: null,
+    });
   });
 
   it("requests scoped media uploads and stores confirmed media records", async () => {
@@ -204,26 +220,6 @@ describe("VehicleService", () => {
     expect(detail.media).toHaveLength(1);
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "vehicle_listing.detail.read" }),
-    );
-  });
-
-  it("lists vehicle inventory with search and scoped audit", async () => {
-    const context = createContext(["inventory.read"]);
-    const ports = createInMemoryVehiclePorts([
-      createListing({ id: "listing_1", title: "Fiat Toro" }),
-      createListing({ id: "listing_2", title: "Honda Civic" }),
-    ]);
-
-    const result = await listVehicleListings(
-      context,
-      { search: "toro" },
-      ports,
-    );
-
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.listing.id).toBe("listing_1");
-    expect(context.audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "vehicle_listing.list.read" }),
     );
   });
 });

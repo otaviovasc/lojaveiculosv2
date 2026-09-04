@@ -79,6 +79,11 @@ export function PageBuilderRenderer({
   const pageFont = page.fontFamily ?? config.fonts.body;
   const headingFont = config.fonts.heading;
   const blockFonts = collectPageBuilderFonts(page.components);
+  const pageVariant = page.components.some(
+    (component) => component.props.pageVariant === "vehicle-vitrine",
+  )
+    ? "vehicle-vitrine"
+    : undefined;
   const pageStyle: CSSProperties & Record<`--${string}`, string> = {
     ...createPageBackgroundStyle(pageBackground, background),
     "--color-accent": accent,
@@ -127,6 +132,7 @@ export function PageBuilderRenderer({
       <StorefrontFontLinks fonts={[pageFont, headingFont, ...blockFonts]} />
       <main
         className="public-light-surface page-builder-renderer min-h-screen text-app-text"
+        data-page-variant={pageVariant}
         style={pageStyle}
       >
         <PageBackgroundLayer background={pageBackground} />
@@ -194,8 +200,15 @@ function BuilderBlockFrame({
   }, [component.id, onSelect, preview]);
 
   if (!preview || !onSelect) {
-    if (!style) return children;
-    return <div style={style}>{children}</div>;
+    return (
+      <div
+        className={style ? undefined : "contents"}
+        data-page-builder-block={component.type}
+        style={style ?? undefined}
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -209,6 +222,7 @@ function BuilderBlockFrame({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       )}
       data-builder-block-id={component.id}
+      data-page-builder-block={component.type}
       data-selected={selected ? "true" : undefined}
       onClickCapture={(event) => {
         event.preventDefault();

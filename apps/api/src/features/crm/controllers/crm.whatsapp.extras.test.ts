@@ -1,10 +1,11 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import type { CrmWhatsappSendTextInput } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingSendTextInput } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -14,17 +15,20 @@ describe("CRM WhatsApp extras", () => {
   it("lists quick messages for the composer", async () => {
     const app = createTestApp();
 
-    const response = await app.request("/api/v1/crm/whatsapp/quick-messages");
+    const response = await app.request("/api/v1/crm/quick-messages");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual([]);
   });
 
   it("sends location through the audited text fallback", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "location");
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "location");
     const sendText = vi.fn(
-      async (_connection: CrmConnection, _input: CrmWhatsappSendTextInput) => ({
+      async (
+        _connection: CrmConnection,
+        _input: CrmMessagingSendTextInput,
+      ) => ({
         externalId: "zapi-location-outbound-1",
         providerTimestamp: new Date("2026-07-02T20:01:00.000Z"),
         raw: { messageId: "zapi-location-outbound-1" },
@@ -34,12 +38,12 @@ describe("CRM WhatsApp extras", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         getConnectionStatus: vi.fn(),
         sendMedia: vi.fn(),
         sendText,
       },
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await app.request("/api/v1/crm/whatsapp/send/location", {
@@ -48,14 +52,18 @@ describe("CRM WhatsApp extras", () => {
         latitude: -23.56168,
         longitude: -46.65598,
         name: "Loja Veiculos",
-        sessionId: inbound.session.id,
+        cycleId: inbound.conversationCycle.id,
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": "structured-location-1",
+      },
       method: "POST",
     });
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
+      clientRequestId: "structured-location-1",
       content: "Loja Veiculos",
       direction: "OUTBOUND",
       externalId: "zapi-location-outbound-1",
@@ -75,13 +83,13 @@ describe("CRM WhatsApp extras", () => {
       expect.objectContaining({ phone: "5511999999999" }),
     );
     expect(
-      readMockInput<CrmWhatsappSendTextInput>(sendText, 0, 1).text,
+      readMockInput<CrmMessagingSendTextInput>(sendText, 0, 1).text,
     ).toContain("Av. Paulista, 1000");
   });
 
   it("sends catalog through the ZAPI catalog gateway", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
-    const inbound = await seedSession(whatsappRepository, "catalog");
+    const whatsappRepository = createMemoryCrmConversationRepository();
+    const inbound = await seedCycle(whatsappRepository, "catalog");
     const sendCatalog = vi.fn(async () => ({
       externalId: "zapi-catalog-outbound-1",
       providerTimestamp: new Date("2026-07-02T20:02:00.000Z"),
@@ -91,16 +99,16 @@ describe("CRM WhatsApp extras", () => {
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection({ phone: "5511940231407" }),
       ]),
-      crmWhatsappGateway: {
+      crmMessagingGateway: {
         sendCatalog,
       },
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await app.request("/api/v1/crm/whatsapp/send/catalog", {
       body: JSON.stringify({
         message: "Veja nosso catalogo",
-        sessionId: inbound.session.id,
+        cycleId: inbound.conversationCycle.id,
         title: "Catalogo da loja",
       }),
       headers: { "Content-Type": "application/json" },
@@ -135,13 +143,13 @@ describe("CRM WhatsApp extras", () => {
   });
 });
 
-function seedSession(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+function seedCycle(
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
   suffix: string,
 ) {
   return whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Ola",
@@ -149,6 +157,7 @@ function seedSession(
     externalId: `inbound-extras-${suffix}`,
     metadata: {},
     providerTimestamp: new Date("2026-07-02T20:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,
@@ -160,21 +169,12 @@ function seedSession(
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides,
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }
 
 function readMockInput<T>(

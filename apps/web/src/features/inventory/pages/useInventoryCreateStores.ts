@@ -1,5 +1,15 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
+import { useOptionalAccountSession } from "../../account/accountSession";
+import { readRuntimeStoreSlug } from "../../account/currentStore";
+import { readSessionActiveStore } from "../../account/sessionPermissions";
+import type { SessionBootstrap } from "../../account/apiClient";
 import type { InventoryFormState } from "../model/formModel";
 
 export type InventoryCreateStoreOption = {
@@ -20,20 +30,24 @@ type BillingStoreAllocationDto = {
   subscriptionStatus: string | null;
 };
 
-const fallbackStores = [
-  { id: "store_1", name: "Elite Motors", slug: "test-store" },
-  { id: "store_2", name: "Carro Fácil", slug: "carrofacil" },
-  { id: "store_3", name: "Prime Select", slug: "primeselect" },
-  { id: "store_4", name: "Norte Veículos", slug: "norteveiculos" },
-];
-
 export function useInventoryCreateStores(
   setForm: Dispatch<SetStateAction<InventoryFormState>>,
 ) {
-  const [stores, setStores] = useState<InventoryCreateStoreOption[]>([]);
+  const session = useOptionalAccountSession();
+  const sessionStores = useMemo(() => mapSessionStores(session), [session]);
+  const [stores, setStores] =
+    useState<InventoryCreateStoreOption[]>(sessionStores);
 
   useEffect(() => {
     let active = true;
+
+    if (sessionStores.length > 0) {
+      applyStores(sessionStores);
+      return () => {
+        active = false;
+      };
+    }
+
     async function loadStores() {
       try {
         const headers = await createInventoryRuntimeHeaders();
@@ -42,17 +56,21 @@ export function useInventoryCreateStores(
         const data: unknown = await res.json();
         if (!active) return;
         const mapped = mapBillingStores(data);
-        applyStores(mapped.length > 0 ? mapped : fallbackStores);
+        applyStores(mapped);
       } catch {
-        if (active) applyStores(fallbackStores);
+        if (active) applyStores([]);
       }
     }
 
     function applyStores(nextStores: InventoryCreateStoreOption[]) {
+      const currentStoreSlug = readRuntimeStoreSlug();
+      const currentStore = nextStores.find(
+        (store) => store.slug === currentStoreSlug,
+      );
       setStores(nextStores);
       setForm((current) => ({
         ...current,
-        storeId: current.storeId || nextStores[0]?.id || "",
+        storeId: current.storeId || currentStore?.id || nextStores[0]?.id || "",
       }));
     }
 
@@ -60,9 +78,31 @@ export function useInventoryCreateStores(
     return () => {
       active = false;
     };
-  }, [setForm]);
+  }, [sessionStores, setForm]);
 
   return stores;
+}
+
+function mapSessionStores(
+  session: SessionBootstrap | null,
+): InventoryCreateStoreOption[] {
+  const activeStore = readSessionActiveStore(session);
+  const activeStores =
+    session?.stores.filter((store) => store.status === "active") ?? [];
+  const stores = activeStore
+    ? [
+        activeStore,
+        ...activeStores.filter(
+          (store) => store.storeId !== activeStore.storeId,
+        ),
+      ]
+    : activeStores;
+
+  return stores.map((store) => ({
+    id: store.storeId,
+    name: store.storeName,
+    slug: store.storeSlug,
+  }));
 }
 
 function mapBillingStores(data: unknown) {
@@ -72,22 +112,24 @@ function mapBillingStores(data: unknown) {
       : null;
   if (!Array.isArray(allocations)) return [];
 
-  return allocations.filter(isBillingAllocation).map((allocation, index) => {
-    const name = allocation.storeName ?? `Loja ${index + 1}`;
-    return {
-      id: allocation.storeId ?? String(index),
-      name,
-      slug: allocation.storeSlug ?? slugifyStoreName(name),
-    };
-  });
+  return allocations.filter(isBillingAllocation).map((allocation) => ({
+    id: allocation.storeId,
+    name: allocation.storeName,
+    slug: allocation.storeSlug,
+  }));
 }
 
 function isBillingAllocation(
   value: unknown,
 ): value is BillingStoreAllocationDto {
-  return typeof value === "object" && value !== null;
-}
-
-function slugifyStoreName(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (typeof value !== "object" || value === null) return false;
+  const allocation = value as Record<string, unknown>;
+  return (
+    typeof allocation.storeId === "string" &&
+    allocation.storeId.trim().length > 0 &&
+    typeof allocation.storeName === "string" &&
+    allocation.storeName.trim().length > 0 &&
+    typeof allocation.storeSlug === "string" &&
+    allocation.storeSlug.trim().length > 0
+  );
 }

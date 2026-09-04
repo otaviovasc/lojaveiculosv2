@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
 import { assert } from "./local-seed-smoke-support.mjs";
 
-export async function verifySandboxProviders() {
+export async function verifySandboxProviders(options = {}) {
   return {
     asaas: await verifyAsaas(),
-    zapi: await verifyZapi(),
+    zapi: await verifyZapi(options.zapiConnection),
   };
 }
 
@@ -34,16 +35,8 @@ async function verifyAsaas() {
   return { authenticated: true, checked: true };
 }
 
-async function verifyZapi() {
-  const credentialNames = [
-    "CRM_ZAPI_TEST_INSTANCE_ID",
-    "CRM_ZAPI_TEST_INSTANCE_TOKEN",
-    "CRM_ZAPI_TEST_CLIENT_TOKEN",
-  ];
-  const config = readOptionalConfig(
-    ["CRM_ZAPI_API_BASE_URL", ...credentialNames],
-    credentialNames,
-  );
+async function verifyZapi(connection) {
+  const config = readZapiConnectionConfig(connection);
   if (!config) return { checked: false, connected: false };
 
   const baseUrl = new URL(config.CRM_ZAPI_API_BASE_URL);
@@ -53,17 +46,46 @@ async function verifyZapi() {
   );
   const base = baseUrl.toString().replace(/\/+$/, "");
   const instances = base.endsWith("/instances") ? base : `${base}/instances`;
-  const url = `${instances}/${encodeURIComponent(config.CRM_ZAPI_TEST_INSTANCE_ID)}/token/${encodeURIComponent(config.CRM_ZAPI_TEST_INSTANCE_TOKEN)}/status`;
+  const url = `${instances}/${encodeURIComponent(config.instanceId)}/token/${encodeURIComponent(config.instanceToken)}/status`;
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
-      "Client-Token": config.CRM_ZAPI_TEST_CLIENT_TOKEN,
+      "Client-Token": config.clientToken,
     },
     method: "GET",
     signal: AbortSignal.timeout(15_000),
   });
   const payload = await assertJsonResponse(response, "ZAPI test instance");
   return { checked: true, connected: isConnected(payload) };
+}
+
+function readZapiConnectionConfig(connection) {
+  const path = process.env.CRM_ZAPI_CONNECTION_FILE?.trim();
+  if (!connection && !path) return null;
+  let credentials = connection;
+  if (!credentials) {
+    try {
+      credentials = JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      throw new Error(
+        "CRM_ZAPI_CONNECTION_FILE must point to a readable JSON file.",
+      );
+    }
+  }
+  const apiBaseUrl = process.env.CRM_ZAPI_API_BASE_URL?.trim() ?? "";
+  const missing = ["instanceId", "instanceToken", "clientToken"].filter(
+    (key) => typeof credentials?.[key] !== "string" || !credentials[key].trim(),
+  );
+  if (!apiBaseUrl) missing.unshift("CRM_ZAPI_API_BASE_URL");
+  if (missing.length) {
+    throw new Error(`Incomplete sandbox configuration: ${missing.join(", ")}.`);
+  }
+  return {
+    CRM_ZAPI_API_BASE_URL: apiBaseUrl,
+    clientToken: credentials.clientToken.trim(),
+    instanceId: credentials.instanceId.trim(),
+    instanceToken: credentials.instanceToken.trim(),
+  };
 }
 
 function readOptionalConfig(names, activationNames = names) {

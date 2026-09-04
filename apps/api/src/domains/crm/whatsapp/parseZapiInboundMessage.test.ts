@@ -14,16 +14,18 @@ describe("parseZapiInboundMessage", () => {
       messageId: "zapi-image-1",
       phone: "5511999999999",
       senderName: "Ana",
+      senderPhoto: "https://zapi.test/profiles/ana.jpg",
       timestamp: 1783029600,
     });
 
     expect(parsed).toMatchObject({
-      buyerName: "Ana",
+      customerDisplayName: "Ana",
       content: "Foto do documento",
       externalId: "zapi-image-1",
       mediaType: "image",
       mediaUrl: "https://zapi.test/media/image-1.jpg",
       phone: "5511999999999",
+      profilePhotoUrl: "https://zapi.test/profiles/ana.jpg",
       type: "IMAGE",
     });
     expect(parsed?.metadata).toMatchObject({
@@ -41,6 +43,7 @@ describe("parseZapiInboundMessage", () => {
       "messageId",
       "phone",
       "senderName",
+      "senderPhoto",
       "timestamp",
     ]);
   });
@@ -84,7 +87,7 @@ describe("parseZapiInboundMessage", () => {
     });
 
     expect(parsed).toMatchObject({
-      buyerName: "Lead WhatsApp",
+      customerDisplayName: "Lead WhatsApp",
       content: "Ola vivo",
       externalId: "live-zapi-text-1",
       phone: "5511999990000",

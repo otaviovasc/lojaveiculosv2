@@ -29,6 +29,566 @@
       "when": 1784329922624,
       "tag": "0003_align_billing_catalog_trial_features",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784576726815,
+      "tag": "0004_tearful_iron_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784686168381,
+      "tag": "0005_buyer_acknowledgment_document_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784906073475,
+      "tag": "0006_visit_vehicle_interest",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785167012941,
+      "tag": "0007_yielding_kat_farrell",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785179322708,
+      "tag": "0008_curly_marrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785183451194,
+      "tag": "0009_graceful_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785196110228,
+      "tag": "0010_powerful_secret_warriors",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785198057113,
+      "tag": "0011_unique_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785766422783,
+      "tag": "0012_brave_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785864774072,
+      "tag": "0013_trial_plate_lookup_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785871755073,
+      "tag": "0014_fluffy_medusa",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785871755074,
+      "tag": "0015_vehicle_unit_soft_delete_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786283425479,
+      "tag": "0016_wandering_mesmero",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786373276883,
+      "tag": "0017_nappy_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786375659487,
+      "tag": "0018_yummy_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786378818206,
+      "tag": "0019_crm_whatsapp_human_attendance",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786383490111,
+      "tag": "0020_woozy_mandarin",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786390165064,
+      "tag": "0021_storefront_vehicle_vitrine",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786396810897,
+      "tag": "0022_crm_whatsapp_consistency_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786405023573,
+      "tag": "0023_crm_olx_chat_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786408000000,
+      "tag": "0024_split_crm_connection_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786409000000,
+      "tag": "0025_crm_webhook_effect_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786410000000,
+      "tag": "0026_durable_olx_webhook_effects",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786411000000,
+      "tag": "0027_crm_olx_lead_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786412000000,
+      "tag": "0028_marketplace_oauth_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786413000000,
+      "tag": "0029_marketplace_oauth_exchange_lease",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786500000000,
+      "tag": "0030_core_dashboard_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786550648643,
+      "tag": "0031_crm_core_canonical",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786551023000,
+      "tag": "0032_external_bot_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786551184000,
+      "tag": "0033_crm_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786551400000,
+      "tag": "0034_crm_retention_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786551860971,
+      "tag": "0035_crm_core_semantic_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786552000000,
+      "tag": "0036_crm_external_bot_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786552531972,
+      "tag": "0037_crm_core_provider_consent_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1786552800000,
+      "tag": "0038_crm_core_sensitive_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1786553100000,
+      "tag": "0039_crm_contact_identity_candidates",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1786553400000,
+      "tag": "0040_crm_legacy_retention_window",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786553700000,
+      "tag": "0041_crm_retention_reconciliation_and_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1786554000000,
+      "tag": "0042_provider_connection_identity_boundaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786554300000,
+      "tag": "0043_provider_event_payload_digest",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1786554600000,
+      "tag": "0044_outbound_failure_classification",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1786644374035,
+      "tag": "0045_chubby_mercury",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1786650616465,
+      "tag": "0046_credere_reliability_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1786666673944,
+      "tag": "0047_crm_lead_session_outcomes",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1786710521383,
+      "tag": "0048_concerned_captain_flint",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1786714215299,
+      "tag": "0049_lyrical_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1786714391283,
+      "tag": "0050_funny_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1786727051299,
+      "tag": "0051_wild_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1786977889000,
+      "tag": "0052_repair_crm_whatsapp_lid_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1786982882848,
+      "tag": "0053_tired_jack_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1786989257833,
+      "tag": "0054_clever_bushwacker",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1786990000000,
+      "tag": "0055_canonical_crm_routing_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1787009000000,
+      "tag": "0056_crm_routing_default_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1787083200000,
+      "tag": "0057_canonical_crm_connection_foreign_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1787090400000,
+      "tag": "0058_canonical_crm_operational_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1787094000000,
+      "tag": "0059_canonical_crm_multichannel_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1787101200000,
+      "tag": "0060_external_bot_security_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1787104800000,
+      "tag": "0061_canonical_crm_dead_schema_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787112000000,
+      "tag": "0062_external_bot_action_registry_effects",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1787356800000,
+      "tag": "0063_vehicle_cost_corrections",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1787443200000,
+      "tag": "0064_finance_entry_receipt_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1787529600000,
+      "tag": "0065_vehicle_cost_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1787616000000,
+      "tag": "0066_fiscal_scope_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1787702400000,
+      "tag": "0067_external_api_idempotency_replay",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1787788800000,
+      "tag": "0068_crm_push_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1787792400000,
+      "tag": "0069_production_billing_packaging_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1787796000000,
+      "tag": "0070_billing_reconciliation_replay",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1787799600000,
+      "tag": "0071_zapi_byok_credentials_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1787803200000,
+      "tag": "0072_billing_product_event_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1787806800000,
+      "tag": "0073_billing_lifecycle_monotonicity",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1787810400000,
+      "tag": "0074_billing_product_event_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1787814000000,
+      "tag": "0075_developer_admin_store_membership_invariant",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1787817600000,
+      "tag": "0076_atomic_monthly_plate_lookup_quota",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1787821200000,
+      "tag": "0077_billing_product_event_requeue",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1787824800000,
+      "tag": "0078_store_scoped_billing_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1787828400000,
+      "tag": "0079_billing_audit_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1787832000000,
+      "tag": "0080_crm_uazapi_transport_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1787835600000,
+      "tag": "0081_crm_channel_connection_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1787839200000,
+      "tag": "0082_crm_conversation_cycle_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1788439702000,
+      "tag": "0083_store_profile_billing_address",
+      "breakpoints": true
     }
   ]
 }

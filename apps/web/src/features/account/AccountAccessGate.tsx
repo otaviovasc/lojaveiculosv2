@@ -1,14 +1,18 @@
-import { Loader2, RefreshCcw } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { RefreshCcw } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
+import { AppBootScreen } from "../../components/ui";
 import {
   FeatureActionButton,
   FeaturePageShell,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureAlert,
-  FeatureLoadingState,
-} from "../../components/ui/FeatureStates";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SessionBootstrap } from "./apiClient";
 import {
@@ -16,12 +20,14 @@ import {
   persistCurrentStoreSlug,
   readCurrentStoreSlug,
 } from "./currentStore";
-import { createRuntimeAccountApi } from "./runtimeApi";
 import {
   hasActiveAgencyMembership,
   resolveSessionDestination,
 } from "./sessionRedirect";
 import { AccountSessionProvider } from "./accountSession";
+import { AccountAccessUnavailable } from "./AccountAccessUnavailable";
+import { useSessionBootstrapHandoff } from "./sessionBootstrapHandoff";
+import { loadRuntimeSessionBootstrap } from "./sessionBootstrapLoader";
 
 export type AccountAccess = "agency" | "onboarding" | "platform" | "store";
 
@@ -37,33 +43,60 @@ export function AccountAccessGate({
   userId?: string | null;
 }) {
   const navigate = useNavigate();
-  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(null);
+  const { clear: clearBootstrapHandoff, peek: peekBootstrapHandoff } =
+    useSessionBootstrapHandoff();
+  const handedOffBootstrap = peekBootstrapHandoff(userId);
+  const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(
+    () => handedOffBootstrap,
+  );
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const getTokenRef = useRef(getToken);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     getTokenRef.current = getToken;
   }, [getToken]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const session = await loadRuntimeSessionBootstrap(getTokenRef.current);
+      if (!mountedRef.current) return false;
+      persistBootstrapSelection(session, access, userId);
+      setBootstrap(session);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [access, userId]);
+
+  useEffect(() => {
+    if (!bootstrap && handedOffBootstrap) {
+      setBootstrap(handedOffBootstrap);
+    }
+  }, [bootstrap, handedOffBootstrap]);
+
+  useEffect(() => {
+    if (!bootstrap || !userId) return;
+    clearBootstrapHandoff(userId, bootstrap);
+  }, [bootstrap, clearBootstrapHandoff, userId]);
+
+  useEffect(() => {
+    if (bootstrap) return;
     let cancelled = false;
     setError(null);
 
     async function loadBootstrap() {
       try {
-        const accessToken = await getTokenRef.current();
-        const api = await createRuntimeAccountApi({ accessToken });
-        const session = await api.bootstrap();
-        if (session.defaultStore) {
-          persistCurrentStoreSlug(session.defaultStore.storeSlug, userId);
-        } else if (access === "store") {
-          persistSelectedStoreForStoreAccess(session, userId);
-        } else if (!hasActiveStoreAccess(session)) {
-          clearCurrentStoreSlug(userId);
-        } else {
-          keepSelectedManagedStore(session, userId);
-        }
+        const session = await loadRuntimeSessionBootstrap(getTokenRef.current);
+        persistBootstrapSelection(session, access, userId);
         if (!cancelled) setBootstrap(session);
       } catch (err) {
         if (!cancelled) {
@@ -79,11 +112,12 @@ export function AccountAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [access, attempt, userId]);
+  }, [access, attempt, bootstrap, userId]);
 
   useEffect(() => {
     if (!bootstrap || isAllowed(access, bootstrap)) return;
-    void navigate(resolveSessionDestination(bootstrap), { replace: true });
+    const destination = resolveSessionDestination(bootstrap);
+    if (destination) void navigate(destination, { replace: true });
   }, [access, bootstrap, navigate]);
 
   if (error) {
@@ -105,24 +139,48 @@ export function AccountAccessGate({
     );
   }
 
+  if (
+    bootstrap &&
+    !isAllowed(access, bootstrap) &&
+    resolveSessionDestination(bootstrap) === null
+  ) {
+    return (
+      <AccountAccessUnavailable
+        onRetry={() => setAttempt((current) => current + 1)}
+      />
+    );
+  }
+
   if (!bootstrap || !isAllowed(access, bootstrap)) {
     return (
-      <FeaturePageShell
-        className="min-h-screen max-w-xl justify-center"
-        variant="plain"
-      >
-        <FeatureLoadingState icon={Loader2} title="Carregando sua conta">
-          <span className="sr-only">Aguarde</span>
-        </FeatureLoadingState>
-      </FeaturePageShell>
+      <AppBootScreen
+        description="Estamos preparando seu acesso à loja."
+        title="Carregando sua conta"
+      />
     );
   }
 
   return (
-    <AccountSessionProvider session={bootstrap}>
+    <AccountSessionProvider refreshSession={refreshSession} session={bootstrap}>
       {children}
     </AccountSessionProvider>
   );
+}
+
+function persistBootstrapSelection(
+  session: SessionBootstrap,
+  access: AccountAccess,
+  actorKey: string | null | undefined,
+) {
+  if (session.defaultStore) {
+    persistCurrentStoreSlug(session.defaultStore.storeSlug, actorKey);
+  } else if (access === "store") {
+    persistSelectedStoreForStoreAccess(session, actorKey);
+  } else if (!hasActiveStoreAccess(session)) {
+    clearCurrentStoreSlug(actorKey);
+  } else {
+    keepSelectedManagedStore(session, actorKey);
+  }
 }
 
 function isAllowed(access: AccountAccess, bootstrap: SessionBootstrap) {

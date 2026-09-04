@@ -1,3 +1,7 @@
+import {
+  interpolateSampleVariables,
+  sampleValue as getSampleValue,
+} from "@lojaveiculosv2/documents";
 import type { DocumentKind } from "./types";
 
 export type DocumentTemplateDraft = {
@@ -30,16 +34,6 @@ export type DocumentTemplatePreviewModel = {
     phone: string;
   };
   title: string;
-};
-
-const sampleValues: Record<string, string> = {
-  "{{buyer.document}}": "123.456.789-00",
-  "{{buyer.name}}": "Ana Cliente",
-  "{{finance.paymentMethod}}": "PIX",
-  "{{finance.salePrice}}": "R$ 126.900,00",
-  "{{finance.signalAmount}}": "R$ 5.000,00",
-  "{{vehicle.plate}}": "ABC1D23",
-  "{{vehicle.title}}": "Fiat Toro Volcano 2023",
 };
 
 export function renderDocumentTemplatePreview(
@@ -126,22 +120,15 @@ export function renderDocumentTemplatePreview(
 }
 
 export function variableSample(variable: string) {
-  return sampleValue(variable);
-}
-
-function sampleValue(variable: string) {
-  return sampleValues[variable] ?? "Valor preenchido na emissão";
+  return getSampleValue(variable);
 }
 
 function field(label: string, variable: string): DocumentTemplatePreviewField {
-  return { label, value: sampleValue(variable) };
+  return { label, value: getSampleValue(variable) };
 }
 
 function applyTemplateSampleValues(value: string) {
-  return Object.entries(sampleValues).reduce(
-    (current, [variable, sample]) => current.replaceAll(variable, sample),
-    value,
-  );
+  return interpolateSampleVariables(value);
 }
 
 function renderClause(clause: string) {
@@ -173,6 +160,7 @@ function introForOperationalContext(context: string) {
 
 function kindFallbackTitle(kind: DocumentKind) {
   const titles: Partial<Record<DocumentKind, string>> = {
+    buyer_acknowledgment: "Termo de recebimento",
     delivery_term: "Termo de entrega",
     power_of_attorney: "Procuração",
     reservation_receipt: "Recibo de sinal",
@@ -183,6 +171,7 @@ function kindFallbackTitle(kind: DocumentKind) {
 }
 
 function documentNumber(kind: DocumentKind) {
+  if (kind === "buyer_acknowledgment") return "Recebimento nº 2048";
   if (kind === "reservation_receipt") return "Reserva nº 1024";
   if (kind === "sale_contract" || kind === "sale_receipt")
     return "Venda nº 2048";
@@ -192,6 +181,9 @@ function documentNumber(kind: DocumentKind) {
 }
 
 function introForKind(kind: DocumentKind) {
+  if (kind === "buyer_acknowledgment") {
+    return "O comprador confirma os documentos e itens recebidos com o veículo, incluindo chaves, manual e documento de transferência quando aplicável.";
+  }
   if (kind === "reservation_receipt") {
     return "Recebemos do comprador qualificado abaixo a importância descrita como sinal para reserva do veículo, conforme dados da operação registrada.";
   }

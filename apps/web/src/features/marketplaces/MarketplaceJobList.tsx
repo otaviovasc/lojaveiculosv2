@@ -1,5 +1,6 @@
-import { RotateCcw } from "lucide-react";
+import { RefreshCcw, RotateCcw } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
   getMarketplaceJobStatusLabel,
   getMarketplaceJobTypeLabel,
@@ -12,18 +13,22 @@ import type {
 } from "./types";
 
 export function MarketplaceJobList({
+  onReconcile,
   onRetry,
   overview,
 }: {
+  onReconcile: (job: MarketplaceJob) => Promise<void>;
   onRetry: (job: MarketplaceJob) => Promise<void>;
   overview: MarketplaceOverview;
 }) {
   return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Sincronizações recentes</h3>
-        <p>Resultados dos últimos lotes solicitados para a loja atual.</p>
-      </header>
+    <section aria-label="Atividade recente" className="marketplace-activity">
+      <div className="marketplace-activity__header">
+        <h3 className="marketplace-activity__title">Atividade recente</h3>
+        <p className="marketplace-activity__description">
+          Resultados dos últimos lotes solicitados para a loja atual.
+        </p>
+      </div>
       <div className="marketplace-job-list">
         {overview.jobs.length ? (
           overview.jobs.map((job) => (
@@ -32,32 +37,57 @@ export function MarketplaceJobList({
               data-status={job.status}
               key={job.id}
             >
-              <div className="marketplace-job__provider">
-                <strong>{providerLabels[job.provider]}</strong>
-                <FeatureStatusBadge size="dense" tone={jobTone(job.status)}>
-                  {getMarketplaceJobStatusLabel(job.status)}
-                </FeatureStatusBadge>
+              <div className="marketplace-job__indicator">
+                <span
+                  className={`marketplace-job__dot tone-${jobTone(job.status)}`}
+                />
               </div>
-              <div className="marketplace-job__description">
-                <span>{getMarketplaceJobTypeLabel(job.jobType)}</span>
-                <small>{jobVehicleLabel(job)}</small>
+              <div className="marketplace-job__main">
+                <div className="marketplace-job__topline">
+                  <div className="marketplace-job__provider">
+                    <strong>{providerLabels[job.provider]}</strong>
+                    <FeatureStatusBadge size="dense" tone={jobTone(job.status)}>
+                      {getMarketplaceJobStatusLabel(job.status)}
+                    </FeatureStatusBadge>
+                  </div>
+                  <span className="marketplace-job__scope">
+                    {jobVehicleLabel(job)}
+                  </span>
+                </div>
+                <div className="marketplace-job__description">
+                  <span>{getMarketplaceJobTypeLabel(job.jobType)}</span>
+                </div>
+                {job.status === "submitted" ? (
+                  <p className="marketplace-job__message is-info">
+                    {jobStatusDetail(job)}
+                  </p>
+                ) : null}
+                {job.errorMessage ? <JobFailureMessage job={job} /> : null}
               </div>
-              {job.errorMessage ? <JobFailureMessage job={job} /> : null}
-              {job.status === "failed" ? (
-                <button
-                  aria-label={`Tentar novamente no ${providerLabels[job.provider]}`}
-                  className="marketplace-job__retry"
-                  onClick={() => void onRetry(job)}
-                  title="Tentar novamente"
-                  type="button"
-                >
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                </button>
-              ) : null}
+              <div className="marketplace-job__actions">
+                {job.status === "failed" ? (
+                  <FeatureRowAction
+                    ariaLabel={`Tentar novamente no ${providerLabels[job.provider]}`}
+                    icon={RotateCcw}
+                    onClick={() => void onRetry(job)}
+                    tooltip="Tentar novamente"
+                  />
+                ) : null}
+                {job.status === "submitted" ? (
+                  <FeatureRowAction
+                    ariaLabel={`Consultar confirmação no ${providerLabels[job.provider]}`}
+                    icon={RefreshCcw}
+                    onClick={() => void onReconcile(job)}
+                    tooltip="Consultar canal"
+                  />
+                ) : null}
+              </div>
             </article>
           ))
         ) : (
-          <p>Nenhuma sincronização de estoque foi solicitada.</p>
+          <div className="marketplace-job-empty">
+            <p>Nenhuma sincronização de estoque foi solicitada.</p>
+          </div>
         )}
       </div>
     </section>
@@ -80,6 +110,20 @@ function jobVehicleLabel(job: MarketplaceJob) {
     : "Escopo: lote de estoque";
 }
 
+function jobStatusDetail(job: MarketplaceJob) {
+  if (job.metadata.reconciliationMessage) {
+    return job.metadata.reconciliationMessage;
+  }
+  const status = job.metadata.providerResult?.providerStatus;
+  if (status === "pending" || status === "queued") {
+    return `${providerLabels[job.provider]} ainda está processando o anúncio. A confirmação será consultada automaticamente.`;
+  }
+  if (status === "indeterminate" || job.metadata.reconciliationRequired) {
+    return "A confirmação está atrasada. Não reenvie o anúncio; consulte o canal novamente.";
+  }
+  return `${providerLabels[job.provider]} recebeu a operação. A publicação ainda não foi confirmada.`;
+}
+
 function jobTone(status: MarketplaceJobStatus) {
   switch (status) {
     case "cancelled":
@@ -88,6 +132,7 @@ function jobTone(status: MarketplaceJobStatus) {
       return "danger" as const;
     case "queued":
     case "running":
+    case "submitted":
       return "blue" as const;
     case "succeeded":
       return "success" as const;

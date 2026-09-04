@@ -1,186 +1,78 @@
-# CRM V2 Smoke Checklist
+# CRM V2 smoke checklist
 
-Last updated: 2026-07-13
+Use this checklist for the canonical multi-channel CRM cutover. It validates
+truthful routing and store scope; it does not authorize production enablement.
 
-Use this checklist for focused slice evidence and final CRM handoff. Store
-screenshots under `/tmp/lojaveiculosv2-qa/crm-v2/` unless a worker-specific
-evidence folder is documented.
+## Preflight and cutover
 
-## Preflight
+- Read ADR 0060, ADR 0061, and the integration contract.
+- Confirm the target environment is the approved reset checkpoint.
+- Confirm migration `0059_canonical_crm_multichannel_names.sql` fails closed
+  when any superseded operational table has rows.
+- Confirm no production reset or migration is run without the explicit operator
+  approval required by the release procedure.
 
-- `git status --short`
-- `pnpm --filter @lojaveiculosv2/api typecheck`
-- `pnpm --filter @lojaveiculosv2/web typecheck`
-- `pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp`
-- `pnpm --filter @lojaveiculosv2/web test -- crmWhatsapp`
+## Connection and routing
 
-## Shell And Navigation
+- List connections through `GET /crm/channel-connections` and verify every DTO
+  has `channel`, `provider`, `state`, `readiness`, `capabilities`, and
+  `isDefault`.
+- Verify only these triples are accepted: `whatsapp/meta_cloud/composio`,
+  `instagram/meta_cloud/composio`, `whatsapp/zapi/direct`, and
+  `olx_chat/olx/direct`.
+- Verify defaults are store-scoped and channel-scoped.
+- Verify a pending, disconnected, paused, or capability-incomplete connection
+  is visible as unavailable and cannot be selected.
+- Verify a provider failure does not retry through another provider or report
+  success.
+- Verify ZAPI, Meta, and OLX callbacks reject invalid authentication and retain
+  only bounded, sanitized data.
 
-- Open `/dashboard#/crm?surface=whatsapp`.
-- Verify top CRM exposes WhatsApp and Clientes.
-- Verify desktop WhatsApp scoped nav labels: Conversas, Agendar mensagem,
-  Visitas, Campanhas, Etiquetas, Integracoes, Conexao.
-- On mobile, verify Conversas, Agendar, and Visitas remain in the bottom bar;
-  Campanhas, Etiquetas, Integracoes, and Conexao appear in Mais.
-- Verify the mobile bar hides inside a chat and returns in the conversation list.
-- Verify no scoped tab subtitle copy is visible.
-- Verify unread/tag badges appear only when useful.
-- Capture desktop and mobile screenshots.
-- Verify every workflow footer remains fully above the mobile navigation.
+## Conversations and messages
 
-## Connection
+- Verify conversation threads remain bound to the receiving channel connection.
+- Verify reads, assignment, close/reopen, attendance, tags, messages, and media
+  mutations are tenant/store scoped and audited.
+- Verify human attendance blocks automatic bot effects immediately before send.
+- Verify the persisted conversation projection remains authoritative when the
+  realtime broker is unavailable; the UI shows reconnect/reconciliation state.
+- Verify inbound and outbound failures use the shared error envelope and never
+  show synthetic provider success.
 
-- Load seeded/test ZAPI connection.
-- Verify status indicator and live provider status render.
-- Save ZAPI instance ID and token through the write-only instance form.
-- Verify the token is not rendered after save and responses only expose
-  configured state.
-- Verify six webhook URLs:
-  received, delivery, status, connected, disconnected, chat-presence.
-- Verify permission-denied state disables mutation controls.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
-- Capture mobile screenshot.
+## Permission contract
 
-## Tags
+- Verify current checks use `crm.conversations.*`, `crm.messages.*`,
+  `crm.tags.*`, `crm.scheduled_messages.*`, `crm.campaigns.*`, `crm.bot.*`,
+  `crm.attendances.manage`, `crm.messaging.connection.*`, and the pipeline/
+  visit keys documented in the integration contract.
+- Verify the retired provider-specific permission keys are not in the active
+  catalog or new docs.
+- Verify entitlement checks remain separate from actor permissions.
 
-- List tags.
-- Create tag.
-- Edit name/color/emoji.
-- Reorder tag.
-- Assign tag to a session.
-- Remove tag from a session.
-- Delete tag through confirmation modal.
-- Verify no pipeline/column wording appears.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-tags-ui/crm-whatsapp-tags.png`.
-- Capture mobile screenshot.
+## External bot
 
-## Permission Contract
+- Configure one external bot per store and verify the secret is write-only.
+- Verify bot actions use a bot-scoped `ServiceContext`, UUIDs, store scope,
+  permissions, audit, idempotency, and the configured channel route.
+- Verify policies support `auto`, `proposal`, and `disabled` and that human
+  takeover blocks automatic provider effects.
+- Verify no provider secret, bot secret, message body, or raw payload appears in
+  logs, audit metadata, errors, or API responses.
 
-- Verify no old singular permission keys remain:
-  `crm.whatsapp.tag.*`, `crm.whatsapp.schedule.*`,
-  `crm.whatsapp.connection.update_*`.
-- Verify canonical keys are present in shared types, identity catalog,
-  role defaults, frontend capability reader, service checks, and test contexts.
-- Verify connection admin requires `crm.whatsapp.connection.manage`.
-- Verify tag management uses `crm.whatsapp.tags.manage`.
-- Verify tag assignment uses `crm.whatsapp.tags.assign`.
-- Verify scheduled messages use `crm.whatsapp.schedules.*`.
+## Workers and recovery
 
-## Pipeline
+- Run the scheduled-message worker with a bounded store scope and verify it uses
+  the same channel route/readiness/capability checks as an authenticated call.
+- Verify external-bot effects are durable, idempotent, retryable only under the
+  documented policy, and observable without exposing customer content.
+- Verify retention and cleanup jobs use canonical table names and preserve legal
+  holds.
 
-- Create/edit/reorder pipeline stage.
-- Reload page and verify stages persist.
-- Move lead stage through backend.
-- Verify lead detail and WhatsApp-linked lead stay consistent.
-- Verify audit events exist for stage movement.
+## Final gate
 
-## Lead And WhatsApp Link
-
-- Open a lead detail page.
-- Start or open linked WhatsApp session from the lead.
-- From WhatsApp session detail, navigate back to lead detail.
-- Verify URL sync for active session.
-- Verify lead activity timeline includes WhatsApp-relevant events.
-
-## Visits
-
-- From a WhatsApp session linked to a lead, create a visit.
-- Open store-wide Visitas and verify today/tomorrow/upcoming/overdue/completed
-  views with visible counts.
-- Verify visit appears on visit page and lead detail.
-- Update status to confirmed/completed/no_show/cancelled.
-- Verify activity and audit evidence.
-- Verify no financing/test-drive-specific fields are required.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-visits-ui/crm-whatsapp-visits.png`.
-
-## Scheduled Messages
-
-- Schedule one-off message from a chat.
-- Open store-wide schedules page.
-- Filter by status, connection, and session/lead.
-- Cancel a pending schedule.
-- Process due messages in local/admin/dev mode.
-- Verify rows show status, time, lead/session, preview, and errors.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-schedules-ui/crm-whatsapp-schedules.png`.
-
-## Integrations And Bot
-
-- Configure bot webhook URL.
-- Save a write-only webhook secret.
-- Trigger test webhook.
-- Call action API with `X-Webhook-Secret`.
-- Verify UUID inputs for lead/session/tag/visit.
-- Verify `send_image`, `send_audio`, and `send_document` use
-  `imageUrl`/`audioUrl`/`documentUrl`; base64 should be rejected on the
-  external bot API.
-- Verify `send_text` can start a conversation with `connectionId` plus
-  `payload.phone` and stores the message as bot-authored.
-- Start human takeover and verify regular forwarding pauses.
-- End intervention through bot action.
-- Verify `intervention_ended` includes started/ended timestamps, duration,
-  message count, and a compact handback summary.
-- Verify bot send action is blocked during takeover.
-- Process a scheduled/campaign message and verify it forwards as
-  `senderOrigin: system` without emitting `intervention_started`.
-- Trigger connected/disconnected callback and verify
-  `connection_status_changed` is forwarded without chat/session fields.
-- Verify bot webhook dispatch audit records contain no secret values.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-integrations-ui/crm-whatsapp-integrations.png`.
-
-## Campaigns
-
-- Current V2 UI creates from filtered leads, filtered WhatsApp sessions, and
-  CSV/paste matched to sessions. Lead sourcing pages through the full result
-  set and reports matched leads that do not yet have a WhatsApp session.
-- Create campaign from filtered leads.
-- Create campaign from filtered WhatsApp sessions.
-- Create campaign from CSV/contact paste.
-- Validate recipients and fix bad rows.
-- Configure variables, rate, send window, initial tag, reply tag, and optional
-  delayed secondary message.
-- Create scheduled campaign sends.
-- Pause, resume, and cancel campaign.
-- Open campaign detail and verify durable recipient statuses.
-- Verify metrics: total, scheduled, sent, failed, replied, secondary sent,
-  reply rate.
-- Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns.png`,
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review.png`,
-  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review-rows.png`.
-
-## Conversas Parity
-
-- Search sessions.
-- Filter by status/tag/assignment.
-- Send text/media/location/catalog/product/vehicle.
-- Reply/react/delete message.
-- Use quick messages.
-- Toggle human takeover.
-- Verify realtime updates.
-- Verify mobile layout.
-- Verify empty/loading/error states.
-- Send an `externalAdReply`/CTWA buyer message into a session in human takeover.
-- Verify the session returns to bot-active state, stores sanitized ad
-  attribution, and dispatches `intervention_ended` before the buyer `message`.
-- Verify both bot events carry the same allowlisted `session.adAttribution`.
-- Send a notification-only ad callback and verify attribution is captured
-  without storing a synthetic buyer message or lead activity.
-- Send a LID-keyed message followed by the real phone with the same `chatLid`;
-  verify one session/lead is safely backfilled and an unrelated phone is not
-  merged.
-- Verify the conversation details surface shows the ad title/source/link when
-  those fields are available.
-
-## Final Gate
-
-- `pnpm run validate`
-- `pnpm run test:smoke:api`
-- Playwright evidence for the major CRM pages.
-
-If full validation fails for unrelated work, record the failing command,
-failure summary, and why it is unrelated in `crm-v2-status.md`.
+- Run the repository document/link/format checks and the stale-term scan.
+- Record environment, route/provider triple, result, request id, and failure
+  evidence without recording secrets, personal data, message bodies, or raw rows.
+- Do not mark the CRM commercially ready until staging rehearsal, provider
+  evidence, broker recovery, support ownership, and design-partner acceptance
+  are complete.

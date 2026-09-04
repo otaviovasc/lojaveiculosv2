@@ -1,0 +1,491 @@
+/* Channel-first CRM connection directory - Billing Modern Card & Watermark Styling */
+
+.crm-channel-directory-shell {
+  display: grid;
+  gap: 2rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.crm-channel-directory-groups {
+  display: grid;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* Open section layout (removes card-on-card nesting) */
+.crm-channel-group {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  width: 100%;
+}
+
+.crm-channel-group-heading {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.75rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.crm-channel-group-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-line) 70%, transparent);
+}
+
+.crm-channel-directory,
+.crm-channel-group ol,
+.crm-channel-group ul {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.crm-channel-directory > li,
+.crm-channel-group li {
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Modern billing-style elevated channel card */
+.crm-channel-row {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  color: var(--color-text);
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 5.5rem;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+/* Ambient gradient backdrops per channel/provider */
+.crm-channel-row[data-channel="whatsapp"]:not([data-provider="meta_cloud"]),
+.crm-channel-row[data-provider="zapi"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 5%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"],
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"]) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #0081fb 5%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+}
+
+.crm-channel-row[data-channel="instagram"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #e1306c 5%, var(--color-panel)),
+    var(--color-panel) 75%
+  ) !important;
+}
+
+.crm-channel-row[data-channel="olx"],
+.crm-channel-row[data-channel="olx_chat"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #6e0ad6 5%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+}
+
+.crm-channel-row:hover {
+  border-color: color-mix(in srgb, #10b981 50%, var(--color-line));
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]:hover,
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"]):hover {
+  border-color: color-mix(in srgb, #0081fb 50%, var(--color-line));
+}
+
+.crm-channel-row[data-channel="instagram"]:hover {
+  border-color: color-mix(in srgb, #e1306c 50%, var(--color-line)) !important;
+}
+
+.crm-channel-row[data-channel="olx"]:hover,
+.crm-channel-row[data-channel="olx_chat"]:hover {
+  border-color: color-mix(in srgb, #6e0ad6 50%, var(--color-line));
+}
+
+.crm-channel-row:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.crm-channel-row[data-channel="instagram"]:focus-visible {
+  outline-color: #e1306c;
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]:focus-visible {
+  outline-color: #0081fb;
+}
+
+.crm-channel-row[data-channel="olx"]:focus-visible,
+.crm-channel-row[data-channel="olx_chat"]:focus-visible {
+  outline-color: #6e0ad6;
+}
+
+/* Decorative Background Watermark Icon (Billing Style) */
+.crm-channel-card-watermark {
+  position: absolute;
+  right: -1.25rem;
+  bottom: -1.5rem;
+  width: 8.5rem;
+  height: 8.5rem;
+  pointer-events: none;
+  opacity: 0.05;
+  transform: rotate(-10deg);
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-channel-card-watermark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.crm-channel-row:hover .crm-channel-card-watermark {
+  opacity: 0.09;
+  transform: rotate(-6deg) scale(1.1);
+}
+
+.crm-channel-row[data-channel="whatsapp"]:not([data-provider="meta_cloud"])
+  .crm-channel-card-watermark,
+.crm-channel-row[data-provider="zapi"] .crm-channel-card-watermark {
+  color: #10b981;
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]
+  .crm-channel-card-watermark,
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"])
+  .crm-channel-card-watermark {
+  color: #0081fb;
+}
+
+.crm-channel-row[data-channel="instagram"] .crm-channel-card-watermark {
+  color: #e1306c !important;
+}
+
+.crm-channel-row[data-channel="olx"] .crm-channel-card-watermark,
+.crm-channel-row[data-channel="olx_chat"] .crm-channel-card-watermark {
+  color: #6e0ad6;
+}
+
+/* Integrated Front Emblem / Icon (No Background) */
+.crm-channel-icon {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #059669;
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-channel-row:hover .crm-channel-icon {
+  transform: scale(1.08);
+}
+
+:root[data-theme="dark"] .crm-channel-icon,
+.dark .crm-channel-icon {
+  color: #34d399;
+}
+
+.crm-channel-row[data-channel="whatsapp"]:not([data-provider="meta_cloud"])
+  .crm-channel-icon,
+.crm-channel-row[data-provider="zapi"] .crm-channel-icon {
+  color: #059669;
+}
+
+:root[data-theme="dark"]
+  .crm-channel-row[data-channel="whatsapp"]:not([data-provider="meta_cloud"])
+  .crm-channel-icon,
+:root[data-theme="dark"]
+  .crm-channel-row[data-provider="zapi"]
+  .crm-channel-icon,
+.dark
+  .crm-channel-row[data-channel="whatsapp"]:not([data-provider="meta_cloud"])
+  .crm-channel-icon,
+.dark .crm-channel-row[data-provider="zapi"] .crm-channel-icon {
+  color: #34d399;
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]
+  .crm-channel-icon,
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"])
+  .crm-channel-icon {
+  color: #0081fb;
+}
+
+:root[data-theme="dark"]
+  .crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]
+  .crm-channel-icon,
+:root[data-theme="dark"]
+  .crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"])
+  .crm-channel-icon,
+.dark
+  .crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]
+  .crm-channel-icon,
+.dark
+  .crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"])
+  .crm-channel-icon {
+  color: #60a5fa;
+}
+
+.crm-channel-row[data-channel="instagram"] .crm-channel-icon {
+  color: #e1306c !important;
+}
+
+:root[data-theme="dark"]
+  .crm-channel-row[data-channel="instagram"]
+  .crm-channel-icon,
+.dark .crm-channel-row[data-channel="instagram"] .crm-channel-icon {
+  color: #f472b6 !important;
+}
+
+.crm-channel-row[data-channel="olx_chat"] .crm-channel-icon,
+.crm-channel-row[data-channel="olx"] .crm-channel-icon {
+  color: #6e0ad6;
+}
+
+:root[data-theme="dark"]
+  .crm-channel-row[data-channel="olx_chat"]
+  .crm-channel-icon,
+:root[data-theme="dark"] .crm-channel-row[data-channel="olx"] .crm-channel-icon,
+.dark .crm-channel-row[data-channel="olx_chat"] .crm-channel-icon,
+.dark .crm-channel-row[data-channel="olx"] .crm-channel-icon {
+  color: #a855f7;
+}
+
+.crm-channel-icon svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+.crm-channel-body {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.crm-channel-title {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  gap: 0.625rem;
+}
+
+.crm-channel-title strong {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.crm-channel-description {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-channel-identity {
+  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  gap: 0.35rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.crm-channel-identity > span {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.crm-channel-identity small {
+  color: var(--color-text);
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.crm-channel-badge {
+  align-items: center;
+  border-radius: 9999px;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.crm-channel-badge[data-tone="success"] {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-channel-badge[data-tone="success"],
+.dark .crm-channel-badge[data-tone="success"] {
+  color: #34d399;
+}
+
+.crm-channel-badge[data-tone="warning"] {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
+  color: #d97706;
+}
+
+.crm-channel-badge[data-tone="danger"] {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
+  color: #dc2626;
+}
+
+.crm-channel-badge[data-tone="neutral"],
+.crm-channel-badge[data-tone="muted"] {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-channel-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.crm-channel-capability {
+  background: color-mix(in srgb, var(--color-text) 4%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 0.2rem 0.55rem;
+}
+
+.crm-channel-chevron,
+.crm-channel-action-arrow {
+  color: var(--color-muted);
+  height: 1.35rem;
+  width: 1.35rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.2s ease;
+}
+
+.crm-channel-row-action {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.crm-channel-row:hover .crm-channel-chevron,
+.crm-channel-row:hover .crm-channel-action-arrow {
+  color: #10b981;
+  transform: translateX(4px);
+}
+
+.crm-channel-row[data-channel="instagram"]:hover .crm-channel-chevron,
+.crm-channel-row[data-channel="instagram"]:hover .crm-channel-action-arrow {
+  color: #e1306c !important;
+}
+
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]:hover
+  .crm-channel-chevron,
+.crm-channel-row[data-provider="meta_cloud"][data-channel="whatsapp"]:hover
+  .crm-channel-action-arrow,
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"]):hover
+  .crm-channel-chevron,
+.crm-channel-row[data-provider="meta_cloud"]:not(
+    [data-channel="instagram"]
+  ):not([data-channel="olx"]):hover
+  .crm-channel-action-arrow {
+  color: #0081fb !important;
+}
+
+.crm-channel-row[data-channel="olx"]:hover .crm-channel-chevron,
+.crm-channel-row[data-channel="olx_chat"]:hover .crm-channel-chevron,
+.crm-channel-row[data-channel="olx"]:hover .crm-channel-action-arrow,
+.crm-channel-row[data-channel="olx_chat"]:hover .crm-channel-action-arrow {
+  color: #6e0ad6 !important;
+}

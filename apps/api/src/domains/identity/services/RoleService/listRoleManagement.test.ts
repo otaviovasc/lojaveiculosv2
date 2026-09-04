@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
+import { AuthorizationError } from "../../../../shared/authorization.js";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { RoleManagementRepository } from "../../ports/roleManagementRepository.js";
 import { listRoleManagement } from "./listRoleManagement.js";
@@ -27,6 +28,46 @@ describe("listRoleManagement", () => {
         tenantId,
       },
     ]);
+  });
+
+  it("lets validated tenant-level agency access manage a store roster", async () => {
+    const repository = createRepository();
+    const context = createServiceContext({
+      actor: { id: "user_agency", kind: "user" },
+      membershipRole: "agency",
+      permissions: ["users.manage"],
+      request: { requestId: "req_1" },
+      storeId,
+      tenantId,
+    });
+
+    const result = await listRoleManagement(context, {
+      roleManagementRepository: repository,
+    });
+
+    expect(result.actor).toEqual({
+      canManageRoles: true,
+      membershipId: null,
+      role: "agency",
+    });
+    expect(result.memberships[0]?.manageable).toBe(true);
+  });
+
+  it("rejects an unvalidated tenant actor without a store membership", async () => {
+    const repository = createRepository();
+    const context = createServiceContext({
+      actor: { id: "user_unknown", kind: "user" },
+      permissions: ["users.manage"],
+      request: { requestId: "req_1" },
+      storeId,
+      tenantId,
+    });
+
+    await expect(
+      listRoleManagement(context, {
+        roleManagementRepository: repository,
+      }),
+    ).rejects.toBeInstanceOf(AuthorizationError);
   });
 });
 

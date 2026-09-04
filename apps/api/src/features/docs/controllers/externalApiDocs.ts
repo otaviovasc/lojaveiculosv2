@@ -32,7 +32,8 @@ export const externalApiOpenApiDocument = {
   info: {
     title: "Loja Veiculos Public API",
     version: externalApiContractVersion,
-    summary: "Scoped external API for dealership inventory and CRM leads.",
+    summary:
+      "Scoped external API for dealership inventory, CRM leads, and Credere financing.",
     description:
       "Clean partner and AI-agent contract for public vehicle discovery and lead workflows. Private tenant, store, VIN, and full plate fields are intentionally excluded from runtime DTOs.",
   },
@@ -85,27 +86,32 @@ The Public API is tenant and store scoped by API key. Runtime DTOs intentionally
 - [Public API llms.txt](/api/v1/external-api/llms.txt): Token-light index for LLMs and coding agents.
 - [Public API OpenAPI](/api/v1/external-api/openapi.json): Scoped OpenAPI 3.1 document for external routes only.
 - [Public API manifest](/api/v1/external-api/manifest): Capability manifest with auth, scopes, operations, and AI-native URLs.
-- [Public API tool definitions](/api/v1/external-api/ai-tools): OpenAI-style function metadata for vehicle search and lead creation.
+- [Public API tool definitions](/api/v1/external-api/ai-tools): OpenAI-style function metadata for vehicle search, lead creation, and Credere financing.
 - [Markdown docs](/api/v1/external-api/docs.md): Markdown alias for this document.
 
 ## Authentication
 - Send x-api-key: lv2_... or Authorization: Bearer lv2_....
-- Use least-privilege scopes. Vehicle read routes require inventory.read. Lead create/read/update routes require lead.create, lead.read, or lead.update.
-- API-key mutations require Idempotency-Key as a deduplication key. Reusing it returns 409; the earlier response is not replayed.
+- Use least-privilege scopes. Credere reads require financing.simulation.read and creation requires financing.simulation.create.
+- API-key mutations require Idempotency-Key. Reusing the key with the same validated payload after completion replays the original bounded JSON status/body. Changed payloads and in-flight attempts return 409; retry a 5xx attempt with a new key.
 
 ## Core Endpoints
 - GET /api/v1/external-api/vehicles: List clean external vehicle DTOs with pagination.
 - GET /api/v1/external-api/vehicles/search: Search by q/search, price, year, mileage, color, fuel, transmission, and sort aliases.
 - GET /api/v1/external-api/vehicles/{listingId}: Read one vehicle detail with public media only.
-- GET /api/v1/external-api/leads: List CRM leads by status, source, phone, listingId, text query, page, and limit.
-- POST /api/v1/external-api/leads: Create a lead from an external site, chatbot, marketplace, or custom app.
-- GET /api/v1/external-api/leads/{leadId}: Read one CRM lead.
-- PATCH /api/v1/external-api/leads/{leadId}: Update lead status or buyer contact fields.
+- GET /api/v1/external-api/leads: List CRM leads by status, source, phone, listingId, text query, page, and limit. Requires the CRM entitlement.
+- POST /api/v1/external-api/leads: Create a lead from an external site, chatbot, marketplace, or custom app. Requires the CRM entitlement.
+- GET /api/v1/external-api/leads/{leadId}: Read one CRM lead. Requires the CRM entitlement.
+- PATCH /api/v1/external-api/leads/{leadId}: Update lead status or buyer contact fields. Requires the CRM entitlement.
+- POST /api/v1/external-api/financing/credere/preflight: Check readiness, banks, requirements, and safe existing-applicant fields.
+- POST /api/v1/external-api/financing/credere/simulations: Create an official consented simulation. Requires Idempotency-Key.
+- GET /api/v1/external-api/financing/credere/simulations/{inquiryId}: Read official status and bank conditions.
 
 ## Safety Notes
 - Do not expect VIN, full plate, tenant id, store id, private photos, or internal notes in public responses.
 - Public media URLs are filtered to media marked public.
-- Mutations are audited. Their Idempotency-Key header prevents duplicate processing by rejecting reused keys; it does not replay prior responses.
+- Lead metadata is a flat allowlist containing only message and title. Unknown or nested keys are rejected; metadata is capped at 4096 UTF-8 bytes.
+- Mutations are audited. Their Idempotency-Key header prevents duplicate processing and safely replays the original bounded JSON response after completion for an identical validated request.
+- Credere creation requires explicit credit-simulation and personal-data consent. No provider credential or store mapping id is accepted from clients.
 - Pagination caps are part of the public contract; agents should request more pages instead of assuming full inventory fits in one response.
 
 ## Optional
@@ -123,23 +129,27 @@ This is a concise Markdown map. Fetch the scoped OpenAPI document for schemas. F
 - [Public API docs](/api/v1/external-api/docs): Human and agent-readable Markdown guide for auth, routes, safety, and usage.
 - [Public API OpenAPI](/api/v1/external-api/openapi.json): OpenAPI 3.1 document containing only Public API and API-client management routes.
 - [Public API manifest](/api/v1/external-api/manifest): Machine-readable capability manifest with scopes, operations, auth rules, and AI-native URLs.
-- [Public API tool definitions](/api/v1/external-api/ai-tools): Function metadata for vehicle search and lead creation.
+- [Public API tool definitions](/api/v1/external-api/ai-tools): Function metadata for vehicle search, lead creation, and Credere financing.
 
 ## Core Runtime Routes
 - [List vehicles](/api/v1/external-api/vehicles): Requires inventory.read. Returns clean vehicle DTOs with public media summary.
 - [Search vehicles](/api/v1/external-api/vehicles/search): Requires inventory.read. Supports q/search, available/status, price, mileage, year, color/cor, fuel, transmission, and sort.
 - [Vehicle detail](/api/v1/external-api/vehicles/{listingId}): Requires inventory.read. Returns public media, safe unit refs, price history, and status history.
 - [List leads](/api/v1/external-api/leads): Requires lead.read and CRM entitlement. Supports q/search, phone, source, status, listingId, page, and limit.
-- [Create lead](/api/v1/external-api/leads): Requires lead.create and an Idempotency-Key deduplication key. Accepts V2 buyer fields and V1 aliases name/email/phone/message/vehicleId.
-- [Lead detail](/api/v1/external-api/leads/{leadId}): Requires lead.read.
-- [Update lead](/api/v1/external-api/leads/{leadId}): Requires lead.update and an Idempotency-Key deduplication key.
+- [Create lead](/api/v1/external-api/leads): Requires lead.create, the CRM entitlement, and an Idempotency-Key deduplication key. Accepts V2 buyer fields and V1 aliases name/email/phone/message/vehicleId.
+- [Lead detail](/api/v1/external-api/leads/{leadId}): Requires lead.read and the CRM entitlement.
+- [Update lead](/api/v1/external-api/leads/{leadId}): Requires lead.update, the CRM entitlement, and an Idempotency-Key deduplication key.
+- [Credere preflight](/api/v1/external-api/financing/credere/preflight): Requires financing.simulation.read. Returns readiness, usable banks, requirements, and safe applicant hydration.
+- [Create Credere simulation](/api/v1/external-api/financing/credere/simulations): Requires financing.simulation.create, explicit consent, and Idempotency-Key.
+- [Credere simulation detail](/api/v1/external-api/financing/credere/simulations/{inquiryId}): Requires financing.simulation.read and returns official bank conditions.
 
 ## Authentication And Safety
 - Send x-api-key: lv2_... or Authorization: Bearer lv2_....
-- Use least-privilege scopes: inventory.read, lead.create, lead.read, and lead.update.
+- Use least-privilege scopes, including financing.simulation.read/create only for clients that operate Credere.
 - Responses omit tenant ids, store ids, VIN, full plate fields, private photos, and internal inventory notes.
 - Public media URLs are filtered to media marked public.
-- API-key mutations use Idempotency-Key for duplicate rejection and request ids for audit correlation. Reuse returns 409 and does not replay the earlier response.
+- Lead metadata accepts only flat message and title strings, rejects unknown or nested keys, and is capped at 4096 UTF-8 bytes.
+- API-key mutations use Idempotency-Key and request ids for audit correlation. An identical completed request replays its original bounded JSON status/body; changed payloads and in-flight attempts return 409, while a 5xx attempt requires a new key.
 
 ## Optional
 - [Global Loja Veiculos API llms.txt](/llms.txt): Full backend API index. It is larger and includes operator-only routes.

@@ -69,7 +69,9 @@ export type InvitationStatus =
   "accepted" | "expired" | "pending" | "revoked" | "send_failed" | "sent";
 
 export type IdentityInvitation = {
+  acceptUrl: string | null;
   email: string;
+  emailDeliveryStatus: "failed" | "requested";
   id: string;
   role: string;
   status: InvitationStatus;
@@ -95,7 +97,7 @@ export type ProvisionedStore = {
 };
 
 export type AccountApi = {
-  bootstrap: () => Promise<SessionBootstrap>;
+  bootstrap: (options?: { signal?: AbortSignal }) => Promise<SessionBootstrap>;
   createAgency: (input: CreateAgencyInput) => Promise<ProvisionedAgency>;
   createAgencyStore: (
     input: CreateAgencyStoreInput,
@@ -111,10 +113,11 @@ export function createAccountApi(options: {
 }): AccountApi {
   const auth = options.auth ?? {};
   return {
-    bootstrap: () =>
+    bootstrap: (input) =>
       options
         .fetch(endpoint("/session/bootstrap", options.baseUrl), {
           headers: headers(auth),
+          ...(input?.signal ? { signal: input.signal } : {}),
         })
         .then(readJson<SessionBootstrap>),
     createAgency: (input) =>

@@ -16,6 +16,8 @@ export const defaultIgnoredDirectories = new Set([
   "test-results",
 ]);
 
+const defaultIgnoredFiles = new Set(["otavio-ai-workflow.md"]);
+
 export function walkFiles(roots, options = {}) {
   const rootList = Array.isArray(roots) ? roots : [roots];
   return rootList.flatMap((root) => walk(root, options));
@@ -49,12 +51,14 @@ export function workspaceRoots() {
 function walk(dir, options, files = []) {
   const ignoredDirectories =
     options.ignoredDirectories ?? defaultIgnoredDirectories;
+  const ignoredFiles = options.ignoredFiles ?? defaultIgnoredFiles;
   const extensions = options.extensions ?? null;
 
   for (const entry of readdirSync(dir)) {
     if (ignoredDirectories.has(entry)) continue;
 
     const path = join(dir, entry);
+    if (ignoredFiles.has(repoPath(path))) continue;
     const stat = statSync(path);
     if (stat.isDirectory()) {
       walk(path, options, files);

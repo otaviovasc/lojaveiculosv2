@@ -1,0 +1,473 @@
+/* ==========================================================================
+   CRM Tags Management - Modern Billing System Design
+   ========================================================================== */
+
+.crm-tag-manager {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.crm-tag-manager-page {
+  display: grid;
+  margin: 0 auto;
+  max-width: 76rem;
+  width: 100%;
+}
+
+.crm-tag-manager-page .crm-tag-manager {
+  box-shadow: none;
+  max-width: none;
+  min-height: 0;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Hero Card Header
+   -------------------------------------------------------------------------- */
+.crm-tag-hero-card {
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 6%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  display: grid;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.crm-tag-hero-watermark {
+  color: #059669;
+  height: 8.5rem;
+  opacity: 0.05;
+  pointer-events: none;
+  position: absolute;
+  right: -1.25rem;
+  bottom: -1.5rem;
+  transform: rotate(-10deg);
+  width: 8.5rem;
+}
+
+:root[data-theme="dark"] .crm-tag-hero-watermark,
+.dark .crm-tag-hero-watermark {
+  color: #34d399;
+}
+
+.crm-tag-hero-content {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.crm-tag-hero-main {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.crm-tag-hero-eyebrow {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-tag-hero-eyebrow,
+.dark .crm-tag-hero-eyebrow {
+  color: #34d399;
+}
+
+.crm-tag-hero-card h2 {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-xl);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.crm-tag-hero-card p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-tag-hero-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.crm-tag-count-badge {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.625rem;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0 0.85rem;
+}
+
+.crm-tag-create-btn {
+  align-items: center;
+  background: #047857;
+  border: 1px solid #047857;
+  border-radius: 0.625rem;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0 1.15rem;
+  box-shadow: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-create-btn:hover:not(:disabled) {
+  background: #065f46;
+  border-color: #065f46;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.crm-tag-create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Tag List Surface & Rows
+   -------------------------------------------------------------------------- */
+.crm-tag-list-surface {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.crm-tag-editor-drawer .feature-drawer__header {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 6%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+  border-bottom-color: var(--color-line);
+  padding-block: 1.25rem;
+}
+
+.crm-tag-editor-drawer .feature-drawer__title {
+  display: grid;
+  gap: 0.25rem;
+  font-family: var(--font-heading, var(--font-sans));
+  font-weight: 850;
+  letter-spacing: -0.015em;
+}
+
+.crm-tag-editor-eyebrow {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-tag-editor-eyebrow,
+.dark .crm-tag-editor-eyebrow {
+  color: #34d399;
+}
+
+.crm-tag-editor-heading {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.2;
+}
+
+.crm-tag-editor-drawer .feature-drawer__body {
+  background: var(--color-panel);
+}
+
+.crm-tag-editor-column {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.crm-tag-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crm-tag-list-heading strong {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-lg);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.crm-tag-list-heading p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin: 0.2rem 0 0 0;
+}
+
+.crm-tag-manager-note {
+  background: color-mix(in srgb, #f59e0b 10%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, var(--color-line));
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.crm-tag-manager-error {
+  background: color-mix(in srgb, #ef4444 10%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #ef4444 25%, var(--color-line));
+  border-radius: 0.75rem;
+  color: var(--color-crm-active-red);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.crm-tag-manager-status {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  margin: 0;
+}
+
+.crm-tag-admin-list {
+  display: grid;
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.crm-tag-admin-row {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 3.75rem;
+  padding: 0.95rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-admin-row:hover {
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  transform: translateY(-2px);
+}
+
+.crm-tag-admin-main {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.crm-tag-order-index {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+  padding: 0 0.55rem;
+  flex-shrink: 0;
+}
+
+.crm-tag-admin-info {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.crm-tag-order-caption {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.crm-template-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.crm-tag-action-btn {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.25rem;
+  box-shadow: none;
+  transition: all 0.15s ease;
+}
+
+.crm-tag-action-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.crm-tag-delete-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #ef4444 40%, var(--color-line)) !important;
+  color: #ef4444 !important;
+}
+
+.crm-tag-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.crm-tag-action-btn svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Empty State Card
+   -------------------------------------------------------------------------- */
+.crm-tag-empty-card {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px dashed var(--color-line);
+  border-radius: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.crm-tag-empty-icon {
+  align-items: center;
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 25%, var(--color-line));
+  border-radius: 1rem;
+  color: #059669;
+  display: inline-flex;
+  height: 3.5rem;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  width: 3.5rem;
+}
+
+:root[data-theme="dark"] .crm-tag-empty-icon,
+.dark .crm-tag-empty-icon {
+  color: #34d399;
+}
+
+.crm-tag-empty-icon svg {
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.crm-tag-manager-empty {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  margin: 0;
+}
+
+.crm-tag-empty-description {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 26rem;
+}
+
+/* --------------------------------------------------------------------------
+   Tag Editor Actions (Drawer & Modal)
+   -------------------------------------------------------------------------- */
+.crm-tag-editor-actions {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.crm-tag-editor-actions .crm-action {
+  min-height: 2.5rem;
+  border-radius: 0.625rem;
+  font-weight: 750;
+  padding: 0 1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-editor-actions .crm-action-muted {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-tag-editor-actions .crm-action-muted:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-app));
+}
+
+.crm-tag-editor-actions .crm-action:not(.crm-action-muted) {
+  background: #047857;
+  border-color: #047857;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.crm-tag-editor-actions .crm-action:not(.crm-action-muted):hover {
+  background: #065f46;
+  transform: translateY(-1px);
+}

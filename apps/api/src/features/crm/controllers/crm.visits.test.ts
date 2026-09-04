@@ -1,15 +1,15 @@
 import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
-import type { CrmWhatsappSession } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmConversationCycle } from "../../../domains/crm/ports/crmConversationRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   createAuditSpy,
   createTestApp,
   expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -54,8 +54,17 @@ describe("CRM visits routes", () => {
       method: "POST",
     });
     expect(created.status).toBe(201);
-    const visit = (await created.json()) as { id: string; status: string };
-    expect(visit.status).toBe("scheduled");
+    const visit = (await created.json()) as {
+      id: string;
+      listingId: string | null;
+      status: string;
+      vehicleTitle: string | null;
+    };
+    expect(visit).toMatchObject({
+      listingId: null,
+      status: "scheduled",
+      vehicleTitle: null,
+    });
 
     const listed = await app.request(`/api/v1/crm/visits?leadId=${lead.id}`);
     expect(listed.status).toBe(200);
@@ -112,17 +121,17 @@ describe("CRM visits routes", () => {
     );
   });
 
-  it("rejects a WhatsApp session that is linked to another lead", async () => {
+  it("rejects a WhatsApp cycle that is linked to another lead", async () => {
     const crmRepository = createMemoryCrmRepository();
     const firstLead = await createLead(crmRepository, "Lead Um");
     const secondLead = await createLead(crmRepository, "Lead Dois");
-    const session = createWhatsappSession({
+    const cycle = createCrmConversationCycle({
       id: "34000000-0000-4000-8000-000000000001",
       leadId: firstLead.id,
     });
     const app = createTestApp({
       crmRepository,
-      crmWhatsappRepository: createMemoryCrmWhatsappRepository([session]),
+      crmConversationRepository: createMemoryCrmConversationRepository([cycle]),
       permissions: visitPermissions,
     });
 
@@ -130,7 +139,7 @@ describe("CRM visits routes", () => {
       body: JSON.stringify({
         leadId: secondLead.id,
         scheduledAt: "2026-07-07T14:00:00.000Z",
-        sessionId: session.id,
+        cycleId: cycle.id,
       }),
       method: "POST",
     });
@@ -138,7 +147,8 @@ describe("CRM visits routes", () => {
     expect(response.status).toBe(409);
     await expectApiError(response, {
       code: "CRM_VISIT_SESSION_MISMATCH",
-      message: "WhatsApp session is not linked to the requested lead.",
+      message:
+        "WhatsApp conversationCycle is not linked to the requested lead.",
     });
   });
 
@@ -173,24 +183,31 @@ function createLead(
   });
 }
 
-function createWhatsappSession(
-  overrides: Partial<CrmWhatsappSession> = {},
-): CrmWhatsappSession {
+function createCrmConversationCycle(
+  overrides: Partial<CrmConversationCycle> = {},
+): CrmConversationCycle {
   const now = new Date("2026-07-06T10:00:00.000Z");
   return {
+    archivedAt: null,
     assignedUserId: null,
-    buyerChatLid: null,
-    buyerName: "Lead Um",
-    buyerPhone: "5511999999999",
+    customerChatId: null,
+    customerDisplayName: "Lead Um",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
-    channelExternalId: null,
+    externalThreadId: null,
     channelMetadata: {},
     connectionId: "24000000-0000-4000-8000-000000000101",
     createdAt: now,
-    externalSessionId: null,
+    deletedAt: null,
+    externalCycleId: null,
     firstHandledAt: null,
     freshLeadAt: now,
+    humanAttendanceChangedAt: null,
+    humanAttendanceState: null,
+    humanAttendanceStateVersion: null,
+    humanHandlingStartedAt: null,
     humanTakeoverAt: null,
+    interventionId: null,
     id: "34000000-0000-4000-8000-000000000000",
     lastAssignedAt: null,
     lastCustomerReadAt: null,
@@ -200,8 +217,10 @@ function createWhatsappSession(
     leadId: null,
     messageCount: 1,
     metadata: {},
+    pinnedAt: null,
     profilePhotoUrl: null,
-    sessionTags: [],
+    revision: 0,
+    tags: [],
     source: null,
     status: "ACTIVE",
     storeId,

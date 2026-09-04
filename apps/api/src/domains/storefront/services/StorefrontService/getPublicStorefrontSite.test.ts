@@ -68,6 +68,12 @@ function createRepository(options: { includeSite?: boolean } = {}) {
         ? null
         : {
             contact: {
+              addressCity: "Sao Paulo",
+              addressLine1: "Avenida Paulista, 1000",
+              addressLine2: "Bela Vista",
+              addressState: "SP",
+              addressZipCode: "01310-100",
+              businessHours: { text: "Segunda a sexta, 9h as 18h" },
               city: "Sao Paulo",
               contactEmail: "contato@demo.com.br",
               contactPhone: null,

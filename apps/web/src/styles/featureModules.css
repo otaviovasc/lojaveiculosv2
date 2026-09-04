@@ -290,7 +290,7 @@
 
 .feature-alert--info {
   --feature-alert-tone: var(--color-blue-start);
-  --feature-alert-tone-strong: var(--color-blue-start);
+  --feature-alert-tone-strong: var(--color-info-soft-foreground);
 }
 
 .feature-alert__icon {
@@ -313,6 +313,139 @@
 .feature-empty {
   color: var(--color-muted);
   font-weight: 900;
+}
+
+/* Branded loading surface: shares the empty-state watermark/chip family but
+   speaks "in progress" — a rotating accent ring, an indeterminate track like
+   the boot screen, and a reserved min-height so the shell never jumps. */
+.feature-loading-state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  justify-content: center;
+  min-height: 18rem;
+  overflow: hidden;
+  padding: 3rem 1.5rem;
+  position: relative;
+  text-align: center;
+}
+
+.feature-loading-state__chip {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 24%, var(--color-line));
+  border-radius: var(--surface-radius-xl);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--color-accent) 8%, transparent),
+    0 10px 24px color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 3.5rem;
+  justify-content: center;
+  width: 3.5rem;
+}
+
+.feature-loading-state__ring,
+.feature-loading-inline__ring {
+  border: 2px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.feature-loading-state__ring {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.feature-loading-inline__ring {
+  height: 1rem;
+  width: 1rem;
+}
+
+.feature-loading-state__title {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin-top: 1.25rem;
+}
+
+.feature-loading-state__body {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+  max-width: 26rem;
+}
+
+.feature-loading-state__track {
+  background: var(--color-line);
+  border-radius: 999px;
+  height: 2px;
+  margin-top: 1.75rem;
+  overflow: hidden;
+  position: relative;
+  width: min(12rem, 70%);
+}
+
+.feature-loading-state__track::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent),
+    transparent
+  );
+  content: "";
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: translateX(-100%);
+  width: 45%;
+}
+
+.feature-loading-inline {
+  align-items: center;
+  display: flex;
+  gap: 0.625rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .feature-loading-state__ring,
+  .feature-loading-inline__ring {
+    animation: feature-loading-spin 0.9s linear infinite;
+  }
+
+  .feature-loading-state__track::after {
+    animation: feature-loading-shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes feature-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes feature-loading-shimmer {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-loading-state__track::after {
+    transform: translateX(70%);
+  }
 }
 
 .feature-status.ok {

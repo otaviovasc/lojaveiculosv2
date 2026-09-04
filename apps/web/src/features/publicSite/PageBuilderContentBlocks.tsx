@@ -19,12 +19,11 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
     context.vehicles && context.vehicles.length > 0
       ? context.vehicles[0]
       : null;
-  const fallbackHeroImage = firstListing?.thumbnailUrl ?? "";
   const imageUrl =
     textProp(props.imageUrl) ??
-    fallbackHeroImage ??
+    firstListing?.thumbnailUrl ??
     context.config.heroImageUrl ??
-    pageBuilderDefaultMedia.audiFront;
+    null;
   const ctaUrl = textProp(props.ctaUrl) ?? "#estoque";
   return (
     <section className="bg-panel" id="home">
@@ -272,7 +271,7 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const imageUrl =
     textProp(props.imageUrl) ??
-    (context.preview ? pageBuilderDefaultMedia.bmwFront : null);
+    (context.preview ? pageBuilderDefaultMedia.showroom : null);
   return (
     <section className="bg-app">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">

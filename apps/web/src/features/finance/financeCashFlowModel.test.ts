@@ -125,6 +125,28 @@ describe("finance cash flow model", () => {
       "soon",
     ]);
   });
+
+  it("matches the expanded operational date presets at their boundaries", () => {
+    const on = (
+      date: string,
+      datePreset: Parameters<typeof matchesFinanceDateFilter>[1]["datePreset"],
+    ) =>
+      matchesFinanceDateFilter(entry(date, "expense", "pending", 1000, date), {
+        dateFrom: "",
+        datePreset,
+        dateTo: "",
+      });
+
+    expect(on("2026-06-22", "today")).toBe(true);
+    expect(on("2026-06-28", "thisWeek")).toBe(true);
+    expect(on("2026-06-29", "thisWeek")).toBe(false);
+    expect(on("2026-07-07", "next15")).toBe(true);
+    expect(on("2026-07-08", "next15")).toBe(false);
+    expect(on("2026-09-20", "next90")).toBe(true);
+    expect(on("2026-09-21", "next90")).toBe(false);
+    expect(on("2026-12-31", "thisYear")).toBe(true);
+    expect(on("2027-01-01", "thisYear")).toBe(false);
+  });
 });
 
 function entry(

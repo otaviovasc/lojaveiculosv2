@@ -18,11 +18,13 @@ export function createDrizzleCrmVisitRepository(
         .values({
           assignedUserId: input.assignedUserId ?? null,
           leadId: input.leadId,
+          listingId: input.listingId ?? null,
           notes: input.notes ?? null,
           scheduledAt: input.scheduledAt,
           status: input.status ?? "scheduled",
           storeId: input.storeId,
           tenantId: input.tenantId,
+          vehicleTitle: input.vehicleTitle ?? null,
         })
         .returning();
       if (!row) throw new Error("Drizzle adapter did not return visit.");
@@ -60,10 +62,16 @@ export function createDrizzleCrmVisitRepository(
             ? { assignedUserId: input.assignedUserId }
             : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.listingId !== undefined
+            ? { listingId: input.listingId }
+            : {}),
           ...(input.scheduledAt !== undefined
             ? { scheduledAt: input.scheduledAt }
             : {}),
           ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.vehicleTitle !== undefined
+            ? { vehicleTitle: input.vehicleTitle }
+            : {}),
         })
         .where(
           and(
@@ -96,11 +104,13 @@ function toVisit(row: typeof leadVisits.$inferSelect): CrmLeadVisit {
     createdAt: row.createdAt,
     id: row.id,
     leadId: row.leadId,
+    listingId: row.listingId,
     notes: row.notes,
     scheduledAt: row.scheduledAt,
     status: row.status as CrmLeadVisit["status"],
     storeId: row.storeId as StoreId,
     tenantId: row.tenantId as TenantId,
     updatedAt: row.updatedAt,
+    vehicleTitle: row.vehicleTitle,
   };
 }

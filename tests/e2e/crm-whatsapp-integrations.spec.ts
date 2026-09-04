@@ -40,7 +40,7 @@ test.describe("CRM WhatsApp integrations", () => {
       }),
     );
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Integrações/ }).click();
 
     await expect(

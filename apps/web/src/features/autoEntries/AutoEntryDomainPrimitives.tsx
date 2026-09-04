@@ -10,6 +10,7 @@ import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import { FeatureToneIcon } from "../../components/ui/FeatureToneIcon";
 import { cx, type FeatureIcon } from "../../components/ui/featureShared";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import type { AutoEntryTone } from "./domainMeta";
@@ -36,11 +37,7 @@ export function AutoEntryDomainCard({
     >
       <FeatureCardHeader
         className="auto-entry-domain-card__header"
-        icon={
-          <span aria-hidden="true" className="auto-entry-domain-card__icon">
-            <Icon className="size-4" />
-          </span>
-        }
+        icon={<FeatureToneIcon icon={Icon} size="lg" />}
       >
         <FeatureCardTitle className="auto-entry-domain-card__title">
           {title}
@@ -56,11 +53,14 @@ export function AutoEntryDomainCard({
 
 export function AutoEntrySaveAction({
   canManage,
+  isDirty,
   isSaving,
   label = "Salvar configuração",
   onClick,
 }: {
   canManage: boolean;
+  /** Card-local dirty flag (draft differs from stored). Undefined = not tracked. */
+  isDirty?: boolean;
   isSaving: boolean;
   label?: string;
   onClick: () => void;
@@ -68,13 +68,22 @@ export function AutoEntrySaveAction({
   if (!canManage) return null;
   return (
     <div className="auto-entry-domain-card__save flex justify-end border-t border-line/50 pt-4">
-      <FeatureActionButton
-        icon={Save}
-        isBusy={isSaving}
-        label={label}
-        onClick={onClick}
-        variant="primary"
-      />
+      <div className="ae-save-action">
+        <FeatureActionButton
+          disabled={isDirty === false}
+          icon={Save}
+          isBusy={isSaving}
+          label={label}
+          onClick={onClick}
+          variant="primary"
+        />
+        {isDirty ? (
+          <>
+            <span aria-hidden="true" className="ae-save-action__dot" />
+            <span className="sr-only">Alterações não salvas</span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -95,11 +104,7 @@ export function AutoEntryStat({
 }) {
   return (
     <div className={cx("ae-stat", className)}>
-      {Icon ? (
-        <span aria-hidden="true" className="ae-stat__icon">
-          <Icon className="size-4" />
-        </span>
-      ) : null}
+      {Icon ? <FeatureToneIcon icon={Icon} size="md" /> : null}
       <div className="ae-stat__body">
         <span className="ae-stat__label">{label}</span>
         <span className="ae-stat__value">{value}</span>

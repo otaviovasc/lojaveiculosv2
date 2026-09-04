@@ -49,7 +49,10 @@ function findSpecialSplit(clean: string): VehicleCatalogNameParts | null {
 function findCompoundFamily(clean: string): string | null {
   const normalized = normalize(clean);
   const match = compoundFamilies.find(
-    (family) => normalized === family || normalized.startsWith(`${family} `),
+    (family) =>
+      normalized === family ||
+      (normalized.startsWith(family) &&
+        /[^a-z0-9+]/.test(normalized.charAt(family.length))),
   );
   return match ? clean.slice(0, match.length) : null;
 }
@@ -91,8 +94,9 @@ function cleanVersionName(
 ): string {
   const escapedFamily = escapeRegExp(modelFamilyName.trim());
   return versionName
-    .replace(/^[./\-\s]+/g, "")
+    .replace(new RegExp(`^\\s*/?\\s*${escapedFamily}\\s+`, "i"), "")
     .replace(new RegExp(`/\\s*${escapedFamily}\\s+`, "i"), "/")
+    .replace(/^[./\-\s]+/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

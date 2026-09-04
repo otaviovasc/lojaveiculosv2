@@ -16,10 +16,7 @@ import {
 } from "../../publicSite/storefrontRuntimeApis";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { buildCustomPagePublicPath } from "../../publicSite/customPageUtils";
-import {
-  createVitrineComponents,
-  createVitrinePageSlug,
-} from "./VitrineTabComponentsHelper";
+import { createVitrinePageSlug } from "./VitrineTabComponentsHelper";
 import type { StoreSettingsSnapshot } from "../../settings/types";
 import { VitrinePreviewMockup, type Specs } from "./VitrinePreviewMockup";
 import { VitrinePromoMockup } from "./VitrinePromoMockup";
@@ -44,9 +41,8 @@ export function InventoryDetailVitrineTab({
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [storeSlug, setStoreSlug] = useState("demo");
-  const [storeName, setStoreName] = useState("Loja Demo");
-  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [storeSlug, setStoreSlug] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [activePage, setActivePage] = useState<StorefrontCustomPage | null>(
     null,
   );
@@ -66,12 +62,23 @@ export function InventoryDetailVitrineTab({
       setStoreName(
         settingsData.identity.tradingName ||
           settingsData.identity.legalName ||
-          "Loja Demo",
+          settingsData.identity.publicSlug,
       );
-      setWhatsappPhone(settingsData.profile.whatsappPhone || "");
       setSettings(settingsData);
 
-      const foundPage = pages.find((p) => p.slug === targetSlug);
+      const boundPage = pages.find(
+        (page) => page.sourceListingId === listing.id,
+      );
+      const legacyPage = pages.find(
+        (page) => !page.sourceListingId && page.slug === targetSlug,
+      );
+      const foundPage =
+        boundPage ??
+        (legacyPage
+          ? await pagesApi.createOrReuseVehicleVitrine(listing.id, {
+              visible: legacyPage.visible,
+            })
+          : null);
       setActivePage(foundPage ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -102,31 +109,16 @@ export function InventoryDetailVitrineTab({
   };
 
   const handleCreate = async () => {
+    if (!settings) return;
     setIsBusy(true);
     setError(null);
     try {
-      // 1. Create custom page
-      const createdPage = await pagesApi.createPage({
-        title: `${listing.title} - Oferta Exclusiva`,
-        slug: targetSlug,
-        description: `Página comercial para o veículo ${listing.title}. Confira fotos, ficha técnica e fale diretamente com a equipe.`,
-      });
-
-      // 2. Generate page components using helper
-      const components = createVitrineComponents({
-        detail,
-        primaryUnit,
-        specs,
-        storeName,
-        storeSlug,
-        whatsappPhone,
-      });
-
-      // 3. Save components & make public
-      const updatedPage = await pagesApi.updatePage(createdPage.id, {
-        components,
-        visible: true,
-      });
+      const updatedPage = await pagesApi.createOrReuseVehicleVitrine(
+        listing.id,
+        {
+          visible: true,
+        },
+      );
 
       setActivePage(updatedPage);
     } catch (err) {
@@ -141,9 +133,11 @@ export function InventoryDetailVitrineTab({
     setIsBusy(true);
     setError(null);
     try {
-      const updated = await pagesApi.updatePage(activePage.id, {
-        visible: checked,
-      });
+      const updated = checked
+        ? await pagesApi.createOrReuseVehicleVitrine(listing.id, {
+            visible: true,
+          })
+        : await pagesApi.updatePage(activePage.id, { visible: false });
       setActivePage(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -167,7 +161,8 @@ export function InventoryDetailVitrineTab({
   };
 
   const handleEdit = () => {
-    window.location.hash = "/custom-pages";
+    if (!activePage) return;
+    window.location.hash = `/custom-pages?page=${encodeURIComponent(activePage.id)}`;
   };
 
   const publicPhotos = useMemo(() => {
@@ -202,12 +197,13 @@ export function InventoryDetailVitrineTab({
       {activePage ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Column 1: Controls (7 cols) */}
-          <div className="lg:col-span-7 bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6 shadow-sm">
+          <div className="vehicle-detail-card lg:col-span-7 bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6 shadow-sm">
             {/* Top Row Controls */}
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-3">
                 <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
+                    aria-label="Publicar Vitrine"
                     type="checkbox"
                     disabled={isBusy}
                     checked={activePage.visible}
@@ -243,7 +239,7 @@ export function InventoryDetailVitrineTab({
               <span className="text-xs font-black uppercase tracking-wider text-muted">
                 URL pública da Vitrine
               </span>
-              <div className="flex items-center justify-between min-h-10 rounded-xl border border-line bg-app/30 px-3.5 font-bold text-xs">
+              <div className="vehicle-detail-subcard flex items-center justify-between min-h-10 rounded-xl border border-line bg-app/30 px-3.5 font-bold text-xs">
                 <span className="text-app-text truncate mr-2 select-all">
                   {publicUrl}
                 </span>
@@ -290,7 +286,7 @@ export function InventoryDetailVitrineTab({
           </div>
 
           {/* Column 2: Live Mockup Preview (5 cols) */}
-          <div className="lg:col-span-5 bg-panel border border-line rounded-2xl p-5 shadow-sm">
+          <div className="vehicle-detail-card lg:col-span-5 bg-panel border border-line rounded-2xl p-5 shadow-sm">
             <VitrinePreviewMockup
               settings={settings}
               listing={listing}
@@ -301,7 +297,7 @@ export function InventoryDetailVitrineTab({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-panel border border-line rounded-2xl p-6 lg:p-8 shadow-sm">
+        <div className="vehicle-detail-card grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-panel border border-line rounded-2xl p-6 lg:p-8 shadow-sm">
           {/* Left panel: Info & Trigger (7 cols) */}
           <div className="lg:col-span-7 flex flex-col gap-4 text-center lg:text-left">
             <div className="size-12 rounded-full bg-accent-soft text-accent flex items-center justify-center border border-accent-soft/20 animate-pulse mx-auto lg:mx-0">
@@ -320,7 +316,7 @@ export function InventoryDetailVitrineTab({
             </div>
             <button
               onClick={() => void handleCreate()}
-              disabled={isBusy}
+              disabled={isBusy || !settings}
               className="mt-2 self-center lg:self-start min-h-10 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5 disabled:opacity-50"
               type="button"
             >

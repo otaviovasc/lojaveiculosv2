@@ -13,6 +13,12 @@ import {
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
+import {
+  formatInventoryMileageInput,
+  formatInventoryPlateInput,
+  formatInventoryRenavamInput,
+  formatInventoryVinInput,
+} from "../model/inventoryInputFormatting";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
@@ -129,20 +135,41 @@ export function InventoryCreateForm({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <InventoryField label="Placa">
             <InventoryInput
               className="font-mono uppercase"
-              onChange={onChange("plate")}
+              maxLength={7}
+              onChange={(event) =>
+                onChange("plate")(formatInventoryPlateInput(event.target.value))
+              }
               placeholder="Ex: abc1d23"
               value={form.plate}
             />
           </InventoryField>
           <InventoryField label="Chassi / VIN">
             <InventoryInput
-              onChange={onChange("vin")}
+              className="font-mono uppercase"
+              maxLength={17}
+              onChange={(event) =>
+                onChange("vin")(formatInventoryVinInput(event.target.value))
+              }
               placeholder="Chassi ou VIN"
               value={form.vin}
+            />
+          </InventoryField>
+          <InventoryField label="Renavam">
+            <InventoryInput
+              className="font-mono"
+              inputMode="numeric"
+              maxLength={11}
+              onChange={(event) =>
+                onChange("renavam")(
+                  formatInventoryRenavamInput(event.target.value),
+                )
+              }
+              placeholder="11 dígitos"
+              value={form.renavam}
             />
           </InventoryField>
           <InventoryField label="Número de Estoque">
@@ -221,10 +248,12 @@ export function InventoryCreateForm({
           >
             <InventoryInput
               inputMode="numeric"
-              min={0}
-              onChange={onChange("mileageKm")}
-              placeholder="Ex: 32500"
-              type="number"
+              onChange={(event) => {
+                onChange("mileageKm")(
+                  formatInventoryMileageInput(event.target.value),
+                );
+              }}
+              placeholder="Ex: 32.500"
               value={form.mileageKm}
             />
           </InventoryField>

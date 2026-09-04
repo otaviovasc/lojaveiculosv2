@@ -44,6 +44,8 @@ function createApi(input: {
     createPipeline: vi.fn(),
     deletePipeline: vi.fn(),
     listActivities: vi.fn(),
+    listLeadBoard: vi.fn(),
+    listLeadPage: vi.fn(),
     listLeads: vi.fn(),
     listPipelines: vi.fn(),
     moveLeadPipelineStage: vi.fn(async () => input.movedLead),

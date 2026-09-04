@@ -8,12 +8,14 @@ export type CrmLeadVisit = {
   createdAt: Date;
   id: string;
   leadId: string;
+  listingId: string | null;
   notes: string | null;
   scheduledAt: Date;
   status: LeadVisitStatus;
   storeId: StoreId;
   tenantId: TenantId;
   updatedAt: Date;
+  vehicleTitle: string | null;
 };
 
 export type ListLeadVisitsInput = {
@@ -30,21 +32,25 @@ export type ListLeadVisitsInput = {
 export type CreateLeadVisitInput = {
   assignedUserId?: UserId | null;
   leadId: string;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt: Date;
   status?: LeadVisitStatus;
   storeId: StoreId;
   tenantId: TenantId;
+  vehicleTitle?: string | null;
 };
 
 export type UpdateLeadVisitInput = {
   assignedUserId?: UserId | null;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt?: Date;
   status?: LeadVisitStatus;
   storeId: StoreId;
   tenantId: TenantId;
   visitId: string;
+  vehicleTitle?: string | null;
 };
 
 export type CrmVisitRepository = {

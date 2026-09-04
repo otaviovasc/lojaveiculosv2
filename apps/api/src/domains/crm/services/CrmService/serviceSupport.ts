@@ -1,14 +1,16 @@
-import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { StoreScopedServiceContext } from "../../../../shared/serviceContext.js";
+import type {
+  ServiceContext,
+  StoreScopedServiceContext,
+} from "../../../../shared/serviceContext.js";
 import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
-import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
-import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
-import {
-  createNoopCrmBotWebhookDispatcher,
-  type CrmBotWebhookDispatcher,
-} from "../../ports/crmBotWebhookDispatcher.js";
+import { createDisabledCrmMessagingGateway } from "../../acl/disabledCrmMessagingGateway.js";
+import type { CrmExternalBotIntegrationRepository } from "../../ports/crmExternalBotIntegrationRepository.js";
+import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
+import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
+import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
   createNoopCrmRealtimePublisher,
@@ -17,100 +19,41 @@ import {
 import type { CrmRepository } from "../../ports/crmRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
-import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
-import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
-import type {
-  VehicleListingRepository,
-  VehicleMediaRepository,
-  VehicleUnitRepository,
-} from "../../../vehicle/ports/vehicleInventoryRepository.js";
+import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
+import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
+import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
+import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
+import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentRepository.js";
+import { CrmScopeError } from "../../crmScopeError.js";
+import type { CrmServicePorts } from "./types.js";
+export type { CrmServicePorts } from "./types.js";
+export { CrmScopeError } from "../../crmScopeError.js";
+export {
+  CrmPipelineDuplicateNameError,
+  CrmPipelineInUseError,
+  CrmPipelineStageNotFoundError,
+  CrmVisitNotFoundError,
+  CrmVisitSessionMismatchError,
+  CrmVisitVehicleNotFoundError,
+} from "../../crmServiceDomainErrors.js";
 
-export type CrmServicePorts = {
-  crmBotIntegrationRepository?: CrmBotIntegrationRepository;
-  crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
-  crmConnectionRepository?: CrmConnectionRepository;
-  crmPipelineRepository?: CrmPipelineRepository;
-  crmRealtimePublisher?: CrmRealtimePublisher;
-  crmRepository: CrmRepository;
-  crmVisitRepository?: CrmVisitRepository;
-  crmWebhookEventRepository?: CrmWebhookEventRepository;
-  crmWhatsappGateway?: CrmWhatsappGateway;
-  crmWhatsappMediaStorage?: ObjectStorage;
-  crmWhatsappRepository?: CrmWhatsappRepository;
-  environment?: string;
-  transaction?: <T>(
-    action: (ports: CrmServicePorts) => Promise<T>,
-  ) => Promise<T>;
-  vehicleInventory?: {
-    listingRepository: VehicleListingRepository;
-    mediaRepository: VehicleMediaRepository;
-    unitRepository: VehicleUnitRepository;
-  };
-};
+export {
+  CrmActivityIdempotencyConflictError,
+  CrmLeadNotFoundError,
+  CrmPipelineNotFoundError,
+} from "./crmServiceErrors.js";
 
-export class CrmLeadNotFoundError extends Error {
-  constructor(leadId: string) {
-    super(`Lead not found: ${leadId}`);
-    this.name = "CrmLeadNotFoundError";
-  }
+export function isCrmOlxChatEnabled(ports: CrmServicePorts): boolean {
+  return ports.crmProviderRuntime?.olxChatEnabled === true;
 }
 
-export class CrmActivityIdempotencyConflictError extends Error {
-  constructor() {
-    super(
-      "Idempotency key was already used with a different CRM activity payload.",
-    );
-    this.name = "CrmActivityIdempotencyConflictError";
+export function getCrmOutboundIntentRepository(
+  ports: CrmServicePorts,
+): CrmOutboundIntentRepository {
+  if (!ports.crmOutboundIntentRepository) {
+    throw new Error("CRM outbound intent repository is unavailable.");
   }
-}
-
-export class CrmPipelineNotFoundError extends Error {
-  constructor(pipelineId: string) {
-    super(`CRM pipeline not found: ${pipelineId}`);
-    this.name = "CrmPipelineNotFoundError";
-  }
-}
-
-export class CrmPipelineStageNotFoundError extends Error {
-  constructor(stageId: string) {
-    super(`CRM pipeline stage not found: ${stageId}`);
-    this.name = "CrmPipelineStageNotFoundError";
-  }
-}
-
-export class CrmPipelineDuplicateNameError extends Error {
-  constructor(name: string) {
-    super(`CRM pipeline name already exists: ${name}`);
-    this.name = "CrmPipelineDuplicateNameError";
-  }
-}
-
-export class CrmPipelineInUseError extends Error {
-  constructor(message = "CRM pipeline is in use by active leads.") {
-    super(message);
-    this.name = "CrmPipelineInUseError";
-  }
-}
-
-export class CrmVisitNotFoundError extends Error {
-  constructor(visitId: string) {
-    super(`CRM visit not found: ${visitId}`);
-    this.name = "CrmVisitNotFoundError";
-  }
-}
-
-export class CrmVisitSessionMismatchError extends Error {
-  constructor() {
-    super("WhatsApp session is not linked to the requested lead.");
-    this.name = "CrmVisitSessionMismatchError";
-  }
-}
-
-export class CrmScopeError extends Error {
-  constructor(fieldName: string) {
-    super(`CRM service requires ${fieldName}.`);
-    this.name = "CrmScopeError";
-  }
+  return ports.crmOutboundIntentRepository;
 }
 
 export function requireCrmScope(context: ServiceContext): {
@@ -122,7 +65,7 @@ export function requireCrmScope(context: ServiceContext): {
   return { storeId: context.storeId, tenantId: context.tenantId };
 }
 
-export function requireCrmWhatsappScope(context: ServiceContext): {
+export function requireCrmMessagingScope(context: ServiceContext): {
   storeId: string;
   tenantId: string;
 } {
@@ -134,19 +77,30 @@ export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
 }
 
-export function getCrmBotIntegrationRepository(
+export function getCrmAssigneeMembershipRepository(
   ports: CrmServicePorts,
-): CrmBotIntegrationRepository {
-  if (!ports.crmBotIntegrationRepository) {
-    throw new CrmScopeError("crmBotIntegrationRepository");
+): CrmAssigneeMembershipRepository {
+  if (!ports.crmAssigneeMembershipRepository) {
+    throw new CrmScopeError("crmAssigneeMembershipRepository");
   }
-  return ports.crmBotIntegrationRepository;
+  return ports.crmAssigneeMembershipRepository;
 }
 
-export function getCrmBotWebhookDispatcher(
+export function getCrmOutcomeRepository(
   ports: CrmServicePorts,
-): CrmBotWebhookDispatcher {
-  return ports.crmBotWebhookDispatcher ?? createNoopCrmBotWebhookDispatcher();
+): CrmOutcomeRepository {
+  if (!ports.crmOutcomeRepository)
+    throw new CrmScopeError("crmOutcomeRepository");
+  return ports.crmOutcomeRepository;
+}
+
+export function getCrmExternalBotIntegrationRepository(
+  ports: CrmServicePorts,
+): CrmExternalBotIntegrationRepository {
+  if (!ports.crmExternalBotIntegrationRepository) {
+    throw new CrmScopeError("crmExternalBotIntegrationRepository");
+  }
+  return ports.crmExternalBotIntegrationRepository;
 }
 
 export function getCrmVisitRepository(
@@ -172,13 +126,23 @@ export function getCrmRealtimePublisher(
 ): CrmRealtimePublisher {
   return ports.crmRealtimePublisher ?? createNoopCrmRealtimePublisher();
 }
-
 export function getCrmConnectionRepository(
-  ports: CrmServicePorts,
+  ports: Pick<CrmServicePorts, "crmConnectionRepository">,
 ): CrmConnectionRepository {
   if (!ports.crmConnectionRepository) {
     return {
+      archiveAbandonedZapiConnections: async () => [],
+      claimZapiWebhookSetup: async () => null,
+      configureInitialZapiCredentials: async () => ({ status: "not_found" }),
+      createConnection: async () => {
+        throw new CrmScopeError("crmConnectionRepository");
+      },
+      upsertOlxConnection: async () => {
+        throw new CrmScopeError("crmConnectionRepository");
+      },
+      findConnectionByExternalId: async () => null,
       findConnectionById: async () => null,
+      finishZapiWebhookSetup: async () => null,
       listConnections: async () => [],
       updateConnection: async () => null,
     };
@@ -186,25 +150,52 @@ export function getCrmConnectionRepository(
   return ports.crmConnectionRepository;
 }
 
-export function getCrmWhatsappGateway(
-  ports: CrmServicePorts,
-): CrmWhatsappGateway {
-  return ports.crmWhatsappGateway ?? createDisabledCrmWhatsappGateway();
+export function getCrmRoutingConnectionRepository(
+  ports: Pick<CrmServicePorts, "crmRoutingConnectionRepository">,
+): CrmRoutingConnectionRepository {
+  if (!ports.crmRoutingConnectionRepository) {
+    throw new CrmScopeError("crmRoutingConnectionRepository");
+  }
+  return ports.crmRoutingConnectionRepository;
 }
 
-export function getCrmWhatsappMediaStorage(
+export function getCrmRoutingPolicyRepository(
+  ports: Pick<CrmServicePorts, "crmRoutingPolicyRepository">,
+): CrmRoutingPolicyRepository {
+  if (!ports.crmRoutingPolicyRepository) {
+    throw new CrmScopeError("crmRoutingPolicyRepository");
+  }
+  return ports.crmRoutingPolicyRepository;
+}
+
+export function getCrmMessagingGateway(
+  ports: CrmServicePorts,
+): CrmMessagingGateway {
+  return ports.crmMessagingGateway ?? createDisabledCrmMessagingGateway();
+}
+
+export function getCrmMediaStorage(
   ports: CrmServicePorts,
 ): ObjectStorage | null {
-  return ports.crmWhatsappMediaStorage ?? null;
+  return ports.crmMediaStorage ?? null;
 }
 
-export function getCrmWhatsappRepository(
+export function getCrmConversationRepository(
   ports: CrmServicePorts,
-): CrmWhatsappRepository {
-  if (!ports.crmWhatsappRepository) {
-    throw new CrmScopeError("crmWhatsappRepository");
+): CrmConversationRepository {
+  if (!ports.crmConversationRepository) {
+    throw new CrmScopeError("crmConversationRepository");
   }
-  return ports.crmWhatsappRepository;
+  return ports.crmConversationRepository;
+}
+
+export function getCrmConversationCycleCommandRepository(
+  ports: CrmServicePorts,
+): CrmConversationCycleCommandRepository {
+  if (!ports.crmConversationCycleCommandRepository) {
+    throw new CrmScopeError("crmConversationCycleCommandRepository");
+  }
+  return ports.crmConversationCycleCommandRepository;
 }
 
 export function getCrmWebhookEventRepository(
@@ -214,6 +205,15 @@ export function getCrmWebhookEventRepository(
     throw new CrmScopeError("crmWebhookEventRepository");
   }
   return ports.crmWebhookEventRepository;
+}
+
+export function getCrmOlxWebhookSecurity(
+  ports: CrmServicePorts,
+): CrmOlxWebhookSecurity {
+  if (!ports.crmOlxWebhookSecurity) {
+    throw new CrmScopeError("crmOlxWebhookSecurity");
+  }
+  return ports.crmOlxWebhookSecurity;
 }
 
 export function getCrmEnvironment(ports: CrmServicePorts): string {

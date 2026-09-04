@@ -18,9 +18,13 @@ export interface CostItem {
   id: string;
   account: string;
   date: string;
+  dateIso: string;
   kind: InventoryCostKind;
   kindLabel: string;
+  status: "active" | "voided";
   value: number;
+  voidedAt?: string | null;
+  voidReason?: string | null;
   receipt?: {
     id: string;
     fileName: string;
@@ -33,13 +37,27 @@ export interface FinanceiroCustosSectionProps {
   costs: readonly CostItem[];
   formatBRL: (cents: number) => string;
   isAdding?: boolean;
+  isUpdating?: boolean;
+  isVoiding?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canVoid?: boolean;
   onAddCost: (
     account: string,
     value: number,
     kind: InventoryCostKind,
+    costDate: string,
     file?: File | null,
   ) => Promise<boolean>;
   onDownloadReceipt?: (documentId: string) => void;
+  onUpdateCost?: (
+    costId: string,
+    account: string,
+    value: number,
+    kind: InventoryCostKind,
+    costDate: string,
+  ) => Promise<boolean>;
+  onVoidCost?: (costId: string, reason: string) => Promise<boolean>;
 }
 
 const costKindLabels: Record<InventoryCostKind, string> = {

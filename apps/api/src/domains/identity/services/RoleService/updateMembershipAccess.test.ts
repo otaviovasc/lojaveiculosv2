@@ -1,22 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import type {
-  StoreId,
-  StoreMembershipId,
-  TenantId,
-  UserId,
-} from "@lojaveiculosv2/shared";
-import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { RoleManagementRepository } from "../../ports/roleManagementRepository.js";
+import { describe, expect, it } from "vitest";
+import type { UserId } from "@lojaveiculosv2/shared";
+import {
+  createRoleTestContext as createContext,
+  createRoleTestRepository as createRepository,
+  roleTestAgencyUserId as agencyUserId,
+  roleTestOwnerMembershipId as ownerMembershipId,
+  roleTestOwnerUserId as ownerUserId,
+  roleTestSalesmanMembershipId as salesmanMembershipId,
+} from "../../testSupportRoleManagement.js";
 import { updateMembershipAccess } from "./updateMembershipAccess.js";
 import { RoleManagementPolicyError } from "./serviceSupport.js";
-
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const ownerUserId = "user_owner" as UserId;
-const agencyUserId = "user_agency" as UserId;
-const ownerMembershipId = "membership_owner" as StoreMembershipId;
-const agencyMembershipId = "membership_agency" as StoreMembershipId;
-const salesmanMembershipId = "membership_salesman" as StoreMembershipId;
 
 describe("updateMembershipAccess", () => {
   it("lets owner update subuser role and overrides", async () => {
@@ -65,7 +58,7 @@ describe("updateMembershipAccess", () => {
         overrides: [
           {
             allowed: true,
-            permission: "crm.whatsapp.send",
+            permission: "crm.messages.send",
             reason: "approved",
           },
         ],
@@ -79,7 +72,7 @@ describe("updateMembershipAccess", () => {
         overrides: [
           {
             allowed: true,
-            permission: "crm.whatsapp.send",
+            permission: "crm.messages.send",
             reason: "approved",
           },
         ],
@@ -89,7 +82,45 @@ describe("updateMembershipAccess", () => {
       result.permissionGroups
         .find((group) => group.key === "crm")
         ?.permissions.map((permission) => permission.key),
-    ).toEqual(expect.arrayContaining(["crm.whatsapp.send"]));
+    ).toEqual(expect.arrayContaining(["crm.messages.send"]));
+  });
+
+  it("keeps CRM setup allowed while persisting an explicit pairing denial", async () => {
+    const repository = createRepository();
+
+    await updateMembershipAccess(
+      createContext(ownerUserId),
+      {
+        membershipId: salesmanMembershipId,
+        overrides: [
+          {
+            allowed: true,
+            permission: "crm.messaging.connection.setup",
+            reason: "channel_configuration_allowed",
+          },
+          {
+            allowed: false,
+            permission: "crm.messaging.connection.pair",
+            reason: "pairing_requires_owner",
+          },
+        ],
+        role: "supervisor",
+      },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overrides: [
+          {
+            allowed: false,
+            permission: "crm.messaging.connection.pair",
+            reason: "pairing_requires_owner",
+          },
+        ],
+        role: "supervisor",
+      }),
+    );
   });
 
   it("blocks owner from assigning owner role", async () => {
@@ -161,6 +192,22 @@ describe("updateMembershipAccess", () => {
     );
   });
 
+  it("lets a validated tenant-level agency manage owners without a direct store membership", async () => {
+    const repository = createRepository();
+    const context = createContext("user_virtual_agency" as UserId);
+    context.membershipRole = "agency";
+
+    await updateMembershipAccess(
+      context,
+      { membershipId: ownerMembershipId, overrides: [], role: "owner" },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ membershipId: ownerMembershipId }),
+    );
+  });
+
   it("blocks users from editing their own role", async () => {
     await expect(
       updateMembershipAccess(
@@ -185,54 +232,3 @@ describe("updateMembershipAccess", () => {
     ).rejects.toBeInstanceOf(RoleManagementPolicyError);
   });
 });
-
-function createContext(userId: UserId) {
-  return createServiceContext({
-    actor: { id: userId, kind: "user" },
-    permissions: ["users.manage"],
-    request: { requestId: "req_1" },
-    storeId,
-    tenantId,
-  });
-}
-
-function createRepository(): RoleManagementRepository {
-  const state = {
-    memberships: [
-      {
-        membershipId: agencyMembershipId,
-        overrides: [],
-        role: "agency" as const,
-        status: "active" as const,
-        user: { email: "agency@test", id: agencyUserId, name: "Agency" },
-      },
-      {
-        membershipId: ownerMembershipId,
-        overrides: [],
-        role: "owner" as const,
-        status: "active" as const,
-        user: { email: "owner@test", id: ownerUserId, name: "Owner" },
-      },
-      {
-        membershipId: salesmanMembershipId,
-        overrides: [],
-        role: "salesman" as const,
-        status: "active" as const,
-        user: {
-          email: "salesman@test",
-          id: "user_salesman" as UserId,
-          name: "Salesman",
-        },
-      },
-    ],
-    pendingInvitations: [],
-    storeId,
-    tenantId,
-  };
-
-  return {
-    listActiveMembersByStore: vi.fn(async () => []),
-    listByStore: vi.fn(async () => state),
-    updateMembershipAccess: vi.fn(async () => state),
-  };
-}

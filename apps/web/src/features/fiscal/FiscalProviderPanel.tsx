@@ -1,39 +1,81 @@
-import { ShieldAlert } from "lucide-react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { PlugZap, ShieldAlert, ShieldCheck } from "lucide-react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { getFiscalConfigurationLabels } from "./fiscalLabels";
 import type { FiscalOverview } from "./types";
 
 export function FiscalProviderPanel({
+  onOpenConnection,
   overview,
 }: {
+  onOpenConnection?: () => void;
   overview: FiscalOverview;
 }) {
+  const configured = overview.provider.configured;
   const missingConfiguration = getFiscalConfigurationLabels(
     overview.provider.missingConfiguration,
   );
 
   return (
-    <FeatureSection
-      className="feature-panel"
-      description={
-        overview.provider.configured
-          ? "Conexão, credencial e retorno de eventos estão prontos para uso."
-          : "A emissão ficará bloqueada até os itens abaixo serem configurados."
+    <FeatureAlert
+      action={
+        onOpenConnection && !configured ? (
+          <FeatureActionButton
+            icon={PlugZap}
+            label="Abrir conexão fiscal"
+            onClick={onOpenConnection}
+            title="Abrir a configuração da conexão fiscal"
+          />
+        ) : undefined
       }
-      icon={<ShieldAlert aria-hidden="true" className="size-5" />}
+      className="fiscal-shell-notice fiscal-provider-panel"
+      icon={
+        configured ? (
+          <ShieldCheck aria-hidden="true" className="size-5" />
+        ) : (
+          <ShieldAlert aria-hidden="true" className="size-5" />
+        )
+      }
       title={
-        overview.provider.configured
-          ? "Integração fiscal pronta"
-          : "Integração fiscal incompleta"
+        <span className="fiscal-notice-header">
+          <span className="fiscal-notice-title">
+            {configured
+              ? "Integração fiscal pronta"
+              : "Integração fiscal incompleta"}
+          </span>
+          <span
+            className={
+              configured
+                ? "fiscal-notice-badge fiscal-notice-badge--success"
+                : "fiscal-notice-badge fiscal-notice-badge--warning"
+            }
+          >
+            {configured ? "Operacional" : "Ação necessária"}
+          </span>
+        </span>
       }
+      tone={configured ? "success" : "warning"}
     >
-      {!overview.provider.configured ? (
-        <ul className="mt-4 grid gap-2 pl-5 text-sm font-bold text-danger">
-          {missingConfiguration.map((label) => (
-            <li key={label}>{label}</li>
-          ))}
-        </ul>
-      ) : null}
-    </FeatureSection>
+      <div className="fiscal-notice-text-wrap">
+        <p className="fiscal-notice-body">
+          {configured
+            ? "Conexão, credencial e retorno de eventos estão prontos para uso."
+            : "A emissão ficará bloqueada até os itens abaixo serem configurados."}
+        </p>
+        {!configured ? (
+          <ul className="fiscal-provider-alert__list">
+            {missingConfiguration.map((label) => (
+              <li className="fiscal-provider-alert__item" key={label}>
+                <span
+                  aria-hidden="true"
+                  className="fiscal-provider-alert__dot"
+                />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </FeatureAlert>
   );
 }

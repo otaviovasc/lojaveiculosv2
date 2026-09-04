@@ -1,0 +1,344 @@
+/* ==========================================================================
+   Fiscal setup — issuer company, A1 certificate and tax-defaults review.
+   Billing/credere visual language: panel cards with the accent "speed line",
+   rotated low-opacity watermark icons, a blurred accent blob, Satoshi display
+   headings and wide-tracked uppercase micro labels. Colors only via design
+   tokens / color-mix — never hardcoded.
+   ========================================================================== */
+
+.fiscal-setup-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 1.25rem;
+  overflow: clip;
+  padding: clamp(1.25rem, 2.4vw, 1.75rem);
+  position: relative;
+}
+
+/* Fine accent thread along the panel top edge — the credere "speed line". */
+.fiscal-setup-panel::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    color-mix(in srgb, var(--color-accent) 42%, transparent) 34%,
+    color-mix(in srgb, var(--color-accent) 0%, transparent) 72%
+  );
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.fiscal-setup-panel__blob {
+  background: color-mix(in srgb, var(--color-accent-strong) 15%, transparent);
+  border-radius: 999px;
+  filter: blur(120px);
+  height: 220px;
+  pointer-events: none;
+  position: absolute;
+  right: 12%;
+  top: -80px;
+  width: 380px;
+}
+
+.fiscal-setup-panel__watermark {
+  bottom: -2rem;
+  color: var(--color-accent-strong);
+  opacity: 0.1;
+  pointer-events: none;
+  position: absolute;
+  right: -1.5rem;
+  transform: rotate(-12deg);
+  z-index: 0;
+}
+
+.fiscal-setup-panel__watermark svg {
+  height: 9rem;
+  stroke-width: 1.2;
+  width: 9rem;
+}
+
+.fiscal-setup-panel__header,
+.fiscal-setup-panel__body {
+  position: relative;
+  z-index: 1;
+}
+
+.fiscal-setup-panel__header {
+  align-items: flex-start;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-line) 70%, transparent);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding-bottom: 1.25rem;
+}
+
+.fiscal-setup-panel__icon {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+  border-radius: var(--radius-lg);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+.fiscal-setup-panel__eyebrow {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fiscal-setup-panel__title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  margin-top: 0.2rem;
+}
+
+.fiscal-setup-panel__description {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.55;
+  margin-top: 0.35rem;
+  max-width: 62ch;
+}
+
+.fiscal-setup-panel__body {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* --- Grouped form sections (credere section label + grouped container) --- */
+
+.fiscal-setup-section {
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-line) 75%, transparent);
+  border-radius: 1rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+/* The grid display above beats the UA [hidden] rule — restore it. */
+.fiscal-setup-section[hidden] {
+  display: none;
+}
+
+.fiscal-setup-section-label {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fiscal-setup-section-label::before {
+  background: var(--color-accent);
+  content: "";
+  display: inline-block;
+  height: 2px;
+  width: 1.1rem;
+}
+
+.fiscal-setup-section-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+/* --- A1 certificate dropzone ---------------------------------------------- */
+
+.fiscal-setup-dropzone {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 60%, var(--color-panel));
+  border: 1.5px dashed
+    color-mix(in srgb, var(--color-line) 90%, var(--color-muted));
+  border-radius: 1rem;
+  cursor: pointer;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  min-height: 10rem;
+  padding: 1.5rem 1.25rem;
+  position: relative;
+  text-align: center;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.fiscal-setup-dropzone:hover,
+.fiscal-setup-dropzone:focus-within {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__title,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__title {
+  color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__hint,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__hint {
+  color: var(--color-text);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__file-name,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__file-name {
+  color: var(--color-accent-strong);
+}
+
+.fiscal-setup-dropzone:hover .fiscal-setup-dropzone__file-size,
+.fiscal-setup-dropzone:focus-within .fiscal-setup-dropzone__file-size {
+  color: var(--color-text);
+}
+
+.fiscal-setup-dropzone--dragging {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-strong);
+  border-style: solid;
+  transform: scale(1.01);
+}
+
+.fiscal-setup-dropzone--selected {
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-line));
+  border-style: solid;
+}
+
+.fiscal-setup-dropzone--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.fiscal-setup-dropzone--disabled:hover {
+  background: color-mix(in srgb, var(--color-app) 60%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-line) 90%, var(--color-muted));
+}
+
+.fiscal-setup-dropzone__icon {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.fiscal-setup-dropzone__title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.fiscal-setup-dropzone__hint {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.fiscal-setup-dropzone__file {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  min-width: 0;
+}
+
+.fiscal-setup-dropzone__file-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.fiscal-setup-dropzone__file-name {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-setup-dropzone__file-size {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+/* --- Review acknowledgment card -------------------------------------------- */
+
+.fiscal-setup-ack {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--color-app) 60%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.fiscal-setup-ack:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-line));
+}
+
+.fiscal-setup-ack:has(:checked) {
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-line));
+}
+
+/* --- Responsive / motion ---------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .fiscal-setup-panel__header {
+    flex-direction: column;
+  }
+
+  .fiscal-setup-panel__watermark svg {
+    height: 6.5rem;
+    width: 6.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiscal-setup-dropzone,
+  .fiscal-setup-ack {
+    transition: none;
+  }
+
+  .fiscal-setup-dropzone--dragging {
+    transform: none;
+  }
+}

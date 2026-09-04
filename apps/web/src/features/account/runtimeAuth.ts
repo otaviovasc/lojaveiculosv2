@@ -1,3 +1,4 @@
+import { getToken as getClerkToken } from "@clerk/react-router";
 import { readRuntimeStoreSlug } from "./currentStore";
 import { readLocalDevAccount, type LocalDevAuthEnv } from "./localDevAuth";
 
@@ -6,14 +7,86 @@ export type RuntimeAuthHeadersInput = {
   includeStoreSlug?: boolean;
 };
 
-export async function readClerkToken() {
-  const clerk = (window as Window & ClerkRuntime).Clerk;
-  return (await clerk?.session?.getToken?.()) ?? null;
+export async function readClerkToken(options?: { skipCache?: boolean }) {
+  // Local development authenticates through explicit x-clerk-user-id headers.
+  // Do not initialize Clerk just to discover that there is no browser token;
+  // the Clerk runtime is intentionally absent from the local stack.
+  if (readLocalDevAccount()) return null;
+  return getClerkToken(options);
+}
+
+/**
+ * Fetch wrapper that resolves a fresh Clerk session token on every request,
+ * so long-lived API clients never send an expired token. On a 401 it forces
+ * a token refresh and retries once.
+ */
+export function createRuntimeFetch(baseFetch?: typeof fetch): typeof fetch {
+  const base = baseFetch ?? ((input, init) => window.fetch(input, init));
+
+  return async (input, init) => {
+    if (isAwsPresignedRequest(input)) return base(input, init);
+
+    const token = await readClerkToken();
+    const response = await base(
+      input,
+      token ? withAuthorization(init, token) : init,
+    );
+
+    const canRetry =
+      response.status === 401 &&
+      token !== null &&
+      (init?.body == null || typeof init.body === "string");
+    if (!canRetry) return response;
+
+    const refreshedToken = await readClerkToken({ skipCache: true });
+    if (!refreshedToken || refreshedToken === token) return response;
+    return base(input, withAuthorization(init, refreshedToken));
+  };
+}
+
+function isAwsPresignedRequest(input: RequestInfo | URL): boolean {
+  const rawUrl =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+  let url: URL;
+  try {
+    url = new URL(rawUrl, window.location.href);
+  } catch {
+    return false;
+  }
+
+  return (
+    url.searchParams.has("X-Amz-Algorithm") &&
+    url.searchParams.has("X-Amz-Credential") &&
+    url.searchParams.has("X-Amz-Signature")
+  );
+}
+
+function withAuthorization(
+  init: RequestInit | undefined,
+  token: string,
+): RequestInit {
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  return { ...init, headers };
 }
 
 export function readRuntimeApiBaseUrl(): { baseUrl?: string } {
   const env = import.meta.env as { VITE_API_BASE_URL?: string };
-  return env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {};
+  const configuredBaseUrl = env.VITE_API_BASE_URL?.trim();
+  return configuredBaseUrl
+    ? { baseUrl: normalizeRuntimeApiBaseUrl(configuredBaseUrl) }
+    : {};
+}
+
+export function normalizeRuntimeApiBaseUrl(baseUrl: string): string {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  return normalizedBaseUrl.endsWith("/api/v1")
+    ? normalizedBaseUrl
+    : `${normalizedBaseUrl}/api/v1`;
 }
 
 export async function createRuntimeAuthHeaders(
@@ -65,14 +138,6 @@ export function createRuntimeActorAuth(
     ...(storeSlug ? { storeSlug } : {}),
   };
 }
-
-type ClerkRuntime = {
-  Clerk?: {
-    session?: {
-      getToken?: () => Promise<string | null>;
-    };
-  };
-};
 
 type RuntimeAuthEnv = LocalDevAuthEnv & {
   VITE_DEV_CLERK_USER_ID?: string;

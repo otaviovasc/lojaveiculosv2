@@ -192,6 +192,7 @@ export function createRows() {
         isDeleted: false,
         listingId: "listing_1",
         plate: null,
+        renavam: null,
         status: "available",
         stockNumber: null,
         storeId: "store_1",

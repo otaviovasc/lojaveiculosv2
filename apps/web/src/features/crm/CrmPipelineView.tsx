@@ -6,7 +6,10 @@ import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
 import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { CrmPipelineSettingsLayout } from "./CrmPipelineSettingsLayout";
 import { CrmSimulationModal } from "./CrmSimulationModal";
-import type { FinancingSimulationDraft } from "./crmLeadData";
+import { CrmLeadChatModal } from "./CrmLeadChatModal";
+import { Toast, type ToastTone } from "../../components/ui/Toast";
+import { getLeadStageId, type FinancingSimulationDraft } from "./crmLeadData";
+import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import { type PipelineStage } from "./crmPipelineStorage";
 import {
@@ -21,12 +24,9 @@ import { CrmQuickAddStageModal } from "./CrmQuickAddStageModal";
 import { CrmEditStageModal } from "./CrmEditStageModal";
 import { CrmListView } from "./CrmListView";
 import { CrmPipelineAlert, CrmPipelineLoading } from "./CrmPipelineViewStates";
-import { useCrmPipelines } from "./useCrmPipelines";
 import { getFilteredLeads, hasAnyClientFilter } from "./CrmPipelineViewFilters";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
-  const storeId = props.leads[0]?.storeId ?? "default";
-
   const {
     pipelines,
     activePipelineId,
@@ -38,7 +38,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     handleAddStage,
     isLoading: isPipelineLoading,
     error: pipelineError,
-  } = useCrmPipelines(storeId, props.pipelineApi);
+  } = props.pipelinesState;
 
   const [visibleStages, setVisibleStages] = useState<Record<string, boolean>>(
     {},
@@ -46,6 +46,12 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [simulateLead, setSimulateLead] = useState<ProductCrmLead | null>(null);
+  const [chatLead, setChatLead] = useState<ProductCrmLead | null>(null);
+  const [toast, setToast] = useState<{
+    title: string;
+    children?: string;
+    tone: ToastTone;
+  } | null>(null);
 
   // Modal control states
   const [quickAddLeadStageId, setQuickAddLeadStageId] = useState<string | null>(
@@ -55,7 +61,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   const [isQuickStageOpen, setIsQuickStageOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
 
-  const handleUpdateStageInfo = (
+  const handleUpdateStageInfo = async (
     name: string,
     color: string,
     slaDays: number | null,
@@ -64,8 +70,17 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     const nextStages = activePipeline.stages.map((s) =>
       s.id === editingStage.id ? { ...s, name, color, slaDays } : s,
     );
-    void handleUpdatePipeline({ ...activePipeline, stages: nextStages });
-    setEditingStage(null);
+    try {
+      await handleUpdatePipeline({ ...activePipeline, stages: nextStages });
+      setEditingStage(null);
+      setToast({ title: "Etapa atualizada.", tone: "success" });
+    } catch {
+      setToast({
+        title: "Não foi possível salvar a etapa.",
+        children: "A alteração não foi aplicada. Tente novamente.",
+        tone: "danger",
+      });
+    }
   };
 
   // Custom filter selections
@@ -85,7 +100,36 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   const handleUpdateStage = async (leadId: string, stageId: string) => {
     const lead = props.leads.find((l) => l.id === leadId);
     if (!lead) return;
-    await props.onMoveLeadPipelineStage(leadId, stageId);
+    const stageName =
+      activePipeline?.stages.find((stage) => stage.id === stageId)?.name ?? "";
+    try {
+      await props.onMoveLeadPipelineStage(leadId, stageId);
+      setToast({
+        title: "Lead movido de etapa.",
+        ...(stageName ? { children: `Nova etapa: ${stageName}.` } : {}),
+        tone: "success",
+      });
+    } catch {
+      setToast({
+        title: "Não foi possível mover o lead.",
+        children: "A alteração não foi aplicada. Tente novamente.",
+        tone: "danger",
+      });
+    }
+  };
+
+  const handleQuickAddCreateLead = async (draft: LeadCreateDraft) => {
+    try {
+      await props.onCreateLead(draft);
+      setToast({ title: "Negócio criado com sucesso.", tone: "success" });
+    } catch (caught) {
+      setToast({
+        title: "Não foi possível criar o negócio.",
+        children: "Revise os dados e tente novamente.",
+        tone: "danger",
+      });
+      throw caught;
+    }
   };
 
   const handleSaveSimulation = async (
@@ -109,6 +153,15 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     return getFilteredLeads(props.viewLeads, activePipeline, customFilters);
   }, [props.viewLeads, activePipeline, customFilters]);
   const hasActiveFilters = hasAnyClientFilter(props.filters, customFilters);
+  const remainingLeadCount =
+    activePipeline?.stages.reduce((total, stage) => {
+      const loaded = props.leads.filter(
+        (lead) => getLeadStageId(lead) === stage.id,
+      ).length;
+      return (
+        total + Math.max(0, (props.stageTotals[stage.id] ?? loaded) - loaded)
+      );
+    }, 0) ?? 0;
   const openQuickAddLead = () =>
     setQuickAddLeadStageId(activePipeline?.stages[0]?.id ?? "new");
   const resetClientFilters = () => {
@@ -125,7 +178,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   if (isCreateOpen) {
     return (
       <FeaturePageShell
-        className="crm-page relative min-h-screen"
+        className="crm-pipeline-page relative min-h-screen"
         variant="plain"
       >
         <CrmLeadCreateFullPage
@@ -147,7 +200,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   if (activeLead && activePipeline) {
     return (
       <FeaturePageShell
-        className="crm-page relative min-h-screen"
+        className="crm-pipeline-page relative min-h-screen"
         variant="plain"
       >
         <CrmLeadDetailsPage
@@ -155,6 +208,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           lead={activeLead}
           onBack={() => props.onSelectLead(null)}
           onCreateActivity={props.onCreateActivity}
+          onSetLeadArchived={props.onSetLeadArchived}
           onMoveLeadPipelineStage={props.onMoveLeadPipelineStage}
           stages={activePipeline.stages}
           vehicleOptions={props.vehicleOptions}
@@ -165,20 +219,59 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
 
   if (isSettingsOpen && activePipeline) {
     return (
-      <CrmPipelineSettingsLayout
-        onBack={() => setIsSettingsOpen(false)}
-        onDeletePipeline={(id) =>
-          void handleDeletePipeline(id, () => setIsSettingsOpen(false))
-        }
-        onUpdatePipeline={(updated) => void handleUpdatePipeline(updated)}
-        pipeline={activePipeline}
-      />
+      <>
+        <CrmPipelineSettingsLayout
+          onBack={() => setIsSettingsOpen(false)}
+          onDeletePipeline={(id) =>
+            void handleDeletePipeline(id, () => setIsSettingsOpen(false)).then(
+              () =>
+                setToast({
+                  title: "Pipeline excluído com sucesso.",
+                  tone: "success",
+                }),
+              () =>
+                setToast({
+                  title: "Não foi possível excluir o pipeline.",
+                  children:
+                    "Mova os negócios para outro pipeline e tente novamente.",
+                  tone: "danger",
+                }),
+            )
+          }
+          onUpdatePipeline={(updated, feedback) =>
+            void handleUpdatePipeline(updated).then(
+              () => {
+                if (feedback?.successMessage) {
+                  setToast({ title: feedback.successMessage, tone: "success" });
+                }
+              },
+              () =>
+                setToast({
+                  title: "Não foi possível salvar as configurações.",
+                  children: "A alteração não foi aplicada. Tente novamente.",
+                  tone: "danger",
+                }),
+            )
+          }
+          pipeline={activePipeline}
+        />
+        {toast ? (
+          <Toast
+            durationMs={4000}
+            onDismiss={() => setToast(null)}
+            title={toast.title}
+            tone={toast.tone}
+          >
+            {toast.children}
+          </Toast>
+        ) : null}
+      </>
     );
   }
 
   return (
     <FeaturePageShell
-      className="crm-page relative min-h-screen"
+      className="crm-pipeline-page relative min-h-screen"
       variant="plain"
     >
       <FeaturePageHeader eyebrow="Atendimento" title="Clientes" />
@@ -267,19 +360,32 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           ) : props.viewMode === "kanban" ? (
             <CrmKanbanBoard
               onAddStage={() => setIsQuickStageOpen(true)}
+              onChatClick={setChatLead}
               onQuickAddDeal={setQuickAddLeadStageId}
+              onLoadMoreStage={props.onLoadMoreStage}
               onSelectLead={props.onSelectLead}
               onSimulateClick={setSimulateLead}
               onUpdateStage={handleUpdateStage}
               onEditStage={setEditingStage}
               stages={activePipeline.stages}
+              loadingStageIds={props.loadingStageIds}
+              stageTotals={props.stageTotals}
               vehicleOptions={props.vehicleOptions}
               viewLeads={filteredLeads}
               visibleStages={visibleStages}
             />
           ) : (
             <CrmListView
+              isLoadingMore={props.loadingStageIds.size > 0}
               leads={filteredLeads}
+              onLoadMore={async () => {
+                await Promise.all(
+                  activePipeline.stages.map((stage) =>
+                    props.onLoadMoreStage(stage.id),
+                  ),
+                );
+              }}
+              remaining={remainingLeadCount}
               stages={activePipeline.stages}
               vehicleOptions={props.vehicleOptions}
               onSelectLead={props.onSelectLead}
@@ -300,7 +406,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
 
       {quickAddLeadStageId && activePipeline && (
         <CrmQuickAddLeadModal
-          onCreateLead={props.onCreateLead}
+          onCreateLead={handleQuickAddCreateLead}
           onClose={() => setQuickAddLeadStageId(null)}
           stageId={quickAddLeadStageId}
           stages={activePipeline.stages}
@@ -311,17 +417,41 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       {isQuickPipelineOpen && (
         <CrmQuickAddPipelineModal
           onClose={() => setIsQuickPipelineOpen(false)}
-          onCreatePipeline={(name, stages) =>
-            void handleCreatePipelineConfirm(name, stages)
-          }
+          onCreatePipeline={(name, stages) => {
+            void handleCreatePipelineConfirm(name, stages).then(
+              () =>
+                setToast({
+                  title: "Pipeline criado com sucesso.",
+                  tone: "success",
+                }),
+              () =>
+                setToast({
+                  title: "Não foi possível criar o pipeline.",
+                  children: "Tente novamente.",
+                  tone: "danger",
+                }),
+            );
+          }}
         />
       )}
 
       {isQuickStageOpen && (
         <CrmQuickAddStageModal
-          onAddStage={(name, color, slaDays) =>
-            void handleAddStage(name, color, slaDays)
-          }
+          onAddStage={(name, color, slaDays) => {
+            void handleAddStage(name, color, slaDays).then(
+              () =>
+                setToast({
+                  title: "Etapa criada com sucesso.",
+                  tone: "success",
+                }),
+              () =>
+                setToast({
+                  title: "Não foi possível criar a etapa.",
+                  children: "Tente novamente.",
+                  tone: "danger",
+                }),
+            );
+          }}
           onClose={() => setIsQuickStageOpen(false)}
         />
       )}
@@ -330,9 +460,35 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         <CrmEditStageModal
           stage={editingStage}
           onClose={() => setEditingStage(null)}
-          onSave={handleUpdateStageInfo}
+          onSave={(name, color, slaDays) =>
+            void handleUpdateStageInfo(name, color, slaDays)
+          }
         />
       )}
+
+      {chatLead && (
+        <CrmLeadChatModal
+          lead={chatLead}
+          onClose={() => setChatLead(null)}
+          onConversationStarted={() =>
+            setToast({
+              title: "Conversa iniciada com sucesso.",
+              tone: "success",
+            })
+          }
+        />
+      )}
+
+      {toast ? (
+        <Toast
+          durationMs={4000}
+          onDismiss={() => setToast(null)}
+          title={toast.title}
+          tone={toast.tone}
+        >
+          {toast.children}
+        </Toast>
+      ) : null}
     </FeaturePageShell>
   );
 }

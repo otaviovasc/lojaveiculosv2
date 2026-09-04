@@ -58,6 +58,12 @@ export const { id: _listingId, ...listingResponse } = listing;
 
 export const site = {
   contact: {
+    addressCity: "Sao Paulo",
+    addressLine1: "Avenida Paulista, 1000",
+    addressLine2: "Bela Vista",
+    addressState: "SP",
+    addressZipCode: "01310-100",
+    businessHours: { text: "Segunda a sexta, 9h as 18h" },
     city: "Sao Paulo",
     contactEmail: "contato@demo.com.br",
     contactPhone: null,
@@ -128,8 +134,8 @@ export function createCrmRepository(): CrmRepository {
       lastInteractionAt: null,
       listingId: input.listingId ?? null,
       metadata: input.metadata ?? {},
-      pipelineId: null,
-      pipelineStageId: null,
+      pipelineId: input.pipelineId ?? null,
+      pipelineStageId: input.pipelineStageId ?? null,
       source: input.source,
       status: "new" as const,
       storeId: input.storeId,
@@ -137,11 +143,16 @@ export function createCrmRepository(): CrmRepository {
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       vehicleTitle: null,
     })),
+    createLeadIdempotently: vi.fn(async () => {
+      throw new Error("Unexpected idempotent lead creation");
+    }),
     countLeadsByPipeline: vi.fn(async () => 0),
     countLeadsByPipelineStages: vi.fn(async () => 0),
+    countLeads: vi.fn(async () => 0),
     findLeadById: vi.fn(async () => null),
     findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
+    listLeadBoard: vi.fn(async () => []),
     listLeads: vi.fn(async () => []),
     updateLead: vi.fn(async () => {
       throw new Error("Unexpected lead update");

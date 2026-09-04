@@ -167,7 +167,12 @@ function createServices(
     }),
     listVersions: vi.fn(async () => []),
     listTemplates: vi.fn(async () => []),
-    listWorkspace: vi.fn(async () => []),
+    listWorkspace: vi.fn(async () => ({
+      documents: [],
+      limit: 100,
+      offset: 0,
+      total: 0,
+    })),
     preview: vi.fn(async () => {
       throw new Error("Unexpected preview");
     }),

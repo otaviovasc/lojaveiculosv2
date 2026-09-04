@@ -3,7 +3,7 @@ import { expect, type Page } from "@playwright/test";
 
 export async function waitForSettledWorkspace(page: Page) {
   await expect(page.locator("body")).not.toHaveAttribute("aria-busy", "true");
-  await page.waitForTimeout(900);
+  await waitForVisibleOpacityAnimations(page);
 }
 
 export async function expectViewportSafe(page: Page) {
@@ -53,6 +53,7 @@ export async function expectViewportSafe(page: Page) {
 }
 
 export async function expectAccessible(page: Page) {
+  await waitForVisibleOpacityAnimations(page);
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
@@ -71,4 +72,28 @@ export async function expectAccessible(page: Page) {
         .join("\n"),
     )
     .toEqual([]);
+}
+
+async function waitForVisibleOpacityAnimations(page: Page) {
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll<HTMLElement>("[style*='will-change']")]
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          return (
+            rect.height > 0 &&
+            rect.width > 0 &&
+            style.visibility === "visible" &&
+            style.willChange.includes("opacity")
+          );
+        })
+        .every(
+          (element) =>
+            Number.parseFloat(window.getComputedStyle(element).opacity) >=
+            0.999,
+        ),
+    undefined,
+    { timeout: 5_000 },
+  );
 }

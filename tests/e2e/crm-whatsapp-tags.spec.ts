@@ -16,7 +16,7 @@ test.describe("CRM WhatsApp tags", () => {
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page.getByRole("tab", { name: /Etiquetas/ }).click();
 
     await expect(

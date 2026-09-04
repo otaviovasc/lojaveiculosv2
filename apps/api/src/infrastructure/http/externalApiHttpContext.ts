@@ -1,10 +1,6 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
-import type { Context } from "hono";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
-import {
-  hashExternalApiKey,
-  readExternalApiKeyFromAuthorizationHeader,
-} from "../../domains/externalApi/crypto/apiKeyCrypto.js";
+import { hashExternalApiKey } from "../../domains/externalApi/crypto/apiKeyCrypto.js";
 import {
   createServiceContext,
   type ServiceContext,
@@ -14,8 +10,14 @@ import {
 import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
 } from "./httpContextErrors.js";
+import { enforceExternalApiGovernance } from "./externalApiIdempotencyGovernance.js";
+export {
+  assertExternalApiAudience,
+  isExternalApiAudience,
+  readExternalApiKey,
+  readExternalApiRequestFingerprint,
+} from "./externalApiRequestContext.js";
 
 export const externalApiContextKey = "externalApiContext";
 
@@ -23,8 +25,10 @@ export type ExternalApiHttpContextMetadata = {
   clientId: string;
   idempotencyKey: string | null;
   method: string;
+  ownsIdempotencyReservation: boolean;
   path: string;
   requestId: string;
+  requestFingerprint: string | null;
   startedAt: number;
   storeId: string;
   tenantId: string;
@@ -37,6 +41,7 @@ export async function createExternalApiServiceContext(input: {
   onAuthenticated?: (metadata: ExternalApiHttpContextMetadata) => void;
   repository?: ExternalApiRepository;
   request: ServiceRequestContext;
+  requestFingerprint?: string;
 }): Promise<ServiceContext> {
   if (!input.repository) {
     throw new HttpContextAuthenticationError(
@@ -58,23 +63,31 @@ export async function createExternalApiServiceContext(input: {
     );
   }
 
-  await enforceExternalApiGovernance({
-    clientId: credential.clientId,
-    repository: input.repository,
-    request: input.request,
-    storeId: credential.storeId,
-    tenantId: credential.tenantId,
-  });
-  input.onAuthenticated?.({
+  const httpMetadata: ExternalApiHttpContextMetadata = {
     clientId: credential.clientId,
     idempotencyKey: input.request.idempotencyKey ?? null,
     method: input.request.method ?? "GET",
+    ownsIdempotencyReservation: false,
     path: input.request.path ?? "/",
     requestId: input.request.requestId,
+    requestFingerprint: null,
     startedAt: Date.now(),
     storeId: credential.storeId,
     tenantId: credential.tenantId,
+  };
+  input.onAuthenticated?.(httpMetadata);
+  const ownedRequestFingerprint = await enforceExternalApiGovernance({
+    clientId: credential.clientId,
+    repository: input.repository,
+    request: input.request,
+    ...(input.requestFingerprint
+      ? { requestFingerprint: input.requestFingerprint }
+      : {}),
+    storeId: credential.storeId,
+    tenantId: credential.tenantId,
   });
+  httpMetadata.ownsIdempotencyReservation = Boolean(ownedRequestFingerprint);
+  httpMetadata.requestFingerprint = ownedRequestFingerprint;
 
   await input.audit.record({
     action: "external_api.authenticate",
@@ -90,9 +103,18 @@ export async function createExternalApiServiceContext(input: {
       scopeCount: credential.scopes.length,
     },
     outcome: "succeeded",
+    request: input.request,
     requestId: input.request.requestId,
+    source: {
+      component: "external-api",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    },
     storeId: credential.storeId,
     tenantId: credential.tenantId,
+    ...(input.request.correlationId
+      ? { correlationId: input.request.correlationId }
+      : {}),
   });
 
   const serviceContext = createServiceContext({
@@ -108,6 +130,7 @@ export async function createExternalApiServiceContext(input: {
     request: input.request,
     source: {
       component: "external-api",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
       service: "api",
     },
     storeId: credential.storeId,
@@ -118,76 +141,4 @@ export async function createExternalApiServiceContext(input: {
     ...serviceContext,
     entitlements: credential.entitlements,
   } as ServiceContext;
-}
-
-async function enforceExternalApiGovernance(input: {
-  clientId: string;
-  repository: ExternalApiRepository;
-  request: ServiceRequestContext;
-  storeId: string;
-  tenantId: string;
-}): Promise<void> {
-  const limit = Number(process.env.EXTERNAL_API_RATE_LIMIT_PER_MINUTE ?? 120);
-  const recentRequests = await input.repository.countRecentRequests({
-    clientId: input.clientId,
-    since: new Date(Date.now() - 60_000),
-  });
-  if (recentRequests >= limit) {
-    throw new HttpContextRequestPolicyError(
-      "External API rate limit exceeded.",
-      429,
-    );
-  }
-
-  const method = input.request.method ?? "GET";
-  if (!requiresIdempotencyKey(method)) return;
-  const idempotencyKey = input.request.idempotencyKey;
-  if (!idempotencyKey) {
-    throw new HttpContextRequestPolicyError(
-      "External API mutations require Idempotency-Key header.",
-      400,
-    );
-  }
-
-  const reservation = await input.repository.reserveIdempotencyKey({
-    clientId: input.clientId,
-    idempotencyKey,
-    method,
-    path: input.request.path ?? "/",
-    requestFingerprint: createRequestFingerprint(input.request),
-    requestId: input.request.requestId,
-    storeId: input.storeId as never,
-    tenantId: input.tenantId as never,
-  });
-
-  if (reservation.kind === "conflict") {
-    throw new HttpContextRequestPolicyError(
-      "Idempotency-Key was already used for a different request.",
-      409,
-    );
-  }
-
-  if (reservation.kind === "duplicate") {
-    throw new HttpContextRequestPolicyError(
-      "Idempotency-Key was already used for this request.",
-      409,
-    );
-  }
-}
-
-function createRequestFingerprint(request: ServiceRequestContext): string {
-  return [request.method ?? "GET", request.path ?? "/"].join(":");
-}
-
-function requiresIdempotencyKey(method: string): boolean {
-  return ["DELETE", "PATCH", "POST", "PUT"].includes(method.toUpperCase());
-}
-
-export function readExternalApiKey(context: Context): string | null {
-  return (
-    context.req.header("x-api-key") ??
-    readExternalApiKeyFromAuthorizationHeader(
-      context.req.header("authorization"),
-    )
-  );
 }

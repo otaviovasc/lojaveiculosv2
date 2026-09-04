@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
+import { Toast } from "../../components/ui/Toast";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SettingsApi } from "../settings/apiClient";
 import { createStoreSettingsPatch } from "../settings/settingsPatch";
@@ -67,16 +68,23 @@ export function StorefrontCustomizationModule({
     try {
       const [settings, nextPages] = await Promise.all([
         runtimeSettingsApi.getStoreSettings(),
-        runtimePagesApi.listPages(),
+        initialTab === "design"
+          ? runtimePagesApi.listPages().catch(() => [])
+          : runtimePagesApi.listPages(),
       ]);
       setSavedSettings(settings);
       setDraftSettings(settings);
       setPages(nextPages);
-      setSelectedPage((current) =>
-        current
-          ? (nextPages.find((page) => page.id === current.id) ?? null)
-          : null,
-      );
+      setSelectedPage((current) => {
+        const selectedPageId =
+          current?.id ??
+          readCustomPageIdFromHash(
+            typeof window === "undefined" ? "" : window.location.hash,
+          );
+        return selectedPageId
+          ? (nextPages.find((page) => page.id === selectedPageId) ?? null)
+          : null;
+      });
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
@@ -103,8 +111,10 @@ export function StorefrontCustomizationModule({
       setDraftSettings(saved);
       notifyTenantAdminBrandUpdated(saved);
       setStatus({ kind: "saved" });
+      return true;
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+      return false;
     }
   };
 
@@ -192,20 +202,39 @@ export function StorefrontCustomizationModule({
       current.kind === "saved" ? { kind: "ready" } : current,
     );
   };
+  const clearFeedbackStatus = () => {
+    setStatus((current) =>
+      current.kind === "saved" || current.kind === "error"
+        ? { kind: "ready" }
+        : current,
+    );
+  };
 
   if (!draftSettings || !builderConfig) {
-    return <StorefrontLoadingState status={status} />;
+    return (
+      <StorefrontLoadingState onRetry={() => void refresh()} status={status} />
+    );
   }
+
+  const statusToast = toStatusMessage(status);
+  const feedbackToast = statusToast ? (
+    <Toast
+      durationMs={4000}
+      onDismiss={clearFeedbackStatus}
+      title={statusToast.text}
+      tone={statusToast.type === "error" ? "danger" : "success"}
+    />
+  ) : null;
 
   if (initialTab === "design") {
     return (
       <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+        {feedbackToast}
         <WebsiteBuilderDesign
           isSaving={status.kind === "saving"}
           onDirty={clearSavedStatus}
           onSave={(input) => saveSettings(input.settings)}
           settings={draftSettings}
-          statusMessage={toStatusMessage(status)}
         />
       </StorefrontMediaLibraryProvider>
     );
@@ -215,6 +244,7 @@ export function StorefrontCustomizationModule({
     return (
       <div className="website-builder-surface text-foreground">
         <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+          {feedbackToast}
           <CustomPageEditor
             config={builderConfig}
             isSaving={status.kind === "saving"}
@@ -222,7 +252,6 @@ export function StorefrontCustomizationModule({
             onDirty={clearSavedStatus}
             onSave={savePage}
             page={selectedPage}
-            statusMessage={toStatusMessage(status)}
             storeSlug={draftSettings.identity.publicSlug}
           />
         </StorefrontMediaLibraryProvider>
@@ -232,6 +261,7 @@ export function StorefrontCustomizationModule({
 
   return (
     <div className="website-builder-surface min-h-dvh p-4 text-foreground md:p-6">
+      {feedbackToast}
       <CustomPagesList
         createDescription={createDescription}
         createSlug={createSlug}
@@ -248,11 +278,15 @@ export function StorefrontCustomizationModule({
         onDuplicate={(page) => void duplicatePage(page)}
         onSelect={setSelectedPage}
         pages={pages}
-        statusMessage={toStatusMessage(status)}
         storeSlug={draftSettings.identity.publicSlug}
       />
     </div>
   );
+}
+
+export function readCustomPageIdFromHash(hash: string) {
+  const query = hash.split("?", 2)[1];
+  return query ? new URLSearchParams(query).get("page") : null;
 }
 
 function toPageUpdate(page: StorefrontCustomPage) {

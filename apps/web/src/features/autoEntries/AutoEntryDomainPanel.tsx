@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FeatureToneIcon } from "../../components/ui/FeatureToneIcon";
 import { cx } from "../../components/ui/featureShared";
 import { AutoEntryRulesOverview } from "./AutoEntryRulesOverview";
 import { ConsortiumRulesPanel } from "./ConsortiumRulesPanel";
@@ -26,16 +27,14 @@ export function AutoEntryDomainPanel({
       className={cx("auto-entries-domain", `ae-tone--${meta.tone}`)}
     >
       <div className="auto-entries-domain__heading">
-        <span aria-hidden="true" className="auto-entries-domain__icon">
-          <Icon className="size-5" />
-        </span>
+        <FeatureToneIcon icon={Icon} size="lg" />
         <div className="min-w-0">
-          <p className="auto-entries-domain__eyebrow">{meta.eyebrow}</p>
           <h2 className="auto-entries-domain__title" id={headingId}>
             {meta.title}
           </h2>
           <p className="auto-entries-domain__description">{meta.description}</p>
         </div>
+        <span className="auto-entries-domain__pill">{meta.tab}</span>
       </div>
       {panelForTab(tab, props)}
       <AutoEntryRulesOverview

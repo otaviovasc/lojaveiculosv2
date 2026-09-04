@@ -16,7 +16,7 @@ export function createExternalApiManifest(baseUrl: string) {
     auth: {
       headers: ["x-api-key: lv2_...", "Authorization: Bearer lv2_..."],
       mutationDeduplication:
-        "API-key mutations require Idempotency-Key. A reused key is rejected with 409; the earlier response is not replayed.",
+        "API-key mutations require Idempotency-Key. Identical completed requests replay the original bounded JSON response. Changed payloads and in-flight attempts return 409. Retry a 5xx attempt with a new key.",
       rateLimit:
         "Default 120 requests per minute per API client. The deployment can override this limit.",
     },
@@ -34,12 +34,69 @@ export function createExternalApiTools(baseUrl: string) {
     usage: {
       auth: "Send x-api-key with a scoped key created in Admin > Public API.",
       mutationDeduplication:
-        "Send Idempotency-Key with every API-key mutation. Reuse is rejected with 409 and never replays the earlier response.",
+        "Send Idempotency-Key with every API-key mutation. Identical completed requests replay the original bounded JSON status/body. Changed payloads and in-flight attempts return 409; retry 5xx attempts with a new key.",
     },
   } as const;
 }
 
 const externalApiTools = [
+  {
+    function: {
+      description:
+        "Check whether Credere is ready and which applicant fields or banks are required before a simulation.",
+      name: "preflight_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          bankCodes: { type: "array", items: { type: "string" } },
+          document: { description: "Valid CPF or CNPJ.", type: "string" },
+        },
+        required: ["document"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
+  {
+    function: {
+      description:
+        "Create an official Credere simulation after explicit personal-data and credit-simulation consent.",
+      name: "create_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          applicant: { type: "object" },
+          consent: {
+            description:
+              "Must contain creditSimulation=true and personalData=true.",
+            type: "object",
+          },
+          leadId: { type: "string" },
+          listingId: { type: "string" },
+          terms: { type: "object" },
+          unitId: { type: "string" },
+          vehicle: { type: "object" },
+        },
+        required: ["applicant", "consent", "terms", "vehicle"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
+  {
+    function: {
+      description:
+        "Read the official Credere status and bank conditions for one inquiry.",
+      name: "get_credere_simulation",
+      parameters: {
+        additionalProperties: false,
+        properties: { inquiryId: { type: "string" } },
+        required: ["inquiryId"],
+        type: "object",
+      },
+    },
+    type: "function",
+  },
   {
     function: {
       description: "Find vehicles that match buyer intent.",

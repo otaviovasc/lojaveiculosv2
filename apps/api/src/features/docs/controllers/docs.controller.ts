@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { billingPaths, billingSchemas } from "./billingOpenApi.js";
 import { analyticsPaths, analyticsSchemas } from "./analyticsOpenApi.js";
+import {
+  agencyOperationsPaths,
+  agencyOperationsSchemas,
+} from "./agencyOperationsOpenApi.js";
 import { automationPaths, automationSchemas } from "./automationOpenApi.js";
 import { compliancePaths, complianceSchemas } from "./complianceOpenApi.js";
 import {
@@ -16,6 +20,7 @@ import {
   externalApiOpenApiDocument,
 } from "./externalApiDocs.js";
 import { financePaths, financeSchemas } from "./financeOpenApi.js";
+import { financingPaths, financingSchemas } from "./financingOpenApi.js";
 import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
 import {
@@ -26,6 +31,7 @@ import {
   internalMonitoringPaths,
   internalMonitoringSchemas,
 } from "./internalMonitoringOpenApi.js";
+import { internalMonitoringPlatformPaths } from "./internalMonitoringPlatformOpenApi.js";
 import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
 import { llmsText } from "./llmsText.js";
 import { marketplacePaths, marketplaceSchemas } from "./marketplaceOpenApi.js";
@@ -84,7 +90,9 @@ export const openApiDocument = {
     ...identityProvisioningPaths,
     ...billingPaths,
     ...financePaths,
+    ...financingPaths,
     ...fiscalPaths,
+    ...agencyOperationsPaths,
     ...analyticsPaths,
     ...automationPaths,
     ...compliancePaths,
@@ -93,6 +101,7 @@ export const openApiDocument = {
     ...externalApiDocsPaths,
     ...externalApiPaths,
     ...internalMonitoringPaths,
+    ...internalMonitoringPlatformPaths,
     ...marketplacePaths,
     ...inventoryPaths,
     ...storefrontLeadPaths,
@@ -103,7 +112,9 @@ export const openApiDocument = {
       ...inventorySchemas,
       ...billingSchemas,
       ...financeSchemas,
+      ...financingSchemas,
       ...fiscalSchemas,
+      ...agencyOperationsSchemas,
       ...analyticsSchemas,
       ...automationSchemas,
       ...complianceSchemas,
@@ -161,7 +172,7 @@ export const openApiDocument = {
   "x-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",
     "Least-privilege external client scopes required; operator roles are not exposed to integrations.",
-    "API-key mutations use Idempotency-Key for duplicate rejection; reused keys return 409 and do not replay prior responses.",
+    "API-key mutations replay the original bounded JSON status/body for the same completed Idempotency-Key and validated payload; changed payloads and in-flight attempts return 409.",
     "Request identifiers required for audit correlation.",
     "Rate limits, payload size limits, and pagination caps required before launch.",
     "Destructive operations require explicit delete scopes and audit records.",

@@ -164,6 +164,7 @@ function createPublicContext(audit = { record: vi.fn(async () => undefined) }) {
       "public_storefront.lead_create",
       "public_storefront.read",
     ],
+    platformAdmin: false,
     requestId: "req_1",
     storeId: null,
     tenantId: null,
@@ -212,11 +213,16 @@ function createCrmRepository(): CrmRepository {
       leads.push(lead);
       return lead;
     }),
+    createLeadIdempotently: vi.fn(async () =>
+      unexpected("idempotent lead creation"),
+    ),
     countLeadsByPipeline: vi.fn(async () => 0),
     countLeadsByPipelineStages: vi.fn(async () => 0),
+    countLeads: vi.fn(async () => leads.length),
     findLeadById: vi.fn(async () => null),
     findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
+    listLeadBoard: vi.fn(async () => []),
     listLeads: vi.fn<CrmRepository["listLeads"]>(async (input) =>
       leads
         .filter((lead) => lead.storeId === input.storeId)

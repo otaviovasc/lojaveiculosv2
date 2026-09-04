@@ -22,22 +22,60 @@ export const vehicleTransmissions = [
   "other",
 ] as const;
 
-export const listingCatalogSchema = z.object({
-  brandCode: z.string().trim().min(1).nullable(),
-  brandLogoUrl: z.string().trim().url().nullable().optional().default(null),
-  brandName: z.string().trim().min(1).nullable(),
-  fipeCode: z.string().trim().min(1).nullable(),
-  fuel: z.string().trim().min(1).nullable(),
-  modelCode: z.string().trim().min(1).nullable(),
-  modelName: z.string().trim().min(1).nullable(),
-  modelYear: z.number().int().min(1886).max(2100).nullable(),
-  priceCents: z.number().int().nonnegative().nullable().default(null),
-  referenceMonth: z.string().trim().min(1).nullable(),
-  source: z.literal("fipe").nullable(),
-  vehicleType: z.enum(vehicleCatalogTypes).nullable(),
-  yearCode: z.string().trim().min(1).nullable(),
-  yearName: z.string().trim().min(1).nullable(),
-});
+export const listingCatalogSchema = z
+  .object({
+    brandCode: z.string().trim().min(1).nullable(),
+    brandLogoUrl: z.string().trim().url().nullable().optional().default(null),
+    brandName: z.string().trim().min(1).nullable(),
+    fipeCode: z.string().trim().min(1).nullable(),
+    fuel: z.string().trim().min(1).nullable(),
+    modelCode: z.string().trim().min(1).nullable(),
+    modelFamilyCode: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable()
+      .optional()
+      .default(null),
+    modelFamilyName: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable()
+      .optional()
+      .default(null),
+    modelName: z.string().trim().min(1).nullable(),
+    modelYear: z.number().int().min(1886).max(2100).nullable(),
+    priceCents: z.number().int().nonnegative().nullable().default(null),
+    referenceMonth: z.string().trim().min(1).nullable(),
+    source: z.literal("fipe").nullable(),
+    vehicleType: z.enum(vehicleCatalogTypes).nullable(),
+    yearCode: z.string().trim().min(1).nullable(),
+    yearName: z.string().trim().min(1).nullable(),
+  })
+  .superRefine((catalog, context) => {
+    if (catalog.source !== "fipe") return;
+    const requiredFields = [
+      "brandCode",
+      "brandName",
+      "fipeCode",
+      "modelCode",
+      "modelName",
+      "modelYear",
+      "vehicleType",
+      "yearCode",
+      "yearName",
+    ] as const;
+    for (const field of requiredFields) {
+      if (catalog[field] !== null) continue;
+      context.addIssue({
+        code: "custom",
+        message:
+          "FIPE catalog identities require all canonical codes and names.",
+        path: [field],
+      });
+    }
+  });
 
 export const listingTechnicalSchemaShape = {
   doors: z.number().int().positive().max(12).nullable().optional(),

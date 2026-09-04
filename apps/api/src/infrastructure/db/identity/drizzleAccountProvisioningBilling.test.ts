@@ -1,7 +1,66 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { subscriptionItems } from "@lojaveiculosv2/db";
+import { createFakeBillingAccountDb } from "../billing/drizzleBillingAccount.testSupport.js";
+import { insertBillingDefaults } from "./drizzleAccountProvisioningBilling.js";
+
+const tenant = {
+  id: "tenant_1",
+  legalName: "Loja LTDA",
+  tradingName: "Loja",
+};
+
+const store = {
+  id: "store_1",
+  tenantId: "tenant_1",
+};
 
 describe("account provisioning billing defaults", () => {
+  it("persists a permanent Free contract and its included entitlements", async () => {
+    const db = createFakeBillingAccountDb({
+      planFeatures: [
+        {
+          featureKey: "analytics",
+          included: 1,
+          includedInTrial: false,
+          planId: "plan_1",
+          trialLimitValue: null,
+        },
+      ],
+      plans: [
+        {
+          catalogVersion: "2026-08-v3",
+          id: "plan_1",
+          isDefault: true,
+          monthlyPriceCents: 0,
+          publishedAt: new Date("2026-07-01T00:00:00.000Z"),
+          status: "active",
+        },
+      ],
+    });
+
+    await insertBillingDefaults(
+      db as never,
+      tenant as never,
+      store as never,
+      undefined,
+    );
+
+    const planItem = db.inserted.find(
+      (entry) => entry.table === subscriptionItems,
+    )?.row;
+    expect(planItem).toMatchObject({
+      itemType: "plan",
+      planId: "plan_1",
+      quantity: 1,
+      storeId: "store_1",
+      tenantId: "tenant_1",
+      unitAmountCents: 0,
+    });
+    expect(planItem?.subscriptionId).toBeTruthy();
+    expect(planItem?.endsAt).toBeUndefined();
+  });
+
   it("keeps paid items separate from the safe trial catalog", () => {
     const migration = readFileSync(
       new URL(
@@ -18,6 +77,37 @@ describe("account provisioning billing defaults", () => {
     expect(migration).toContain('SET "included_in_trial" = false');
     expect(migration).toContain('DELETE FROM "subscription_items"');
     expect(migration).toContain("'safe_trial_catalog'");
+
+    const contractRepair = readFileSync(
+      new URL(
+        "../../../../../../packages/db/drizzle/0012_trial_store_plan_contract.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(contractRepair).toContain("subscription.status = 'trialing'");
+    expect(contractRepair).toContain('"item_type"');
+    expect(contractRepair).toContain("'plan'");
+    expect(contractRepair).toContain("NOT EXISTS");
+  });
+
+  it("repairs active trial entitlements, plan contracts, and plate quota", () => {
+    const migration = readFileSync(
+      new URL(
+        "../../../../../../packages/db/migrations/0013_trial_plate_lookup_repair.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain('"trial_limit_value"');
+    expect(migration).toContain("('plate_lookup', 1, true, 300, 10)");
+    expect(migration).toContain("'limitValue', 10");
+    expect(migration).toContain("'safe_trial_catalog'");
+    expect(migration).toContain('INSERT INTO "subscription_items"');
+    expect(migration).toContain('INSERT INTO "store_entitlements"');
+    expect(migration).toContain("subscription.current_period_end > now()");
+    expect(migration).not.toContain("interval '14 days'");
   });
 
   it("selects a versioned catalog without mutating catalog tables", () => {
@@ -25,28 +115,35 @@ describe("account provisioning billing defaults", () => {
       new URL("./drizzleAccountProvisioningBilling.ts", import.meta.url),
       "utf8",
     );
+    const billingAccount = readFileSync(
+      new URL("../billing/drizzleBillingAccount.ts", import.meta.url),
+      "utf8",
+    );
 
     expect(source).not.toContain(".insert(plans)");
     expect(source).not.toContain(".insert(planFeatures)");
-    expect(source).not.toContain("ensureStorePlanItem");
-    expect(source).not.toContain("ensureStoreAddonItem");
+    expect(source).toContain("toStorePlanContractItem");
     expect(source).toContain("catalogVersion");
-    expect(source).toContain("includedInTrial");
-    expect(source).toContain("addDays(new Date(), 14)");
+    expect(source).toContain("feature.included");
+    expect(source).toContain("../billing/drizzleBillingAccount.js");
+    expect(billingAccount).toContain("currentPeriodEnd: null");
+    expect(billingAccount).toContain('status: "active"');
+    expect(billingAccount).not.toContain("local_asaas_");
     expect(
       existsSync(
-        new URL("./drizzleAccountProvisioningBillingItems.ts", import.meta.url),
+        new URL("../billing/drizzleBillingPlanContract.ts", import.meta.url),
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("marks newly provisioned trial entitlements as safe trial catalog rows", () => {
+  it("marks newly provisioned entitlements as permanent catalog rows", () => {
     const source = readFileSync(
       new URL("./drizzleAccountProvisioningWrites.ts", import.meta.url),
       "utf8",
     );
 
-    expect(source).toContain('"safe_trial_catalog"');
+    expect(source).toContain('sourceDetail: "billing_catalog"');
+    expect(source).not.toContain('"safe_trial_catalog"');
   });
 
   it("publishes the paid expansion catalog with server-owned prices", () => {
@@ -60,11 +157,11 @@ describe("account provisioning billing defaults", () => {
 
     expect(migration).toContain("'crm_whatsapp_instance'");
     expect(migration).toContain("'marketplace_connectors'");
-    expect(migration).toContain("'nfe_spedy'");
+    expect(migration).toContain("'fiscal_spedy'");
     expect(migration).toContain("'public_api_access'");
     expect(migration).toContain("'simulations_pro'");
     expect(migration).toContain("24999, 'CRM WhatsApp'");
-    expect(migration).toContain("19990, 'NF-e integrada'");
+    expect(migration).toContain("19990, 'Fiscal NF-e + NFS-e'");
     expect(migration).not.toContain("true,");
   });
 });

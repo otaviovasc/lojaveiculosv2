@@ -17,9 +17,17 @@ import { VehicleAiStudioProviderError } from "../../../domains/vehicle/ports/veh
 import { VehicleListingDeletionStateError } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import { VehiclePublicationValidationError } from "../../../domains/vehicle/services/VehicleService/publishVehicleListing.js";
 import {
+  VehicleCostFinanceEntryDuplicateError,
+  VehicleCostFinanceEntryNotFoundError,
+  VehicleCostNotFoundError,
+  VehicleCostStateError,
+  VehicleCostValidationError,
+} from "../../../domains/vehicle/vehicleCostErrors.js";
+import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
   VehicleSupplierNotFoundError,
+  VehicleUnitIdentifierConflictError,
   VehicleUnitNotFoundError,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
@@ -47,7 +55,8 @@ export function mapInventoryWorkflowError(
     error instanceof VehicleWorkflowValidationError ||
     error instanceof VehicleChecklistValidationError ||
     error instanceof VehicleAiStudioValidationError ||
-    error instanceof VehiclePublicationValidationError
+    error instanceof VehiclePublicationValidationError ||
+    error instanceof VehicleCostValidationError
   ) {
     return jsonApiError(context, {
       code: "VEHICLE_VALIDATION_ERROR",
@@ -66,9 +75,32 @@ export function mapInventoryWorkflowError(
     });
   }
 
+  if (
+    error instanceof VehicleCostStateError ||
+    error instanceof VehicleCostFinanceEntryDuplicateError ||
+    error instanceof VehicleCostFinanceEntryNotFoundError
+  ) {
+    return jsonApiError(context, {
+      code: "VEHICLE_COST_CONFLICT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+
   if (error instanceof SaleUnitConflictError) {
     return jsonApiError(context, {
       code: "SALE_UNIT_CONFLICT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+
+  if (error instanceof VehicleUnitIdentifierConflictError) {
+    return jsonApiError(context, {
+      code: "VEHICLE_UNIT_IDENTIFIER_CONFLICT",
+      details: { field: error.field },
       error,
       message: error.message,
       status: 409,
@@ -169,12 +201,14 @@ function isVehicleInventoryNotFoundError(
   error: unknown,
 ): error is
   | VehicleListingNotFoundError
+  | VehicleCostNotFoundError
   | VehicleChecklistNotFoundError
   | VehicleMediaNotFoundError
   | VehicleSupplierNotFoundError
   | VehicleUnitNotFoundError {
   return (
     error instanceof VehicleListingNotFoundError ||
+    error instanceof VehicleCostNotFoundError ||
     error instanceof VehicleChecklistNotFoundError ||
     error instanceof VehicleMediaNotFoundError ||
     error instanceof VehicleSupplierNotFoundError ||
@@ -182,6 +216,7 @@ function isVehicleInventoryNotFoundError(
     (error instanceof Error &&
       [
         "VehicleListingNotFoundError",
+        "VehicleCostNotFoundError",
         "VehicleChecklistNotFoundError",
         "VehicleMediaNotFoundError",
         "VehicleSupplierNotFoundError",

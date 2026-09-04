@@ -1,6 +1,14 @@
-import { formatBrazilianCnpj } from "@lojaveiculosv2/shared";
+import {
+  formatBrazilianCnpj,
+  normalizeBrazilianPhoneDigits,
+} from "@lojaveiculosv2/shared";
 
-export { formatBrazilianCnpj };
+export { formatBrazilianCnpj, normalizeBrazilianPhoneDigits };
+
+const currencyValueFormatter = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 /** Parse raw input into a numeric string with 2 decimals (e.g. "1500000.00") */
 export function parseCurrencyInput(input: string): string {
@@ -15,10 +23,7 @@ export function formatCurrencyValue(value: string | number): string {
   if (typeof value === "string" && value.trim() === "") return "";
   const num = typeof value === "string" ? Number(value) : value;
   if (!Number.isFinite(num)) return "";
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
+  return currencyValueFormatter.format(num);
 }
 
 export function formatBrazilianDocument(value: string): string {
@@ -39,13 +44,6 @@ export function formatBrazilianCpf(value: string): string {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-}
-
-export function normalizeBrazilianPhoneDigits(value: string): string {
-  const digits = onlyDigits(value);
-  const hasCountryCode =
-    /^\s*\+55/.test(value) || (digits.length > 11 && digits.startsWith("55"));
-  return (hasCountryCode ? digits.slice(2) : digits).slice(0, 11);
 }
 
 export function formatBrazilianPhone(value: string): string {
@@ -107,6 +105,29 @@ export function formatBrazilianZipCode(value: string): string {
     .replace(/^(\d{5})(\d{1,3})$/, "$1-$2");
 }
 
+export function formatVehicleMileageInput(value: string): string {
+  const digits = onlyDigits(value).slice(0, 9);
+  return digits ? Number(digits).toLocaleString("pt-BR") : "";
+}
+
+export function formatVehiclePlateInput(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 7);
+}
+
+export function formatVehicleRenavamInput(value: string): string {
+  return onlyDigits(value).slice(0, 11);
+}
+
+export function formatVehicleVinInput(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 17);
+}
+
 export function formatBrazilianPixKey(value: string, category: string): string {
   switch (category) {
     case "CPF":
@@ -134,9 +155,9 @@ function findCaretAfterDigits(value: string, requestedDigits: number): number {
   let index = 0;
 
   while (index < value.length && seenDigits < targetDigits) {
-    if (/\d/.test(value[index] ?? "")) seenDigits += 1;
+    if (/\d/.test(value.charAt(index))) seenDigits += 1;
     index += 1;
   }
-  while (index < value.length && !/\d/.test(value[index] ?? "")) index += 1;
+  while (index < value.length && !/\d/.test(value.charAt(index))) index += 1;
   return index;
 }

@@ -44,6 +44,7 @@ const jobStatusLabels: Record<MarketplaceJobStatus, string> = {
   failed: "Falhou",
   queued: "Na fila",
   running: "Em andamento",
+  submitted: "Enviado; aguardando canal",
   succeeded: "Concluída",
 };
 
@@ -75,6 +76,11 @@ export function getMarketplaceRequirementCopy(
   }
 
   switch (requirement.code) {
+    case "MARKETPLACE_OAUTH_STATE_INVALID":
+      return {
+        action: "Inicie uma nova conexão com o canal.",
+        message: "Autorização expirada ou já utilizada",
+      };
     case "MARKETPLACE_ACCOUNT_NOT_CONNECTED":
       return {
         action: "Conecte a conta antes de publicar o estoque.",
@@ -170,13 +176,13 @@ export function getMarketplaceBlockerCopy(blocker: MarketplaceListingBlocker) {
       };
     case "MARKETPLACE_LISTING_CATALOG_FIELD_MISSING":
       return {
-        action: "Complete os dados de marca, modelo e versão.",
-        message: "Dados de catálogo incompletos",
+        action: blocker.userAction,
+        message: blocker.message,
       };
     case "MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING":
       return {
-        action: "Complete os dados técnicos exigidos pelo canal.",
-        message: "Ficha técnica incompleta",
+        action: blocker.userAction,
+        message: blocker.message,
       };
     case "MARKETPLACE_LISTING_CONTACT_PHONE_MISSING":
       return {
@@ -195,8 +201,30 @@ export function getMarketplaceBlockerCopy(blocker: MarketplaceListingBlocker) {
       };
     case "MARKETPLACE_LISTING_MAPPING_REQUIRED":
       return {
-        action: "Revise a categoria sugerida e gere uma nova prévia.",
-        message: "Categoria do canal precisa de revisão",
+        action:
+          "Revise a identidade FIPE e gere uma nova prévia. Se os dados estiverem corretos, acione o suporte.",
+        message: "Correspondência do veículo com o canal precisa de revisão",
+      };
+    case "MARKETPLACE_LISTING_OLX_NOT_QUERIED":
+      return {
+        action: blocker.userAction,
+        message: blocker.message,
+      };
+    case "MARKETPLACE_LISTING_PHOTOS_INVALID":
+      return {
+        action: "Mantenha de 1 a 20 fotos públicas, sem imagens repetidas.",
+        message: "Fotos fora dos critérios da OLX",
+      };
+    case "MARKETPLACE_LISTING_PROVIDER_NOT_QUERIED":
+      return {
+        action: blocker.userAction,
+        message: blocker.message,
+      };
+    case "MARKETPLACE_LISTING_TEXT_INVALID":
+      return {
+        action: "Revise o título e a descrição do anúncio.",
+        message: "Título ou descrição fora dos limites da OLX",
       };
   }
+  return { action: blocker.userAction, message: blocker.message };
 }

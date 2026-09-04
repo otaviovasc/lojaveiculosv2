@@ -5,6 +5,8 @@ import type {
   StorefrontPageRepository,
   StorefrontPageUpdateInput,
 } from "../../../domains/storefront/ports/storefrontPageRepository.js";
+import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import { createOrReuseVehicleVitrine } from "../../../domains/storefront/services/StorefrontService/createOrReuseVehicleVitrine.js";
 import { createStorefrontCustomPage } from "../../../domains/storefront/services/StorefrontService/createStorefrontCustomPage.js";
 import { deleteStorefrontCustomPage } from "../../../domains/storefront/services/StorefrontService/deleteStorefrontCustomPage.js";
 import { getStorefrontCustomPage } from "../../../domains/storefront/services/StorefrontService/getStorefrontCustomPage.js";
@@ -13,6 +15,10 @@ import { updateStorefrontCustomPage } from "../../../domains/storefront/services
 import { createMemoryStorefrontPageRepository } from "../adapters/memory/storefrontPageRepository.js";
 
 export type StorefrontPageServices = {
+  createOrReuseVehicleVitrine: (
+    context: ServiceContext,
+    input: { listingId: string; visible: boolean },
+  ) => Promise<StorefrontCustomPage>;
   createPage: (
     context: ServiceContext,
     input: StorefrontPageCreateInput,
@@ -36,6 +42,7 @@ export type StorefrontPageServices = {
 };
 
 export type CreateStorefrontPageServicesOptions = {
+  publicRepository?: PublicStorefrontRepository | undefined;
   repository?: StorefrontPageRepository;
 };
 
@@ -46,6 +53,11 @@ export function createStorefrontPageServices(
     options.repository ?? createMemoryStorefrontPageRepository();
 
   return {
+    createOrReuseVehicleVitrine: (context, input) =>
+      createOrReuseVehicleVitrine(context, input, {
+        pageRepository: repository,
+        publicRepository: options.publicRepository,
+      }),
     createPage: (context, input) =>
       createStorefrontCustomPage(context, input, repository),
     deletePage: (context, pageId) =>

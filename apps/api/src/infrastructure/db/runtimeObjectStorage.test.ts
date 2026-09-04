@@ -14,7 +14,7 @@ describe("createRuntimeObjectStorage", () => {
     });
 
     expect(upload?.uploadUrl).toBe(
-      "https://upload.local/tenants/tenant_1/stores/store_1/receipt.pdf",
+      "https://upload.local/l/tenants/tenant_1/stores/store_1/receipt.pdf",
     );
     expect(storage?.getPublicUrl("documents/receipt.pdf")).toBe(
       "https://cdn.local/documents/receipt.pdf",

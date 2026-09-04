@@ -1,0 +1,338 @@
+/* ==========================================================================
+   CRM Tag Draft Tools & Preview - Modern Billing Design (Compact)
+   ========================================================================== */
+
+.crm-tag-admin-pill {
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.45rem;
+  inline-size: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.35rem 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-dot {
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.crm-tag-emoji {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.crm-tag-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Tag Editor Drawer Shell
+   -------------------------------------------------------------------------- */
+.crm-tag-editor-drawer .feature-drawer__body {
+  padding: 1rem;
+}
+
+.crm-tag-editor-column {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.crm-tag-editor-title {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.crm-tag-editor-eyebrow {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-tag-editor-eyebrow,
+.dark .crm-tag-editor-eyebrow {
+  color: #34d399;
+}
+
+.crm-tag-editor-heading {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-lg);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   Compact Inline Live Preview
+   -------------------------------------------------------------------------- */
+.crm-tag-draft-preview,
+.crm-tag-draft-group,
+.crm-tag-suggestions {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  box-shadow: none;
+}
+
+.crm-tag-draft-preview-header {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-tag-draft-preview-header,
+.dark .crm-tag-draft-preview-header {
+  color: #34d399;
+}
+
+.crm-tag-sparkle-icon {
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.crm-tag-draft-preview-inline {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Quick-Start Suggestion Presets
+   -------------------------------------------------------------------------- */
+.crm-tag-suggestions {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 5%, var(--color-app)),
+    var(--color-app) 70%
+  );
+}
+
+.crm-tag-group-header {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.crm-tag-group-header > span:first-child {
+  align-items: center;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.3rem;
+}
+
+.crm-tag-group-subtitle {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 0.92);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.crm-tag-suggestion-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.crm-tag-suggestion-chip {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  box-shadow: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-suggestion-chip:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #10b981 50%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-tag-suggestion-chip:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.crm-tag-suggestion-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Form Fields (Name, Custom Color, Custom Emoji)
+   -------------------------------------------------------------------------- */
+.crm-tag-draft-group > span,
+.crm-tag-custom-color > span,
+.crm-tag-custom-emoji > span,
+.crm-tag-draft-name label > span {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.crm-tag-draft-name label,
+.crm-tag-custom-color,
+.crm-tag-custom-emoji {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.crm-tag-draft-name {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  padding: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Color & Emoji Grids
+   -------------------------------------------------------------------------- */
+.crm-tag-color-grid,
+.crm-tag-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.crm-tag-color-grid button,
+.crm-tag-emoji-grid button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.15rem;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  width: 2.15rem;
+  box-shadow: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-tag-color-grid button:hover:not(:disabled),
+.crm-tag-emoji-grid button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #10b981 45%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-tag-color-grid button[aria-pressed="true"],
+.crm-tag-emoji-grid button[aria-pressed="true"] {
+  border-color: #10b981;
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+}
+
+.crm-tag-color-grid i {
+  border-radius: 9999px;
+  display: block;
+  height: 1.1rem;
+  width: 1.1rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.crm-tag-color-grid svg {
+  color: #ffffff;
+  height: 0.8rem;
+  position: absolute;
+  width: 0.8rem;
+}
+
+.crm-tag-emoji-grid button {
+  font-size: calc(var(--font-size-xs) * 1.4);
+}
+
+/* --------------------------------------------------------------------------
+   Color Swatch Inline Preview
+   -------------------------------------------------------------------------- */
+.crm-tag-input-with-preview {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 0.625rem;
+  overflow: hidden;
+  background: var(--color-panel);
+  transition: border-color 0.15s ease;
+}
+
+.crm-tag-input-with-preview:focus-within {
+  border-color: #10b981;
+  outline: 2px solid rgba(16, 185, 129, 0.25);
+}
+
+.crm-tag-color-swatch-preview {
+  display: block;
+  flex: 0 0 2.5rem;
+  height: auto;
+  border-right: 1px solid var(--color-line);
+}
+
+.crm-tag-input-with-preview input {
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-tag-input-with-preview input:focus {
+  outline: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Text Inputs
+   -------------------------------------------------------------------------- */
+.crm-tag-custom-color input,
+.crm-tag-custom-emoji input,
+.crm-tag-draft-name input {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.625rem;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+
+.crm-tag-custom-color input:focus,
+.crm-tag-custom-emoji input:focus,
+.crm-tag-draft-name input:focus {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}

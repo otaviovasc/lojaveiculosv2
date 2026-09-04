@@ -2,154 +2,116 @@ import React from "react";
 import {
   DocumentPdfPage,
   DocumentPdfRoot,
-  DocumentPdfText,
-  DocumentPdfView,
-  DocumentPdfHeader,
-  DocumentPdfFooter,
+  DocumentPdfText as Text,
+  DocumentPdfView as View,
+  PdfLogoOrName,
+  formatPdfDate,
+  formatPdfDateTime,
 } from "../../documents/render/reactPdfDocumentPrimitives.js";
-import { styles as sharedStyles } from "../../documents/render/reactPdfDocumentStyles.js";
 import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
 import type { VehicleChecklistOverview } from "../readModels/vehicleChecklistOverview.js";
-import { customStyles } from "./vehicleChecklistReportStyles.js";
+import { fleetStyles } from "./vehicleChecklistReportStyles.js";
 import {
-  resolveContactLine,
-  initials,
-} from "./vehicleChecklistDetailedReport.js";
-import {
-  renderSummaryCard,
-  renderFleetRows,
+  deriveFleetItemColumns,
+  renderFleetRow,
 } from "./vehicleChecklistFleetReportHelpers.js";
 
 const e = React.createElement;
+const s = fleetStyles;
 
+/** V1-style fleet summary report (A4 landscape). */
 export function buildFleetDocument(input: {
   branding?: VehicleStoreBranding | undefined;
   overview: VehicleChecklistOverview;
   scopeLabel: string;
 }) {
   const storeName = input.branding?.name ?? "Loja Veículos";
-  const title = "Relatório geral de checklists";
-  const subtitle = `${input.overview.summary.unitCount} veículos no recorte selecionado`;
-
-  const brand = {
-    contactLine: resolveContactLine(input.branding),
-    logoText: initials(storeName),
-    storeDocument: input.branding?.document ?? undefined,
-    storeName,
-  };
-
-  const rows = renderFleetRows(input.overview.items);
+  const generatedAt = input.overview.generatedAt;
+  const itemColumns = deriveFleetItemColumns(input.overview.items);
+  const notesWidth = `${48 - itemColumns.length * 5}%`;
 
   return e(
     DocumentPdfRoot,
     {
       author: storeName,
       creator: "Loja Veículos OS",
-      keywords: "loja veículos, documento automotivo, fluxo operacional",
       language: "pt-BR",
       producer: "Loja Veículos OS",
-      subject: subtitle,
-      title,
+      subject: "Resumo geral de checklists",
+      title: "Resumo Geral de Checklists",
     },
     e(
       DocumentPdfPage,
-      { size: "A4", style: sharedStyles.page },
-      e(DocumentPdfHeader, {
-        brand,
-        subtitle,
-        title,
-      }),
-      e(DocumentPdfFooter, { storeName }),
+      { orientation: "landscape", size: "A4", style: s.page },
       e(
-        DocumentPdfView,
-        { style: sharedStyles.body },
+        View,
+        { style: s.header },
         e(
-          DocumentPdfView,
-          { style: customStyles.summaryGrid },
-          renderSummaryCard(
-            String(input.overview.summary.unitCount),
-            "Veículos",
-          ),
-          renderSummaryCard(
-            String(input.overview.summary.checklistCount),
-            "Checklists",
-          ),
-          renderSummaryCard(
-            `${input.overview.summary.progressPercent}%`,
-            "Conclusão Real",
-          ),
-          renderSummaryCard(
-            String(input.overview.summary.pendingItemCount),
-            "Pendentes",
-          ),
-          renderSummaryCard(
-            String(input.overview.summary.failedItemCount),
-            "Reprovados",
-          ),
+          View,
+          { style: s.logoBox },
+          e(PdfLogoOrName, {
+            logoUrl: input.branding?.logoUrl ?? undefined,
+            storeName,
+          }),
+        ),
+        e(Text, { style: s.title }, "Resumo Geral de Checklists"),
+        e(
+          View,
+          { style: { flexDirection: "row", gap: 10 } },
+          e(Text, { style: s.subtitle }, storeName),
+          e(Text, { style: s.subtitle }, "•"),
+          e(Text, { style: s.subtitle }, formatPdfDate(generatedAt)),
+        ),
+      ),
+      e(
+        View,
+        {
+          style: {
+            alignItems: "flex-end",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 10,
+          },
+        },
+        e(
+          Text,
+          { style: s.sectionTitle },
+          `Visão compacta por veículo (${input.overview.items.length} itens)`,
         ),
         e(
-          DocumentPdfView,
-          { style: customStyles.table },
+          Text,
+          { style: { color: "#6b7280", fontSize: 9 } },
+          "* Legenda das colunas no topo da tabela",
+        ),
+      ),
+      e(
+        View,
+        { style: s.tableHeader },
+        e(Text, { style: [s.th, { width: "22%" }] }, "Veículo"),
+        e(Text, { style: [s.th, { width: "10%" }] }, "Status"),
+        ...itemColumns.map((column) =>
           e(
-            DocumentPdfView,
-            { style: customStyles.tableHeader },
-            e(
-              DocumentPdfView,
-              { style: { width: "32%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Veículo",
-              ),
-            ),
-            e(
-              DocumentPdfView,
-              { style: { width: "13%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Estoque",
-              ),
-            ),
-            e(
-              DocumentPdfView,
-              { style: { width: "15%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Situação",
-              ),
-            ),
-            e(
-              DocumentPdfView,
-              { style: { width: "15%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Progresso",
-              ),
-            ),
-            e(
-              DocumentPdfView,
-              { style: { width: "12%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Pendências",
-              ),
-            ),
-            e(
-              DocumentPdfView,
-              { style: { width: "13%" } },
-              e(
-                DocumentPdfText,
-                { style: customStyles.tableHeaderCell },
-                "Atualização",
-              ),
-            ),
+            Text,
+            {
+              key: column.label,
+              style: [s.th, { textAlign: "center", width: "5%" }],
+            },
+            column.heading,
           ),
-          ...rows,
         ),
+        e(Text, { style: [s.th, { textAlign: "center", width: "8%" }] }, "%"),
+        e(
+          Text,
+          { style: [s.th, { textAlign: "center", width: "12%" }] },
+          "Atualizado",
+        ),
+        e(Text, { style: [s.th, { width: notesWidth }] }, "Observações"),
+      ),
+      ...input.overview.items.map((item) => renderFleetRow(item, itemColumns)),
+      e(
+        Text,
+        { style: s.footer },
+        `Documento gerado pelo sistema em ${formatPdfDateTime(generatedAt)}`,
       ),
     ),
   );

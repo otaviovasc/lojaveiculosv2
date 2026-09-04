@@ -1,0 +1,290 @@
+/* Account Auth & Onboarding Visual Language (matching /billing visual tokens) */
+
+.account-auth-shell {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.account-auth-glow {
+  pointer-events: none;
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 380px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-accent-strong) 15%, transparent);
+  filter: blur(120px);
+  z-index: 0;
+}
+
+/* Two-zone composition: brand/context on the left, one auth surface on the
+   right at large viewports; compact single column on mobile. */
+.account-auth-grid {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.account-auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.account-auth-features {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .account-auth-grid {
+    max-width: 68rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
+    align-items: center;
+    gap: 4.5rem;
+    padding: 0 2rem;
+  }
+
+  .account-auth-brand {
+    align-items: flex-start;
+    text-align: left;
+    gap: 1.25rem;
+    max-width: 32rem;
+  }
+
+  .account-auth-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-top: 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+/* The single elevated surface: only the interactive content gets the card.
+   Sign-in uses a flat panel to avoid cards-on-cards nesting; onboarding keeps
+   the glass variant. */
+.account-auth-surface {
+  width: 100%;
+}
+
+.account-auth-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-panel);
+  padding: 1.75rem;
+}
+
+@media (max-width: 640px) {
+  .account-auth-card {
+    padding: 1.25rem;
+    border-radius: 1.125rem;
+  }
+}
+
+.account-glass-card {
+  position: relative;
+  z-index: 10;
+  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 25%, var(--color-line));
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.25);
+  padding: 2rem;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .account-glass-card {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+}
+
+.account-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.875rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  background: var(--color-accent-soft);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--color-accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.account-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-panel));
+  color: var(--color-accent-strong);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* Local dev profile choices: restrained rows separated by hairlines, not
+   nested cards inside the auth surface. */
+.account-profile-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.875rem 0.25rem;
+  border: none;
+  border-top: 1px solid var(--color-line);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.account-profile-list > li:first-child > .account-profile-row {
+  border-top: none;
+}
+
+.account-profile-row:hover {
+  background: var(--color-accent-soft);
+}
+
+.account-profile-row:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: -2px;
+}
+
+.account-profile-signout {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  justify-content: center;
+}
+
+.account-profile-signout > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-muted);
+  transition: color 0.2s ease;
+}
+
+.account-profile-signout > button:hover {
+  color: var(--color-foreground);
+}
+
+.account-profile-signout > button:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+.account-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-accent-strong);
+  color: var(--color-accent-strong-foreground);
+  font-weight: 900;
+  border-radius: 0.875rem;
+  padding: 0.875rem 1.5rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  border: none;
+  cursor: pointer;
+}
+
+.account-primary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.account-primary-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.account-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.account-feature-icon {
+  color: var(--color-success-strong);
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.onboarding-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-logo-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .onboarding-logo-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .onboarding-logo-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .onboarding-logo-light {
+    display: none;
+  }
+
+  :root:not([data-theme]) .onboarding-logo-dark {
+    display: block;
+  }
+}

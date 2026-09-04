@@ -2,12 +2,16 @@ import type { ReactNode } from "react";
 import { cx } from "./featureShared";
 
 export function FeatureField({
+  as: Element = "label",
   children,
   className,
   error,
   hint,
   label,
 }: {
+  // Use "div" for composite controls (segmented controls, tab strips):
+  // a <label> wrapper swallows the accessible name of the buttons inside.
+  as?: "div" | "label";
   children: ReactNode;
   className?: string | undefined;
   error?: ReactNode;
@@ -15,7 +19,7 @@ export function FeatureField({
   label: ReactNode;
 }) {
   return (
-    <label
+    <Element
       className={cx(
         "grid gap-2 text-sm font-semibold text-app-text/90",
         className,
@@ -31,7 +35,7 @@ export function FeatureField({
       {hint ? (
         <span className="text-xs font-medium text-muted">{hint}</span>
       ) : null}
-    </label>
+    </Element>
   );
 }
 
@@ -66,7 +70,7 @@ export function FeatureFormSection({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-accent-strong">
             {title}
           </h4>
           {description ? (

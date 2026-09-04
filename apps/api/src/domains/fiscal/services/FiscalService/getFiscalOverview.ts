@@ -25,7 +25,10 @@ export async function getFiscalOverview(
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
-  const provider = await ports.fiscalProviderGateway.getProviderStatus();
+  const provider = await ports.fiscalProviderGateway.getProviderStatus({
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
 
   await context.audit.record({
     action: "fiscal.overview.read",
@@ -45,5 +48,18 @@ export async function getFiscalOverview(
     summary: "Read fiscal provider and document overview",
   });
 
-  return { ...overview, provider };
+  return {
+    ...overview,
+    capabilities: {
+      canCancelDocuments: context.permissions.includes(
+        "fiscal.document.cancel",
+      ),
+      canDownloadOfficialArtifacts:
+        context.permissions.includes("documents.download"),
+      canIssueDocuments: context.permissions.includes("fiscal.document.issue"),
+      canRepeatDocuments: context.permissions.includes("fiscal.document.issue"),
+      canSyncDocumentStatus: context.permissions.includes("fiscal.manage"),
+    },
+    provider,
+  };
 }

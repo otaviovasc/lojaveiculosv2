@@ -11,7 +11,7 @@ describe("finance entry document routes", () => {
     const response = await request(
       feature,
       `/entries/${entryId}/documents/${documentId}/download`,
-      { method: "GET", storeId: "store_a" },
+      { method: "GET", mode: "read_only", storeId: "store_a" },
     );
 
     expect(response.status).toBe(200);
@@ -26,7 +26,7 @@ describe("finance entry document routes", () => {
     const inline = await request(
       feature,
       `/entries/${entryId}/documents/${documentId}/download?disposition=inline`,
-      { method: "GET", storeId: "store_a" },
+      { method: "GET", mode: "read_only", storeId: "store_a" },
     );
     expect(inline.status).toBe(200);
   });
@@ -114,15 +114,18 @@ function createFeature(
     contextFactory: async (context) =>
       createServiceContext({
         actor: { id: "user_1", kind: "user" },
+        entitlements: ["finance"],
         permissions:
           context.req.header("x-mode") === "create_only"
             ? ["finance.create"]
-            : [
-                "finance.attach_document",
-                "finance.create",
-                "finance.read",
-                "finance.update",
-              ],
+            : context.req.header("x-mode") === "read_only"
+              ? ["finance.read"]
+              : [
+                  "finance.attach_document",
+                  "finance.create",
+                  "finance.read",
+                  "finance.update",
+                ],
         request: { requestId: "request_1" },
         storeId: context.req.header("x-store-id") ?? "store_a",
         tenantId: "tenant_1",
@@ -134,19 +137,7 @@ function createFeature(
 async function attachReceipt(
   feature: ReturnType<typeof createFinanceFeature>,
 ): Promise<{ documentId: string; entryId: string; storageKey: string }> {
-  const entryResponse = await request(feature, "/entries", {
-    body: {
-      amountCents: 15000,
-      category: "Aluguel",
-      name: "Aluguel",
-      type: "expense",
-    },
-    method: "POST",
-    storeId: "store_a",
-  });
-  expect(entryResponse.status).toBe(201);
-  const bundle = await json<{ entry: { id: string } }>(entryResponse);
-  const entryId = bundle.entry.id;
+  const entryId = await createEntry(feature);
 
   const uploadResponse = await request(
     feature,
@@ -184,13 +175,31 @@ async function attachReceipt(
   return { documentId: document.id, entryId, storageKey: upload.storageKey };
 }
 
+async function createEntry(
+  feature: ReturnType<typeof createFinanceFeature>,
+): Promise<string> {
+  const entryResponse = await request(feature, "/entries", {
+    body: {
+      amountCents: 15000,
+      category: "Aluguel",
+      name: "Aluguel",
+      type: "expense",
+    },
+    method: "POST",
+    storeId: "store_a",
+  });
+  expect(entryResponse.status).toBe(201);
+  const bundle = await json<{ entry: { id: string } }>(entryResponse);
+  return bundle.entry.id;
+}
+
 async function request(
   feature: ReturnType<typeof createFinanceFeature>,
   path: string,
   input: {
     body?: Record<string, unknown>;
     method: "GET" | "POST";
-    mode?: "create_only";
+    mode?: "create_only" | "read_only";
     storeId: string;
   },
 ) {

@@ -1,3 +1,5 @@
+import { planHireBody } from "./billingProviderSyncOpenApi.js";
+
 export const agencyBillingSchemas = {
   AgencyTenantOverview: {
     type: "object",
@@ -33,6 +35,13 @@ const tenantIdParam = {
   schema: { type: "string", format: "uuid" },
 } as const;
 
+const storeIdParam = {
+  in: "path",
+  name: "storeId",
+  required: true,
+  schema: { type: "string", format: "uuid" },
+} as const;
+
 export const agencyBillingPaths = {
   "/api/v1/agency/tenants/{tenantId}/overview": {
     get: {
@@ -44,7 +53,7 @@ export const agencyBillingPaths = {
       responses: {
         "200": {
           description:
-            "Agency tenant overview with managed stores, persisted subscription items, charge preview, financial summary, and entitlement events.",
+            "Agency tenant overview with managed stores and effective billing contracts.",
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/AgencyTenantOverview" },
@@ -73,114 +82,103 @@ export const agencyBillingPaths = {
       },
     },
   },
-  "/api/v1/agency/tenants/{tenantId}/billing/provider/checkout": {
+  "/api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires": {
     post: {
       tags: ["Agency", "Billing"],
-      summary: "Create a hosted Asaas checkout for an agency tenant",
-      operationId: "createAgencyBillingProviderCheckout",
+      summary: "Persist a plan hire for an agency-managed store",
+      operationId: "createAgencyBillingPlanHire",
       security: [{ bearerAuth: [] }],
-      parameters: [tenantIdParam],
-      requestBody: {
-        required: false,
-        content: {
-          "application/json": {
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                billingTypes: {
-                  type: "array",
-                  items: { type: "string", enum: ["CREDIT_CARD", "PIX"] },
-                  minItems: 1,
-                  maxItems: 2,
-                },
-                minutesToExpire: {
-                  type: "integer",
-                  minimum: 10,
-                  maximum: 1440,
-                },
-                nextDueDate: { type: "string", format: "date" },
-              },
-            },
-          },
-        },
-      },
+      parameters: [tenantIdParam, storeIdParam],
+      requestBody: planHireBody,
       responses: {
-        "200": {
-          description:
-            "Hosted Asaas checkout created from the agency tenant subscription_items.",
+        "201": {
+          description: "Store-scoped durable plan hire.",
           content: {
             "application/json": {
-              schema: {
-                $ref: "#/components/schemas/BillingProviderCheckoutSessionResult",
-              },
+              schema: { $ref: "#/components/schemas/BillingPlanHire" },
             },
           },
         },
       },
     },
   },
-  "/api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync": {
-    post: {
-      tags: ["Agency", "Billing"],
-      summary: "Synchronize agency tenant subscription with Asaas",
-      operationId: "syncAgencyBillingProviderSubscription",
-      security: [{ bearerAuth: [] }],
-      parameters: [tenantIdParam],
-      requestBody: {
-        required: false,
-        content: {
-          "application/json": {
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                billingType: {
-                  type: "string",
-                  enum: ["BOLETO", "CREDIT_CARD", "PIX", "UNDEFINED"],
-                },
-                nextDueDate: { type: "string", format: "date" },
-                updatePendingPayments: { type: "boolean" },
-              },
-            },
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description:
-            "Asaas customer and subscription synchronized from persisted subscription_items.",
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/BillingProviderSubscriptionSyncResult",
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  "/api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}":
+  "/api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires/{hireId}":
     {
-      patch: {
+      get: {
         tags: ["Agency", "Billing"],
-        summary: "Update one agency-managed store entitlement",
-        operationId: "updateAgencyStoreEntitlement",
+        summary: "Poll an agency-managed store plan hire",
+        operationId: "getAgencyBillingPlanHire",
         security: [{ bearerAuth: [] }],
         parameters: [
           tenantIdParam,
+          storeIdParam,
           {
             in: "path",
-            name: "storeId",
+            name: "hireId",
             required: true,
             schema: { type: "string", format: "uuid" },
           },
+        ],
+        responses: {
+          "200": {
+            description: "Store-scoped plan hire lifecycle.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BillingPlanHire" },
+              },
+            },
+          },
+          "404": { description: "Plan hire was not found in this store." },
+        },
+      },
+    },
+  "/api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes": {
+    post: {
+      tags: ["Agency", "Billing"],
+      summary: "Request an Escala quote for an agency-managed store",
+      operationId: "requestAgencyBillingPlanQuote",
+      security: [{ bearerAuth: [] }],
+      parameters: [tenantIdParam, storeIdParam],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["planId"],
+              properties: { planId: { type: "string", format: "uuid" } },
+            },
+          },
+        },
+      },
+      responses: {
+        "201": {
+          description: "Escala quote request created for the store.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/BillingPlanQuote" },
+            },
+          },
+        },
+      },
+    },
+  },
+  "/api/v1/agency/platform/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes/{quoteId}/approve":
+    {
+      patch: {
+        tags: ["Platform", "Billing"],
+        summary: "Approve a versioned Escala quote as a platform admin",
+        operationId: "approvePlatformBillingPlanQuote",
+        security: [{ bearerAuth: ["platformAdmin", "billing.manage"] }],
+        parameters: [
+          tenantIdParam,
+          storeIdParam,
           {
             in: "path",
-            name: "featureKey",
+            name: "quoteId",
             required: true,
-            schema: { type: "string" },
+            schema: { type: "string", format: "uuid" },
           },
         ],
         requestBody: {
@@ -189,15 +187,11 @@ export const agencyBillingPaths = {
             "application/json": {
               schema: {
                 type: "object",
-                additionalProperties: true,
-                required: ["featureKey", "status"],
+                additionalProperties: false,
+                required: ["expiresAt", "quotedCents"],
                 properties: {
-                  featureKey: { type: "string" },
-                  reason: { type: ["string", "null"] },
-                  status: {
-                    type: "string",
-                    enum: ["active", "inactive", "suspended", "trialing"],
-                  },
+                  expiresAt: { type: "string", format: "date-time" },
+                  quotedCents: { type: "integer", minimum: 89700 },
                 },
               },
             },
@@ -205,10 +199,11 @@ export const agencyBillingPaths = {
         },
         responses: {
           "200": {
-            description: "Updated agency tenant overview.",
+            description:
+              "Versioned store quote approved by a platform administrator.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/AgencyTenantOverview" },
+                schema: { $ref: "#/components/schemas/BillingPlanQuote" },
               },
             },
           },

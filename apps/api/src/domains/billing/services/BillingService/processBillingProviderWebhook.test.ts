@@ -1,15 +1,13 @@
-import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
-import { describe, expect, it, vi } from "vitest";
-import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { BillingRepository } from "../../ports/billingRepository.js";
-import type {
-  BillingProviderSyncResult,
-  BillingProviderWebhookEvent,
-  BillingWebhookRepository,
-} from "../../ports/billingWebhookRepository.js";
-import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
+import { describe, expect, it } from "vitest";
 import { processBillingProviderWebhook } from "./processBillingProviderWebhook.js";
 import { BillingWebhookAuthenticationError } from "../../readModels/billingWebhookErrors.js";
+import {
+  createAuditSink,
+  createBillingRepository,
+  createProviderGateway,
+  createWebhookContext,
+  createWebhookRepository,
+} from "../../testSupportProcessBillingProviderWebhook.js";
 
 describe("processBillingProviderWebhook", () => {
   it("syncs a received Asaas payment and records duplicate events once", async () => {
@@ -63,6 +61,60 @@ describe("processBillingProviderWebhook", () => {
     );
   });
 
+  it("marks a credit-card PAYMENT_CONFIRMED event as paid so renewal activation fires", async () => {
+    const audit = createAuditSink();
+    const context = createWebhookContext(audit);
+    const webhookRepository = createWebhookRepository();
+    const upsertedStatuses: string[] = [];
+    const capturingRepository = {
+      ...webhookRepository,
+      async upsertProviderPayment(
+        input: Parameters<typeof webhookRepository.upsertProviderPayment>[0],
+      ) {
+        upsertedStatuses.push(input.status);
+        return webhookRepository.upsertProviderPayment(input);
+      },
+    };
+    const payload = {
+      event: "PAYMENT_CONFIRMED",
+      id: "evt_payment_confirmed_1",
+      payment: {
+        confirmedDate: "2026-07-06",
+        customer: "cus_1",
+        dueDate: "2026-07-31",
+        externalReference: "lojaveiculos:tenant_1:2026-07",
+        id: "pay_confirmed_1",
+        subscription: "sub_memory",
+        value: 548.99,
+      },
+    };
+
+    await expect(
+      processBillingProviderWebhook(
+        context,
+        { payload, provider: "asaas", webhookToken: "secret" },
+        {
+          billingRepository: createBillingRepository(),
+          billingWebhookRepository: capturingRepository,
+          environment: "test",
+          paymentProviderGateway: createProviderGateway("secret"),
+        },
+      ),
+    ).resolves.toMatchObject({
+      providerEventId: "evt_payment_confirmed_1",
+      status: "processed",
+    });
+    expect(upsertedStatuses).toEqual(["paid"]);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "billing.webhook.asaas.processed",
+        outcome: "succeeded",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    );
+  });
+
   it("rejects invalid webhook tokens before recording events", async () => {
     const ports = {
       billingRepository: createBillingRepository(),
@@ -84,12 +136,57 @@ describe("processBillingProviderWebhook", () => {
     ).rejects.toBeInstanceOf(BillingWebhookAuthenticationError);
   });
 
+  it("reclaims an event left received by a crashed delivery", async () => {
+    const repository = createWebhookRepository();
+    const payload = {
+      event: "PAYMENT_RECEIVED",
+      id: "evt_crash_recovery",
+      payment: {
+        customer: "cus_1",
+        dueDate: "2026-08-10",
+        id: "pay_crash_recovery",
+        subscription: "sub_memory",
+        value: 548.99,
+      },
+    };
+    await repository.recordReceived({
+      environment: "test",
+      eventType: "PAYMENT_RECEIVED",
+      payload,
+      provider: "asaas",
+      providerEventId: "evt_crash_recovery",
+    });
+
+    await expect(
+      processBillingProviderWebhook(
+        createWebhookContext(createAuditSink()),
+        { payload, provider: "asaas", webhookToken: "secret" },
+        {
+          billingRepository: createBillingRepository(),
+          billingWebhookRepository: repository,
+          environment: "test",
+          paymentProviderGateway: createProviderGateway("secret"),
+        },
+      ),
+    ).resolves.toMatchObject({ status: "processed" });
+  });
+
   it("syncs a received Asaas checkout payment event", async () => {
     const audit = createAuditSink();
     const context = createWebhookContext(audit);
+    const repository = createWebhookRepository();
+    let paymentUpserts = 0;
     const ports = {
       billingRepository: createBillingRepository(),
-      billingWebhookRepository: createWebhookRepository(),
+      billingWebhookRepository: {
+        ...repository,
+        async upsertProviderPayment(
+          input: Parameters<typeof repository.upsertProviderPayment>[0],
+        ) {
+          paymentUpserts += 1;
+          return repository.upsertProviderPayment(input);
+        },
+      },
       environment: "test",
       paymentProviderGateway: createProviderGateway("secret"),
     };
@@ -120,6 +217,7 @@ describe("processBillingProviderWebhook", () => {
       providerEventId: "evt_checkout_paid_1",
       status: "processed",
     });
+    expect(paymentUpserts).toBe(0);
 
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -131,118 +229,3 @@ describe("processBillingProviderWebhook", () => {
     );
   });
 });
-
-function createWebhookContext(audit: AuditSink) {
-  return createServiceContext({
-    actor: { id: "asaas", kind: "integration" },
-    audit,
-    permissions: ["billing.webhook.ingest"],
-    request: { requestId: "request_1" },
-    source: { component: "test", service: "api" },
-  });
-}
-
-function createAuditSink(): AuditSink {
-  const record = vi.fn(async (_event: AuditEvent) => undefined);
-  return { record };
-}
-
-function createBillingRepository(): BillingRepository {
-  return {
-    activateSubscriptionSelection: async () => undefined,
-    getOverview: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    getTenantOverview: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    storeExistsInTenant: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    updateSubscriptionSelection: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    updateStoreEntitlement: async () => {
-      throw new Error("Unused billing repository.");
-    },
-  };
-}
-
-function createProviderGateway(secret: string): PaymentProviderGateway {
-  return {
-    async getProviderStatus() {
-      return {
-        configured: true,
-        missingConfiguration: [],
-        provider: "asaas",
-        webhookConfigured: true,
-      };
-    },
-    verifyWebhookToken: (token) => token === secret,
-  };
-}
-
-function createWebhookRepository(): BillingWebhookRepository {
-  const events: BillingProviderWebhookEvent[] = [];
-  const checkoutScope: BillingProviderSyncResult = {
-    status: "synced",
-    storeId: "store_1" as never,
-    tenantId: "tenant_1" as never,
-  };
-  const scope: BillingProviderSyncResult = {
-    status: "synced",
-    storeId: "store_1" as never,
-    tenantId: "tenant_1" as never,
-  };
-
-  return {
-    async recordReceived(input) {
-      const existing = events.find(
-        (event) => event.providerEventId === input.providerEventId,
-      );
-      if (existing) return { created: false, event: existing };
-      const now = new Date();
-      const event: BillingProviderWebhookEvent = {
-        createdAt: now,
-        environment: input.environment,
-        errorMessage: null,
-        eventType: input.eventType,
-        id: `event_${events.length + 1}`,
-        payload: input.payload,
-        processedAt: null,
-        provider: input.provider,
-        providerEventId: input.providerEventId,
-        status: "received",
-        storeId: null,
-        tenantId: null,
-        updatedAt: now,
-      };
-      events.push(event);
-      return { created: true, event };
-    },
-    async syncProviderCheckout(input) {
-      return input.providerCheckoutId === "chk_memory"
-        ? checkoutScope
-        : {
-            reason: "unknown_checkout",
-            status: "ignored",
-            storeId: null,
-            tenantId: null,
-          };
-    },
-    async syncProviderSubscription() {
-      return scope;
-    },
-    async updateStatus(input) {
-      const event = events.find((item) => item.id === input.eventId);
-      if (!event) return null;
-      event.status = input.status;
-      event.storeId = input.storeId ?? null;
-      event.tenantId = input.tenantId ?? null;
-      return event;
-    },
-    async upsertProviderPayment() {
-      return scope;
-    },
-  };
-}

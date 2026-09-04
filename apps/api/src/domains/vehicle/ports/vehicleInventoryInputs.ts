@@ -44,6 +44,7 @@ export type CreateVehicleUnitRecord = {
   colorName?: VehicleColor | null;
   listingId: string;
   plate: string | null;
+  renavam?: string | null;
   status: VehicleUnitStatus;
   stockNumber: string | null;
   storeId: string | null;

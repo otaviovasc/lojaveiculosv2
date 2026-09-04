@@ -1,0 +1,245 @@
+import {
+  assertPermission,
+  assertEntitlement,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
+import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import {
+  getCrmConnectionRepository,
+  requireCrmMessagingScope,
+  runCrmTransaction,
+  type CrmServicePorts,
+} from "../CrmService/serviceSupport.js";
+import {
+  crmChannelConnectionCapabilityFacts,
+  type CreateCrmChannelConnectionInput,
+  CrmChannelConnectionProviderAlreadyExistsError,
+  CrmZapiConnectionConflictError,
+} from "../../channelConnections/connectionCreation.js";
+import {
+  toCrmChannelConnection,
+  type CrmChannelConnection,
+} from "../../channelConnections/channelConnectionModels.js";
+import {
+  logCrmServiceEvent,
+  recordCrmServiceMutation,
+} from "../CrmMessagingService/serviceSupport.js";
+import {
+  createZapiWebhookSetupIntent,
+  withZapiWebhookSetupState,
+} from "../../whatsapp/zapiWebhookSetupState.js";
+import { runZapiWebhookSetupAttempt } from "../CrmWhatsappService/runZapiWebhookSetupAttempt.js";
+import { runUazapiWebhookSetupAttempt } from "../CrmWhatsappService/runUazapiWebhookSetupAttempt.js";
+import { sealZapiCredentials } from "../../whatsapp/zapiInitialCredentials.js";
+import { readConnectionLiveStatus } from "../../whatsapp/zapiConnectionCredentialUpdate.js";
+import { persistInitialReadyChannelDefault } from "../CrmRoutingService/persistInitialReadyChannelDefault.js";
+import { provisionUazapiWhatsappConnection } from "./provisionUazapiConnection.js";
+import { grantCreatorConnectionMembership } from "./grantCreatorConnectionMembership.js";
+
+export const connectionPermission = "crm.messaging.connection.setup";
+
+export async function createCrmChannelConnection(
+  context: ServiceContext,
+  input: CreateCrmChannelConnectionInput,
+  ports: CrmServicePorts,
+): Promise<CrmChannelConnection> {
+  assertPermission(context, connectionPermission);
+  if (context.actor.kind !== "user") {
+    throw new AuthorizationError(
+      "CRM messaging connection creation requires an authenticated store user.",
+    );
+  }
+  const scope = requireCrmMessagingScope(context);
+  assertEntitlement(context as never, "crm");
+  logCrmServiceEvent(context, "crm.channel_connection.create.started", {
+    channel: input.channel,
+    provider: input.provider,
+  });
+
+  return recordCrmServiceMutation(
+    context,
+    {
+      action: "crm.channel_connection.create_or_initial_configure",
+      category: "data_change",
+      entityType: "crm_channel_connection",
+      metadata: { channel: input.channel, provider: input.provider },
+      permission: connectionPermission,
+      summary: "Created or initially configured CRM channel connection",
+    },
+    async () => {
+      const created =
+        input.provider === "uazapi"
+          ? await provisionUazapiWhatsappConnection(
+              context,
+              input,
+              scope,
+              ports,
+            )
+          : await runCrmTransaction(ports, async (transactionPorts) => {
+              const repository = getCrmConnectionRepository(transactionPorts);
+              const current = await repository.listConnections({
+                channels: [input.channel],
+                providers: [input.provider],
+                storeId: scope.storeId as never,
+                tenantId: scope.tenantId as never,
+              });
+              const existing = current.find(
+                (connection) => connection.status !== "archived",
+              );
+              if (existing) {
+                if (input.provider === "zapi")
+                  return existingZapiConflict(existing, input);
+                throw new CrmChannelConnectionProviderAlreadyExistsError(input);
+              }
+              const credentialsRef =
+                input.provider === "zapi"
+                  ? await sealZapiCredentials(input, scope, transactionPorts)
+                  : {};
+              const setupIdentity =
+                input.provider === "zapi"
+                  ? ({
+                      broker: "direct",
+                      channel: "whatsapp",
+                      provider: "zapi",
+                    } as const)
+                  : ({
+                      broker: "composio",
+                      channel: input.channel,
+                      provider: "meta_cloud",
+                    } as const);
+              let connection;
+              try {
+                connection = await repository.createConnection({
+                  broker: setupIdentity.broker,
+                  channel: input.channel,
+                  credentialsRef,
+                  displayName: input.displayName,
+                  externalInstanceId: null,
+                  metadata: {
+                    capabilities:
+                      crmChannelConnectionCapabilityFacts(setupIdentity),
+                    connected: false,
+                    degraded: false,
+                    errorCode: null,
+                    routingStatus: "preserved",
+                  },
+                  provider: input.provider,
+                  status: "sandbox",
+                  storeId: scope.storeId as never,
+                  tenantId: scope.tenantId as never,
+                });
+              } catch (error) {
+                if (input.provider !== "zapi") throw error;
+                const raced = (
+                  await repository.listConnections({
+                    channels: ["whatsapp"],
+                    providers: ["zapi"],
+                    storeId: scope.storeId as never,
+                    tenantId: scope.tenantId as never,
+                  })
+                ).find((candidate) => candidate.status !== "archived");
+                if (!raced) throw error;
+                return existingZapiConflict(raced, input);
+              }
+              if (input.provider === "zapi") {
+                const metadata = withZapiWebhookSetupState(
+                  connection.metadata,
+                  createZapiWebhookSetupIntent(connection.id),
+                );
+                connection =
+                  (await repository.updateConnection({
+                    connectionId: connection.id,
+                    metadata,
+                    storeId: connection.storeId,
+                    tenantId: connection.tenantId,
+                  })) ?? connection;
+              }
+              await grantCreatorConnectionMembership(
+                context,
+                connection,
+                transactionPorts,
+              );
+              return connection;
+            });
+      if (input.provider === "zapi" && input.webhookSetupTarget) {
+        await runZapiWebhookSetupAttempt(
+          context,
+          { connectionId: created.id, ...input.webhookSetupTarget },
+          ports,
+        );
+      }
+      if (input.provider === "uazapi" && input.webhookSetupTarget) {
+        await runUazapiWebhookSetupAttempt(
+          context,
+          { connectionId: created.id, ...input.webhookSetupTarget },
+          ports,
+        );
+      }
+      const finalConnection =
+        (await getCrmConnectionRepository(ports).findConnectionById(
+          created.id,
+        )) ?? created;
+      const result = toCrmChannelConnection(
+        finalConnection,
+        await readConnectionLiveStatus(context, finalConnection, ports),
+      );
+      let routingStatus: "ready" | "preserved" | "deferred" = result.ready
+        ? "preserved"
+        : "deferred";
+      if (
+        result.ready &&
+        ports.crmRoutingConnectionRepository &&
+        ports.crmRoutingPolicyRepository
+      ) {
+        try {
+          const persisted = await persistInitialReadyChannelDefault(
+            context,
+            { channel: result.channel ?? "whatsapp", connectionId: result.id },
+            ports,
+          );
+          routingStatus = persisted ? "ready" : "preserved";
+        } catch (error) {
+          routingStatus = "deferred";
+          context.logger.warn("crm.routing.policy.default.deferred", {
+            connectionId: result.id,
+            errorName: error instanceof Error ? error.name : "UnknownError",
+            requestId: context.requestId,
+            storeId: scope.storeId,
+            tenantId: scope.tenantId,
+          });
+        }
+      }
+      const persisted = await getCrmConnectionRepository(
+        ports,
+      ).updateConnection({
+        connectionId: result.id,
+        metadata: { ...finalConnection.metadata, routingStatus },
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      return toCrmChannelConnection(persisted ?? finalConnection, result.live);
+    },
+  );
+}
+
+function existingZapiConflict(
+  existing: {
+    externalInstanceId: string | null;
+    id: string;
+    revision?: number;
+  },
+  input: Extract<CreateCrmChannelConnectionInput, { provider: "zapi" }>,
+): never {
+  const relation =
+    !existing.externalInstanceId ||
+    existing.externalInstanceId.trim() === input.instanceId.trim()
+      ? "same_instance"
+      : "different_instance";
+  throw new CrmZapiConnectionConflictError({
+    connectionId: existing.id,
+    expectedRevision: existing.revision ?? 0,
+    identityRelation: relation,
+    nextAction:
+      relation === "same_instance" ? "repair_credentials" : "replace_instance",
+  });
+}

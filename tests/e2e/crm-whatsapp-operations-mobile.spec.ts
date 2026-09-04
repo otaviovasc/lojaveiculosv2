@@ -3,6 +3,7 @@ import {
   installCampaignApiMocks,
   installNoopCampaignEventSource,
 } from "./crm-whatsapp-campaigns-helpers";
+import { createCampaignConnection } from "./crm-whatsapp-campaigns-fixtures";
 import { installLocalOwnerSession } from "./crm-whatsapp-test-helpers";
 import { saveQaScreenshot } from "./support/artifacts";
 import { setQaViewport } from "./support/viewports";
@@ -16,7 +17,8 @@ test.describe("CRM WhatsApp operations mobile", () => {
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
     await installOperationsMocks(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await installPairingConnectionMocks(page);
+    await page.goto("/crm#/crm?surface=conversations");
 
     await expectMobileNavigation(page);
 
@@ -68,15 +70,131 @@ test.describe("CRM WhatsApp operations mobile", () => {
 
     const mobileNav = getMobileNavigation(page);
     await mobileNav.getByRole("button", { name: "Mais" }).click();
-    await expect(mobileNav.getByRole("menu")).toBeVisible();
+    await expect(
+      mobileNav.getByRole("group", { name: "Outras áreas do CRM" }),
+    ).toBeVisible();
     await expectMoreMenuAboveNavigation(page);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-more-mobile");
-    await mobileNav.getByRole("menuitem", { name: "Conexão" }).click();
-    await expect(page.getByText("Credenciais protegidas")).toBeVisible();
+    await mobileNav.getByRole("button", { name: "Conexão" }).click();
+    const connection = page.getByRole("region", { name: /Conexão/i });
+    await expect(
+      connection.getByRole("heading", { name: /Conectar WhatsApp.*Z-API/ }),
+    ).toBeVisible();
+    await expect(
+      connection.getByRole("tab", { name: "QR Code" }),
+    ).toBeVisible();
+    await expect(
+      connection.getByRole("button", { name: "Gerar QR Code" }),
+    ).toBeVisible();
+    await expect(
+      connection.getByText("Atualização automática ativa"),
+    ).toBeVisible();
+    await expect(connection.getByText("Credenciais protegidas")).toHaveCount(0);
+    await expect(
+      connection.getByLabel(/ID da instância|Token da instância/i),
+    ).toHaveCount(0);
+    await expect(connection.getByText(/webhook/i)).toHaveCount(0);
+    await expect(
+      connection.getByRole("button", { name: /configurar|webhook/i }),
+    ).toHaveCount(0);
+
+    await connection.getByRole("button", { name: "Gerar QR Code" }).click();
+    await expect(
+      connection.getByAltText("QR Code para conectar o WhatsApp"),
+    ).toBeVisible();
+    await connection.getByRole("tab", { name: "Código do telefone" }).click();
+    await expect(
+      connection.getByLabel("Telefone para pareamento"),
+    ).toBeVisible();
+    await connection
+      .getByLabel("Telefone para pareamento")
+      .fill("+55 (11) 99999-9999");
+    await connection.getByRole("button", { name: "Solicitar código" }).click();
+    await expect(
+      connection.locator("output").filter({ hasText: "5511999999999" }),
+    ).toBeVisible();
     await expectNoPageOverflow(page);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection-mobile");
   });
 });
+
+async function installPairingConnectionMocks(page: Page) {
+  const connection = createCampaignConnection();
+  await page.route("**/crm/whatsapp/connections", (route) =>
+    fulfillJson(route, {
+      allowance: { limit: 1, remaining: 0, used: 1 },
+      availableProviders: [],
+      connections: [
+        {
+          ...connection,
+          credentials: {
+            apiBaseUrlEnv: null,
+            clientTokenEnv: null,
+            instanceIdEnv: null,
+            instanceTokenEnv: null,
+            mode: "stored",
+            storedInstanceConfigured: true,
+          },
+          externalInstanceId: "stored-instance",
+          id: "connection-pairing-mobile-e2e",
+          live: {
+            checkedAt: "2026-08-10T12:00:00.000Z",
+            connected: false,
+            connectedPhone: null,
+            providerStatus: "disconnected",
+            smartphoneConnected: false,
+          },
+          phone: null,
+          ready: false,
+          setup: {
+            attemptCount: 1,
+            configuredAt: "2026-08-10T12:00:00.000Z",
+            lastErrorCode: null,
+            requestedAt: "2026-08-10T11:59:00.000Z",
+            requiredTypes: [
+              "received",
+              "delivery",
+              "status",
+              "connected",
+              "disconnected",
+              "chat-presence",
+            ],
+            status: "configured",
+            succeededTypes: [
+              "received",
+              "delivery",
+              "status",
+              "connected",
+              "disconnected",
+              "chat-presence",
+            ],
+            supportCode: "ZAPI-MOBILE-E2E",
+            updatedAt: "2026-08-10T12:00:00.000Z",
+            version: 1,
+          },
+          status: "disconnected",
+        },
+      ],
+    }),
+  );
+  await page.route(
+    "**/crm/whatsapp/connections/connection-pairing-mobile-e2e/zapi/pairing/qr",
+    (route) =>
+      fulfillJson(route, {
+        expiresAt: "2099-08-10T12:00:00.000Z",
+        qrCode: "data:image/png;base64,crm-pairing-qr-mobile",
+      }),
+  );
+  await page.route(
+    "**/crm/whatsapp/connections/connection-pairing-mobile-e2e/zapi/pairing/code",
+    (route) =>
+      fulfillJson(route, {
+        code: "5511999999999",
+        expiresAt: "2099-08-10T12:00:00.000Z",
+        requested: true,
+      }),
+  );
+}
 
 async function installOperationsMocks(page: Page) {
   await page.route("**/crm/whatsapp/scheduled-messages**", (route) =>
@@ -129,7 +247,10 @@ async function selectMobileScope(page: Page, name: string) {
   }
 
   await navigation.getByRole("button", { name: "Mais" }).click();
-  await navigation.getByRole("menuitem", { name }).click();
+  await navigation
+    .getByRole("group", { name: "Outras áreas do CRM" })
+    .getByRole("button", { name })
+    .click();
 }
 
 async function expectMobileNavigation(page: Page) {
@@ -142,17 +263,25 @@ async function expectMobileNavigation(page: Page) {
     );
     return {
       bottomGap: window.innerHeight - bounds.bottom,
+      leftGap: bounds.left,
       minimumTargetHeight: Math.min(...targets.map((target) => target.height)),
+      rightGap: window.innerWidth - bounds.right,
+      top: bounds.top,
     };
   });
   expect(result.bottomGap).toBeGreaterThanOrEqual(0);
   expect(result.bottomGap).toBeLessThanOrEqual(24);
+  expect(result.leftGap).toBeGreaterThanOrEqual(0);
+  expect(result.rightGap).toBeGreaterThanOrEqual(0);
+  expect(result.top).toBeGreaterThanOrEqual(0);
   expect(result.minimumTargetHeight).toBeGreaterThanOrEqual(44);
 }
 
 async function expectMoreMenuAboveNavigation(page: Page) {
   const navigation = getMobileNavigation(page);
-  const menu = navigation.getByRole("menu");
+  const menu = navigation.getByRole("group", {
+    name: "Outras áreas do CRM",
+  });
   const [navigationBox, menuBox] = await Promise.all([
     navigation.boundingBox(),
     menu.boundingBox(),

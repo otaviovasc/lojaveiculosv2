@@ -14,6 +14,7 @@ import {
   reservationSignalPayment,
   saleMissingFields,
 } from "./salesModel";
+import { getSaleCloseMissingFields } from "./saleWorkspaceReadiness";
 import { SummaryRow } from "./SaleSummaryPanelParts";
 import type { SaleRecord } from "./types";
 
@@ -32,7 +33,7 @@ export function StickySaleSummary({
   onRevert: () => void;
   sale: SaleRecord;
 }) {
-  const closeMissing = saleMissingFields(sale, "close");
+  const closeMissing = getSaleCloseMissingFields(sale);
   const reserveMissing = saleMissingFields(sale, "reserve");
   const isCloseReady = closeMissing.length === 0;
   const isReserveReady = reserveMissing.length === 0;
@@ -89,7 +90,7 @@ export function StickySaleSummary({
   ];
 
   return (
-    <aside className="sales-glass-panel sales-summary-aside border border-line">
+    <aside className="sales-glass-panel sales-summary-aside border border-line lg:sticky lg:top-6 self-start">
       <div className="flex items-center gap-2 border-b border-line/50 pb-3 mb-2">
         <ShoppingBag className="size-4.5 text-accent" />
         <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
@@ -134,7 +135,7 @@ export function StickySaleSummary({
         <span className="text-xs font-bold text-muted uppercase tracking-wider mb-1">
           Requisitos de Fechamento
         </span>
-        <div className="flex flex-col gap-2 bg-app-elevated/40 p-3 rounded-xl border border-line/40">
+        <div className="flex flex-col gap-2">
           {checks.map((check) => (
             <div key={check.label} className="flex items-start gap-2 text-xs">
               {check.ok ? (
@@ -145,7 +146,9 @@ export function StickySaleSummary({
               <div className="flex flex-col">
                 <span
                   className={
-                    "font-bold " + (check.ok ? "text-app-text" : "text-muted")
+                    check.ok
+                      ? "font-bold text-app-text"
+                      : "font-bold text-muted"
                   }
                 >
                   {check.label}
@@ -198,16 +201,19 @@ export function StickySaleSummary({
           </div>
         )}
 
+        {!isTerminal && closeMissing.length > 0 ? (
+          <div className="rounded-xl border border-warning/20 bg-warning-soft px-3 py-2 text-xs font-bold text-warning-soft-foreground">
+            <span className="block font-black">Pendências para fechar</span>
+            <span className="mt-1 block">{closeMissing.join(", ")}.</span>
+          </div>
+        ) : null}
+
         {isTerminal ? null : (
           <>
             <button
-              className="sales-primary-button w-full"
-              disabled={!canClose}
+              className="sales-primary-button inline-flex w-full flex-row items-center gap-2 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canClose || isSaving}
               onClick={onClose}
-              style={{
-                opacity: canClose ? 1 : 0.5,
-                cursor: canClose ? "pointer" : "not-allowed",
-              }}
               type="button"
             >
               <div className="gloss-overlay" />
@@ -215,20 +221,16 @@ export function StickySaleSummary({
             </button>
 
             <button
-              className="sales-secondary-button w-full"
-              disabled={!canReserve}
+              className="sales-secondary-button inline-flex w-full flex-row items-center gap-2 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canReserve || isSaving}
               onClick={onReserve}
-              style={{
-                opacity: canReserve ? 1 : 0.5,
-                cursor: canReserve ? "pointer" : "not-allowed",
-              }}
               type="button"
             >
               Reservar Veículo
             </button>
 
             <button
-              className="sales-secondary-button w-full !text-muted hover:!text-danger hover:!border-danger/40"
+              className="sales-secondary-button inline-flex w-full flex-row items-center justify-center whitespace-nowrap text-muted hover:border-danger/40 hover:text-danger"
               disabled={!canCancel}
               onClick={onCancel}
               type="button"
@@ -239,7 +241,7 @@ export function StickySaleSummary({
         )}
         {sale.status === "closed" && sale.isCurrentRevision ? (
           <button
-            className="sales-secondary-button w-full !text-muted hover:!text-danger hover:!border-danger/40"
+            className="sales-secondary-button inline-flex w-full flex-row items-center justify-center gap-2 whitespace-nowrap text-muted hover:border-danger/40 hover:text-danger"
             disabled={isSaving}
             onClick={onRevert}
             type="button"

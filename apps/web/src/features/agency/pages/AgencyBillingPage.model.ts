@@ -1,18 +1,19 @@
 import type {
-  BillingEntitlementStatus,
   BillingOverview,
+  BillingPlanHire,
   BillingProviderStatus,
-  EntitlementKey,
+  CreateBillingPlanHireInput,
 } from "../../billing/types";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
-import type { AgencyTenantOverview } from "../apiClient";
+import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
 
 export type AgencyBillingStatus =
   | { kind: "error"; message: string }
   | { kind: "loading" }
   | { kind: "ready" }
-  | { featureKey: EntitlementKey; kind: "saving" }
   | { kind: "syncing" };
+
+export type AgencyBillingTab = "billing" | "history" | "overview";
 
 export type AgencyBillingCanonicalState = {
   canCheckout: boolean;
@@ -34,8 +35,8 @@ const providerConfigurationLabels = [
   ["ASAAS_API_URL", "Endereço da API do Asaas"],
   ["ASAAS_API_KEY", "Credencial de acesso do Asaas"],
   ["PUBLIC_APP_URL", "Endereço público do aplicativo"],
-  ["ASAAS_WEBHOOK_SECRET", "Chave de validação do webhook"],
-  ["ASAAS_WEBHOOK_URL", "Endereço do webhook de cobrança"],
+  ["ASAAS_WEBHOOK_SECRET", "Segurança da confirmação automática"],
+  ["ASAAS_WEBHOOK_URL", "Endereço de confirmação automática"],
 ] as const;
 
 export function createAgencyBillingPanelOverview(
@@ -53,7 +54,6 @@ export function createAgencyBillingPanelOverview(
     : null;
 
   return {
-    addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
     chargePreview: overview.chargePreview,
@@ -63,9 +63,14 @@ export function createAgencyBillingPanelOverview(
     financialSummary: overview.financialSummary,
     plans: overview.plans,
     storeId: selectedStore?.storeId ?? "",
-    subscription: overview.subscription
-      ? { ...overview.subscription, plan: selectedPlan }
-      : null,
+    subscription:
+      overview.subscription && selectedStore?.subscriptionStatus
+        ? {
+            ...overview.subscription,
+            plan: selectedPlan,
+            status: selectedStore.subscriptionStatus,
+          }
+        : null,
     tenantId: overview.tenantId,
   };
 }
@@ -97,19 +102,6 @@ export function createAgencyBillingCanonicalState(
       metricLabel: "Ativa",
       title: "Assinatura ativa",
       tone: "success",
-    };
-  }
-
-  if (subscription?.status === "trialing") {
-    return {
-      canCheckout: false,
-      description: `O plano ${planName} está em período de teste. Nenhuma nova contratação é necessária.`,
-      integrationRequirements,
-      kind: "current",
-      label: "Situação atual",
-      metricLabel: "Em teste",
-      title: "Período de teste ativo",
-      tone: "info",
     };
   }
 
@@ -174,15 +166,24 @@ export function agencyBillingConfigurationLabels(
   ];
 }
 
-export function agencyBillingDefaultReason(status: BillingEntitlementStatus) {
-  return status === "active"
-    ? "Entitlement enabled from agency billing console."
-    : "Entitlement changed from agency billing console.";
+export function agencyBillingErrorMessage(error: unknown) {
+  const message = formatApiErrorDisplay(
+    error,
+    "Não foi possível carregar o faturamento da agência.",
+  );
+  return `${message} Tente novamente; se persistir, informe o ID do erro ou da contratação ao suporte.`;
 }
 
-export function agencyBillingErrorMessage(error: unknown) {
-  return formatApiErrorDisplay(
-    error,
-    "Nao foi possivel carregar o faturamento da agencia.",
-  );
+export async function startAgencyStorePlanHire({
+  api,
+  input,
+  storeId,
+  tenantId,
+}: {
+  api: Pick<AgencyApi, "createStorePlanHire">;
+  input: CreateBillingPlanHireInput;
+  storeId: string;
+  tenantId: string;
+}): Promise<BillingPlanHire> {
+  return api.createStorePlanHire(tenantId, storeId, input);
 }

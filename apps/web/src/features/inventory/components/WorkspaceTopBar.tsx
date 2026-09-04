@@ -2,13 +2,16 @@ import {
   ArrowLeft,
   DollarSign,
   ExternalLink,
+  Landmark,
   MapPin,
   Printer,
   Trash2,
 } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { MercosulPlateBadge } from "./InventoryListingBadges";
 
 export type WorkspaceTopBarAction =
-  "delete" | "print" | "sell" | "transfer" | "view-public-listing";
+  "delete" | "print" | "sell" | "simulate" | "transfer" | "view-public-listing";
 
 export function WorkspaceTopBar({
   canTransferStores,
@@ -25,79 +28,108 @@ export function WorkspaceTopBar({
   plate: string;
   title: string;
 }) {
+  const hasValidPlate = Boolean(plate && plate.trim() !== "" && plate !== "-");
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
       <div className="flex items-center gap-3.5 min-w-0">
-        <button
+        <Button
+          aria-label="Voltar ao estoque"
           onClick={onBack}
-          className="p-2.5 rounded-xl bg-app-elevated border border-line hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
+          size="icon-sm"
+          variant="outline"
           title="Voltar ao estoque"
           type="button"
         >
-          <ArrowLeft className="size-5" />
-        </button>
+          <ArrowLeft aria-hidden="true" className="size-4" />
+        </Button>
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-black leading-tight break-words">
+          <h1 className="text-xl md:text-2xl font-black leading-tight break-words text-app-text">
             {title}
           </h1>
-          <p className="text-xs font-bold text-muted flex items-center gap-2 mt-0.5">
-            <span className="bg-app-elevated border border-line px-2 py-0.5 rounded uppercase tracking-wider">
-              {plate}
-            </span>
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            {hasValidPlate ? (
+              <MercosulPlateBadge plate={plate} />
+            ) : (
+              <span className="rounded-md border border-line bg-app-elevated px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-muted">
+                Sem placa
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Main Actions Panel */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <Button
           onClick={() => onAction("print")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
+          size="sm"
+          variant="outline"
           type="button"
         >
-          <Printer className="size-3.5 text-muted" />
+          <Printer className="size-3.5 mr-1 text-muted" />
           <span>Imprimir</span>
-        </button>
+        </Button>
+
         {canTransferStores ? (
-          <button
+          <Button
             onClick={() => onAction("transfer")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
+            size="sm"
+            variant="outline"
             type="button"
           >
-            <MapPin className="size-3.5 text-muted" />
+            <MapPin className="size-3.5 mr-1 text-muted" />
             <span>Transferir</span>
-          </button>
+          </Button>
         ) : null}
-        <button
+
+        <Button
           onClick={() => onAction("delete")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
+          size="sm"
+          variant="outline"
           type="button"
         >
-          <Trash2 className="size-3.5 text-danger" />
+          <Trash2 className="size-3.5 mr-1 text-danger" />
           <span>Excluir</span>
-        </button>
-        <button
+        </Button>
+
+        <Button
           disabled={!publicListingUrl}
           onClick={() => onAction("view-public-listing")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-55"
+          size="sm"
+          variant="outline"
           title={
             publicListingUrl
-              ? "Abrir anuncio publico"
-              : "Publique o veiculo para gerar o anuncio publico"
+              ? "Abrir anúncio público"
+              : "Publique o veículo para gerar o anúncio público"
           }
           type="button"
         >
-          <ExternalLink className="size-3.5 text-accent" />
+          <ExternalLink className="size-3.5 mr-1 text-accent" />
           <span>Ver anúncio</span>
-        </button>
-        <button
-          onClick={() => onAction("sell")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer"
+        </Button>
+
+        <Button
+          onClick={() => onAction("simulate")}
+          size="sm"
+          title="Simular financiamento com bancos integrados via Credere"
           type="button"
+          variant="outline"
         >
-          <DollarSign className="size-3.5" />
+          <Landmark className="size-3.5 mr-1 text-accent" />
+          <span>Simular</span>
+        </Button>
+
+        <Button
+          onClick={() => onAction("sell")}
+          size="sm"
+          title="Iniciar venda deste veículo"
+          type="button"
+          variant="default"
+        >
+          <DollarSign className="size-3.5 mr-1" />
           <span>Vender</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import { AtSign, Mail, MessageCircle, Phone } from "lucide-react";
-import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { readString } from "./publicStorefrontTheme";
 import type { PublicStorefrontSettingsData } from "./types";
 
@@ -14,8 +13,8 @@ export function LeadPanel({
   const instagram = readString(socialLinks.instagram);
   return (
     <section className="bg-panel" id="contato">
-      <div className="public-storefront-shell px-6 py-16 md:py-20">
-        <div className="grid gap-8 rounded-2xl border border-line bg-app p-6 shadow-sm md:grid-cols-[0.95fr_1.05fr] md:p-10">
+      <div className="public-storefront-shell px-6 py-[var(--sf-section-pad)]">
+        <div className="grid gap-8 rounded-[var(--sf-radius)] border border-line bg-app p-6 shadow-sm md:grid-cols-[0.95fr_1.05fr] md:p-10">
           <div className="flex flex-col justify-center">
             <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
               INTERESSE RÁPIDO
@@ -62,21 +61,9 @@ export function LeadPanel({
           </div>
 
           <div className="flex flex-col justify-center gap-4">
-            <input
-              aria-label="Nome"
-              className="min-h-12 rounded-xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
-              placeholder="Seu nome"
-            />
-            <input
-              aria-label="Telefone"
-              className="min-h-12 rounded-xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
-              inputMode="tel"
-              onInput={(event) => {
-                applyInputMask(event.currentTarget, formatBrazilianPhone);
-              }}
-              placeholder="Seu telefone"
-              type="tel"
-            />
+            <p className="text-sm font-semibold text-muted">
+              Fale com a loja pelo WhatsApp para separar este veículo.
+            </p>
             <a
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95"
               href={settings.contact.whatsappUrl ?? undefined}

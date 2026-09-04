@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ClipboardList, Wallet } from "lucide-react";
+import { ClipboardList, DollarSign, Landmark, Wallet } from "lucide-react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
@@ -16,6 +16,8 @@ import { createDocumentsApi } from "../../documents/apiClient";
 import { createDocumentsApiOptions } from "../../documents/runtimeApi";
 import { openDocumentDownload } from "../../documents/DocumentsModuleSupport";
 import { uploadInventoryFile } from "../model/mediaWorkspaceTypes";
+import { useOptionalAccountSession } from "../../account/accountSession";
+import { readSessionEffectivePermissions } from "../../account/sessionPermissions";
 import {
   costToItem,
   costToCashFlowItem,
@@ -32,16 +34,29 @@ import {
 export function InventoryDetailFinanceiroTab({
   api,
   detail,
+  onSimulate,
+  onSell,
   onUpdated,
   unit,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  onSimulate?: () => void;
+  onSell?: () => void;
   onUpdated: (detail: InventoryListingDetail) => void;
   unit: InventoryUnit | null;
 }) {
   const [isAddingCost, setIsAddingCost] = useState(false);
+  const [isUpdatingCost, setIsUpdatingCost] = useState(false);
+  const [isVoidingCost, setIsVoidingCost] = useState(false);
   const [costMessage, setCostMessage] = useState<string | null>(null);
+  const accountSession = useOptionalAccountSession();
+  const permissions = accountSession
+    ? readSessionEffectivePermissions(accountSession)
+    : null;
+  const canCreateCost = permissions?.includes("inventory.cost_create") ?? true;
+  const canUpdateCost = permissions?.includes("inventory.cost_update") ?? true;
+  const canVoidCost = permissions?.includes("inventory.cost_void") ?? true;
 
   const listing = detail.listing;
   const selectedUnit = unit ?? detail.units[0] ?? null;
@@ -78,6 +93,7 @@ export function InventoryDetailFinanceiroTab({
     account: string,
     value: number,
     kind: InventoryCostKind,
+    costDate: string,
     file?: File | null,
   ): Promise<boolean> => {
     if (!selectedUnit) {
@@ -90,6 +106,7 @@ export function InventoryDetailFinanceiroTab({
     try {
       let updated = await api.addCost(selectedUnit.id, {
         amountCents: Math.round(value),
+        costDate,
         description: account.trim(),
         kind,
       });
@@ -129,6 +146,56 @@ export function InventoryDetailFinanceiroTab({
     }
   };
 
+  const handleUpdateCost = async (
+    costId: string,
+    account: string,
+    value: number,
+    kind: InventoryCostKind,
+    costDate: string,
+  ): Promise<boolean> => {
+    if (!selectedUnit) return false;
+    setIsUpdatingCost(true);
+    setCostMessage(null);
+    try {
+      const updated = await api.updateCost(selectedUnit.id, costId, {
+        amountCents: Math.round(value),
+        costDate,
+        description: account.trim(),
+        kind,
+      });
+      onUpdated(updated);
+      return true;
+    } catch (error) {
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível corrigir o custo."),
+      );
+      return false;
+    } finally {
+      setIsUpdatingCost(false);
+    }
+  };
+
+  const handleVoidCost = async (
+    costId: string,
+    reason: string,
+  ): Promise<boolean> => {
+    if (!selectedUnit) return false;
+    setIsVoidingCost(true);
+    setCostMessage(null);
+    try {
+      const updated = await api.voidCost(selectedUnit.id, costId, { reason });
+      onUpdated(updated);
+      return true;
+    } catch (error) {
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível estornar o custo."),
+      );
+      return false;
+    } finally {
+      setIsVoidingCost(false);
+    }
+  };
+
   const handleDownloadReceipt = async (documentId: string) => {
     try {
       const opts = await createDocumentsApiOptions();
@@ -136,7 +203,9 @@ export function InventoryDetailFinanceiroTab({
       const download = await docsApi.downloadDocument(documentId);
       openDocumentDownload(download);
     } catch (error) {
-      console.error("Erro ao baixar o comprovante", error);
+      setCostMessage(
+        formatApiErrorDisplay(error, "Não foi possível abrir o comprovante."),
+      );
     }
   };
 
@@ -146,7 +215,7 @@ export function InventoryDetailFinanceiroTab({
       className="flex w-full max-w-none flex-col gap-8 text-app-text"
     >
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
+        <div className="vehicle-detail-card flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
           <div>
             <h3 className="mb-4 flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
               <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -178,7 +247,7 @@ export function InventoryDetailFinanceiroTab({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-1.5 rounded-xl border border-accent-soft/20 bg-accent-soft/30 p-4">
+          <div className="vehicle-detail-subcard mt-6 flex flex-col gap-1.5 rounded-xl border border-accent-soft/20 bg-accent-soft/30 p-4">
             <span className="text-xs font-black uppercase tracking-wider text-muted">
               Resultado Esperado
             </span>
@@ -193,9 +262,34 @@ export function InventoryDetailFinanceiroTab({
               </span>
             </div>
           </div>
+
+          {onSimulate || onSell ? (
+            <div className="mt-4 flex items-center gap-2 pt-2 border-t border-line/20 flex-wrap">
+              {onSimulate ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line/40 bg-panel/60 px-3 text-xs font-bold text-muted hover:text-app-text hover:bg-line/15 transition-all cursor-pointer"
+                  onClick={onSimulate}
+                  type="button"
+                >
+                  <Landmark className="size-3.5 text-accent" />
+                  <span>Simular Financiamento</span>
+                </button>
+              ) : null}
+              {onSell ? (
+                <button
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 text-xs font-black text-accent-text hover:bg-accent hover:text-accent-foreground transition-all cursor-pointer"
+                  onClick={onSell}
+                  type="button"
+                >
+                  <DollarSign className="size-3.5" />
+                  <span>Iniciar Venda</span>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+        <div className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
           <h3 className="flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
             <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
               <ClipboardList className="size-4" />
@@ -263,14 +357,21 @@ export function InventoryDetailFinanceiroTab({
 
       <FinanceiroCustosSection
         addStatus={costMessage}
+        canCreate={canCreateCost}
+        canUpdate={canUpdateCost}
+        canVoid={canVoidCost}
         clearStatus={() => setCostMessage(null)}
         costs={costItems}
         formatBRL={formatBRL}
         isAdding={isAddingCost}
+        isUpdating={isUpdatingCost}
+        isVoiding={isVoidingCost}
         onAddCost={handleAddCost}
         onDownloadReceipt={(documentId) => {
           void handleDownloadReceipt(documentId);
         }}
+        onUpdateCost={handleUpdateCost}
+        onVoidCost={handleVoidCost}
       />
 
       <FinanceiroNotasFiscaisSection />

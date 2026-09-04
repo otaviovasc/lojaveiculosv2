@@ -10,6 +10,7 @@ import {
   tenantMemberships,
   tenants,
 } from "@lojaveiculosv2/db";
+import { DEFAULT_PUBLIC_STOREFRONT_THEME } from "@lojaveiculosv2/shared";
 import type { EntitlementKey, RoleKey } from "@lojaveiculosv2/shared";
 import {
   AccountProvisioningConflictError,
@@ -21,6 +22,7 @@ import {
   addDays,
   assertNoActiveInvitation,
 } from "./drizzleAccountProvisioningInvitations.js";
+import { createPublicStorefrontDefaults } from "./drizzleAccountProvisioningDefaults.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
 
 export async function assertSlugsAvailable(
@@ -41,11 +43,10 @@ export async function assertTenantSlugAvailable(
     .from(tenants)
     .where(eq(tenants.slug, slug))
     .limit(1);
-  if (tenant) {
+  if (tenant)
     throw new AccountProvisioningConflictError(
       "Tenant slug is already in use.",
     );
-  }
 }
 
 export async function assertStoreSlugAvailable(
@@ -97,7 +98,10 @@ export async function insertStoreMembership(
   await db
     .insert(storeMemberships)
     .values({ roleTemplateId, storeId, tenantId, userId })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      set: { roleTemplateId, status: "active" },
+      target: [storeMemberships.storeId, storeMemberships.userId],
+    });
 }
 
 export async function insertStoreDefaults(
@@ -110,7 +114,7 @@ export async function insertStoreDefaults(
     endsAt: Date | null;
     entitlements: readonly EntitlementKey[];
     startsAt: Date;
-    status: "active" | "trialing";
+    status: "active";
   },
 ) {
   await Promise.all([
@@ -120,7 +124,7 @@ export async function insertStoreDefaults(
       .onConflictDoNothing(),
     db
       .insert(storePublicSiteSettings)
-      .values({ isPublished: false, storeId, tenantId })
+      .values(createPublicStorefrontDefaults(tenantId, storeId))
       .onConflictDoNothing(),
     db
       .insert(storeEntitlements)
@@ -203,6 +207,9 @@ function toProfile(
   profile: StoreProfileDraft | undefined,
 ) {
   return {
+    businessHours: {
+      text: DEFAULT_PUBLIC_STOREFRONT_THEME.contact.businessHours,
+    },
     contactEmail: profile?.contactEmail ?? null,
     contactPhone: profile?.contactPhone ?? null,
     documentNumber: profile?.documentNumber ?? null,
@@ -220,7 +227,7 @@ function toEntitlement(
     catalogVersion: string;
     endsAt: Date | null;
     startsAt: Date;
-    status: "active" | "trialing";
+    status: "active";
   },
 ) {
   return {
@@ -228,10 +235,7 @@ function toEntitlement(
     featureKey,
     metadata: {
       catalogVersion: billing.catalogVersion,
-      sourceDetail:
-        billing.status === "trialing"
-          ? "safe_trial_catalog"
-          : "billing_catalog",
+      sourceDetail: "billing_catalog",
     },
     source: "billing_catalog",
     startsAt: billing.startsAt,

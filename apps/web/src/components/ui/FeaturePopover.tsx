@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEventHandler,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -13,13 +14,17 @@ import { cx } from "./featureShared";
 type FeatureAnchoredPopoverProps = {
   align?: "end" | "start";
   anchorRef: RefObject<HTMLElement | null>;
+  ariaLabel?: string;
   children: ReactNode;
   className?: string;
   id?: string;
+  initialFocus?: "first" | "last";
   isOpen: boolean;
   maxHeight?: number;
   offset?: number;
   onClose: () => void;
+  onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  restoreFocusOnClose?: boolean;
   role?: "dialog" | "listbox" | "menu";
 };
 
@@ -33,20 +38,36 @@ type PopoverPosition = {
 
 const edgePadding = 12;
 const minimumPanelHeight = 96;
+const focusableItemSelector = [
+  '[role="menuitem"]:not([aria-disabled="true"])',
+  '[role="menuitemcheckbox"]:not([aria-disabled="true"])',
+  '[role="menuitemradio"]:not([aria-disabled="true"])',
+  '[role="option"]:not([aria-disabled="true"])',
+  "button:not(:disabled)",
+  'input:not(:disabled):not([type="hidden"])',
+  "select:not(:disabled)",
+  "textarea:not(:disabled)",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 export function FeatureAnchoredPopover({
   align = "start",
   anchorRef,
+  ariaLabel,
   children,
   className,
   id,
+  initialFocus,
   isOpen,
   maxHeight = 320,
   offset = 8,
   onClose,
+  onKeyDown,
+  restoreFocusOnClose = true,
   role = "menu",
 }: FeatureAnchoredPopoverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
   const [position, setPosition] = useState<PopoverPosition>({
     left: edgePadding,
     maxHeight,
@@ -75,6 +96,30 @@ export function FeatureAnchoredPopover({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      wasOpenRef.current = true;
+      if (!initialFocus) return;
+      const items = panelRef.current?.querySelectorAll<HTMLElement>(
+        focusableItemSelector,
+      );
+      if (!items?.length) return;
+      const item =
+        initialFocus === "last" ? items.item(items.length - 1) : items.item(0);
+      item?.focus();
+      return;
+    }
+
+    if (!wasOpenRef.current) return;
+    wasOpenRef.current = false;
+    if (!restoreFocusOnClose) return;
+    const anchor = anchorRef.current;
+    const focusTarget = anchor?.matches(focusableItemSelector)
+      ? anchor
+      : anchor?.querySelector<HTMLElement>(focusableItemSelector);
+    focusTarget?.focus();
+  }, [anchorRef, initialFocus, isOpen, restoreFocusOnClose]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -110,10 +155,7 @@ export function FeatureAnchoredPopover({
       const availableHeight = openAbove
         ? aboveSpace - offset
         : belowSpace - offset;
-      const nextMaxHeight = Math.max(
-        minimumPanelHeight,
-        Math.min(maxHeight, availableHeight),
-      );
+      const nextMaxHeight = Math.max(1, Math.min(maxHeight, availableHeight));
       const renderedHeight = Math.min(measuredHeight, nextMaxHeight);
       const top = openAbove
         ? Math.max(edgePadding, anchorRect.top - offset - renderedHeight)
@@ -149,11 +191,13 @@ export function FeatureAnchoredPopover({
 
   return createPortal(
     <div
+      aria-label={ariaLabel}
       className={cx(
         "fixed z-[1000] overflow-auto rounded-lg border border-line bg-panel p-2 shadow-[var(--shadow-panel)]",
         className,
       )}
       id={id}
+      onKeyDown={onKeyDown}
       ref={panelRef}
       role={role}
       style={style}

@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import type { CrmWhatsappProviderEvent } from "../../apps/web/src/features/crm/crmWhatsappTypes";
 
 export async function installProviderEventIssueRoutes(page: Page) {
   let retried = false;
@@ -22,15 +23,18 @@ export async function installProviderEventIssueRoutes(page: Page) {
   });
 }
 
-function providerEventIssue() {
+function providerEventIssue(): CrmWhatsappProviderEvent {
   return {
+    attentionReason: "processing_failed",
     connectionId: "24000000-0000-4000-8000-000000000101",
     createdAt: new Date().toISOString(),
     errorMessage: "timeout na entrega",
-    eventType: "crm.whatsapp.zapi.delivery",
+    eventType: "crm.provider.zapi.delivery",
     id: "event_e2e",
     processedAt: null,
+    provider: "zapi",
     providerEventId: "provider_event_e2e",
+    retryable: true,
     status: "failed",
     updatedAt: new Date().toISOString(),
     webhookType: "delivery",

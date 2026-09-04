@@ -1,18 +1,41 @@
+import type {
+  AuditCategory,
+  AuditCriticality,
+  AuditOutcome,
+  AuditRequestContext,
+  AuditSeverity,
+  AuditSource,
+  SafeAuditMetadata,
+} from "@lojaveiculosv2/audit";
+
+export type InternalAuditRequestContext = Pick<
+  AuditRequestContext,
+  "causationId" | "correlationId" | "method" | "path" | "requestId"
+>;
+
 export type InternalAuditEvent = {
   action: string;
   actorId: string;
   actorKind: string;
   category: string | null;
+  correlationId: string | null;
   criticality: string;
   entityId: string;
   entityType: string;
+  failureTier: string;
   id: string;
   occurredAt: Date;
   outcome: string;
+  providerEventId: string | null;
+  providerName: string | null;
+  metadata: SafeAuditMetadata;
+  requestContext: InternalAuditRequestContext | null;
   requestId: string;
   severity: string;
+  source: AuditSource | null;
   storeId: string | null;
   summary: string | null;
+  tags: readonly string[];
   tenantId: string | null;
 };
 
@@ -92,10 +115,30 @@ export type InternalHealthSnapshot = {
   summary: InternalHealthSummary;
 };
 
+export type InternalMonitoringQuery = {
+  action?: string | undefined;
+  actorId?: string | undefined;
+  category?: AuditCategory | undefined;
+  correlationId?: string | undefined;
+  criticality?: AuditCriticality | undefined;
+  entityId?: string | undefined;
+  entityType?: string | undefined;
+  from?: Date | undefined;
+  limit: number;
+  outcome?: AuditOutcome | undefined;
+  providerName?: string | undefined;
+  requestId?: string | undefined;
+  severity?: AuditSeverity | undefined;
+  to?: Date | undefined;
+};
+
 export type InternalMonitoringRepository = {
   getHealthSnapshot: (input: {
-    limit: number;
+    query: InternalMonitoringQuery;
     storeId: string;
     tenantId: string;
+  }) => Promise<InternalHealthSnapshot>;
+  getPlatformHealthSnapshot: (input: {
+    query: InternalMonitoringQuery;
   }) => Promise<InternalHealthSnapshot>;
 };

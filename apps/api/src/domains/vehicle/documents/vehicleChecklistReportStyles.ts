@@ -1,141 +1,224 @@
 import { createDocumentPdfStyles } from "../../documents/render/reactPdfDocumentStyles.js";
-import type {
-  VehicleChecklistOverviewItem,
-  VehicleChecklistOverviewStatus,
-} from "../readModels/vehicleChecklistOverview.js";
+import type { VehicleChecklistOverviewStatus } from "../readModels/vehicleChecklistOverview.js";
 
-export const customStyles = createDocumentPdfStyles({
-  summaryGrid: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
+/**
+ * Checklist report styles ported from the V1 VehicleChecklistPDF and
+ * VehicleChecklistSummaryPDF documents (soft gray cards, green/red badges).
+ */
+export const checklistStyles = createDocumentPdfStyles({
+  page: {
+    backgroundColor: "#ffffff",
+    color: "#1f2937",
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    padding: 40,
   },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: "#fafaf9",
-    borderColor: "#e8e3e2",
-    borderWidth: 1,
-    padding: 8,
+  header: {
     alignItems: "center",
-    borderRadius: 4,
+    borderBottomColor: "#e5e7eb",
+    borderBottomWidth: 1,
+    flexDirection: "column",
+    marginBottom: 20,
+    paddingBottom: 20,
   },
-  summaryValue: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "#151515",
-  },
-  summaryLabel: {
-    fontSize: 6.5,
-    color: "#78716c",
-    textTransform: "uppercase",
-    marginTop: 2,
-    fontWeight: 700,
-  },
-  table: {
+  logoBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
     width: "100%",
+  },
+  logo: { maxHeight: 80, maxWidth: 200, objectFit: "contain" },
+  title: {
+    color: "#111827",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  subtitle: { color: "#6b7280", fontSize: 10, textAlign: "center" },
+  section: { marginBottom: 24 },
+  sectionTitle: {
+    color: "#111827",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 14,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    textTransform: "uppercase",
+  },
+  infoGrid: {
+    backgroundColor: "#f9fafb",
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e8e3e2",
+  },
+  row: {
+    borderBottomColor: "#e5e7eb",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  lastRow: { borderBottomWidth: 0 },
+  label: { color: "#6b7280", fontSize: 10, width: "40%" },
+  value: {
+    color: "#111827",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    fontWeight: "bold",
+    width: "60%",
+  },
+  checklistItem: {
+    alignItems: "center",
+    borderBottomColor: "#e5e7eb",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  checklistLabel: { color: "#374151", fontSize: 11 },
+  statusBadge: {
     borderRadius: 4,
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    textTransform: "uppercase",
+  },
+  statusYes: { backgroundColor: "#dcfce7", color: "#166534" },
+  statusNo: { backgroundColor: "#fee2e2", color: "#991b1b" },
+  statusNeutral: { backgroundColor: "#f3f4f6", color: "#374151" },
+  completionText: {
+    color: "#10b981",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  progressBarContainer: {
+    backgroundColor: "#e5e7eb",
+    borderRadius: 3,
+    height: 6,
+    marginTop: 8,
     overflow: "hidden",
   },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#151515",
-    borderBottomWidth: 2,
-    borderBottomColor: "#e11f26",
-    padding: 6,
+  progressBarFill: {
+    backgroundColor: "#10b981",
+    borderRadius: 3,
+    height: "100%",
   },
-  tableHeaderCell: {
-    color: "#ffffff",
-    fontSize: 7.5,
-    fontWeight: 700,
-    textTransform: "uppercase",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e3e2",
-    padding: 6,
-    alignItems: "center",
-  },
-  tableRowEven: {
-    backgroundColor: "#fafaf9",
-  },
-  tableCell: {
-    fontSize: 8,
-    color: "#151515",
-  },
-  failedCount: {
-    color: "#b81820",
-    fontWeight: 700,
-  },
-  vehicleTitle: {
-    fontWeight: 700,
-    fontSize: 8,
-    color: "#151515",
-  },
-  vehicleSubtitle: {
-    fontSize: 6.5,
-    color: "#78716c",
-    marginTop: 1,
-  },
-  badge: {
-    padding: "2 4",
-    borderRadius: 2,
-    fontSize: 7,
-    fontWeight: 700,
-    textAlign: "center",
-    alignSelf: "flex-start",
-  },
-  badgeSuccess: {
-    backgroundColor: "#d1fae5",
-    color: "#065f46",
-  },
-  badgeWarning: {
-    backgroundColor: "#fef3c7",
-    color: "#92400e",
-  },
-  badgeDanger: {
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-  },
-  badgeBlue: {
-    backgroundColor: "#dbeafe",
-    color: "#1e40af",
-  },
-  badgeNeutral: {
-    backgroundColor: "#f3f4f6",
+  notesBox: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    borderWidth: 1,
     color: "#374151",
+    lineHeight: 1.5,
+    minHeight: 80,
+    padding: 16,
+  },
+  footer: {
+    borderTopColor: "#f3f4f6",
+    borderTopWidth: 1,
+    bottom: 30,
+    color: "#9ca3af",
+    fontSize: 9,
+    left: 40,
+    paddingTop: 12,
+    position: "absolute",
+    right: 40,
+    textAlign: "center",
   },
 });
 
-export function getOverviewStatusBadgeStyle(
-  status: VehicleChecklistOverviewStatus,
-) {
-  if (status === "passed")
-    return [customStyles.badge, customStyles.badgeSuccess];
-  if (status === "failed" || status === "missing")
-    return [customStyles.badge, customStyles.badgeDanger];
-  if (status === "in_progress" || status === "pending")
-    return [customStyles.badge, customStyles.badgeWarning];
-  return [customStyles.badge, customStyles.badgeNeutral];
-}
-
-export function getUnitStatusBadgeStyle(
-  status: VehicleChecklistOverviewItem["unit"]["status"],
-) {
-  if (status === "available")
-    return [customStyles.badge, customStyles.badgeSuccess];
-  if (status === "reserved" || status === "in_preparation")
-    return [customStyles.badge, customStyles.badgeWarning];
-  if (status === "sold" || status === "acquired")
-    return [customStyles.badge, customStyles.badgeBlue];
-  if (status === "delivered")
-    return [customStyles.badge, customStyles.badgeNeutral];
-  if (status === "inactive")
-    return [customStyles.badge, customStyles.badgeDanger];
-  return [customStyles.badge, customStyles.badgeNeutral];
-}
+export const fleetStyles = createDocumentPdfStyles({
+  page: {
+    backgroundColor: "#ffffff",
+    color: "#1f2937",
+    fontFamily: "Helvetica",
+    fontSize: 9,
+    padding: 30,
+  },
+  header: {
+    alignItems: "center",
+    borderBottomColor: "#e5e7eb",
+    borderBottomWidth: 1,
+    flexDirection: "column",
+    marginBottom: 20,
+    paddingBottom: 16,
+  },
+  logoBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    width: "100%",
+  },
+  logo: { maxHeight: 60, maxWidth: 180, objectFit: "contain" },
+  title: {
+    color: "#111827",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  subtitle: { color: "#6b7280", fontSize: 10, textAlign: "center" },
+  sectionTitle: {
+    color: "#111827",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  tableHeader: {
+    backgroundColor: "#f9fafb",
+    borderBottomWidth: 1,
+    borderColor: "#e5e7eb",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  tableRow: {
+    alignItems: "center",
+    borderBottomColor: "#f3f4f6",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  th: {
+    color: "#4b5563",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+  },
+  td: { color: "#111827", fontSize: 9 },
+  statusBadge: {
+    backgroundColor: "#f3f4f6",
+    borderRadius: 2,
+    color: "#374151",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  statusYes: { color: "#10b981" },
+  statusNo: { color: "#ef4444" },
+  footer: {
+    borderTopColor: "#f3f4f6",
+    borderTopWidth: 1,
+    bottom: 20,
+    color: "#9ca3af",
+    fontSize: 8,
+    left: 30,
+    paddingTop: 10,
+    position: "absolute",
+    right: 30,
+    textAlign: "center",
+  },
+});
 
 export function overviewStatusLabel(status: VehicleChecklistOverviewStatus) {
   return {

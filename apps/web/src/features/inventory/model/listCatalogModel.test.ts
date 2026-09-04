@@ -3,9 +3,14 @@ import {
   createListQuery,
   formatInventoryPrice,
   getInventoryCatalogLine,
+  getInventoryFipeComparison,
+  getInventoryKm,
   getInventoryLeadInterestLevel,
   getInventoryPlate,
+  getInventoryStockDays,
   getInventoryStockLabel,
+  getInventoryVehicleSubtitle,
+  getInventoryVehicleTitle,
   getInventoryYearLine,
   summarizeInventoryList,
 } from "./listCatalogModel";
@@ -63,6 +68,10 @@ describe("inventory list catalog model", () => {
     expect(getInventoryCatalogLine(item.listing.catalog, item.listing)).toBe(
       "Toyota - Corolla - XEI",
     );
+    expect(getInventoryVehicleTitle(item.listing)).toBe("Toyota Corolla");
+    expect(
+      getInventoryVehicleSubtitle(item.listing, item.listing.catalog),
+    ).toBe("XEI");
     expect(getInventoryYearLine(item.listing)).toBe("2024/2025");
     expect(getInventoryPlate(item)).toBe("ABC1D23");
     expect(getInventoryStockLabel(item)).toBe("Estoque STK-1");
@@ -76,5 +85,49 @@ describe("inventory list catalog model", () => {
     expect(getInventoryLeadInterestLevel(5)).toBe("hot");
     expect(getInventoryLeadInterestLevel(6)).toBe("very_hot");
     expect(getInventoryLeadInterestLevel(9)).toBe("very_hot");
+  });
+
+  it("formats the real listing mileage and hides it when unknown", () => {
+    expect(getInventoryKm(45230)).toBe("45.230 km");
+    expect(getInventoryKm(0)).toBe("0 km");
+    expect(getInventoryKm(null)).toBe("-");
+  });
+
+  it("derives stock days from the listing creation date only", () => {
+    const tenDaysAgo = new Date(
+      Date.now() - 10 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    expect(getInventoryStockDays(tenDaysAgo)).toBe(10);
+    expect(getInventoryStockDays(tomorrow)).toBe(0);
+    expect(getInventoryStockDays("not-a-date")).toBe(0);
+  });
+
+  it("compares the price with the real FIPE reference from the catalog", () => {
+    expect(getInventoryFipeComparison(9_000_000, 10_000_000)).toEqual({
+      percentage: -10,
+      label: "-10% FIPE",
+      isBelow: true,
+      isAbove: false,
+    });
+    expect(getInventoryFipeComparison(11_000_000, 10_000_000)).toEqual({
+      percentage: 10,
+      label: "+10% FIPE",
+      isBelow: false,
+      isAbove: true,
+    });
+    expect(getInventoryFipeComparison(10_000_000, 10_000_000)).toEqual({
+      percentage: 0,
+      label: "FIPE",
+      isBelow: false,
+      isAbove: false,
+    });
+  });
+
+  it("omits the FIPE comparison when there is no real reference price", () => {
+    expect(getInventoryFipeComparison(null, 10_000_000)).toBeNull();
+    expect(getInventoryFipeComparison(10_000_000, null)).toBeNull();
+    expect(getInventoryFipeComparison(10_000_000, 0)).toBeNull();
   });
 });

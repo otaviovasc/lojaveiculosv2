@@ -1,6 +1,5 @@
 import type {
   BillingProviderAccount,
-  BillingProviderCheckoutRecord,
   BillingProviderCustomerRecord,
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
@@ -16,20 +15,23 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
     id: "billing_customer_memory",
     name: "Loja Teste LTDA",
     provider: "asaas",
-    providerCustomerId: "local_asaas_customer_memory",
+    providerCustomerId: null,
   };
   let subscription: BillingProviderSubscriptionRecord = {
     currentPeriodEnd: null,
     currentPeriodStart: null,
     id: "subscription_memory",
     provider: "asaas",
-    providerSubscriptionId: "local_asaas_subscription_memory",
-    status: "trialing",
+    providerSubscriptionId: null,
+    status: "active",
   };
-  const checkouts: BillingProviderCheckoutRecord[] = [];
+  let accountScope: { storeId: string; tenantId: string } | null = null;
 
   return {
     async getProviderAccount(input): Promise<BillingProviderAccount> {
+      if (input.storeId) {
+        accountScope = { storeId: input.storeId, tenantId: input.tenantId };
+      }
       const overview = await getBillingProviderOverview(
         billingRepository,
         input,
@@ -41,7 +43,18 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       };
     },
     async saveProviderCustomer(input) {
-      if (input.billingCustomerId !== billingCustomer.id) return null;
+      if (
+        input.billingCustomerId !== billingCustomer.id ||
+        !scopeMatches(accountScope, input)
+      ) {
+        return null;
+      }
+      if (
+        billingCustomer.providerCustomerId &&
+        billingCustomer.providerCustomerId !== input.providerCustomerId
+      ) {
+        return null;
+      }
       billingCustomer = {
         ...billingCustomer,
         provider: input.provider,
@@ -49,24 +62,27 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       };
       return billingCustomer;
     },
-    async saveProviderCheckout(input) {
-      const checkout: BillingProviderCheckoutRecord = {
-        checkoutUrl: input.checkoutUrl,
-        expiresAt: input.expiresAt,
-        externalReference: input.externalReference,
-        id: `checkout_${checkouts.length + 1}`,
-        provider: input.provider,
-        providerCheckoutId: input.providerCheckoutId,
-        status: input.status,
-        storeId: input.storeId,
-        subscriptionId: input.subscriptionId,
-        tenantId: input.tenantId,
-      };
-      checkouts.push(checkout);
-      return checkout;
-    },
     async saveProviderSubscription(input) {
-      if (input.subscriptionId !== subscription.id) return null;
+      if (
+        input.subscriptionId !== subscription.id ||
+        !scopeMatches(accountScope, input)
+      ) {
+        return null;
+      }
+      if (
+        input.expectedStatus &&
+        input.expectedStatus !== subscription.status
+      ) {
+        return null;
+      }
+      const identityCanChange = input.providerSubscriptionId
+        ? !subscription.providerSubscriptionId ||
+          subscription.providerSubscriptionId === input.providerSubscriptionId
+        : input.expectedProviderSubscriptionId
+          ? subscription.providerSubscriptionId ===
+            input.expectedProviderSubscriptionId
+          : !subscription.providerSubscriptionId;
+      if (!identityCanChange) return null;
       subscription = {
         currentPeriodEnd: input.currentPeriodEnd,
         currentPeriodStart: input.currentPeriodStart,
@@ -78,4 +94,14 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
       return subscription;
     },
   };
+}
+
+function scopeMatches(
+  expected: { storeId: string; tenantId: string } | null,
+  actual: { storeId: string; tenantId: string },
+) {
+  return (
+    expected?.storeId === actual.storeId &&
+    expected.tenantId === actual.tenantId
+  );
 }

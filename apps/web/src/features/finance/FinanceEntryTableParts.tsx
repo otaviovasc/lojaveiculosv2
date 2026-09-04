@@ -1,4 +1,4 @@
-import { Pencil, ReceiptText, XCircle } from "lucide-react";
+import { Check, Pencil, ReceiptText, XCircle } from "lucide-react";
 import {
   FeatureRowAction,
   FeatureRowActions,
@@ -51,12 +51,29 @@ export function StatusButton({
     );
   }
   const pending = entry.status !== "paid";
+  if (pending) {
+    return (
+      <button
+        aria-label={`Marcar ${entry.name} como pago`}
+        className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-line bg-panel px-3 text-xs font-black text-app-text transition-all hover:border-success-strong hover:text-success-strong focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-95"
+        onClick={() => onToggle(entry)}
+        title="Confirmar pagamento"
+        type="button"
+      >
+        <Check aria-hidden="true" className="size-3.5 shrink-0" />
+        <span>Pagar</span>
+        <FeatureStatusBadge size="dense" tone={statusTone(entry.status)}>
+          {financeStatusLabels[entry.status]}
+        </FeatureStatusBadge>
+      </button>
+    );
+  }
   return (
     <button
-      aria-label={pending ? "Marcar como pago" : "Marcar como pendente"}
+      aria-label="Marcar como pendente"
       className="cursor-pointer rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-95"
       onClick={() => onToggle(entry)}
-      title={pending ? "Marcar como pago" : "Marcar como pendente"}
+      title="Marcar como pendente"
       type="button"
     >
       <FeatureStatusBadge tone={statusTone(entry.status)}>
@@ -67,27 +84,40 @@ export function StatusButton({
 }
 
 export function EntryActions({
-  canAttach = true,
+  canGenerateReceipt = true,
+  canOpenReceipt = true,
   canUpdate = true,
   entry,
   onCancel,
   onEdit,
+  onReceipt,
+  receiptActionEntryId,
 }: {
-  canAttach?: boolean;
+  canGenerateReceipt?: boolean;
+  canOpenReceipt?: boolean;
   canUpdate?: boolean;
   entry: FinanceEntry;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
+  onReceipt: (entry: FinanceEntry) => void;
+  receiptActionEntryId?: string | null | undefined;
 }) {
-  if (!canAttach && !canUpdate) return null;
+  if (!canOpenReceipt && !canUpdate) return null;
   return (
     <FeatureRowActions>
-      {canAttach ? (
+      {canOpenReceipt ? (
         <FeatureRowAction
-          ariaLabel="Anexar recibo"
+          ariaLabel={
+            receiptActionEntryId === entry.id
+              ? "Abrindo recibo"
+              : canGenerateReceipt
+                ? "Abrir ou gerar recibo"
+                : "Abrir recibo existente"
+          }
+          disabled={receiptActionEntryId === entry.id}
           icon={ReceiptText}
-          onClick={() => onEdit(entry)}
-          tooltip="Recibo"
+          onClick={() => onReceipt(entry)}
+          tooltip={receiptActionEntryId === entry.id ? "Abrindo..." : "Recibo"}
         />
       ) : null}
       {canUpdate ? (

@@ -38,6 +38,8 @@ export function readListingCatalog(
     fipeCode: readString(catalog.fipeCode),
     fuel: readString(catalog.fuel),
     modelCode: readString(catalog.modelCode),
+    modelFamilyCode: readString(catalog.modelFamilyCode),
+    modelFamilyName: readString(catalog.modelFamilyName),
     modelName: readString(catalog.modelName),
     modelYear: readNumber(catalog.modelYear),
     priceCents: readNumber(catalog.priceCents),

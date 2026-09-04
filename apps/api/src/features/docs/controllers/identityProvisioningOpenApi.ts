@@ -1,3 +1,5 @@
+import { identityProvisioningInvitationSchema } from "./identityProvisioningInvitationSchema.js";
+
 const slugSchema = {
   type: "string",
   minLength: 2,
@@ -32,19 +34,7 @@ export const identityProvisioningSchemas = {
       tenantTradingName: { type: "string", minLength: 2, maxLength: 191 },
     },
   },
-  IdentityInvitation: {
-    type: "object",
-    additionalProperties: true,
-    required: ["email", "id", "role", "status", "tenantId"],
-    properties: {
-      email: { type: "string", format: "email" },
-      id: { type: "string", format: "uuid" },
-      role: { type: "string" },
-      status: { type: "string" },
-      storeId: { type: ["string", "null"] },
-      tenantId: { type: "string" },
-    },
-  },
+  IdentityInvitation: identityProvisioningInvitationSchema,
   InviteStoreMemberRequest: {
     type: "object",
     additionalProperties: false,

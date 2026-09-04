@@ -7,26 +7,10 @@ import {
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { createPassthroughTransactionRunner } from "../../../shared/transaction.js";
-import {
-  cleanCreateActivityInput,
-  cleanCreateLeadInput,
-  cleanListLeadsInput,
-  cleanUpdateLeadInput,
-} from "./crm.controller.cleaners.js";
-import {
-  createActivitySchema,
-  createLeadFinancialProductSchema,
-  createLeadSchema,
-  listActivitiesQuerySchema,
-  listLeadsQuerySchema,
-  updateLeadSchema,
-} from "./crm.controller.schemas.js";
 import type { FinanceServices } from "../../finance/controllers/financeServices.js";
 import { financeServices as defaultFinanceServices } from "../../finance/controllers/financeServices.js";
-import {
-  createCrmLeadFinancialProduct,
-  type CrmFinancialProductTransactionRunner,
-} from "./crmFinancialProducts.js";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
+import type { CrmFinancialProductTransactionRunner } from "./crmFinancialProducts.js";
 import { registerCrmPipelineRoutes } from "./crm.pipeline.routes.js";
 import { registerCrmVisitRoutes } from "./crm.visits.routes.js";
 import {
@@ -34,16 +18,33 @@ import {
   handleCrm,
 } from "./crm.controller.errors.js";
 import { crmServices, type CrmServices } from "./crmServices.js";
-import { registerCrmWhatsappRoutes } from "./crm.whatsapp.controller.js";
+import { registerCrmMessagingRoutes } from "./crm.messaging.controller.js";
+import type { CrmCoreRepository } from "../../../domains/crm/ports/crmCoreRepository.js";
+import { registerCrmCoreRoutes } from "./crm.core.routes.js";
+import { handleCrmCore } from "./crm.core.errors.js";
+import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
+import { registerExternalBotRoutes } from "./crm.bot.controller.js";
+import {
+  registerCrmLeadCollectionRoutes,
+  registerCrmLeadDetailRoutes,
+} from "./crm.leads.routes.js";
+import { registerCrmRoutingRoutes } from "./crm.routing.routes.js";
+import { registerCrmMetaWebhookRoutes } from "./crm.metaWebhookRoutes.js";
+import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
 export type CreateCrmFeatureOptions = {
+  accountContextFactory?: CrmContextFactory;
   contextFactory?: CrmContextFactory;
+  coreRepository?: CrmCoreRepository;
   financialProductTransactionRunner?:
     CrmFinancialProductTransactionRunner | undefined;
   financeServices?: Pick<FinanceServices, "materializeAutoEntries"> | undefined;
+  externalBotManager?: ExternalBotManagerPorts | undefined;
   realtimeBroker?: CrmRealtimeBroker | undefined;
+  resolveBotEntitlements?: ResolveCrmBotEntitlements | undefined;
+  pushPublicConfig?: CrmPushPublicConfig | undefined;
   services?: CrmServices;
   webhookContextFactory?: CrmContextFactory;
 };
@@ -62,33 +63,17 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const createContext = (context: Context) =>
     createProtectedServiceContext(context, contextFactory);
+  const createWebhookContext = options.webhookContextFactory ?? createContext;
 
-  crmFeature.get("/leads", async (context) =>
-    handleCrm(context, async () => {
-      const parsed = listLeadsQuerySchema.safeParse(context.req.query());
-      if (!parsed.success) {
-        throw new CrmRequestValidationError("Request query is invalid.");
-      }
-      const serviceContext = await createContext(context);
-      const leads = await services.listLeads(
-        serviceContext,
-        cleanListLeadsInput(parsed.data),
-      );
-      return context.json({ leads });
-    }),
-  );
-
-  crmFeature.post("/leads", async (context) =>
-    handleCrm(context, async () => {
-      const input = await parseJson(context, createLeadSchema);
-      const serviceContext = await createContext(context);
-      const lead = await services.createLead(
-        serviceContext,
-        cleanCreateLeadInput(input),
-      );
-      return context.json(lead, 201);
-    }),
-  );
+  const leadRouteSupport = {
+    createContext,
+    financeServices,
+    financialProductTransactionRunner,
+    handleCrm,
+    parseJson,
+    services,
+  };
+  registerCrmLeadCollectionRoutes(crmFeature, leadRouteSupport);
 
   registerCrmPipelineRoutes(crmFeature, {
     createContext,
@@ -104,68 +89,49 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     services,
   });
 
-  crmFeature.patch("/leads/:leadId", async (context) =>
-    handleCrm(context, async () => {
-      const input = await parseJson(context, updateLeadSchema);
-      const serviceContext = await createContext(context);
-      const lead = await services.updateLead(serviceContext, {
-        ...cleanUpdateLeadInput(input),
-        leadId: context.req.param("leadId"),
-      });
-      return context.json(lead);
-    }),
-  );
+  registerCrmRoutingRoutes(crmFeature, { createContext, services });
 
-  crmFeature.get("/leads/:leadId/activities", async (context) =>
-    handleCrm(context, async () => {
-      const parsed = listActivitiesQuerySchema.safeParse(context.req.query());
-      if (!parsed.success) {
-        throw new CrmRequestValidationError("Request query is invalid.");
-      }
-      const serviceContext = await createContext(context);
-      const activities = await services.listActivities(serviceContext, {
-        leadId: context.req.param("leadId"),
-        limit: parsed.data.limit,
-      });
-      return context.json({ activities });
-    }),
-  );
+  if (options.coreRepository) {
+    registerCrmCoreRoutes(crmFeature, {
+      createContext,
+      handleCrm: handleCrmCore,
+      repository: options.coreRepository,
+    });
+  }
 
-  crmFeature.post("/leads/:leadId/activities", async (context) =>
-    handleCrm(context, async () => {
-      const input = await parseJson(context, createActivitySchema);
-      const serviceContext = await createContext(context);
-      const activity = await services.createActivity(
-        serviceContext,
-        cleanCreateActivityInput(context.req.param("leadId"), input),
-      );
-      return context.json(activity, 201);
-    }),
-  );
+  registerCrmLeadDetailRoutes(crmFeature, leadRouteSupport);
 
-  crmFeature.post("/leads/:leadId/financial-products", async (context) =>
-    handleCrm(context, async () => {
-      const input = await parseJson(context, createLeadFinancialProductSchema);
-      const serviceContext = await createContext(context);
-      const result = await createCrmLeadFinancialProduct(
-        serviceContext,
-        context.req.param("leadId"),
-        input,
-        services,
-        financeServices,
-        financialProductTransactionRunner,
-      );
-      return context.json(result, 201);
-    }),
-  );
+  registerCrmMetaWebhookRoutes(crmFeature, {
+    createWebhookContext,
+    services,
+  });
 
-  registerCrmWhatsappRoutes(crmFeature, {
-    createContext,
-    ...(options.webhookContextFactory
-      ? { createWebhookContext: options.webhookContextFactory }
+  registerCrmMessagingRoutes(crmFeature, {
+    ...(options.accountContextFactory
+      ? { createSupportContext: options.accountContextFactory }
       : {}),
+    createContext,
+    createWebhookContext,
     ...(options.realtimeBroker
       ? { realtimeBroker: options.realtimeBroker }
+      : {}),
+    ...(options.resolveBotEntitlements
+      ? { resolveBotEntitlements: options.resolveBotEntitlements }
+      : {}),
+    pushPublicConfig: options.pushPublicConfig ?? {
+      appId: null,
+      deliveryMode: "off",
+    },
+    services,
+  });
+
+  registerExternalBotRoutes(crmFeature, {
+    createContext,
+    createWebhookContext:
+      options.webhookContextFactory ??
+      ((context) => createHttpServiceContext(context)),
+    ...(options.externalBotManager
+      ? { manager: options.externalBotManager }
       : {}),
     services,
   });

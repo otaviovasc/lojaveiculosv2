@@ -18,8 +18,9 @@ import type { FinanceEntry } from "./types";
 
 export function FinanceEntryTable({
   activeType,
-  canAttach = true,
   canCreate = true,
+  canGenerateReceipt = true,
+  canOpenReceipt = true,
   canUpdate = true,
   entries,
   isLoading,
@@ -29,14 +30,17 @@ export function FinanceEntryTable({
   onExport,
   onMarkPending,
   onPay,
+  onReceipt,
   otherEntryCount,
+  receiptActionEntryId,
   toast,
   typeTabs,
   filters,
 }: {
   activeType: FinanceEntry["type"] | "all";
-  canAttach?: boolean;
   canCreate?: boolean;
+  canGenerateReceipt?: boolean;
+  canOpenReceipt?: boolean;
   canUpdate?: boolean;
   entries: FinanceEntry[];
   isLoading: boolean;
@@ -46,7 +50,9 @@ export function FinanceEntryTable({
   onExport?: () => void;
   onMarkPending: (entry: FinanceEntry) => void;
   onPay: (entry: FinanceEntry) => void;
+  onReceipt: (entry: FinanceEntry) => void;
   otherEntryCount: number;
+  receiptActionEntryId?: string | null | undefined;
   toast?: ReactNode;
   typeTabs?: ReactNode;
   filters?: ReactNode;
@@ -67,19 +73,23 @@ export function FinanceEntryTable({
               Registro de {activeLabel}
             </h3>
             <p className="mt-0.5 text-xs font-bold text-muted">
-              {entries.length} lançamento(s) encontrado(s)
-              {otherEntryCount > 0
-                ? ` · mais ${otherEntryCount} em outras abas`
-                : ""}
+              {isLoading
+                ? "Carregando lançamentos"
+                : `${entries.length} lançamento(s) encontrado(s)${
+                    otherEntryCount > 0
+                      ? ` · mais ${otherEntryCount} em outras abas`
+                      : ""
+                  }`}
             </p>
           </div>
         </div>
-        {typeTabs ? (
+        {typeTabs && !isLoading ? (
           <div className="finance-ledger__tabs">{typeTabs}</div>
         ) : null}
         <div className="finance-ledger__actions">
           {onExport ? (
             <FeatureActionButton
+              disabled={isLoading}
               icon={Download}
               label="Exportar"
               onClick={onExport}
@@ -97,7 +107,7 @@ export function FinanceEntryTable({
       </div>
       {toast ? <div className="finance-ledger__toast">{toast}</div> : null}
       <div className="finance-ledger__body">
-        {filters}
+        {isLoading ? null : filters}
         {isLoading ? (
           <FinanceEntrySkeleton />
         ) : entries.length === 0 ? (
@@ -124,13 +134,16 @@ export function FinanceEntryTable({
         ) : (
           <>
             <FinanceEntryDesktopTable
-              canAttach={canAttach}
+              canGenerateReceipt={canGenerateReceipt}
+              canOpenReceipt={canOpenReceipt}
               canUpdate={canUpdate}
               entries={entries}
               onCancel={onCancel}
               onEdit={onEdit}
               onMarkPending={onMarkPending}
               onPay={onPay}
+              onReceipt={onReceipt}
+              receiptActionEntryId={receiptActionEntryId}
             />
             <div
               className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 md:hidden"
@@ -138,7 +151,8 @@ export function FinanceEntryTable({
             >
               {entries.map((entry) => (
                 <FinanceEntryCard
-                  canAttach={canAttach}
+                  canGenerateReceipt={canGenerateReceipt}
+                  canOpenReceipt={canOpenReceipt}
                   canUpdate={canUpdate}
                   entry={entry}
                   key={entry.id}
@@ -146,6 +160,8 @@ export function FinanceEntryTable({
                   onEdit={onEdit}
                   onMarkPending={onMarkPending}
                   onPay={onPay}
+                  onReceipt={onReceipt}
+                  receiptActionEntryId={receiptActionEntryId}
                 />
               ))}
             </div>
@@ -179,21 +195,27 @@ function FinanceEntrySkeleton() {
 }
 
 function FinanceEntryCard({
-  canAttach,
+  canGenerateReceipt,
+  canOpenReceipt,
   canUpdate,
   entry,
   onCancel,
   onEdit,
   onMarkPending,
   onPay,
+  onReceipt,
+  receiptActionEntryId,
 }: {
-  canAttach: boolean;
+  canGenerateReceipt: boolean;
+  canOpenReceipt: boolean;
   canUpdate: boolean;
   entry: FinanceEntry;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
   onMarkPending: (entry: FinanceEntry) => void;
   onPay: (entry: FinanceEntry) => void;
+  onReceipt: (entry: FinanceEntry) => void;
+  receiptActionEntryId?: string | null | undefined;
 }) {
   return (
     <article
@@ -213,10 +235,20 @@ function FinanceEntryCard({
           {sourceLabel(entrySourceKey(entry))}
         </FinanceBadge>
       </div>
-      {canAttach || canUpdate ? (
+      {canOpenReceipt || canUpdate ? (
         <div className="mt-4 grid grid-cols-2 gap-2">
-          {canAttach ? (
-            <MobileAction label="Recibo" onClick={() => onEdit(entry)} />
+          {canOpenReceipt ? (
+            <MobileAction
+              disabled={receiptActionEntryId === entry.id}
+              label={
+                receiptActionEntryId === entry.id
+                  ? "Abrindo recibo"
+                  : canGenerateReceipt
+                    ? "Abrir ou gerar recibo"
+                    : "Abrir recibo"
+              }
+              onClick={() => onReceipt(entry)}
+            />
           ) : null}
           {canUpdate ? (
             <>

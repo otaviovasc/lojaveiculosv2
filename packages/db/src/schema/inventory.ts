@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
@@ -136,6 +137,7 @@ export const vehicleUnits = pgTable(
       .notNull()
       .references((): AnyPgColumn => vehicleListings.id),
     plate: varchar("plate", { length: 16 }),
+    renavam: varchar("renavam", { length: 32 }),
     status: vehicleUnitStatus("status").notNull().default("acquired"),
     stockNumber: varchar("stock_number", { length: 80 }),
     storeId: uuid("store_id")
@@ -151,15 +153,23 @@ export const vehicleUnits = pgTable(
     index("vehicle_units_status_idx").on(table.status),
     index("vehicle_units_store_status_idx").on(table.storeId, table.status),
     index("vehicle_units_tenant_id_idx").on(table.tenantId),
-    uniqueIndex("vehicle_units_store_plate_unique").on(
+    uniqueIndex("vehicle_units_id_tenant_store_unique").on(
+      table.id,
+      table.tenantId,
       table.storeId,
-      table.plate,
     ),
-    uniqueIndex("vehicle_units_store_stock_unique").on(
-      table.storeId,
-      table.stockNumber,
-    ),
-    uniqueIndex("vehicle_units_store_vin_unique").on(table.storeId, table.vin),
+    uniqueIndex("vehicle_units_store_plate_unique")
+      .on(table.storeId, table.plate)
+      .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
+    uniqueIndex("vehicle_units_store_renavam_unique")
+      .on(table.storeId, table.renavam)
+      .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
+    uniqueIndex("vehicle_units_store_stock_unique")
+      .on(table.storeId, table.stockNumber)
+      .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
+    uniqueIndex("vehicle_units_store_vin_unique")
+      .on(table.storeId, table.vin)
+      .where(sql`${table.isDeleted} = false AND ${table.deletedAt} IS NULL`),
   ],
 );
 

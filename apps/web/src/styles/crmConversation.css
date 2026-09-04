@@ -1,0 +1,306 @@
+.crm-page {
+  font-family: var(--font-sans);
+}
+
+.crm-surface-tabs {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  gap: 0.35rem;
+  margin: 0 auto 0.75rem;
+  max-width: var(--layout-content-max);
+  overflow-x: auto;
+  padding: 0.3rem;
+  scrollbar-width: none;
+}
+
+.crm-surface-tabs button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.crm-surface-tabs button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
+}
+
+.crm-surface-tabs button.active {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 25%, var(--color-line));
+  color: var(--color-crm-active-emerald);
+  font-weight: 750;
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .crm-surface-tabs button.active,
+.dark .crm-surface-tabs button.active {
+  background: color-mix(in srgb, #10b981 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 35%, transparent);
+  color: #34d399;
+}
+
+.crm-status {
+  align-items: center;
+  border-left: 2px solid var(--color-line);
+  color: var(--color-muted);
+  display: inline-flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 550;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0.125rem 0.5rem;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.crm-status span {
+  border-radius: 50%;
+  display: inline-flex;
+  height: 0.4375rem;
+  width: 0.4375rem;
+}
+
+.crm-status-online {
+  border-color: var(--color-success-strong);
+  color: var(--color-success-strong);
+}
+
+.crm-status-online span {
+  background: var(--color-success-strong);
+}
+
+.crm-status-error,
+.crm-status-offline {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.crm-status-error span,
+.crm-status-offline span {
+  background: var(--color-danger);
+}
+
+.crm-status-loading,
+.crm-status-neutral {
+  border-color: var(--color-muted);
+}
+
+.crm-status-loading span,
+.crm-status-neutral span {
+  background: var(--color-muted);
+}
+
+:root {
+  --crm-input-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  --crm-input-border: 1px solid
+    color-mix(in srgb, var(--color-line) 92%, transparent);
+  --crm-input-shadow: 0 1px 2px 0
+    color-mix(in srgb, var(--color-text) 5%, transparent) inset;
+}
+
+.crm-page
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input),
+.crm-page textarea:not(.crm-raw-input),
+.crm-page select:not(.crm-raw-input),
+.crm-shell
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input),
+.crm-shell textarea:not(.crm-raw-input),
+.crm-shell select:not(.crm-raw-input),
+.crm-input,
+.crm-select,
+.crm-textarea {
+  background: var(--crm-input-bg);
+  border: var(--crm-input-border);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: none;
+  color: var(--color-text);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-page :is(input, textarea, select, button):focus,
+.crm-page :is(input, textarea, select, button):focus-visible,
+.crm-shell :is(input, textarea, select, button):focus,
+.crm-shell :is(input, textarea, select, button):focus-visible {
+  outline: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+}
+
+.crm-page
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input):focus,
+.crm-page textarea:not(.crm-raw-input):focus,
+.crm-page select:not(.crm-raw-input):focus,
+.crm-shell
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="submit"]
+  ):not([type="button"]):not(.crm-raw-input):focus,
+.crm-shell textarea:not(.crm-raw-input):focus,
+.crm-shell select:not(.crm-raw-input):focus,
+.crm-input:focus,
+.crm-select:focus,
+.crm-textarea:focus {
+  background: var(--color-panel);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.crm-search input:focus,
+.crm-search-field input:focus,
+.crm-bot-input-wrap input:focus,
+.crm-composer-textbox textarea:focus,
+.crm-tag-custom-input-wrap input:focus,
+.crm-tag-search input:focus,
+.crm-campaign-search input:focus,
+.crm-tag-input-with-preview input:focus,
+.crm-header-search-overlay input:focus,
+.crm-pairing-phone input:focus,
+.crm-pipeline-page .crm-search input:focus {
+  background: transparent !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.crm-page :is(.crm-cycle-chip, .crm-cycle-status) {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.crm-page :is(.crm-cycle-chip, .crm-cycle-status) > svg,
+.crm-page .crm-action > svg {
+  flex: 0 0 auto;
+}
+
+.crm-list {
+  background: var(--color-panel);
+  border-right: 1px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.crm-avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.crm-avatar-lg {
+  height: 2.75rem;
+  width: 2.75rem;
+}
+
+.crm-channel,
+.crm-chat-title,
+.crm-header-actions,
+.crm-composer {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-chat-identity {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.crm-chat-title {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.crm-chat-title h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-chat-title:hover h3 {
+  color: var(--color-accent-strong);
+}
+
+.crm-chat-title p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-channel {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.crm-chat-channel-pill small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-page *,
+  .crm-page *::before,
+  .crm-page *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}

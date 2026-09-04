@@ -10,10 +10,11 @@ const moduleIds = new Set(Object.keys(moduleDefinitions));
 const modulePathAliases: Record<string, ModuleId> = {
   customize: "public-site",
   "custom-pages": "custom-pages",
-  dominio: "domain",
   "page-builder": "custom-pages",
   paginas: "custom-pages",
   personalizar: "public-site",
+  relatorio: "reports",
+  relatorios: "reports",
   "site-publico": "public-site",
 };
 
@@ -81,8 +82,7 @@ export function useModuleState() {
 
 function moduleHash(moduleId: ModuleId) {
   if (moduleId === "customers") return crmSurfaceHash("leads");
-  if (moduleId === "crm") return crmSurfaceHash("whatsapp");
-  if (moduleId === "domain") return "/dominio";
+  if (moduleId === "crm") return crmSurfaceHash("conversations");
   if (moduleId === "public-site") return "/customize";
   return `/${moduleId}`;
 }

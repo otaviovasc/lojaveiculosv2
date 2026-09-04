@@ -18,6 +18,7 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { assertVehicleChecklistAccess } from "./checklistAccess.js";
 import {
   applyChecklistCompletion,
   normalizeChecklistItems,
@@ -43,6 +44,7 @@ export async function updateVehicleChecklist(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleChecklist> {
   assertPermission(context, permission);
+  assertVehicleChecklistAccess(context);
   const unit = await findScopedUnitById(
     context,
     getUnitRepository(ports),

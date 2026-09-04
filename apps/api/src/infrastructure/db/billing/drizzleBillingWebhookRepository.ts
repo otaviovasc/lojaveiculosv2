@@ -1,23 +1,50 @@
-import { and, eq } from "drizzle-orm";
-import { payments, providerEvents, subscriptions } from "@lojaveiculosv2/db";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { providerEvents } from "@lojaveiculosv2/db";
 import type {
-  BillingProviderSyncResult,
   BillingProviderWebhookEvent,
   BillingWebhookRepository,
-  SyncBillingProviderSubscriptionInput,
-  UpsertBillingProviderPaymentInput,
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 import { syncProviderCheckout } from "./drizzleBillingCheckoutWebhook.js";
-import {
-  resolvePaymentScope,
-  resolveStoreId,
-} from "./drizzleBillingWebhookScope.js";
+import { upsertProviderPayment } from "./drizzleBillingPaymentWebhook.js";
+import { syncProviderSubscription } from "./drizzleBillingSubscriptionWebhook.js";
 
 export function createDrizzleBillingWebhookRepository(
   db: DrizzleBillingClient,
 ): BillingWebhookRepository {
   return {
+    async claimForProcessing(input) {
+      const [row] = await db
+        .update(providerEvents)
+        .set({
+          errorMessage: null,
+          processedAt: null,
+          processingAttempts: sql`${providerEvents.processingAttempts} + 1`,
+          processingStartedAt: input.processingStartedAt,
+          processingToken: input.processingToken,
+          status: "processing",
+          updatedAt: input.processingStartedAt,
+        })
+        .where(
+          and(
+            eq(providerEvents.id, input.eventId),
+            or(
+              eq(providerEvents.status, "failed"),
+              eq(providerEvents.status, "pending_reconciliation"),
+              eq(providerEvents.status, "received"),
+              and(
+                eq(providerEvents.status, "processing"),
+                or(
+                  isNull(providerEvents.processingStartedAt),
+                  lte(providerEvents.processingStartedAt, input.staleBefore),
+                ),
+              ),
+            ),
+          ),
+        )
+        .returning();
+      return row ? toWebhookEvent(row) : null;
+    },
     async recordReceived(input) {
       const [inserted] = await db
         .insert(providerEvents)
@@ -28,13 +55,7 @@ export function createDrizzleBillingWebhookRepository(
           provider: input.provider,
           providerEventId: input.providerEventId,
         })
-        .onConflictDoNothing({
-          target: [
-            providerEvents.provider,
-            providerEvents.environment,
-            providerEvents.providerEventId,
-          ],
-        })
+        .onConflictDoNothing()
         .returning();
       if (inserted) return { created: true, event: toWebhookEvent(inserted) };
 
@@ -58,114 +79,39 @@ export function createDrizzleBillingWebhookRepository(
       return syncProviderCheckout(db, input);
     },
     async syncProviderSubscription(input) {
-      return syncProviderSubscription(db, input);
+      return db.transaction((tx) =>
+        syncProviderSubscription(tx as DrizzleBillingClient, input),
+      );
     },
     async updateStatus(input) {
+      const filters = [eq(providerEvents.id, input.eventId)];
+      if (input.processingToken) {
+        filters.push(
+          eq(providerEvents.status, "processing"),
+          eq(providerEvents.processingToken, input.processingToken),
+        );
+      }
       const [row] = await db
         .update(providerEvents)
         .set({
           errorMessage: input.errorMessage ?? null,
-          processedAt: new Date(),
+          processedAt:
+            input.status === "pending_reconciliation" ? null : new Date(),
+          processingStartedAt: null,
+          processingToken: null,
           status: input.status,
           storeId: input.storeId ?? null,
           tenantId: input.tenantId ?? null,
         })
-        .where(eq(providerEvents.id, input.eventId))
+        .where(and(...filters))
         .returning();
       return row ? toWebhookEvent(row) : null;
     },
     async upsertProviderPayment(input) {
-      return upsertProviderPayment(db, input);
+      return db.transaction((tx) =>
+        upsertProviderPayment(tx as DrizzleBillingClient, input),
+      );
     },
-  };
-}
-
-async function upsertProviderPayment(
-  db: DrizzleBillingClient,
-  input: UpsertBillingProviderPaymentInput,
-): Promise<BillingProviderSyncResult> {
-  const scope = await resolvePaymentScope(db, input);
-  if (!scope) {
-    return {
-      reason: "unknown_billing_account",
-      status: "ignored",
-      storeId: null,
-      tenantId: null,
-    };
-  }
-
-  await db
-    .insert(payments)
-    .values({
-      amountCents: input.amountCents,
-      dueAt: input.dueAt,
-      externalReference: input.externalReference,
-      invoiceUrl: input.invoiceUrl,
-      paidAt: input.paidAt,
-      provider: input.provider,
-      providerPaymentId: input.providerPaymentId,
-      raw: input.raw,
-      status: input.status,
-      storeId: scope.storeId,
-      subscriptionId: scope.subscriptionId,
-      tenantId: scope.tenantId,
-    })
-    .onConflictDoUpdate({
-      set: {
-        amountCents: input.amountCents,
-        dueAt: input.dueAt,
-        externalReference: input.externalReference,
-        invoiceUrl: input.invoiceUrl,
-        paidAt: input.paidAt,
-        raw: input.raw,
-        status: input.status,
-        storeId: scope.storeId,
-        subscriptionId: scope.subscriptionId,
-        tenantId: scope.tenantId,
-        updatedAt: new Date(),
-      },
-      target: [payments.provider, payments.providerPaymentId],
-    });
-
-  return {
-    status: "synced",
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  };
-}
-
-async function syncProviderSubscription(
-  db: DrizzleBillingClient,
-  input: SyncBillingProviderSubscriptionInput,
-): Promise<BillingProviderSyncResult> {
-  const [subscription] = await db
-    .update(subscriptions)
-    .set({
-      currentPeriodEnd: input.currentPeriodEnd,
-      status: input.status,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(subscriptions.provider, input.provider),
-        eq(subscriptions.providerSubscriptionId, input.providerSubscriptionId),
-      ),
-    )
-    .returning();
-  if (!subscription) {
-    return {
-      reason: "unknown_subscription",
-      status: "ignored",
-      storeId: null,
-      tenantId: null,
-    };
-  }
-
-  const storeId = await resolveStoreId(db, subscription.id);
-  return {
-    status: "synced",
-    storeId: storeId as never,
-    tenantId: subscription.tenantId as never,
   };
 }
 
@@ -177,6 +123,9 @@ function toWebhookEvent(row: typeof providerEvents.$inferSelect) {
     eventType: row.eventType,
     id: row.id,
     payload: row.payload as Record<string, unknown>,
+    processingAttempts: row.processingAttempts,
+    processingStartedAt: row.processingStartedAt,
+    processingToken: row.processingToken,
     processedAt: row.processedAt,
     provider: row.provider as "asaas",
     providerEventId: row.providerEventId,

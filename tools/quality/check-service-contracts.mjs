@@ -5,27 +5,91 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
   .pathname;
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
+  "buildCrmChannelConnectionOverview.ts",
+  "billingPlanHireAudit.ts",
+  "billingPlanHireCallbacks.ts",
+  "billingCustomerDataRequirements.ts",
+  "billingPlanHireErrors.ts",
+  "billingWebhookResultStatus.ts",
+  "billingWebhookSync.ts",
+  "cancelEmptyBillingProviderSubscription.ts",
+  "changeBillingPlanAtRenewal.ts",
+  "checklistAccess.ts",
+  "composioChannelConnectionSetup.types.ts",
+  "composioInstagramConnectionSelection.ts",
+  "composioWhatsappConnectionSelection.ts",
+  "crmConnectionSetupSupport.ts",
+  "crmLeadOutcomeContracts.ts",
+  "crmLeadOutcomeMutationSupport.ts",
+  "crmLeadOutcomePersistence.ts",
+  "crmServiceErrors.ts",
+  "createBillingPlanHire.testSupport.ts",
   "financeAutoEntryEvaluator.ts",
   "financeAutoEntryLabels.ts",
   "financeAutoEntryRuleValidation.ts",
+  "inquiryReferenceValidation.ts",
   "leadVisitSupport.ts",
   "marketplaceAccountPreflight.ts",
   "marketplaceAccountPreflightMessages.ts",
+  "marketplaceCatalogResolution.ts",
   "marketplaceErrors.ts",
+  "marketplaceJobIdempotency.ts",
+  "marketplaceJobProcessingTypes.ts",
   "marketplaceJobPermissions.ts",
+  "marketplaceListingReconciliation.ts",
+  "marketplaceReconciliationSupport.ts",
   "marketplaceStockPlanRules.ts",
   "marketplaceStockPlanTypes.ts",
+  "marketplaceStockBlockers.ts",
+  "manageZapiConnectionAsSupport.testSupport.ts",
   "materializeFinanceAutoEntries.ts",
+  "claimMarketplaceSyncJob.ts",
+  "reconcileMarketplaceClaim.ts",
   "runMarketplaceSyncJobAudit.ts",
+  "runMarketplaceSyncJobSupport.ts",
+  "planMarketplaceStockItem.ts",
+  "prepareZapiCredentialRotation.ts",
+  "sendCrmMediaMessageSupport.ts",
   "sendWhatsappVehicleSupport.ts",
   "serviceSupport.ts",
+  "simulationSyncProjection.ts",
+  "summarizeMarketplaceStockPlan.ts",
+  "syncBillingProviderSubscription.testSupport.ts",
   "testSupport.ts",
   "types.ts",
-  "whatsappMessageActionSupport.ts",
-  "whatsappQuickMessageMedia.ts",
-  "whatsappQuickMessageModels.ts",
-  "whatsappQuickMessageServiceSupport.ts",
-  "whatsappSessionMutationSupport.ts",
+  "executeExternalBotActionSupport.ts",
+  "resolveExternalBotExecutionPolicy.ts",
+  "resolveCrmRoutingPolicy.ts",
+  "routingErrors.ts",
+  "routingReadModels.ts",
+  "routingResolution.ts",
+  "zapiWebhookSetupObservability.ts",
+  "zapiWebhookSecretRotation.ts",
+  "zapiReplacementSupport.ts",
+  "zapiReplacementWebhooks.ts",
+  "zapiReplacementCutover.ts",
+  "crmMessageActionSupport.ts",
+  "crmQuickMessageModels.ts",
+  "crmQuickMessageMedia.ts",
+  "crmQuickMessageServiceSupport.ts",
+  "conversationCycleMutationSupport.ts",
+  "executeCrmConversationCycleCommand.ts",
+  "resolveCrmProviderOperation.ts",
+  "onboardOlxCrmConnectionValidation.ts",
+  "applyWonCrmLeadOutcome.testSupport.ts",
+  "provisionUazapiConnection.ts",
+  "attachUazapiConnection.ts",
+  "uazapiConnectionPersistence.ts",
+  "grantCreatorConnectionMembership.ts",
+  "createCrmChannelConnection.uazapi.testSupport.ts",
+  "uazapiInitialCredentials.ts",
+  "connectionMemberSupport.ts",
+  "crmConnectionMemberErrors.ts",
+  "uazapiConnectionSetup.testSupport.ts",
+  "updateReadSessionState.ts",
+  "uazapiConnectionSetupSupport.ts",
+  "uazapiWebhookSupport.ts",
+  "whatsappConnectionSetupShared.ts",
 ]);
 
 function walk(dir, files = []) {
@@ -48,9 +112,29 @@ function isServiceFile(file) {
   return file.includes("/services/") && !nonEntrypointFiles.has(fileName);
 }
 
+// WhatsApp webhook ingestion pipelines persist routine forensic data
+// (crm_webhook_events + audit trail) and only log failures, so routine
+// structured logs are intentionally absent from these services.
+const routineLogExemptFiles = new Set([
+  "processUazapiWhatsappMessage.ts",
+  "processUazapiWhatsappWebhookEvent.ts",
+  "processZapiWhatsappMessageWebhook.ts",
+  "processZapiWhatsappWebhookEvent.ts",
+]);
+
 const failures = [];
 const domainFiles = walk(domainsRoot);
 const delegatedContractHelpers = new Map([
+  [
+    "claimMarketplaceSyncJob(",
+    {
+      file: join(
+        domainsRoot,
+        "marketplace/services/MarketplaceService/claimMarketplaceSyncJob.ts",
+      ),
+      requiredContracts: ["assertPermission(", "context.logger."],
+    },
+  ],
   [
     "executeAutomationStepDecision(",
     {
@@ -63,6 +147,88 @@ const delegatedContractHelpers = new Map([
         "input.context.audit.record(",
         "input.context.logger.",
       ],
+    },
+  ],
+  [
+    "authorizeWhatsappWebhook(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/authorizeWhatsappWebhookSupport.ts",
+      ),
+      requiredContracts: ["assertPermission(", "auditCrmServiceEvent("],
+    },
+  ],
+  [
+    "reconcileWhatsappConnectionStatus(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/reconcileWhatsappConnectionStatus.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "auditCrmServiceEvent(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "disconnectWhatsappConnection(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionLifecycleSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "recordCrmServiceMutation(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "refreshWhatsappConnectionStatus(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionLifecycleSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "recordCrmServiceMutation(",
+        "logCrmServiceEvent(",
+      ],
+    },
+  ],
+  [
+    "loadWhatsappSetupTarget(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionSetupShared.ts",
+      ),
+      requiredContracts: ["assertPermission(", "logCrmServiceEvent("],
+    },
+  ],
+  [
+    "runUazapiProviderOperation(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/whatsappConnectionSetupShared.ts",
+      ),
+      requiredContracts: ["assertPermission(", "logCrmServiceEvent("],
+    },
+  ],
+  [
+    "auditUazapiWebhook(",
+    {
+      file: join(
+        domainsRoot,
+        "crm/services/CrmWhatsappService/uazapiWebhookSupport.ts",
+      ),
+      requiredContracts: ["auditCrmServiceEvent(", "logCrmServiceEvent("],
     },
   ],
 ]);
@@ -112,12 +278,20 @@ for (const file of domainFiles.filter(isServiceFile)) {
   if (
     !source.includes("context.audit.record(") &&
     !source.includes("input.audit.record(") &&
+    !source.includes("auditCrmServiceEvent(") &&
+    !source.includes("auditBotOperation(") &&
+    !source.includes("auditCompletedExternalBotAction(") &&
+    !source.includes("recordCrmServiceMutation(") &&
     !source.includes("auditFinanceServiceEvent(") &&
     !source.includes("auditWhatsappServiceEvent(") &&
     !source.includes("auditZapiWebhook(") &&
+    !source.includes("auditZapiWebhookSetupResult(") &&
+    !source.includes("auditBillingPlanHire(") &&
+    !source.includes("createDurableBillingAuditIntent(") &&
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&
+    !source.includes("recordConclusionOutcomeAudit(") &&
     !source.includes("recordRunAudit(") &&
     !usesDelegatedContractHelper
   ) {
@@ -125,12 +299,18 @@ for (const file of domainFiles.filter(isServiceFile)) {
   }
 
   if (
+    !routineLogExemptFiles.has(basename(file)) &&
     !source.includes("context.logger.") &&
     !source.includes("input.logger.") &&
+    !source.includes("logCrmServiceEvent(") &&
+    !source.includes("auditBotOperation(") &&
+    !source.includes("logStartedExternalBotAction(") &&
+    !source.includes("logOlxOnboardingStarted(") &&
     !source.includes("logFinanceServiceEvent(") &&
     !source.includes("logWhatsappServiceEvent(") &&
     !source.includes("logSalesServiceEvent(") &&
     !source.includes("logVehicleServiceEvent(") &&
+    !source.includes("logZapiWebhookSetup(") &&
     !usesDelegatedContractHelper
   ) {
     failures.push(`${file}: service must write scoped structured logs`);

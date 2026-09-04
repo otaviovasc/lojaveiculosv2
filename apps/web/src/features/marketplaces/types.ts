@@ -1,5 +1,6 @@
 export type {
   CompleteMarketplaceConnectionInput,
+  CompleteMarketplaceConnectionResult,
   CreateMarketplaceConnectUrlInput,
   CreateMarketplaceSyncJobInput,
   MarketplaceAccount,
@@ -13,6 +14,7 @@ export type {
   MarketplaceJobStatus,
   MarketplaceOverview,
   MarketplaceProvider,
+  MarketplaceProviderCapability,
   MarketplaceProviderState,
   MarketplaceRequirementStatus,
   MarketplaceServiceErrorCode,
@@ -20,11 +22,13 @@ export type {
   UpsertMarketplaceAccountInput,
 } from "./typesCore";
 export type {
+  MarketplaceBlockerLayer,
   MarketplaceCatalogSnapshot,
   MarketplaceListingBlocker,
   MarketplaceListingBlockerCode,
   MarketplaceListingProjection,
   MarketplaceStockPlan,
+  MarketplaceStockAccountingStatus,
   MarketplaceStockPlanDecision,
   MarketplaceStockPlanItem,
   MarketplaceStockSyncPreviewRequest,

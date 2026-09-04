@@ -10,9 +10,9 @@ Before broad customer onboarding or any V1 shutdown:
 
 - Rehearse and accept at least three representative V1 store migrations with
   rerunnable importers, parity evidence, and rollback.
-- Fix server-owned price-book versioning, CRM packaging, trial expiry,
-  subscription-to-entitlement reconciliation, quotas, dunning, and cancellation
-  reasons.
+- Verify the immutable server-owned catalog, cumulative CRM packaging,
+  plan-hire-to-entitlement reconciliation, quotas, dunning, and cancellation
+  reasons. Free is permanent; there is no trial-expiry path.
 - Add minimal SaaS product events, activation milestones, account health, and
   cohort retention reporting.
 - Split private documents/finance artifacts from public media storage and move
@@ -130,13 +130,8 @@ Fiscal:
 
 - `SPEDY_RUNTIME_IMPLEMENTATION=http`
 - `SPEDY_API_URL`
-- `SPEDY_API_TOKEN`
-- `SPEDY_AUTH_HEADER`
-- `SPEDY_AUTH_SCHEME`
-- `SPEDY_WEBHOOK_SECRET`
-- `SPEDY_ISSUE_PATH`
-- `SPEDY_CANCEL_PATH`
-- `SPEDY_STATUS_PATH`
+- `SPEDY_OWNER_API_KEY`
+- `FISCAL_CREDENTIAL_ENCRYPTION_KEY`
 - `SPEDY_WEBHOOK_URL`
 
 Public routing:
@@ -157,11 +152,6 @@ Marketplace/runtime integrations:
 - `MERCADO_LIVRE_WEBHOOK_URL`
 - `OLX_CLIENT_ID`
 - `OLX_CLIENT_SECRET`
-- `OLX_AUTHORIZATION_URL`
-- `OLX_API_BASE_URL`
-- `OLX_TOKEN_URL`
-- `OLX_LISTINGS_PATH`
-- `OLX_WEBHOOK_URL`
 
 Observability:
 
@@ -181,11 +171,10 @@ Asaas:
 
 SPEDY:
 
-- Set `SPEDY_RUNTIME_IMPLEMENTATION=http` only after the provider contract is
-  confirmed.
-- `SPEDY_ISSUE_PATH`, `SPEDY_CANCEL_PATH`, and `SPEDY_STATUS_PATH` are
-  configurable. Use `{providerDocumentId}` in cancel/status paths when the
-  provider requires the document id in the URL.
+- Set `SPEDY_RUNTIME_IMPLEMENTATION=http` only after the owner key, credential
+  encryption key, public webhook URL, and per-store setup flow are ready.
+- Spedy v1 resource paths and `X-Api-Key` authentication are fixed in the
+  adapter. The owner key is never used to issue a store's document.
 - Fiscal issue/cancel/status-sync fail with `503` if the HTTP gateway is
   enabled but incomplete.
 

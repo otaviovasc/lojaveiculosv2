@@ -1,0 +1,154 @@
+.credere-awaiting-result {
+  align-content: center;
+  border: 1px dashed
+    color-mix(in srgb, var(--color-line-strong) 55%, transparent);
+  border-radius: var(--surface-radius-xl);
+  display: grid;
+  justify-items: start;
+  min-height: 13rem;
+  overflow: hidden;
+  padding: clamp(1.25rem, 2.4vw, 1.75rem);
+  position: relative;
+}
+
+.credere-awaiting-result::after {
+  background: radial-gradient(
+    circle at 88% 18%,
+    color-mix(in srgb, var(--color-accent) 10%, transparent),
+    transparent 55%
+  );
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.credere-shell-beacon {
+  align-items: center;
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+  position: relative;
+  width: 3rem;
+}
+
+.credere-shell-beacon::before,
+.credere-shell-beacon::after {
+  animation: credere-shell-ping 2.6s var(--motion-ease-emphasized) infinite;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-radius: 999px;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.credere-shell-beacon::after {
+  animation-delay: 1.3s;
+}
+
+@keyframes credere-shell-ping {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+.credere-awaiting-result h3 {
+  margin-top: 0.5rem;
+}
+
+.credere-history {
+  border-top: 1px solid var(--color-line);
+  padding-top: 1.25rem;
+}
+
+.credere-history-header {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.credere-history-header h3 {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credere-history-list {
+  display: grid;
+  margin-top: 0.65rem;
+}
+
+.credere-history-row {
+  align-items: center;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding-left: 0;
+  position: relative;
+  text-align: left;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    padding-left var(--motion-duration-base) var(--motion-ease-emphasized);
+  width: 100%;
+}
+
+.credere-history-row::before {
+  background: var(--color-accent);
+  content: "";
+  height: 55%;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 22.5%;
+  transform: scaleY(0.4);
+  transform-origin: center;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-base) var(--motion-ease-emphasized);
+  width: 2px;
+}
+
+.credere-history-row:hover {
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+  padding-left: 0.65rem;
+}
+
+.credere-history-row:hover::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.credere-history-row:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credere-shell-beacon::before,
+  .credere-shell-beacon::after {
+    animation: none;
+  }
+}

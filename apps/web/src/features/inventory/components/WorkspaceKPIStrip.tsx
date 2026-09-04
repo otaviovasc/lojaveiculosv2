@@ -24,7 +24,7 @@ export function WorkspaceKPIStrip({
   renaveStatus: string;
 }) {
   return (
-    <div className="flex flex-col lg:flex-row gap-4 justify-between lg:items-center bg-panel/30 border border-line/60 rounded-2xl p-4.5">
+    <div className="vehicle-kpi-strip flex flex-col lg:flex-row gap-4 justify-between lg:items-center bg-panel/30 border border-line/60 rounded-2xl p-4.5">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 flex-1 min-w-0">
         <KPIItem
           icon={Tag}
@@ -65,14 +65,14 @@ export function WorkspaceKPIStrip({
 
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-line/60 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
         <span
-          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
+          className="vehicle-kpi-pill inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
           title="O financiamento é configurado durante a formalização da venda"
         >
           <Briefcase className="size-3.5" />
           <span>Financiamento na venda</span>
         </span>
         <span
-          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
+          className="vehicle-kpi-pill inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
           title="O seguro é configurado durante a formalização da venda"
         >
           <Shield className="size-3.5" />

@@ -14,10 +14,13 @@ export type InventoryCost = {
   description: string | null;
   id: string;
   kind: InventoryCostKind;
+  status: "active" | "voided";
   storeId: string | null;
   tenantId: string | null;
   unitId: string;
   updatedAt: string;
+  voidedAt: string | null;
+  voidReason: string | null;
 };
 
 export type InventoryPriceHistoryEntry = {
@@ -48,4 +51,10 @@ export type CreateInventoryCostInput = {
   description?: string | null;
   kind: InventoryCostKind;
   unitId?: string;
+};
+
+export type UpdateInventoryCostInput = Omit<CreateInventoryCostInput, "unitId">;
+
+export type VoidInventoryCostInput = {
+  reason: string;
 };

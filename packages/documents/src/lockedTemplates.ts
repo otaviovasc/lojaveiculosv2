@@ -31,15 +31,15 @@ export const lockedDocumentTemplates = [
   locked(
     "vehicle_checklist",
     "inspection",
-    "Checklist do veiculo",
+    "Checklist do veículo",
     "vehicle",
     [
-      fields("Dados do veiculo", [
-        { label: "Veiculo", token: "{{vehicle.title}}" },
+      fields("Dados do veículo", [
+        { label: "Veículo", token: "{{vehicle.title}}" },
         { label: "Placa", token: "{{vehicle.plate}}" },
-        { label: "Km", token: "{{vehicle.km}}" },
+        { label: "Quilometragem", token: "{{vehicle.km}}" },
       ]),
-      table("Inspecao e documentacao", ["Item", "Status"], "vehicle_checklist"),
+      table("Inspeção e documentação", ["Item", "Status"], "vehicle_checklist"),
       paragraph(
         "Itens: manual, chave reserva, documento para rodar, CRV, pericia, preparacao e debitos quitados.",
       ),
@@ -53,9 +53,9 @@ export const lockedDocumentTemplates = [
     "report",
     [
       table(
-        "Visao compacta por veiculo",
+        "Visão compacta por veículo",
         [
-          "Veiculo",
+          "Veículo",
           "Status",
           "Manual",
           "Chave",
@@ -74,15 +74,15 @@ export const lockedDocumentTemplates = [
   locked(
     "commission_seller_report",
     "finance_receipt",
-    "Relatorio de comissoes",
+    "Relatório de comissões",
     "report",
     [
       paragraph(
         "Relatorio de comissoes por vendedor, periodo, status, origem, nota e resumo de valores a pagar, pagos e totais.",
       ),
       table(
-        "Lancamentos",
-        ["Lancamento", "Referencia", "Origem", "Vencimento", "Status", "Valor"],
+        "Lançamentos",
+        ["Lançamento", "Referência", "Origem", "Vencimento", "Status", "Valor"],
         "commission_lines",
       ),
     ],
@@ -98,8 +98,8 @@ export const lockedDocumentTemplates = [
         "Resumo executivo com saldo realizado, receitas recebidas, custos pagos, lucro oficial, veiculos vendidos e pendencias.",
       ),
       table(
-        "Veiculos vendidos no periodo",
-        ["Veiculo", "Data", "Status", "Venda/Ganho", "Lucro"],
+        "Veículos vendidos no período",
+        ["Veículo", "Data", "Status", "Venda/Ganho", "Lucro"],
         "owner_vehicle_summary",
       ),
     ],
@@ -115,8 +115,8 @@ export const lockedDocumentTemplates = [
         "Controle interno sem transmissao para Receita/SEFAZ, sem valor fiscal e sem XML fiscal.",
       ),
       fields("Documento auxiliar", [
-        { label: "Numero", token: "{{document.number}}" },
-        { label: "Emissao", token: "{{document.issuedAt}}" },
+        { label: "Número", token: "{{document.number}}" },
+        { label: "Emissão", token: "{{document.issuedAt}}" },
         { label: "Emitente", token: "{{store.name}}" },
       ]),
       table(

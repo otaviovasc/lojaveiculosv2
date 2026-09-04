@@ -169,7 +169,7 @@ export function RoleAssignmentSection({
       <div className="grid gap-6">
         <div>
           <h5 className="text-xs font-black uppercase tracking-wider text-accent mb-2">
-            Cargos Customizados da Loja
+            Cargos Customizados (salvos neste navegador)
           </h5>
           {customRoles.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">

@@ -18,20 +18,28 @@ const sourceLabels: Record<string, string> = {
   whatsapp: "WhatsApp",
 };
 
-const kpiLabels: Record<string, string> = {
-  Disponiveis: "Disponíveis",
-  "GMV fechado": "Vendas fechadas",
-  Leads: "Leads",
-  Recebiveis: "Recebíveis",
-  "Recebiveis abertos": "Recebíveis em aberto",
+const ageBucketLabels: Record<string, string> = {
+  days0to30: "0–30 dias",
+  days31to60: "31–60 dias",
+  days61to90: "61–90 dias",
+  over90: "Mais de 90 dias",
 };
 
-const deltaLabels: Record<string, string> = {
-  "em aberto": "em aberto",
-  "estoque total": "do estoque total",
-  "funil ativo": "no funil ativo",
-  "periodo atual": "período atual",
-  "período atual": "período atual",
+const documentKindLabels: Record<string, string> = {
+  buyer_acknowledgment: "Ciência do comprador",
+  buyer_document: "Documento do comprador",
+  consignment_contract: "Contrato de consignação",
+  delivery_term: "Termo de entrega",
+  finance_receipt: "Recibo financeiro",
+  inspection: "Vistoria",
+  invoice: "Nota fiscal",
+  power_of_attorney: "Procuração",
+  reservation_receipt: "Recibo de reserva",
+  sale_contract: "Contrato de venda",
+  sale_receipt: "Recibo de venda",
+  test_drive: "Test drive",
+  vehicle_registration: "Documento do veículo",
+  warranty_certificate: "Certificado de garantia",
 };
 
 export function getReportFunnelLabel(key: string) {
@@ -42,10 +50,10 @@ export function getReportSourceLabel(key: string) {
   return sourceLabels[key] ?? "Outra origem";
 }
 
-export function getReportKpiLabel(label: string) {
-  return kpiLabels[label] ?? "Indicador comercial";
+export function getReportAgeBucketLabel(key: string) {
+  return ageBucketLabels[key] ?? "Idade desconhecida";
 }
 
-export function getReportDeltaLabel(label: string) {
-  return deltaLabels[label] ?? "período informado";
+export function getReportDocumentKindLabel(key: string) {
+  return documentKindLabels[key] ?? "Outro documento";
 }

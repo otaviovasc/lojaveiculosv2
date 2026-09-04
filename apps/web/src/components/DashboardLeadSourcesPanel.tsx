@@ -19,7 +19,9 @@ export function DashboardLeadSourcesPanel({
           </div>
         </div>
         <div className="card-body card-body-centered">
-          {dashboard?.leadSources && dashboard.leadSources.length > 0 ? (
+          {!dashboard ? (
+            <DashboardLeadSourcesPlaceholder />
+          ) : dashboard.leadSources.length > 0 ? (
             dashboard.leadSources.slice(0, 3).map((source, idx) => {
               const totalCount =
                 dashboard.leadSources.reduce(
@@ -62,6 +64,30 @@ export function DashboardLeadSourcesPanel({
         </div>
       </div>
     </DashboardHomeEntry>
+  );
+}
+
+function DashboardLeadSourcesPlaceholder() {
+  return (
+    <div aria-label="Dados de canais de lead indisponíveis">
+      {[0, 1, 2].map((index) => {
+        const tone = leadSourceTone(index);
+        return (
+          <div className="lead-source-row" key={index}>
+            <div className="lead-source-label-row">
+              <div className="lead-source-info">
+                <span className={tone.dotClass} />
+                <span className="lead-source-name">—</span>
+              </div>
+              <span className={tone.valueClass}>—</span>
+            </div>
+            <div className="lead-source-progress-container">
+              <div className={`progress-bar ${tone.progressClass}`} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

@@ -4,11 +4,42 @@ import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createBillingFeature } from "./billing.controller.js";
 import { createBillingServices } from "./billingServices.js";
 import { createMemoryBillingProviderRepository } from "../adapters/memory/billingProviderRepository.js";
+import { createMemoryBillingPlanHireRepository } from "../adapters/memory/billingPlanHireRepository.js";
 import { createMemoryBillingRepository } from "../adapters/memory/billingRepository.js";
 import { createMemoryBillingWebhookRepository } from "../adapters/memory/billingWebhookRepository.js";
 import { createMemoryPaymentProviderGateway } from "../adapters/memory/paymentProviderGateway.js";
+import type { PaymentProviderGateway } from "../../../domains/billing/ports/paymentProviderGateway.js";
 
 describe("billing controller webhooks", () => {
+  it("returns service unavailable instead of using in-memory billing implicitly", async () => {
+    const app = new Hono();
+    app.route(
+      "/api/v1/billing",
+      createBillingFeature({
+        contextFactory: async () =>
+          createServiceContext({
+            actor: { id: "user_1", kind: "user" },
+            permissions: ["billing.manage"],
+            request: { requestId: "request_missing_composition" },
+            storeId: "store_1",
+            tenantId: "tenant_1",
+          }),
+      }),
+    );
+
+    const response = await app.request("/api/v1/billing/provider/status");
+
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as {
+      code?: string;
+      requestId?: unknown;
+    };
+    expect(body).toMatchObject({
+      code: "BILLING_SERVICE_UNAVAILABLE",
+    });
+    expect(typeof body.requestId).toBe("string");
+  });
+
   it("denies store-scoped billing for owners blocked by agency billing", async () => {
     const app = createTestApp("secret", []);
     const response = await app.request("/api/v1/billing/overview");
@@ -19,49 +50,33 @@ describe("billing controller webhooks", () => {
     });
   });
 
-  it("syncs the current subscription with the configured provider", async () => {
+  it("creates a durable plan hire and exposes it for polling", async () => {
     const app = createTestApp("secret");
-    const response = await app.request(
-      "/api/v1/billing/provider/subscription/sync",
-      {
-        body: JSON.stringify({
-          billingType: "PIX",
-          nextDueDate: "2026-07-10",
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      billingType: "PIX",
-      chargeTotalCents: 54899,
-      provider: "asaas",
-      status: "active",
-    });
-  });
-
-  it("creates a hosted provider checkout for the current subscription", async () => {
-    const app = createTestApp("secret");
-    const response = await app.request("/api/v1/billing/provider/checkout", {
+    const response = await app.request("/api/v1/billing/plan-hires", {
       body: JSON.stringify({
         billingTypes: ["CREDIT_CARD", "PIX"],
-        minutesToExpire: 60,
-        nextDueDate: "2026-07-10",
+        idempotencyKey: "hire-route-test-1",
+        planId: "83262608-0000-4000-8000-000000000002",
       }),
       headers: { "content-type": "application/json" },
       method: "POST",
     });
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
+    expect(response.status).toBe(201);
+    const hire = (await response.json()) as { id: string };
+    expect(hire).toMatchObject({
       checkoutUrl:
         "https://sandbox.asaas.com/checkoutSession/show?id=chk_memory_asaas",
-      provider: "asaas",
+      phase: "payment_pending",
+      planSnapshot: { code: "essencial" },
       providerCheckoutId: "chk_memory_asaas",
-      subscriptionId: "subscription_memory",
+      quotedCents: 19700,
+      status: "payment_pending",
     });
+
+    const poll = await app.request(`/api/v1/billing/plan-hires/${hire.id}`);
+    expect(poll.status).toBe(200);
+    await expect(poll.json()).resolves.toMatchObject({ id: hire.id });
   });
 
   it("accepts valid Asaas webhooks through an integration context", async () => {
@@ -102,14 +117,85 @@ describe("billing controller webhooks", () => {
       method: "POST",
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({
       code: "BILLING_WEBHOOK_AUTHENTICATION_FAILED",
     });
   });
+
+  it("maps incomplete billing customer data to 400 with the missing fields", async () => {
+    const hireRepository = createMemoryBillingPlanHireRepository();
+    const app = createTestApp("secret", ["billing.manage"], {
+      billingPlanHireRepository: {
+        ...hireRepository,
+        prepareHire: async (input) => ({
+          ...(await hireRepository.prepareHire(input)),
+          customerData: null,
+        }),
+      },
+    });
+    const response = await app.request("/api/v1/billing/plan-hires", {
+      body: JSON.stringify({
+        billingTypes: ["CREDIT_CARD"],
+        idempotencyKey: "hire-route-incomplete-1",
+        planId: "83262608-0000-4000-8000-000000000002",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: "BILLING_CUSTOMER_DATA_INCOMPLETE",
+      details: {
+        missingFields: [
+          "email",
+          "cpfCnpj",
+          "address",
+          "addressNumber",
+          "province",
+          "postalCode",
+        ],
+      },
+    });
+  });
+
+  it("maps provider checkout rejection to 502", async () => {
+    const app = createTestApp("secret", ["billing.manage"], {
+      paymentProviderGateway: {
+        ...createMemoryPaymentProviderGateway([], "secret"),
+        createCheckout: async () => {
+          throw new Error("O campo email deve ser informado.");
+        },
+      },
+    });
+    const response = await app.request("/api/v1/billing/plan-hires", {
+      body: JSON.stringify({
+        billingTypes: ["CREDIT_CARD"],
+        idempotencyKey: "hire-route-provider-fail-1",
+        planId: "83262608-0000-4000-8000-000000000002",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      code: "BILLING_PROVIDER_CHECKOUT_FAILED",
+    });
+  });
 });
 
-function createTestApp(secret: string, permissions = ["billing.manage"]) {
+function createTestApp(
+  secret: string,
+  permissions = ["billing.manage"],
+  overrides: {
+    billingPlanHireRepository?: ReturnType<
+      typeof createMemoryBillingPlanHireRepository
+    >;
+    paymentProviderGateway?: PaymentProviderGateway;
+  } = {},
+) {
   const app = new Hono();
   app.route(
     "/api/v1/billing",
@@ -127,14 +213,16 @@ function createTestApp(secret: string, permissions = ["billing.manage"]) {
         }),
       services: createBillingServices({
         ports: {
+          billingPlanHireRepository:
+            overrides.billingPlanHireRepository ??
+            createMemoryBillingPlanHireRepository(),
           billingProviderRepository: createMemoryBillingProviderRepository(),
           billingRepository: createMemoryBillingRepository(),
           billingWebhookRepository: createMemoryBillingWebhookRepository(),
           environment: "test",
-          paymentProviderGateway: createMemoryPaymentProviderGateway(
-            [],
-            secret,
-          ),
+          paymentProviderGateway:
+            overrides.paymentProviderGateway ??
+            createMemoryPaymentProviderGateway([], secret),
           publicAppUrl: "http://localhost:5173",
         },
       }),

@@ -28,9 +28,13 @@ export async function listMarketplaceOverview(
   });
   const providerStates = await Promise.all(
     overview.providerStates.map(async (state) => {
-      const account =
-        overview.accounts.find((item) => item.provider === state.provider) ??
-        null;
+      // Overview accounts are safe read models and may contain redacted
+      // credentials. Preflight must use the scoped operational account read.
+      const account = await ports.marketplaceRepository.findAccount({
+        provider: state.provider,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
       const preflight = await checkMarketplaceAccountPreflight({
         account,
         ...(ports.gatewayRegistry

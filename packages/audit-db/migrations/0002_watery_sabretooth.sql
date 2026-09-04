@@ -1,0 +1,1 @@
+CREATE INDEX "audit_events_criticality_idx" ON "audit_events" USING btree ("criticality");

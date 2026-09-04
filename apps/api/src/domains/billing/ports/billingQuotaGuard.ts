@@ -1,9 +1,47 @@
 export type BillingQuotaKey = "plate_lookup" | "seller" | "vehicle";
 
+export type BillingQuotaAllowance = {
+  limit: number;
+  remaining: number;
+  used: number;
+};
+
+export type BillingQuotaUsageOutcome =
+  "provider_failed" | "released" | "succeeded";
+
+export type BillingQuotaUsageReservation = {
+  reservationId: string;
+};
+
 export type BillingQuotaGuard = {
   assertAvailable: (input: {
     increment?: number;
     quotaKey: BillingQuotaKey;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<void>;
+  getAllowance?: (input: {
+    quotaKey: BillingQuotaKey;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<BillingQuotaAllowance>;
+  reserveUsage?: (input: {
+    increment?: number;
+    provider: string;
+    quotaKey: BillingQuotaKey;
+    requestId?: string;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<BillingQuotaUsageReservation>;
+  markUsageStarted?: (input: {
+    reservationId: string;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<void>;
+  finalizeUsage?: (input: {
+    failureCode?: string;
+    outcome: BillingQuotaUsageOutcome;
+    reservationId: string;
     storeId: string;
     tenantId: string;
   }) => Promise<void>;
@@ -31,7 +69,7 @@ export class BillingQuotaExceededError extends Error {
 
 export class BillingContractUnavailableError extends Error {
   constructor() {
-    super("No effective billing contract is available for this store.");
+    super("Free billing access is temporarily being repaired for this store.");
     this.name = "BillingContractUnavailableError";
   }
 }

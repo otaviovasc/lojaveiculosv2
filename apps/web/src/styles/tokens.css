@@ -135,7 +135,7 @@
   --surface-radius-xl: 16px;
   --surface-radius-2xl: 20px;
   --shadow-focus: 0 0 0 3px
-    color-mix(in srgb, var(--color-primary) 26%, transparent);
+    color-mix(in srgb, var(--color-accent) 26%, transparent);
   --shadow-panel: 0 12px 32px rgb(21 21 21 / 0.06);
   --shadow-raised: 0 20px 60px rgb(21 21 21 / 0.1);
   --shadow-float: 0 24px 80px rgb(21 21 21 / 0.14);
@@ -161,14 +161,14 @@
   --color-crm-strong: #15803d;
   --color-crm-soft: #dcfce7;
 
-  /* Finance Module Accent Colors */
-  --color-finance: #7c3aed;
-  --color-finance-strong: #6d28d9;
-  --color-finance-soft: #ede9fe;
+  /* Finance Module Accent Colors — warm gold family (warning), not violet */
+  --color-finance: #b89418;
+  --color-finance-strong: #765b00;
+  --color-finance-soft: #fef3c7;
 
-  /* Documents Module Accent Colors */
-  --color-documents: #2563eb;
-  --color-documents-strong: #1d4ed8;
+  /* Documents Module Accent Colors — deeper brand-anchored blue (Azul Info) */
+  --color-documents: #1d4ed8;
+  --color-documents-strong: #182ab8;
   --color-documents-soft: #dbeafe;
 
   /* Settings Module Accent Colors */
@@ -248,14 +248,14 @@
   --color-crm-soft: rgba(34, 197, 94, 0.15);
 
   /* Finance Module Accent Colors (Dark) */
-  --color-finance: #8b5cf6;
-  --color-finance-strong: #7c3aed;
-  --color-finance-soft: rgba(139, 92, 246, 0.15);
+  --color-finance: #f5c542;
+  --color-finance-strong: #b89418;
+  --color-finance-soft: rgba(245, 197, 66, 0.15);
 
   /* Documents Module Accent Colors (Dark) */
-  --color-documents: #3b82f6;
-  --color-documents-strong: #2563eb;
-  --color-documents-soft: rgba(59, 130, 246, 0.15);
+  --color-documents: #60a5fa;
+  --color-documents-strong: #3b82f6;
+  --color-documents-soft: rgba(96, 165, 250, 0.14);
 
   /* Settings Module Accent Colors (Dark) */
   --color-settings: #a8a29e;
@@ -317,7 +317,7 @@
   --color-violet-500: var(--color-violet-foreground);
   --color-border: var(--color-line);
   --color-input: var(--color-line);
-  --color-ring: var(--color-primary);
+  --color-ring: var(--color-accent);
 
   /* Map feature accents to Tailwind theme variables */
   --color-sales: var(--color-sales);

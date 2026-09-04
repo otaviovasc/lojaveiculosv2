@@ -1,5 +1,15 @@
 import { lazy } from "react";
 
+export const AuthenticatedRoutes = lazy(() =>
+  import("./AuthenticatedRoutes").then((module) => ({
+    default: module.AuthenticatedRoutes,
+  })),
+);
+export const ClerkAuthProvider = lazy(() =>
+  import("../features/account/ClerkAuthProvider").then((module) => ({
+    default: module.ClerkAuthProvider,
+  })),
+);
 export const AdminApp = lazy(() =>
   import("./AdminApp").then((module) => ({ default: module.AdminApp })),
 );
@@ -11,6 +21,11 @@ export const AgencyLayout = lazy(() =>
 export const AgencyBillingPage = lazy(() =>
   import("../features/agency/pages/AgencyBillingPage").then((module) => ({
     default: module.AgencyBillingPage,
+  })),
+);
+export const AgencyCrederePage = lazy(() =>
+  import("../features/agency/pages/AgencyCrederePage").then((module) => ({
+    default: module.AgencyCrederePage,
   })),
 );
 export const AgencyCreateStorePage = lazy(() =>
@@ -28,6 +43,11 @@ export const AgencyStatsPage = lazy(() =>
     default: module.AgencyStatsPage,
   })),
 );
+export const AgencyTeamAccessPage = lazy(() =>
+  import("../features/agency/pages/AgencyTeamAccessPage").then((module) => ({
+    default: module.AgencyTeamAccessPage,
+  })),
+);
 export const LandingPage = lazy(() =>
   import("../features/marketing/LandingPage").then((module) => ({
     default: module.LandingPage,
@@ -41,6 +61,11 @@ export const OwnerOnboardingPage = lazy(() =>
 export const PlatformAdminPage = lazy(() =>
   import("../features/account/PlatformAdminPage").then((module) => ({
     default: module.PlatformAdminPage,
+  })),
+);
+export const ObservabilityPage = lazy(() =>
+  import("../features/observability/ObservabilityPage").then((module) => ({
+    default: module.ObservabilityPage,
   })),
 );
 export const PublicCustomPageRoute = lazy(() =>

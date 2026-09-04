@@ -40,6 +40,9 @@ describe("APIBrasil vehicle plate provider", () => {
       Authorization: "Bearer bearer-token",
     });
     expect(calls[0]?.init?.body).toBe(JSON.stringify({ placa: "ABC1D23" }));
+    expect(calls[1]?.init?.body).toBe(
+      JSON.stringify({ homolog: false, placa: "ABC1D23", tipo: "fipe" }),
+    );
     expect(result.vehicle).toMatchObject({
       brand: "Fiat",
       color: "Branca",
@@ -167,5 +170,63 @@ describe("APIBrasil vehicle plate provider", () => {
       modelYear: 2023,
       priceCents: 12050000,
     });
+  });
+
+  it("merges live-shaped camelCase FIPE arrays and preserves the Mercosul input", () => {
+    const result = normalizeApiBrasilPlateResponse(
+      {
+        data: {
+          ano_fabricacao: 2013,
+          ano_modelo: 2013,
+          cilindradas: "1984",
+          combustivel: "GASOLINA",
+          cor: "BRANCA",
+          marca: "VOLVO",
+          modelo: "I/VOLVO V40 T4 DYNAMIC",
+          placa: "AXD9738",
+          placaMercosul: "AXD9H38",
+          potencia: 180,
+          tipo_veiculo: "Automovel",
+          uf_jurisdicao: "PR",
+        },
+      },
+      "AXD9H38",
+      {
+        fipePayload: {
+          data: [
+            {
+              anoFabricacao: 2013,
+              anoModelo: "2013",
+              codigoFipe: "029039-4",
+              combustivel: "gasolina",
+              marca: "Volvo",
+              mesReferencia: "agosto de 2026",
+              modelo: "V40 T-4 2.0 Aut./Mec.",
+              principal: true,
+              valor: 65526,
+            },
+          ],
+        },
+      },
+    );
+
+    expect(result).toMatchObject({
+      catalogIdentity: { reason: "catalog_not_found", status: "unresolved" },
+      fipe: {
+        code: "029039-4",
+        modelName: "V40 T-4 2.0 Aut./Mec.",
+        priceCents: 6552600,
+        referenceMonth: "agosto de 2026",
+      },
+      lookupVersion: 2,
+      plate: "AXD9H38",
+      vehicle: {
+        brand: "VOLVO",
+        engine: "1984",
+        model: "I/VOLVO V40 T4 DYNAMIC",
+        state: "PR",
+      },
+    });
+    expect(result.fipeCandidates).toHaveLength(1);
   });
 });

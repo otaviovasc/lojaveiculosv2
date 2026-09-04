@@ -1,25 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import "./aurora/aurora.css";
+import "./quadra/quadra.css";
+import { AuroraStorefront } from "./aurora/AuroraStorefront";
 import {
   PublicListingDetailPanel,
   type PublicListingDetailSnapshot,
 } from "./PublicListingDetailPanel";
+import { normalizeStorefrontConfig } from "./config/normalizeStorefrontConfig";
+import { resolveTokenVars } from "./config/resolveTokens";
+import { QuadraListingDetail } from "./quadra/QuadraListingDetail";
+import { QuadraStorefront } from "./quadra/QuadraStorefront";
 import {
-  AboutSection,
-  HeroSection,
-  StockSection,
-  TestimonialsSection,
-} from "./PublicStorefrontSections";
-import { LeadPanel } from "./PublicStorefrontLeadPanel";
-import {
-  createStorefrontTheme,
-  normalizeStorefrontTemplateKey,
-} from "./storefrontTemplates";
+  readStorefrontAppearanceMode,
+  StorefrontThemeToggle,
+  useStorefrontAppearance,
+} from "./StorefrontAppearance";
 import { StorefrontFontLinks } from "./storefrontFonts";
-import {
-  createStorefrontStyle,
-  createVisibleSections,
-  readThemeFonts,
-} from "./publicStorefrontTheme";
 import type {
   PublicStorefrontData,
   PublicStorefrontLeadInput,
@@ -37,6 +33,9 @@ type PublicStorefrontProps = {
     listingSlug: string,
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
+  onSubmitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export function PublicStorefront({
@@ -46,84 +45,88 @@ export function PublicStorefront({
   onOpenListing,
   onRetryListing,
   onSubmitListingInterest,
+  onSubmitStorefrontInterest,
 }: PublicStorefrontProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const layoutKey = normalizeStorefrontTemplateKey(
-    data.settings.site.layoutKey,
+  const config = useMemo(
+    () =>
+      normalizeStorefrontConfig(
+        data.settings.site.theme,
+        data.settings.site.layoutKey,
+      ),
+    [data.settings.site.theme, data.settings.site.layoutKey],
   );
-  const rawTheme = data.settings.site.theme;
-  const theme = createStorefrontTheme(rawTheme, layoutKey);
-  const visibleSections = useMemo(
-    () => createVisibleSections(rawTheme.sections, theme.sections),
-    [rawTheme.sections, theme.sections],
-  );
-  const fonts = readThemeFonts(rawTheme);
-  const style = createStorefrontStyle(rawTheme, fonts);
-
+  const style = useMemo(() => resolveTokenVars(config.tokens), [config.tokens]);
+  const appearanceMode = readStorefrontAppearanceMode(data.settings.site.theme);
+  const appearance = useStorefrontAppearance({
+    mode: appearanceMode,
+    storeSlug: data.store.slug,
+  });
   return (
     <>
-      <StorefrontFontLinks fonts={[fonts.body, fonts.heading]} />
-      <main
+      <StorefrontFontLinks
+        fonts={[
+          config.tokens.type.bodyFont,
+          config.tokens.type.headingFont,
+          config.preset === "quadra" ? "Titillium Web" : null,
+        ]}
+      />
+      <div
         className="public-light-surface public-storefront min-h-screen w-full"
-        data-layout={layoutKey}
+        data-color-scheme={appearance.scheme}
+        data-quadra-classic={
+          config.preset === "quadra" && detail.listingSlug ? "true" : undefined
+        }
+        data-quadra-modern={
+          config.preset === "quadra" && !detail.listingSlug ? "true" : undefined
+        }
+        data-motion={config.tokens.motion.style}
+        data-preset={config.preset}
+        data-storefront
+        id="topo"
         style={style}
       >
+        {appearanceMode === "both" ? (
+          <StorefrontThemeToggle
+            onToggle={appearance.toggle}
+            scheme={appearance.scheme}
+          />
+        ) : null}
         {detail.listingSlug ? (
-          <PublicListingDetailPanel
-            detail={detail}
-            onClose={onCloseListing}
-            onRetry={onRetryListing}
-            onSubmitInterest={onSubmitListingInterest}
-            settings={data.settings}
+          config.preset === "quadra" ? (
+            <QuadraListingDetail
+              availableListings={data.listings}
+              detail={detail}
+              onClose={onCloseListing}
+              onOpenListing={onOpenListing}
+              onRetry={onRetryListing}
+              onSubmitInterest={onSubmitListingInterest}
+              settings={data.settings}
+            />
+          ) : (
+            <PublicListingDetailPanel
+              detail={detail}
+              onClose={onCloseListing}
+              onRetry={onRetryListing}
+              onSubmitInterest={onSubmitListingInterest}
+              settings={data.settings}
+            />
+          )
+        ) : config.preset === "quadra" ? (
+          <QuadraStorefront
+            config={config}
+            data={data}
+            onOpenListing={onOpenListing}
+            onSubmitStorefrontInterest={onSubmitStorefrontInterest}
           />
         ) : (
-          visibleSections.map((section) => {
-            if (section.type === "hero") {
-              return (
-                <HeroSection
-                  data={data}
-                  key={section.id}
-                  sections={visibleSections}
-                  theme={theme}
-                  onOpenListing={onOpenListing}
-                />
-              );
-            }
-            if (isStockSection(section.type)) {
-              return (
-                <StockSection
-                  key={section.id}
-                  listings={data.listings}
-                  onOpenListing={onOpenListing}
-                  query={searchQuery}
-                  sectionType={section.type}
-                  setQuery={setSearchQuery}
-                />
-              );
-            }
-            if (section.type === "about") {
-              return <AboutSection data={data} key={section.id} />;
-            }
-            if (section.type === "testimonials") {
-              return <TestimonialsSection key={section.id} theme={rawTheme} />;
-            }
-            if (section.type === "contact") {
-              return (
-                <LeadPanel
-                  ctaLabel={theme.ctaLabel}
-                  key={section.id}
-                  settings={data.settings}
-                />
-              );
-            }
-            return null;
-          })
+          <AuroraStorefront
+            config={config}
+            data={data}
+            onOpenListing={onOpenListing}
+            onSubmitStorefrontInterest={onSubmitStorefrontInterest}
+          />
         )}
-      </main>
+      </div>
     </>
   );
-}
-
-function isStockSection(type: string) {
-  return type === "featured" || type === "search" || type === "all_properties";
 }

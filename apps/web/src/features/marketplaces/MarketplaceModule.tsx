@@ -1,10 +1,11 @@
-import { CheckCircle2, RefreshCcw, Store } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/marketplaces.css";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
   FeatureActionButton,
+  FeaturePageHeader,
   FeaturePageShell,
-  FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
@@ -14,21 +15,17 @@ import {
 import type { MarketplaceApi } from "./apiClient";
 import { MarketplaceErrorAlert } from "./MarketplaceErrorAlert";
 import {
-  MarketplaceBatchProgress,
   MarketplaceJobList,
   MarketplaceOperationsOverview,
-  MarketplacePreviewPanel,
   MarketplaceProviderCard,
+  MarketplaceStockPanel,
 } from "./MarketplacePanels";
 import {
   formatMarketplaceError,
   type MarketplaceErrorDisplay,
 } from "./marketplaceErrors";
 import { providerLabels } from "./marketplaceLabels";
-import {
-  marketplaceRedirectUri,
-  readMarketplaceOauthCallback,
-} from "./marketplaceOauthCallback";
+import { readMarketplaceOauthCallback } from "./marketplaceOauthCallback";
 import { marketplaceProviderOrder } from "./marketplaceProviderPresentation";
 import { createMarketplaceRuntimeApi } from "./runtimeApi";
 import type {
@@ -39,23 +36,42 @@ import type {
   MarketplaceStockPlan,
   MarketplaceStockSyncRunResponse,
 } from "./types";
-import "./marketplaceCommandBar.css";
+import {
+  clearCrmOlxOauthReturn,
+  hasCrmOlxOauthReturn,
+} from "../crm/crmOlxOauthReturn";
 
 export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
+  const [{ callback: initialCallback, crmOlxReturn }] = useState(() => {
+    const callback = readMarketplaceOauthCallback(window.location);
+    return {
+      callback,
+      crmOlxReturn: callback.kind !== "none" && hasCrmOlxOauthReturn(),
+    };
+  });
   const marketplaceApi = useMemo(
     () => api ?? createMarketplaceRuntimeApi(),
     [api],
   );
   const [overview, setOverview] = useState<MarketplaceOverview | null>(null);
-  const [status, setStatus] = useState<MarketplaceStatus>({ kind: "loading" });
-  const [oauthCodes, setOauthCodes] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState<MarketplaceStatus>(() =>
+    crmOlxReturn
+      ? {
+          kind: "olx-return",
+          message:
+            initialCallback.kind === "result-error"
+              ? "A conexão com a OLX não foi concluída. Você voltará para Conexões para tentar novamente."
+              : "Conectando OLX. Você voltará para o CRM automaticamente.",
+        }
+      : { kind: "loading" },
+  );
   const [previews, setPreviews] = useState<Record<string, ProviderPreview>>({});
   const [selectedProvider, setSelectedProvider] =
     useState<MarketplaceProvider | null>(null);
-  const [lastRun, setLastRun] =
-    useState<MarketplaceStockSyncRunResponse | null>(null);
+  const [lastRuns, setLastRuns] = useState<
+    Partial<Record<MarketplaceProvider, MarketplaceStockSyncRunResponse>>
+  >({});
   const oauthCallbackStartedRef = useRef(false);
-  const redirectUri = marketplaceRedirectUri(window.location);
 
   const applyOverview = (nextOverview: MarketplaceOverview) => {
     setOverview(nextOverview);
@@ -82,13 +98,18 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   }, []);
 
   const initializeMarketplace = async () => {
-    const callback = readMarketplaceOauthCallback(window.location);
+    const callback = initialCallback;
     if (callback.kind === "none") {
       await refresh();
       return;
     }
 
-    if (callback.kind === "error") {
+    if (callback.kind === "result-error") {
+      if (crmOlxReturn) {
+        redirectToCrmConnections();
+        return;
+      }
+      clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       try {
         applyOverview(await marketplaceApi.getOverview());
@@ -99,20 +120,71 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       return;
     }
 
-    setStatus({ kind: "saving", provider: callback.provider });
+    if (!crmOlxReturn) {
+      setStatus(
+        callback.kind === "staged"
+          ? { kind: "saving", provider: callback.provider }
+          : { kind: "loading" },
+      );
+    }
     try {
-      await marketplaceApi.completeConnection({
-        code: callback.code,
-        provider: callback.provider,
-        redirectUri,
-      });
-      applyOverview(await marketplaceApi.getOverview());
+      const result = await marketplaceApi.completeConnection(
+        callback.kind === "staged"
+          ? { transactionId: callback.transactionId }
+          : callback.kind === "inline-error"
+            ? { error: callback.error, state: callback.state }
+            : { code: callback.code, state: callback.state },
+      );
+      if (result.kind === "cancelled") {
+        if (crmOlxReturn) {
+          setStatus({
+            kind: "olx-return",
+            message:
+              "A autorização da OLX foi cancelada. Você voltará para Conexões para tentar novamente.",
+          });
+          redirectToCrmConnections();
+          return;
+        }
+        clearCrmOlxOauthReturn();
+        clearOauthCallbackLocation();
+        setStatus({
+          kind: "error",
+          display: oauthErrorDisplay({
+            kind: "result-error",
+            provider: result.provider,
+          }),
+        });
+        return;
+      }
       clearOauthCallbackLocation();
+      if (result.account.provider === "olx" && crmOlxReturn) {
+        redirectToCrmConnections();
+        return;
+      }
+      clearCrmOlxOauthReturn();
+      applyOverview(await marketplaceApi.getOverview());
+      if (result.kind === "partial") {
+        setStatus({
+          kind: "partial",
+          message: `${providerLabels[result.account.provider]} autorizada parcialmente. Uma ou mais capacidades de Chat, Leads ou Estoque precisam de atenção. Use Revisar conexão para tentar novamente. Nenhum anúncio foi enviado.`,
+        });
+        return;
+      }
       setStatus({
         kind: "saved",
-        message: `${providerLabels[callback.provider]} conectado. Nenhum anúncio foi enviado.`,
+        message: `${providerLabels[result.account.provider]} conectado. Nenhum anúncio foi enviado.`,
       });
     } catch (error) {
+      if (crmOlxReturn) {
+        setStatus({
+          kind: "olx-return",
+          message:
+            "Não foi possível confirmar a conexão da OLX agora. Você voltará para Conexões para tentar novamente.",
+        });
+        redirectToCrmConnections();
+        return;
+      }
+      clearCrmOlxOauthReturn();
       clearOauthCallbackLocation();
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -125,7 +197,6 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     setStatus({ kind: "saving", provider });
     try {
       await marketplaceApi.upsertAccount(provider, {
-        config: { rollout: "v2_stock_sync" },
         provider,
         status: nextStatus,
       });
@@ -147,26 +218,8 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     try {
       const result = await marketplaceApi.createConnectUrl({
         provider,
-        redirectUri,
       });
       window.location.assign(result.authorizationUrl);
-    } catch (error) {
-      setStatus({ kind: "error", display: errorDisplay(error) });
-    }
-  };
-
-  const completeConnection = async (provider: MarketplaceProvider) => {
-    const code = oauthCodes[provider]?.trim();
-    if (!code) return;
-    setStatus({ kind: "saving", provider });
-    try {
-      await marketplaceApi.completeConnection({ code, provider, redirectUri });
-      setOauthCodes((current) => ({ ...current, [provider]: "" }));
-      applyOverview(await marketplaceApi.getOverview());
-      setStatus({
-        kind: "saved",
-        message: `${providerLabels[provider]} conectado. Nenhum anúncio foi enviado.`,
-      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -200,7 +253,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         ? { batchId: preview.batchId, provider }
         : { provider };
       const result = await marketplaceApi.runStockSync(provider, input);
-      setLastRun(result);
+      setLastRuns((current) => ({ ...current, [provider]: result }));
       setPreviews((current) => ({
         ...current,
         [provider]: { batchId: result.batchId, plan: result.plan },
@@ -232,50 +285,75 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     }
   };
 
-  const updateOauthCode = (provider: MarketplaceProvider, value: string) => {
-    setOauthCodes((current) => ({ ...current, [provider]: value }));
+  const reconcileJob = async (job: MarketplaceJob) => {
+    setStatus({ kind: "saving", provider: job.provider });
+    try {
+      const reconciled = await marketplaceApi.reconcileSyncJob(job.id);
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message:
+          reconciled.status === "succeeded"
+            ? `${providerLabels[job.provider]} confirmou a operação.`
+            : reconciled.status === "failed"
+              ? reconciled.metadata.providerResult?.providerStatus === "refused"
+                ? `${providerLabels[job.provider]} recusou a operação. Revise os dados do anúncio antes de tentar novamente.`
+                : `${providerLabels[job.provider]} não concluiu a operação. Revise o detalhe técnico antes de decidir se deve tentar novamente.`
+              : `A operação continua aguardando confirmação do ${providerLabels[job.provider]}. Não é necessário reenviar.`,
+      });
+    } catch (error) {
+      setStatus({ kind: "error", display: errorDisplay(error) });
+    }
   };
 
   const selectedPreview = selectedProvider
     ? (previews[selectedProvider]?.plan ?? null)
     : null;
+  const selectedLastRun = selectedProvider
+    ? (lastRuns[selectedProvider] ?? null)
+    : null;
+
+  if (status.kind === "olx-return") {
+    return (
+      <FeaturePageShell mainClassName="marketplace-shell">
+        <div className="crm-olx-oauth-return" role="status">
+          <FeatureLoadingState>{status.message}</FeatureLoadingState>
+        </div>
+      </FeaturePageShell>
+    );
+  }
 
   return (
     <FeaturePageShell mainClassName="marketplace-shell">
-      <FeatureToolbar className="marketplace-command-bar">
-        <div className="marketplace-command-bar__identity">
-          <span className="marketplace-command-bar__mark">
-            <Store aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="marketplace-command-bar__meta">Canais de venda</p>
-            <h1>Marketplaces da loja</h1>
-            <p className="marketplace-command-bar__description">
-              Revise conexões, pendências e lotes antes de publicar o estoque.
-            </p>
-          </div>
-        </div>
-        <div
-          aria-label="Ações dos marketplaces"
-          className="marketplace-command-bar__actions"
-          role="toolbar"
-        >
+      <FeaturePageHeader
+        actions={
           <FeatureActionButton
             icon={RefreshCcw}
             isBusy={status.kind === "loading"}
             label="Atualizar"
             onClick={() => void refresh()}
           />
-        </div>
-      </FeatureToolbar>
+        }
+        actionsLabel="Ações dos marketplaces"
+        description="Revise conexões, pendências e lotes antes de publicar o estoque."
+        eyebrow="Canais de venda"
+        title="Marketplaces"
+      />
       {status.kind === "error" ? (
         <MarketplaceErrorAlert {...status.display} />
       ) : null}
       {status.kind === "saved" ? (
         <FeatureAlert
-          className="marketplace-feedback"
           icon={<CheckCircle2 aria-hidden="true" className="size-5" />}
           tone="success"
+        >
+          {status.message}
+        </FeatureAlert>
+      ) : null}
+      {status.kind === "partial" ? (
+        <FeatureAlert
+          icon={<AlertTriangle aria-hidden="true" className="size-5" />}
+          tone="warning"
         >
           {status.message}
         </FeatureAlert>
@@ -285,21 +363,10 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <AnimatedContent distance={14} duration={0.32} trigger="mount">
             <MarketplaceOperationsOverview overview={overview} />
           </AnimatedContent>
-          <div className="marketplace-section-heading marketplace-section-heading--channels">
-            <div>
-              <span className="marketplace-section-heading__eyebrow">
-                Canais disponíveis
-              </span>
-              <h2>Conexões da loja</h2>
-              <p>
-                Conecte e revise cada canal conforme o contrato que ele exige. A
-                prévia não publica nenhum anúncio.
-              </p>
-            </div>
-          </div>
-          <section className="marketplace-grid">
+          <section aria-label="Conexões da loja" className="marketplace-grid">
             {orderedProviders(overview).map((provider, index) => (
               <AnimatedContent
+                className="h-full"
                 delay={index * 0.06}
                 distance={18}
                 duration={0.38}
@@ -313,10 +380,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
                   isSaving={
                     status.kind === "saving" && status.provider === provider
                   }
-                  oauthCode={oauthCodes[provider] ?? ""}
-                  onCompleteConnection={completeConnection}
                   onConnect={createConnectUrl}
-                  onOauthCodeChange={updateOauthCode}
                   onPreview={previewStock}
                   onRun={runStock}
                   onStatusChange={upsertAccount}
@@ -329,14 +393,18 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               </AnimatedContent>
             ))}
           </section>
-          {selectedPreview ? (
-            <MarketplacePreviewPanel
+          {selectedPreview || selectedLastRun ? (
+            <MarketplaceStockPanel
+              lastRun={selectedLastRun}
               plan={selectedPreview}
               provider={selectedProvider}
             />
           ) : null}
-          {lastRun ? <MarketplaceBatchProgress lastRun={lastRun} /> : null}
-          <MarketplaceJobList overview={overview} onRetry={retryJob} />
+          <MarketplaceJobList
+            onReconcile={reconcileJob}
+            onRetry={retryJob}
+            overview={overview}
+          />
         </>
       ) : status.kind === "error" ? (
         <FeatureEmptyState
@@ -368,6 +436,8 @@ type ProviderPreview = {
 type MarketplaceStatus =
   | { display: MarketplaceErrorDisplay; kind: "error" }
   | { kind: "loading" }
+  | { kind: "olx-return"; message: string }
+  | { kind: "partial"; message: string }
   | { kind: "ready" }
   | { kind: "saved"; message: string }
   | { kind: "saving"; provider: MarketplaceProvider };
@@ -389,19 +459,25 @@ function clearOauthCallbackLocation() {
   window.history.replaceState({}, "", "/dashboard#/marketplaces");
 }
 
+function redirectToCrmConnections() {
+  window.location.assign("/dashboard#/crm?surface=conversations");
+}
+
 function oauthErrorDisplay(
   callback: Extract<
     ReturnType<typeof readMarketplaceOauthCallback>,
-    { kind: "error" }
+    { kind: "result-error" }
   >,
 ): MarketplaceErrorDisplay {
   return {
-    failed: "A conexão não foi concluída.",
-    fix: callback.message,
+    failed: callback.errorCode
+      ? `A conexão não foi concluída (${callback.errorCode}).`
+      : "A conexão não foi concluída.",
+    fix: "A autorização foi cancelada, recusada ou expirou. Inicie a conexão novamente.",
     provider: callback.provider
       ? providerLabels[callback.provider]
       : "Canal não identificado",
-    requestId: "Não informado",
+    requestId: callback.requestId ?? "Não informado",
     vehicleLabel: "Não se aplica",
   };
 }

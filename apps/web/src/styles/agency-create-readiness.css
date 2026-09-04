@@ -80,7 +80,7 @@
 .agency-readiness-step--connected {
   background: var(--color-blue-soft);
   border-color: color-mix(in srgb, var(--color-info) 22%, transparent);
-  color: var(--color-info);
+  color: var(--color-info-soft-foreground);
 }
 
 .agency-readiness-step--connected svg:last-child {

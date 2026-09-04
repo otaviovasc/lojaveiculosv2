@@ -1,0 +1,94 @@
+import { useState } from "react";
+import {
+  Activity,
+  Bot,
+  Code2,
+  FileJson,
+  Layers,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react";
+import { CrmExternalBotDocsOverview } from "./CrmExternalBotDocsOverview";
+import { CrmExternalBotDocsEvents } from "./CrmExternalBotDocsEvents";
+import { CrmExternalBotDocsActions } from "./CrmExternalBotDocsActions";
+import { CrmExternalBotDocsTakeover } from "./CrmExternalBotDocsTakeover";
+import { CrmExternalBotLlmsBanner } from "./CrmExternalBotLlmsBanner";
+
+type DocSubTab = "overview" | "events" | "actions" | "takeover";
+
+export function CrmExternalBotDocs() {
+  const [activeSubTab, setActiveSubTab] = useState<DocSubTab>("overview");
+
+  return (
+    <section
+      aria-label="Documentacao operacional do bot"
+      className="crm-bot-docs-wrapper"
+    >
+      {/* Sub-navigation Navbar */}
+      <div className="crm-bot-docs-nav">
+        <div className="crm-bot-docs-nav-items">
+          <button
+            aria-selected={activeSubTab === "overview"}
+            className={`crm-bot-nav-tab ${
+              activeSubTab === "overview" ? "crm-bot-nav-tab-active" : ""
+            }`}
+            onClick={() => setActiveSubTab("overview")}
+            role="tab"
+            type="button"
+          >
+            <Layers aria-hidden="true" className="size-4" />
+            <span>Visão Geral & Autenticação</span>
+          </button>
+
+          <button
+            aria-selected={activeSubTab === "events"}
+            className={`crm-bot-nav-tab ${
+              activeSubTab === "events" ? "crm-bot-nav-tab-active" : ""
+            }`}
+            onClick={() => setActiveSubTab("events")}
+            role="tab"
+            type="button"
+          >
+            <FileJson aria-hidden="true" className="size-4" />
+            <span>Webhooks & Eventos</span>
+          </button>
+
+          <button
+            aria-selected={activeSubTab === "actions"}
+            className={`crm-bot-nav-tab ${
+              activeSubTab === "actions" ? "crm-bot-nav-tab-active" : ""
+            }`}
+            onClick={() => setActiveSubTab("actions")}
+            role="tab"
+            type="button"
+          >
+            <Terminal aria-hidden="true" className="size-4" />
+            <span>Bot Action API</span>
+          </button>
+
+          <button
+            aria-selected={activeSubTab === "takeover"}
+            className={`crm-bot-nav-tab ${
+              activeSubTab === "takeover" ? "crm-bot-nav-tab-active" : ""
+            }`}
+            onClick={() => setActiveSubTab("takeover")}
+            role="tab"
+            type="button"
+          >
+            <ShieldCheck aria-hidden="true" className="size-4" />
+            <span>Estados de atendimento humano</span>
+          </button>
+        </div>
+        <CrmExternalBotLlmsBanner variant="button" />
+      </div>
+
+      {/* Render Selected View */}
+      <div className="crm-bot-docs-content">
+        {activeSubTab === "overview" ? <CrmExternalBotDocsOverview /> : null}
+        {activeSubTab === "events" ? <CrmExternalBotDocsEvents /> : null}
+        {activeSubTab === "actions" ? <CrmExternalBotDocsActions /> : null}
+        {activeSubTab === "takeover" ? <CrmExternalBotDocsTakeover /> : null}
+      </div>
+    </section>
+  );
+}

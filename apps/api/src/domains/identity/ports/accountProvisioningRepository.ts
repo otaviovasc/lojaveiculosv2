@@ -183,7 +183,10 @@ export type InvitationSender = {
     email: string;
     invitationId: string;
     metadata: Record<string, unknown>;
-  }) => Promise<{ clerkInvitationId?: string | null }>;
+  }) => Promise<{
+    acceptUrl?: string | null;
+    clerkInvitationId?: string | null;
+  }>;
 };
 
 export class AccountProvisioningConflictError extends Error {

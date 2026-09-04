@@ -23,6 +23,26 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
   });
 
   return {
+    async claimForProcessing(input) {
+      const event = events.find((item) => item.id === input.eventId);
+      if (!event) return null;
+      const claimable =
+        event.status === "failed" ||
+        event.status === "pending_reconciliation" ||
+        event.status === "received" ||
+        (event.status === "processing" &&
+          (!event.processingStartedAt ||
+            event.processingStartedAt <= input.staleBefore));
+      if (!claimable) return null;
+      event.errorMessage = null;
+      event.processedAt = null;
+      event.processingAttempts += 1;
+      event.processingStartedAt = input.processingStartedAt;
+      event.processingToken = input.processingToken;
+      event.status = "processing";
+      event.updatedAt = input.processingStartedAt;
+      return event;
+    },
     async recordReceived(input) {
       const existing = events.find(
         (event) =>
@@ -40,6 +60,9 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
         eventType: input.eventType,
         id: randomUUID(),
         payload: input.payload,
+        processingAttempts: 0,
+        processingStartedAt: null,
+        processingToken: null,
         processedAt: null,
         provider: input.provider,
         providerEventId: input.providerEventId,
@@ -56,7 +79,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!existing) {
         return {
           reason: "unknown_checkout",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };
@@ -68,7 +91,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!existing) {
         return {
           reason: "unknown_subscription",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };
@@ -78,8 +101,17 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
     async updateStatus(input) {
       const event = events.find((item) => item.id === input.eventId);
       if (!event) return null;
+      if (
+        input.processingToken &&
+        (event.status !== "processing" ||
+          event.processingToken !== input.processingToken)
+      ) {
+        return null;
+      }
       event.errorMessage = input.errorMessage ?? null;
       event.processedAt = new Date();
+      event.processingStartedAt = null;
+      event.processingToken = null;
       event.status = input.status;
       event.storeId = input.storeId ?? event.storeId;
       event.tenantId = input.tenantId ?? event.tenantId;
@@ -93,7 +125,7 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       if (!scope) {
         return {
           reason: "unknown_subscription",
-          status: "ignored",
+          status: "pending_reconciliation",
           storeId: null,
           tenantId: null,
         };

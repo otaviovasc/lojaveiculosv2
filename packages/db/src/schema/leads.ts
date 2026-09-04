@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,7 +11,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { stores, tenants, users } from "./identity.js";
+import { sql } from "drizzle-orm";
+import { storeMemberships, stores, tenants, users } from "./identity.js";
 import { vehicleListings, vehicleUnits } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 import { crmPipelines, crmPipelineStages } from "./crmPipeline.js";
@@ -31,6 +33,7 @@ export const leadSource = pgEnum("lead_source", [
   "external_api",
   "manual",
   "olx",
+  "instagram",
   "whatsapp",
   "other",
 ]);
@@ -38,7 +41,7 @@ export const leadSource = pgEnum("lead_source", [
 export const leadActivityType = pgEnum("lead_activity_type", [
   "note",
   "call",
-  "whatsapp",
+  "message",
   "email",
   "status_change",
   "task",
@@ -61,11 +64,14 @@ export const leads = pgTable(
     buyerPhone: varchar("buyer_phone", { length: 40 }),
     lastInteractionAt: timestamp("last_interaction_at", { withTimezone: true }),
     metadata: jsonb("metadata").notNull().default({}),
-    pipelineId: uuid("pipeline_id").references(() => crmPipelines.id),
-    pipelineStageId: uuid("pipeline_stage_id").references(
-      () => crmPipelineStages.id,
-    ),
+    pipelineId: uuid("pipeline_id")
+      .notNull()
+      .references(() => crmPipelines.id),
+    pipelineStageId: uuid("pipeline_stage_id")
+      .notNull()
+      .references(() => crmPipelineStages.id),
     source: leadSource("source").notNull(),
+    sourceIdentityKey: varchar("source_identity_key", { length: 64 }),
     status: leadStatus("status").notNull().default("new"),
     storeId: uuid("store_id")
       .notNull()
@@ -75,10 +81,38 @@ export const leads = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.assignedUserId],
+      foreignColumns: [
+        storeMemberships.tenantId,
+        storeMemberships.storeId,
+        storeMemberships.userId,
+      ],
+      name: "leads_scoped_assignee_membership_fk",
+    }),
     index("leads_assigned_user_id_idx").on(table.assignedUserId),
+    index("leads_board_page_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.pipelineId,
+      table.pipelineStageId,
+      table.isDeleted,
+      table.updatedAt.desc(),
+      table.id.desc(),
+    ),
     index("leads_pipeline_id_idx").on(table.pipelineId),
     index("leads_pipeline_stage_id_idx").on(table.pipelineStageId),
     index("leads_source_idx").on(table.source),
+    uniqueIndex("leads_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
+    uniqueIndex("leads_source_identity_unique")
+      .on(table.tenantId, table.storeId, table.source, table.sourceIdentityKey)
+      .where(
+        sql`${table.sourceIdentityKey} IS NOT NULL AND ${table.isDeleted} = false`,
+      ),
     index("leads_status_idx").on(table.status),
     index("leads_store_status_idx").on(table.storeId, table.status),
     index("leads_tenant_id_idx").on(table.tenantId),
@@ -112,6 +146,12 @@ export const leadActivities = pgTable(
   },
   (table) => [
     index("lead_activities_lead_id_idx").on(table.leadId),
+    index("lead_activities_scoped_history_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.leadId,
+      table.occurredAt.desc(),
+    ),
     index("lead_activities_store_occurred_at_idx").on(
       table.storeId,
       table.occurredAt,
@@ -161,6 +201,9 @@ export const leadVisits = pgTable(
     leadId: uuid("lead_id")
       .notNull()
       .references(() => leads.id),
+    listingId: uuid("listing_id").references(() => vehicleListings.id, {
+      onDelete: "set null",
+    }),
     notes: text("notes"),
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
     status: varchar("status", { length: 80 }).notNull().default("scheduled"),
@@ -170,9 +213,11 @@ export const leadVisits = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    vehicleTitle: varchar("vehicle_title", { length: 191 }),
   },
   (table) => [
     index("lead_visits_lead_id_idx").on(table.leadId),
+    index("lead_visits_listing_id_idx").on(table.listingId),
     index("lead_visits_scheduled_at_idx").on(table.scheduledAt),
     index("lead_visits_store_id_idx").on(table.storeId),
   ],

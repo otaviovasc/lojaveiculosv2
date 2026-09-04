@@ -1,4 +1,10 @@
-import { FolderOpen, RefreshCcw, UploadCloud } from "lucide-react";
+import {
+  FolderOpen,
+  LayoutGrid,
+  PanelLeft,
+  RefreshCcw,
+  UploadCloud,
+} from "lucide-react";
 import type { DocumentsFolderKey } from "./documentDisplayModel";
 import {
   FeatureActionButton,
@@ -12,11 +18,13 @@ export function DocumentsWorkspaceTopBar({
   isUploading,
   onOpenFolders,
   onRefresh,
+  onToggleViewMode,
   onUpload,
   selectedKey,
   showUpload,
   unitLabel,
   uploadTitle,
+  viewMode = "split",
 }: {
   folderTitle: string;
   folderSubtitle: string;
@@ -24,16 +32,25 @@ export function DocumentsWorkspaceTopBar({
   isUploading: boolean;
   onOpenFolders: () => void;
   onRefresh: () => void;
+  onToggleViewMode?: () => void;
   onUpload: () => void;
   selectedKey: DocumentsFolderKey;
   showUpload: boolean;
   unitLabel: string | null;
   uploadTitle: string;
+  viewMode?: "grid" | "split";
 }) {
   return (
     <FeaturePageHeader
       actions={
         <>
+          {onToggleViewMode ? (
+            <FeatureActionButton
+              icon={viewMode === "grid" ? PanelLeft : LayoutGrid}
+              label={viewMode === "grid" ? "Barra lateral" : "Grade de pastas"}
+              onClick={onToggleViewMode}
+            />
+          ) : null}
           <FeatureActionButton
             className="documents-top-bar-action--mobile-only"
             icon={FolderOpen}

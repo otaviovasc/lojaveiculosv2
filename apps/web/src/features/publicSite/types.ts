@@ -16,6 +16,7 @@ export type PublicVehicleListing = {
   fuelType: string | null;
   heroMedia: PublicVehicleMedia | null;
   manufactureYear: number | null;
+  media: readonly PublicVehicleMedia[];
   mileageKm: number | null;
   modelYear: number | null;
   priceCents: number | null;
@@ -44,7 +45,6 @@ export type PublicVehicleMediaGroup = {
 };
 
 export type PublicVehicleListingDetail = PublicVehicleListing & {
-  media: readonly PublicVehicleMedia[];
   mediaGroups: readonly PublicVehicleMediaGroup[];
 };
 
@@ -56,14 +56,26 @@ export type PublicStorefrontData = {
   };
 };
 
-export type PublicStorefrontSettingsData = {
-  contact: {
-    city: string | null;
-    contactEmail: string | null;
-    contactPhone: string | null;
-    whatsappPhone: string | null;
-    whatsappUrl: string | null;
+export type PublicStorefrontContactData = {
+  city: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  whatsappPhone: string | null;
+  whatsappUrl: string | null;
+};
+
+export type PublicStorefrontSettingsContactData =
+  PublicStorefrontContactData & {
+    addressCity: string | null;
+    addressLine1: string | null;
+    addressLine2: string | null;
+    addressState: string | null;
+    addressZipCode: string | null;
+    businessHours: Record<string, unknown>;
   };
+
+export type PublicStorefrontSettingsData = {
+  contact: PublicStorefrontSettingsContactData;
   site: {
     heroImageUrl: string | null;
     layoutKey: string;
@@ -88,10 +100,12 @@ export type PublicStorefrontListingDetailData = {
 };
 
 export type PublicStorefrontLeadInput = {
-  buyerEmail?: string;
+  buyerEmail: string;
   buyerName: string;
-  buyerPhone?: string;
-  message?: string;
+  buyerPhone: string;
+  formStartedAt: number;
+  message: string;
+  website: string;
 };
 
 export type PublicStorefrontLeadResult = {
@@ -105,7 +119,7 @@ export type PublicStorefrontLeadResult = {
 
 export type PublicStorefrontCustomPageData = {
   config: StorefrontBuilderConfig;
-  contact: PublicStorefrontSettingsData["contact"];
+  contact: PublicStorefrontContactData;
   page: Omit<StorefrontCustomPage, "secretToken">;
   sitePublished: boolean;
   store: PublicStorefrontSettingsData["store"];

@@ -8,6 +8,7 @@ import {
   auditFinanceServiceEvent,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireFinanceScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
@@ -24,10 +25,11 @@ export async function listFinanceRecurringEntries(
   ports?: FinanceServicePorts,
 ): Promise<readonly FinanceRecurringEntry[]> {
   assertPermission(context, permission);
+  const scope = requireFinanceScope(context);
   const items = await getFinanceRepository(ports).listRecurringEntries({
     limit: input.limit ?? 100,
-    storeId: context.storeId,
-    tenantId: context.tenantId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
     type: input.type ?? null,
   });
 

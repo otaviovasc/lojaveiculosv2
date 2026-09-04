@@ -6,8 +6,12 @@ import { cn } from "@/lib/utils";
 
 export function DatePickerField({
   align = "left",
+  ariaDescribedBy,
   disabled,
+  displayValue,
+  invalid = false,
   isDisabled = false,
+  isRequired = false,
   label,
   maxDate,
   minDate,
@@ -15,8 +19,12 @@ export function DatePickerField({
   value,
 }: {
   align?: "left" | "right";
+  ariaDescribedBy?: string | undefined;
   disabled?: ((date: Date) => boolean) | undefined;
+  displayValue?: string | undefined;
+  invalid?: boolean | undefined;
   isDisabled?: boolean | undefined;
+  isRequired?: boolean | undefined;
   label: string;
   maxDate?: Date | null | undefined;
   minDate?: Date | null | undefined;
@@ -37,10 +45,16 @@ export function DatePickerField({
     <div className="inline-block w-full" ref={rootRef}>
       <button
         ref={triggerRef}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={invalid || undefined}
+        aria-label={`${label}:${displayValue ?? formatDate(value)}`}
+        aria-required={isRequired || undefined}
         className={cn(
-          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target",
+          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target whitespace-nowrap outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent",
           "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-card/60 disabled:active:scale-100",
+          invalid && "!border-danger !bg-danger/5",
         )}
+        data-invalid={invalid ? "true" : undefined}
         disabled={isDisabled}
         onClick={() => {
           if (isDisabled) return;
@@ -53,7 +67,7 @@ export function DatePickerField({
           {label}:
         </span>
         <span className="font-bold text-xs text-foreground tracking-wide">
-          {formatDate(value)}
+          {displayValue ?? formatDate(value)}
         </span>
       </button>
 
@@ -66,6 +80,7 @@ export function DatePickerField({
         maxHeight={400}
       >
         <Calendar
+          {...(value ? { defaultMonth: value } : {})}
           disabled={isDateDisabled}
           mode="single"
           onSelect={(date) => {

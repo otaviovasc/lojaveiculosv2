@@ -79,6 +79,7 @@ describe("MarketplaceService", () => {
                 providerStatus: "active",
               },
             },
+            operationToken: null,
             providerStatus: "active",
           }),
         }),
@@ -94,7 +95,10 @@ describe("MarketplaceService", () => {
     await upsertMarketplaceAccount(
       context,
       {
-        config: { credentials: { accessToken: "token_1" } },
+        config: {
+          connection: { scope: "autoupload" },
+          credentials: { accessToken: "token_1" },
+        },
         provider: "olx",
         status: "active",
       },
@@ -120,6 +124,33 @@ describe("MarketplaceService", () => {
       externalId: "provider_listing_1",
       providerRequestId: null,
       providerStatus: "active",
+    });
+  });
+
+  it("preserves OAuth credentials when pausing an account", async () => {
+    const repository = createTestMarketplaceRepository();
+    const context = createMarketplaceContext(createMemoryAuditSink());
+    await repository.upsertAccount({
+      config: {
+        connection: { scope: "autoupload" },
+        credentials: { accessToken: "oauth-token" },
+      },
+      provider: "olx",
+      status: "active",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+    });
+
+    const account = await upsertMarketplaceAccount(
+      context,
+      { provider: "olx", status: "inactive" },
+      { marketplaceRepository: repository },
+    );
+
+    expect(account.status).toBe("inactive");
+    expect(account.config).toEqual({
+      connection: { scope: "autoupload" },
+      credentials: { accessToken: "oauth-token" },
     });
   });
 

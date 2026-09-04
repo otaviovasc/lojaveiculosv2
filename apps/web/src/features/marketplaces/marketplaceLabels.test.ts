@@ -16,6 +16,9 @@ describe("marketplaceLabels", () => {
       "Conta pausada",
     );
     expect(getMarketplaceJobStatusLabel("queued")).toBe("Na fila");
+    expect(getMarketplaceJobStatusLabel("submitted")).toBe(
+      "Enviado; aguardando canal",
+    );
     expect(getMarketplaceJobTypeLabel("listing_unpublish")).toBe(
       "Remover anúncio",
     );
@@ -39,6 +42,7 @@ describe("marketplaceLabels", () => {
     expect(
       getMarketplaceBlockerCopy({
         code: "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS",
+        layer: "listing",
         message: "provider_photo_error",
         userAction: "internal_action",
       }),

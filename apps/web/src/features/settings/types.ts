@@ -13,8 +13,10 @@ export type StoreSettingsSnapshot = {
   };
   profile: {
     addressCity: string | null;
+    addressDistrict: string | null;
     addressLine1: string | null;
     addressLine2: string | null;
+    addressNumber: string | null;
     addressState: string | null;
     addressZipCode: string | null;
     businessHours: Record<string, unknown>;
@@ -138,7 +140,9 @@ export type InviteStoreMemberInput = {
 };
 
 export type IdentityInvitationView = {
+  acceptUrl: string | null;
   email: string;
+  emailDeliveryStatus: "failed" | "requested";
   id: string;
   role: RoleKey;
   status:
@@ -154,4 +158,10 @@ export type SettingsStatus =
   | { kind: "saved" }
   | { kind: "saving" };
 
-export type SettingsTab = "roles" | "store";
+export type SettingsTab = "domain" | "notifications" | "roles" | "store";
+
+export type SettingsAccess = {
+  domain: boolean;
+  roles: boolean;
+  store: boolean;
+};

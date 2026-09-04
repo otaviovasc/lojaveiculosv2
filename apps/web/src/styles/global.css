@@ -4,7 +4,6 @@
 @import "./components.css";
 @import "./button-cursors.css";
 @import "./calendar.css";
-@import "./marketing.css";
 @import "./customSelect.css";
 @import "./dashboard.css";
 @import "./dashboardPremium.css";
@@ -26,11 +25,11 @@
 @import "./settingsProfile.css";
 @import "./settingsForms.css";
 @import "./billing.css";
-@import "./billing-composition.css";
 @import "./billing-packages.css";
 @import "./billing-checkout.css";
 @import "./billing-features.css";
-@import "./billing-panels.css";
+@import "./credere.css";
+@import "./credere-workspace-states.css";
 @import "./documents.css";
 @import "./documents-command.css";
 @import "./documents-shell-top.css";
@@ -55,12 +54,11 @@
 @import "./internalDashboard.css";
 @import "./publicSite.css";
 @import "./publicApi.css";
-@import "./marketplaces.css";
 @import "./featureModules.css";
 @import "./statusPages.css";
+@import "./appBootScreen.css";
 @import "./checklists.css";
 @import "./finance.css";
-@import "./autoEntries.css";
 @import "./sales.css";
 @import "./sales-delete-dialog.css";
 @import "./sales-summary.css";
@@ -165,6 +163,11 @@ p {
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 /* Custom Prose Utility for long-form reading contexts */
@@ -286,6 +289,27 @@ table,
     var(--color-settings),
     var(--color-settings-strong)
   );
+}
+
+/* Tenant branding sets these aliases on the outer shell. Rebind them wherever
+   a feature module replaces the accent palette so the foreground cannot stay
+   paired with the tenant accent while the background uses a module accent. */
+[data-active-module="sales"],
+[data-active-module="inventory"],
+[data-active-module="crm"],
+[data-active-module="expenses"],
+[data-active-module="commissions"],
+[data-active-module="auto-entries"],
+[data-active-module="documents"],
+[data-active-module="settings"] {
+  --color-accent-foreground: var(--color-accent-contrast);
+  --color-accent-strong-foreground: var(--color-accent-strong-contrast);
+}
+
+[data-active-module="expenses"],
+[data-active-module="commissions"],
+[data-active-module="auto-entries"] {
+  --color-accent-contrast: var(--color-solid-deep-foreground);
 }
 
 :root[data-theme="dark"] [data-active-module="sales"],

@@ -32,6 +32,23 @@ export function createMemoryVehicleOperationsRepository(): VehicleOperationsRepo
       statusHistory.set(item.id, item);
       return item;
     },
+    findCost: async ({ costId, storeId, tenantId, unitId }) => {
+      const cost = costs.get(costId);
+      return cost &&
+        cost.storeId === storeId &&
+        cost.tenantId === tenantId &&
+        cost.unitId === unitId
+        ? cost
+        : null;
+    },
+    listActiveCostsByUnitIds: async ({ storeId, tenantId, unitIds }) =>
+      [...costs.values()].filter(
+        (cost) =>
+          unitIds.includes(cost.unitId) &&
+          cost.status === "active" &&
+          cost.storeId === storeId &&
+          cost.tenantId === tenantId,
+      ),
     listCostsByUnitIds: async ({ storeId, tenantId, unitIds }) =>
       [...costs.values()].filter(
         (cost) =>
@@ -53,6 +70,21 @@ export function createMemoryVehicleOperationsRepository(): VehicleOperationsRepo
           item.storeId === storeId &&
           item.tenantId === tenantId,
       ),
+    updateCost: async (record) => {
+      const current = costs.get(record.costId);
+      if (
+        !current ||
+        current.storeId !== record.storeId ||
+        current.tenantId !== record.tenantId ||
+        current.unitId !== record.unitId ||
+        current.status !== record.expectedStatus
+      ) {
+        return null;
+      }
+      const updated = applyCostUpdate(current, record);
+      costs.set(updated.id, updated);
+      return updated;
+    },
   };
 }
 
@@ -61,7 +93,38 @@ function createCostRecord(
   sequence: number,
 ): VehicleCost {
   const now = new Date();
-  return { ...record, createdAt: now, id: `cost_${sequence}`, updatedAt: now };
+  return {
+    ...record,
+    createdAt: now,
+    id: `cost_${sequence}`,
+    status: "active",
+    updatedAt: now,
+    voidedAt: null,
+    voidReason: null,
+  };
+}
+
+function applyCostUpdate(
+  current: VehicleCost,
+  record: Parameters<VehicleOperationsRepository["updateCost"]>[0],
+): VehicleCost {
+  return {
+    ...current,
+    ...(record.amountCents !== undefined
+      ? { amountCents: record.amountCents }
+      : {}),
+    ...(record.costDate !== undefined ? { costDate: record.costDate } : {}),
+    ...(record.description !== undefined
+      ? { description: record.description }
+      : {}),
+    ...(record.kind !== undefined ? { kind: record.kind } : {}),
+    ...(record.status !== undefined ? { status: record.status } : {}),
+    ...(record.voidedAt !== undefined ? { voidedAt: record.voidedAt } : {}),
+    ...(record.voidReason !== undefined
+      ? { voidReason: record.voidReason }
+      : {}),
+    updatedAt: new Date(),
+  };
 }
 
 function createPriceHistoryRecord(

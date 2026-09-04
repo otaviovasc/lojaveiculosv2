@@ -1,6 +1,5 @@
 import {
   getInventoryDisplayStatus,
-  getInventoryLeadsCount,
   getInventoryPlate,
   getInventoryStockDays,
   inventoryStatusLabels,
@@ -150,15 +149,9 @@ function compareInventoryItems(
     case "stock_days_desc":
       return stockDays(right) - stockDays(left);
     case "leads_asc":
-      return (
-        getInventoryLeadsCount(left.listing.id) -
-        getInventoryLeadsCount(right.listing.id)
-      );
+      return left.leadsCount - right.leadsCount;
     case "leads_desc":
-      return (
-        getInventoryLeadsCount(right.listing.id) -
-        getInventoryLeadsCount(left.listing.id)
-      );
+      return right.leadsCount - left.leadsCount;
     case "year_asc":
       return inventoryYear(left) - inventoryYear(right);
     case "year_desc":
@@ -186,5 +179,5 @@ function statusLabel(item: InventoryListingSummary) {
 }
 
 function stockDays(item: InventoryListingSummary) {
-  return getInventoryStockDays(item.listing.createdAt, item.listing.id);
+  return getInventoryStockDays(item.listing.createdAt);
 }

@@ -1,4 +1,3 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
@@ -16,6 +15,7 @@ import {
   getStorefrontPageRepository,
   StorefrontPageNotFoundError,
 } from "./serviceSupport.js";
+import { findDuplicatePublicStorefrontLead } from "../../findDuplicatePublicStorefrontLead.js";
 
 const permission = "public_storefront.lead_create";
 
@@ -62,9 +62,10 @@ export async function createPublicStorefrontPageLead(
     throw new StorefrontPageNotFoundError(input.pageSlug);
   }
 
-  const duplicate = await findDuplicatePublicPageLead(ports.leadSink, {
+  const duplicate = await findDuplicatePublicStorefrontLead(ports.leadSink, {
     buyerEmail: input.buyerEmail ?? null,
     buyerPhone: input.buyerPhone ?? null,
+    listingId: snapshot.sourceListingId ?? null,
     storeId: snapshot.store.id,
     tenantId: snapshot.store.tenantId,
   });
@@ -90,13 +91,14 @@ export async function createPublicStorefrontPageLead(
     buyerEmail: input.buyerEmail ?? null,
     buyerName: input.buyerName,
     buyerPhone: input.buyerPhone ?? null,
-    listingId: null,
+    listingId: snapshot.sourceListingId ?? null,
     metadata: {
       message: input.message ?? null,
       pageId: snapshot.page.id,
       pageSlug: snapshot.page.slug,
       pageTitle: snapshot.page.title,
       sourceChannel: "custom_page",
+      sourceListingId: snapshot.sourceListingId ?? null,
       storeSlug: snapshot.store.slug,
     },
     source: "public_site",
@@ -116,46 +118,6 @@ export async function createPublicStorefrontPageLead(
     deduplicated: false,
     lead: { id: lead.id, source: lead.source, status: lead.status },
   };
-}
-
-async function findDuplicatePublicPageLead(
-  repository: PublicStorefrontLeadSink,
-  input: {
-    buyerEmail: string | null;
-    buyerPhone: string | null;
-    storeId: StoreId;
-    tenantId: TenantId;
-  },
-): Promise<PublicStorefrontLead | null> {
-  const search = input.buyerEmail ?? input.buyerPhone;
-  if (!search) return null;
-  const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const leads = await repository.listLeads({
-    limit: 20,
-    search,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-
-  return (
-    leads.find(
-      (lead) =>
-        lead.source === "public_site" &&
-        lead.listingId === null &&
-        lead.createdAt.getTime() >= recentCutoff &&
-        sameContact(lead, input),
-    ) ?? null
-  );
-}
-
-function sameContact(
-  lead: Pick<PublicStorefrontLead, "buyerEmail" | "buyerPhone">,
-  input: { buyerEmail: string | null; buyerPhone: string | null },
-) {
-  return Boolean(
-    (input.buyerEmail && lead.buyerEmail === input.buyerEmail) ||
-    (input.buyerPhone && lead.buyerPhone === input.buyerPhone),
-  );
 }
 
 function canSubmitLead(snapshot: PublicStorefrontCustomPageSnapshot) {

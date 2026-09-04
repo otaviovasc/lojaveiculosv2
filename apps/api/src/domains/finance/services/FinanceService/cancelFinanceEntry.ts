@@ -6,6 +6,7 @@ import {
   findScopedFinanceEntry,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireFinanceScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
@@ -22,6 +23,7 @@ export async function cancelFinanceEntry(
   ports?: FinanceServicePorts,
 ): Promise<FinanceEntryBundle> {
   assertPermission(context, permission);
+  const scope = requireFinanceScope(context);
   const repository = getFinanceRepository(ports);
   const current = await findScopedFinanceEntry(
     context,
@@ -41,8 +43,8 @@ export async function cancelFinanceEntry(
       cancelledReason: input.reason ?? null,
     },
     status: "cancelled",
-    storeId: context.storeId,
-    tenantId: context.tenantId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
 
   await auditFinanceServiceEvent(context, {

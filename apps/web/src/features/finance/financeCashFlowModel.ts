@@ -3,7 +3,17 @@ import { formatFinanceCategory } from "./financeBillsFormat";
 import type { FinanceEntry, FinanceEntryType } from "./types";
 
 export type FinanceDatePreset =
-  "all" | "custom" | "next7" | "next30" | "overdue" | "thisMonth";
+  | "all"
+  | "custom"
+  | "next15"
+  | "next30"
+  | "next7"
+  | "next90"
+  | "overdue"
+  | "thisMonth"
+  | "thisWeek"
+  | "thisYear"
+  | "today";
 
 export type FinanceSourceFilter =
   "all" | "commission" | "document" | "general" | "lead" | "sale" | "vehicle";
@@ -192,13 +202,27 @@ export function matchesFinanceDateFilter(
   if (filter.datePreset === "overdue") {
     return entry.status === "pending" && dueAt < today;
   }
+  if (filter.datePreset === "today") return sameDay(dueAt, today);
+  if (filter.datePreset === "thisWeek") {
+    const first = startOfWeek(today);
+    return dueAt >= first && dueAt <= addDays(first, 6);
+  }
   if (filter.datePreset === "next7")
     return dueAt >= today && dueAt <= addDays(today, 7);
+  if (filter.datePreset === "next15")
+    return dueAt >= today && dueAt <= addDays(today, 15);
   if (filter.datePreset === "next30")
     return dueAt >= today && dueAt <= addDays(today, 30);
+  if (filter.datePreset === "next90")
+    return dueAt >= today && dueAt <= addDays(today, 90);
   if (filter.datePreset === "thisMonth") {
     const first = new Date(today.getFullYear(), today.getMonth(), 1);
     const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return dueAt >= first && dueAt <= last;
+  }
+  if (filter.datePreset === "thisYear") {
+    const first = new Date(today.getFullYear(), 0, 1);
+    const last = new Date(today.getFullYear(), 11, 31);
     return dueAt >= first && dueAt <= last;
   }
   const from = parseDateInput(filter.dateFrom);
@@ -267,6 +291,16 @@ function addDays(value: Date, days: number) {
   const date = new Date(value);
   date.setDate(date.getDate() + days);
   return date;
+}
+
+function sameDay(left: Date, right: Date) {
+  return left.getTime() === right.getTime();
+}
+
+function startOfWeek(value: Date) {
+  const date = startOfDay(value);
+  const mondayOffset = date.getDay() === 0 ? -6 : 1 - date.getDay();
+  return addDays(date, mondayOffset);
 }
 
 function startOfDay(value: Date) {

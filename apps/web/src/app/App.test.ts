@@ -35,7 +35,6 @@ describe("App module navigation", () => {
     expect(ids).toContain("inventory");
     expect(ids).toContain("crm");
     expect(ids).toContain("billing");
-    expect(ids).toContain("autobot");
     expect(ids).toContain("settings");
     expect(ids).toContain("public-api");
     expect(ids).toContain("custom-pages");
@@ -52,9 +51,8 @@ describe("App module navigation", () => {
     expect(sidebarIds.every((id) => moduleSurfaceById[id])).toBe(true);
     expect(isPlaceholderModule("public-site")).toBe(false);
     expect(isPlaceholderModule("custom-pages")).toBe(false);
-    expect(isPlaceholderModule("autobot")).toBe(false);
     expect(isPlaceholderModule("auto-entries")).toBe(false);
-    expect(isPlaceholderModule("domain")).toBe(true);
+    expect(isPlaceholderModule("simulations")).toBe(false);
   });
 
   it("parses hash module state without a router dependency", () => {
@@ -66,11 +64,10 @@ describe("App module navigation", () => {
     expect(parseModuleHash("#/public-site")).toBe("public-site");
     expect(parseModuleHash("#/custom-pages")).toBe("custom-pages");
     expect(parseModuleHash("#/page-builder")).toBe("custom-pages");
-    expect(parseModuleHash("#/dominio")).toBe("domain");
-    expect(parseModuleHash("#/domain")).toBe("domain");
     expect(parseModuleHash("#/settings?tab=roles")).toBe("settings");
+    expect(parseModuleHash("#/settings?tab=domain")).toBe("settings");
     expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");
-    expect(parseModuleHash("#/crm?surface=whatsapp")).toBe("crm");
+    expect(parseModuleHash("#/crm?surface=conversations")).toBe("crm");
     expect(parseModuleHash("#unknown")).toBe("dashboard");
   });
 
@@ -101,10 +98,12 @@ describe("App module navigation", () => {
 
   it("keeps CRM surfaces deterministic for visual QA routes", () => {
     expect(crmSurfaceHash("leads")).toBe("/crm?surface=leads");
-    expect(crmSurfaceHash("whatsapp")).toBe("/crm?surface=whatsapp");
+    expect(crmSurfaceHash("conversations")).toBe("/crm?surface=conversations");
     expect(readCrmSurfaceFromHash("#/crm?surface=leads")).toBe("leads");
-    expect(readCrmSurfaceFromHash("#/crm?surface=whatsapp")).toBe("whatsapp");
-    expect(readCrmSurfaceFromHash("#/crm")).toBe("whatsapp");
+    expect(readCrmSurfaceFromHash("#/crm?surface=conversations")).toBe(
+      "conversations",
+    );
+    expect(readCrmSurfaceFromHash("#/crm")).toBe("conversations");
   });
 
   it("keeps dashboard stats aligned with the Loja visual direction", () => {

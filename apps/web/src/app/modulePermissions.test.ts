@@ -30,14 +30,18 @@ describe("module permissions", () => {
   });
 
   it("hides settings navigation for operational roles", () => {
-    const session = sessionForRole("salesman", [
-      "crm.access",
-      "documents.read",
-      "finance.read",
-      "inventory.read",
-      "lead.read",
-      "sale.read",
-    ]);
+    const session = sessionForRole(
+      "salesman",
+      [
+        "crm.access",
+        "documents.read",
+        "finance.read",
+        "inventory.read",
+        "lead.read",
+        "sale.read",
+      ],
+      ["inventory", "sales"],
+    );
 
     expect(getModulePermission("settings", session)).toMatchObject({
       canView: false,
@@ -51,14 +55,18 @@ describe("module permissions", () => {
   });
 
   it("filters management modules from the sidebar by effective permission", () => {
-    const session = sessionForRole("salesman", [
-      "crm.access",
-      "documents.read",
-      "finance.read",
-      "inventory.read",
-      "lead.read",
-      "sale.read",
-    ]);
+    const session = sessionForRole(
+      "salesman",
+      [
+        "crm.access",
+        "documents.read",
+        "finance.read",
+        "inventory.read",
+        "lead.read",
+        "sale.read",
+      ],
+      ["inventory", "sales"],
+    );
     const visibleIds = filterNavigationGroups(navigationGroups, session)
       .flatMap((group) => group.items)
       .map((item) => item.id);
@@ -71,11 +79,11 @@ describe("module permissions", () => {
   });
 
   it("shows CRM for read-only WhatsApp users", () => {
-    const session = sessionForRole("investor", [
-      "crm.whatsapp.list",
-      "crm.whatsapp.read",
-      "lead.read",
-    ]);
+    const session = sessionForRole(
+      "investor",
+      ["crm.conversations.read", "lead.read"],
+      ["crm"],
+    );
 
     expect(getModulePermission("crm", session).canView).toBe(true);
     expect(
@@ -85,21 +93,8 @@ describe("module permissions", () => {
     ).toBe(true);
   });
 
-  it("shows the AI operator only with automation read access", () => {
-    const allowed = sessionForRole("manager", ["automation.read"]);
-    const denied = sessionForRole("salesman", ["inventory.read"]);
-
-    expect(getModulePermission("autobot", allowed).canView).toBe(true);
-    expect(getModulePermission("autobot", denied).canView).toBe(false);
-    expect(
-      filterNavigationGroups(navigationGroups, allowed)
-        .flatMap((group) => group.items)
-        .some((item) => item.id === "autobot"),
-    ).toBe(true);
-  });
-
   it("keeps automatic entries readable without granting management", () => {
-    const readOnly = sessionForRole("investor", ["finance.read"]);
+    const readOnly = sessionForRole("investor", ["finance.read"], ["finance"]);
 
     expect(getModulePermission("auto-entries", readOnly).canView).toBe(true);
     expect(
@@ -116,7 +111,16 @@ describe("module permissions", () => {
       defaultStore: null,
       stores: [
         {
-          effectivePermissions: ["inventory.read", "users.manage"],
+          effectivePermissions: [
+            "billing.manage",
+            "crm.access",
+            "external_api.manage",
+            "fiscal.manage",
+            "financing.simulation.read",
+            "inventory.read",
+            "sale.read",
+          ],
+          entitlements: ["crm", "external_api", "financing", "fiscal"],
           role: "agency",
           status: "active" as const,
           storeId: "store_agency",
@@ -138,26 +142,40 @@ describe("module permissions", () => {
     };
 
     expect(getModulePermission("inventory", session).canView).toBe(true);
-    expect(getModulePermission("billing", session).canView).toBe(false);
+    expect(getModulePermission("billing", session).canView).toBe(true);
+    expect(getModulePermission("crm", session).canView).toBe(true);
+    expect(getModulePermission("fiscal", session).canView).toBe(true);
+    expect(getModulePermission("public-api", session).canView).toBe(true);
+    expect(getModulePermission("simulations", session).canView).toBe(true);
   });
 
-  it("keeps every product module visible for owners without entitlements", () => {
-    const session = sessionForRole("owner", [], []);
+  it("keeps authorized commercial modules visible and locked for owners", () => {
+    const session = sessionForRole(
+      "owner",
+      [
+        "billing.manage",
+        "crm.access",
+        "fiscal.manage",
+        "marketplace.read",
+        "external_api.manage",
+        "sale.read",
+      ],
+      [],
+    );
     const visibleIds = filterNavigationGroups(navigationGroups, session)
       .flatMap((group) => group.items)
       .map((item) => item.id);
 
     expect(visibleIds).toContain("billing");
     expect(visibleIds).toContain("crm");
-    expect(visibleIds).toContain("domain");
     expect(visibleIds).toContain("fiscal");
     expect(visibleIds).toContain("marketplaces");
     expect(visibleIds).toContain("public-api");
-    expect(visibleIds).toContain("simulations");
+    expect(getModuleEntitlement("crm", session).canUse).toBe(false);
   });
 
-  it("hides only billing from agency-managed store owners", () => {
-    const session = sessionForRole("owner", [], []);
+  it("keeps billing permission-driven for agency-managed store owners", () => {
+    const session = sessionForRole("owner", ["billing.manage"], []);
     session.defaultStore = {
       ...session.defaultStore!,
       billingManagedBy: "agency",
@@ -166,22 +184,23 @@ describe("module permissions", () => {
       .flatMap((group) => group.items)
       .map((item) => item.id);
 
-    expect(visibleIds).not.toContain("billing");
-    expect(visibleIds).toContain("fiscal");
-    expect(visibleIds).toContain("marketplaces");
+    expect(visibleIds).toContain("billing");
+    expect(visibleIds).not.toContain("fiscal");
+    expect(visibleIds).not.toContain("marketplaces");
   });
 
-  it("keeps entitlement filtering for operational roles", () => {
-    const withoutNfe = sessionForRole("manager", ["fiscal.manage"], []);
-    const withNfe = sessionForRole("manager", ["fiscal.manage"], ["nfe"]);
+  it("keeps entitled and locked modules visible for authorized operational roles", () => {
+    const withoutFiscal = sessionForRole("manager", ["fiscal.manage"], []);
+    const withFiscal = sessionForRole("manager", ["fiscal.manage"], ["fiscal"]);
 
     expect(
-      filterNavigationGroups(navigationGroups, withoutNfe)
+      filterNavigationGroups(navigationGroups, withoutFiscal)
         .flatMap((group) => group.items)
         .some((item) => item.id === "fiscal"),
-    ).toBe(false);
+    ).toBe(true);
+    expect(getModuleEntitlement("fiscal", withoutFiscal).canUse).toBe(false);
     expect(
-      filterNavigationGroups(navigationGroups, withNfe)
+      filterNavigationGroups(navigationGroups, withFiscal)
         .flatMap((group) => group.items)
         .some((item) => item.id === "fiscal"),
     ).toBe(true);
@@ -189,10 +208,9 @@ describe("module permissions", () => {
 
   it("maps commercial modules to their effective entitlement", () => {
     const locked = sessionForRole("owner", [], []);
-    const unlocked = sessionForRole("owner", [], ["custom_domain"]);
 
     expect(getModuleEntitlement("crm", locked).featureKey).toBe("crm");
-    expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("nfe");
+    expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("fiscal");
     expect(getModuleEntitlement("marketplaces", locked).featureKey).toBe(
       "marketplace",
     );
@@ -200,15 +218,38 @@ describe("module permissions", () => {
       "external_api",
     );
     expect(getModuleEntitlement("simulations", locked).featureKey).toBe(
-      "simulations",
+      "financing",
     );
-    expect(getModuleEntitlement("domain", locked)).toEqual({
-      canUse: false,
-      featureKey: "custom_domain",
-    });
-    expect(getModuleEntitlement("domain", unlocked).canUse).toBe(true);
-    expect(getModuleEntitlement("checklists", locked).canUse).toBe(true);
-    expect(getModuleEntitlement("expenses", locked).canUse).toBe(true);
+    expect(getModuleEntitlement("paid-traffic", locked).featureKey).toBe(
+      "analytics",
+    );
+    expect(getModuleEntitlement("checklists", locked).canUse).toBe(false);
+    expect(getModuleEntitlement("expenses", locked).canUse).toBe(false);
+  });
+
+  it("keeps financing simulation permission independent from sales", () => {
+    const seller = sessionForRole(
+      "salesman",
+      ["sale.read"],
+      ["financing", "sales"],
+    );
+    const financingReader = sessionForRole(
+      "salesman",
+      ["financing.simulation.read"],
+      ["financing"],
+    );
+
+    expect(getModulePermission("simulations", seller).canView).toBe(false);
+    expect(getModulePermission("simulations", financingReader).canView).toBe(
+      true,
+    );
+  });
+
+  it("fails closed while permission or entitlement state is unavailable", () => {
+    const session = sessionForRole("owner", ["crm.access"]);
+
+    expect(getModuleEntitlement("crm", session).canUse).toBe(false);
+    expect(filterNavigationGroups(navigationGroups, null)).toEqual([]);
   });
 });
 

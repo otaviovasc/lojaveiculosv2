@@ -1,15 +1,20 @@
-import { BarChart3, Inbox, RefreshCcw, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  BarChart3,
+  Download,
+  GitCompareArrows,
+  RefreshCcw,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FeatureDateField,
+  FeatureSearchField,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
 import {
   FeatureActionButton,
+  FeaturePageHeader,
   FeaturePageShell,
-  FeatureSection,
-  FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureKpiCard,
-  FeatureKpiStrip,
-} from "../../components/ui/FeatureKpis";
 import {
   FeatureAlert,
   FeatureEmptyState,
@@ -17,86 +22,261 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createReportsApi, type ReportsApi } from "./apiClient";
+import { CrmReport, InventoryReport } from "./CrmInventoryReports";
+import { DocumentsReport, MarketingReport } from "./DocumentsMarketingReports";
+import { FinanceReport } from "./FinanceReport";
+import { OwnerReport } from "./OwnerReports";
 import {
-  getReportDeltaLabel,
-  getReportFunnelLabel,
-  getReportKpiLabel,
-  getReportSourceLabel,
-} from "./reportsLabels";
+  formatPeriod,
+  isValidPeriod,
+  previousPeriod,
+  readReportsViewState,
+  resolvePeriod,
+  syncReportsViewState,
+  type PeriodPreset,
+  type ReportsViewState,
+} from "./reportPeriod";
+import { ReportsNavigation } from "./ReportsNavigation";
 import { createReportsApiOptions } from "./runtimeApi";
-import type { ReportsDashboard } from "./types";
+import type { ReportsDashboard, ReportsPeriod, ReportTab } from "./types";
 import "./reports.css";
+
+const periodOptions: readonly { label: string; value: PeriodPreset }[] = [
+  { label: "7 dias", value: "7d" },
+  { label: "30 dias", value: "30d" },
+  { label: "90 dias", value: "90d" },
+  { label: "Mês atual", value: "month" },
+  { label: "Período personalizado", value: "custom" },
+];
 
 export function ReportsModule({ api }: { api?: ReportsApi }) {
   const reportsApi = useMemo(() => api ?? createRuntimeReportsApi(), [api]);
+  const [view, setView] = useState<ReportsViewState>(readReportsViewState);
   const [dashboard, setDashboard] = useState<ReportsDashboard | null>(null);
+  const [comparison, setComparison] = useState<ReportsDashboard | null>(null);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
+  const requestVersion = useRef(0);
+  const period = useMemo(
+    () => resolvePeriod(view),
+    [view.customPeriod.from, view.customPeriod.to, view.preset],
+  );
 
-  const refresh = async () => {
-    setStatus({ kind: "loading" });
-    try {
-      setDashboard(await reportsApi.getDashboard());
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
+  const load = useCallback(async () => {
+    if (!isValidPeriod(period)) {
+      setStatus({
+        kind: "error",
+        message: "Informe uma data inicial menor ou igual à data final.",
+      });
+      return;
     }
-  };
+    const version = ++requestVersion.current;
+    setStatus({ kind: "loading" });
+    setComparisonError(null);
+    const results = await Promise.allSettled([
+      reportsApi.getDashboard(period),
+      ...(view.compare
+        ? [reportsApi.getDashboard(previousPeriod(period))]
+        : []),
+    ]);
+    if (version !== requestVersion.current) return;
+    const currentResult = results[0];
+    if (!currentResult || currentResult.status === "rejected") {
+      setStatus({
+        kind: "error",
+        message: errorMessage(currentResult?.reason),
+      });
+      return;
+    }
+    setDashboard(currentResult.value);
+    setStatus({ kind: "ready" });
+    const previousResult = results[1];
+    if (!previousResult) {
+      setComparison(null);
+      return;
+    }
+    if (previousResult.status === "fulfilled") {
+      setComparison(previousResult.value);
+    } else {
+      setComparison(null);
+      setComparisonError(
+        formatApiErrorDisplay(
+          previousResult.reason,
+          "O período anterior não pôde ser comparado.",
+        ),
+      );
+    }
+  }, [period, reportsApi, view.compare]);
 
   useEffect(() => {
-    void refresh();
+    syncReportsViewState(view);
+  }, [view]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    const restoreFromUrl = () => setView(readReportsViewState());
+    window.addEventListener("popstate", restoreFromUrl);
+    return () => window.removeEventListener("popstate", restoreFromUrl);
   }, []);
+
+  const updateView = (patch: Partial<ReportsViewState>) =>
+    setView((current) => ({ ...current, ...patch }));
+  const searchable = view.tab === "sold" || view.tab === "costs";
+  const downloadExecutiveReport = useCallback(async () => {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const report = await reportsApi.downloadExecutiveReport(period);
+      triggerBrowserDownload(report.blob, report.fileName);
+    } catch (error) {
+      setDownloadError(
+        formatApiErrorDisplay(error, "Não foi possível gerar o PDF executivo."),
+      );
+    } finally {
+      setDownloading(false);
+    }
+  }, [period, reportsApi]);
 
   return (
     <FeaturePageShell mainClassName="feature-shell">
-      <FeatureToolbar className="reports-command-bar">
-        <div className="reports-command-bar__identity">
-          <span className="reports-command-bar__mark">
-            <BarChart3 aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="reports-command-bar__meta">
-              <span>Desempenho</span>
-              {dashboard ? (
-                <span>
-                  Atualizado em {formatGeneratedAt(dashboard.generatedAt)}
-                </span>
-              ) : null}
-            </p>
-            <h1>Relatórios gerenciais</h1>
-            <p className="reports-command-bar__description">
-              Estoque, receita, margem e evolução das oportunidades comerciais.
-            </p>
+      <FeaturePageHeader
+        actions={
+          <div
+            aria-label="Ações dos relatórios"
+            className="reports-toolbar__actions"
+            role="toolbar"
+          >
+            <FeatureSelect
+              ariaLabel="Período dos relatórios"
+              className="reports-toolbar__period"
+              density="compact"
+              onChange={(preset) => updateView({ preset })}
+              options={periodOptions}
+              value={view.preset}
+            />
+            <button
+              aria-pressed={view.compare}
+              className="reports-compare"
+              onClick={() => updateView({ compare: !view.compare })}
+              type="button"
+            >
+              <GitCompareArrows aria-hidden="true" className="size-4" />
+              Comparar
+            </button>
+            <FeatureActionButton
+              icon={RefreshCcw}
+              isBusy={status.kind === "loading"}
+              label="Atualizar"
+              onClick={() => void load()}
+              title="Atualizar relatórios"
+            />
+            {view.tab === "summary" ? (
+              <FeatureActionButton
+                disabled={
+                  !dashboard ||
+                  dashboard.owner.availability.status !== "available"
+                }
+                icon={Download}
+                isBusy={downloading}
+                label="Baixar PDF executivo"
+                onClick={() => void downloadExecutiveReport()}
+                title="Baixar PDF executivo"
+                variant="primary"
+              />
+            ) : null}
           </div>
-        </div>
-        <div
-          aria-label="Ações dos relatórios"
-          className="reports-command-bar__actions"
-          role="toolbar"
-        >
-          <FeatureActionButton
-            icon={RefreshCcw}
-            label="Atualizar"
-            onClick={() => void refresh()}
-            title="Atualizar relatórios"
+        }
+        actionsLabel="Ações dos relatórios"
+        description="Margem por veículo, caixa, estoque, CRM e documentos."
+        eyebrow="Desempenho"
+        title="Relatórios"
+      />
+
+      {view.preset === "custom" ? (
+        <div className="reports-custom-period">
+          <FeatureDateField
+            label="Data inicial"
+            max={view.customPeriod.to}
+            onChange={(from) =>
+              updateView({
+                customPeriod: { ...view.customPeriod, from },
+              })
+            }
+            value={view.customPeriod.from}
+          />
+          <FeatureDateField
+            label="Data final"
+            min={view.customPeriod.from}
+            onChange={(to) =>
+              updateView({ customPeriod: { ...view.customPeriod, to } })
+            }
+            value={view.customPeriod.to}
           />
         </div>
-      </FeatureToolbar>
+      ) : null}
 
+      <div className="reports-toolbar__context">
+        <span>{formatPeriod(period)}</span>
+        {dashboard ? (
+          <span>Atualizado em {formatGeneratedAt(dashboard.generatedAt)}</span>
+        ) : null}
+      </div>
+
+      <ReportsNavigation
+        onChange={(tab) => updateView({ tab })}
+        value={view.tab}
+      />
+
+      {searchable ? (
+        <FeatureSearchField
+          className="reports-search"
+          label="Buscar veículo no relatório"
+          onChange={(event) =>
+            updateView({ search: event.currentTarget.value })
+          }
+          placeholder="Buscar por veículo, placa ou data"
+          value={view.search}
+        />
+      ) : null}
+
+      {view.compare && isValidPeriod(period) ? (
+        <div className="reports-comparison-note">
+          <GitCompareArrows aria-hidden="true" className="size-4" />
+          <span>
+            Comparando {formatPeriod(period)} com{" "}
+            {formatPeriod(previousPeriod(period))}
+          </span>
+        </div>
+      ) : null}
+      {comparisonError ? <FeatureAlert>{comparisonError}</FeatureAlert> : null}
+      {downloadError ? <FeatureAlert>{downloadError}</FeatureAlert> : null}
       {status.kind === "error" ? (
         <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
       {dashboard ? (
-        <Dashboard dashboard={dashboard} />
+        <div aria-busy={status.kind === "loading"}>
+          <ReportContent
+            comparison={comparison}
+            dashboard={dashboard}
+            search={view.search}
+            tab={view.tab}
+          />
+        </div>
       ) : status.kind === "error" ? (
         <FeatureEmptyState
           action={
             <FeatureActionButton
               icon={RefreshCcw}
               label="Tentar carregar novamente"
-              onClick={() => void refresh()}
+              onClick={() => void load()}
             />
           }
-          body="Os indicadores não puderam ser consultados agora. Nenhum valor estimado foi exibido."
+          body="A consulta falhou e nenhum valor estimado foi exibido. Tente novamente para buscar os dados oficiais."
           icon={BarChart3}
           title="Relatórios indisponíveis"
         />
@@ -107,106 +287,40 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
   );
 }
 
-function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
-  return (
-    <div className="reports-dashboard">
-      <FeatureKpiStrip ariaLabel="Indicadores dos relatórios">
-        {dashboard.kpis.map((kpi) => (
-          <FeatureKpiCard
-            icon={BarChart3}
-            key={kpi.label}
-            label={`${getReportKpiLabel(kpi.label)} · ${getReportDeltaLabel(kpi.deltaLabel)}`}
-            tone={reportKpiTone(kpi.label)}
-            value={kpi.value}
-          />
-        ))}
-      </FeatureKpiStrip>
-      <section className="feature-grid two">
-        <FeatureSection className="feature-panel" title="Funil comercial">
-          {dashboard.leadFunnel.length ? (
-            <div className="feature-bars">
-              {dashboard.leadFunnel.map((step) => (
-                <span key={step.key}>
-                  {getReportFunnelLabel(step.key)} <strong>{step.count}</strong>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <FeatureEmptyState
-              body="O funil ainda não possui oportunidades no período atual."
-              icon={Inbox}
-              title="Sem dados de funil"
-            />
-          )}
-        </FeatureSection>
-        <FeatureSection className="feature-panel" title="Origem dos leads">
-          {dashboard.leadSources.length ? (
-            <div className="feature-list compact">
-              {dashboard.leadSources.map((source) => (
-                <article key={source.key}>
-                  <strong>{getReportSourceLabel(source.key)}</strong>
-                  <span>{source.value}</span>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <FeatureEmptyState
-              body="As origens aparecerão quando os primeiros leads forem registrados."
-              icon={Inbox}
-              title="Sem origens registradas"
-            />
-          )}
-        </FeatureSection>
-      </section>
-      <FeatureSection className="feature-panel" title="Resumo financeiro">
-        <FeatureKpiStrip ariaLabel="Resumo financeiro">
-          <FeatureKpiCard
-            icon={TrendingUp}
-            label="Vendas fechadas"
-            tone="green"
-            value={money(dashboard.revenue.closedSalesCents)}
-          />
-          <FeatureKpiCard
-            icon={TrendingUp}
-            label="Margem bruta"
-            tone="blue"
-            value={money(dashboard.revenue.grossMarginCents)}
-          />
-          <FeatureKpiCard
-            icon={TrendingUp}
-            label="Recebíveis"
-            tone="violet"
-            value={money(dashboard.revenue.openReceivablesCents)}
-          />
-          <FeatureKpiCard
-            icon={TrendingUp}
-            label="Recebido"
-            tone="green"
-            value={money(dashboard.revenue.paidReceiptsCents)}
-          />
-        </FeatureKpiStrip>
-      </FeatureSection>
-      <FeatureSection
-        className="feature-panel"
-        description="Relação entre anúncios disponíveis e o estoque cadastrado."
-        icon={<TrendingUp aria-hidden="true" className="size-5" />}
-        title="Disponibilidade do estoque"
-      >
-        <p>
-          {dashboard.inventory.availableListings}/
-          {dashboard.inventory.totalListings} veículos disponíveis
-        </p>
-      </FeatureSection>
-    </div>
-  );
-}
-
-function reportKpiTone(label: string) {
-  const normalized = getReportKpiLabel(label).toLocaleLowerCase("pt-BR");
-  if (normalized.includes("vendas")) return "green" as const;
-  if (normalized.includes("receb")) return "violet" as const;
-  if (normalized.includes("lead")) return "blue" as const;
-  return "violet" as const;
+function ReportContent({
+  comparison,
+  dashboard,
+  search,
+  tab,
+}: {
+  comparison: ReportsDashboard | null;
+  dashboard: ReportsDashboard;
+  search: string;
+  tab: ReportTab;
+}) {
+  if (tab === "summary" || tab === "sold" || tab === "costs") {
+    return (
+      <OwnerReport
+        comparison={comparison}
+        dashboard={dashboard}
+        search={search}
+        tab={tab}
+      />
+    );
+  }
+  if (tab === "finance") {
+    return <FinanceReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "crm") {
+    return <CrmReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "inventory") {
+    return <InventoryReport comparison={comparison} dashboard={dashboard} />;
+  }
+  if (tab === "documents") {
+    return <DocumentsReport comparison={comparison} dashboard={dashboard} />;
+  }
+  return <MarketingReport dashboard={dashboard} />;
 }
 
 type LoadStatus =
@@ -214,16 +328,15 @@ type LoadStatus =
 
 function createRuntimeReportsApi(): ReportsApi {
   return {
-    getDashboard: async () =>
-      createReportsApi(await createReportsApiOptions()).getDashboard(),
+    downloadExecutiveReport: async (targetPeriod: ReportsPeriod) =>
+      createReportsApi(await createReportsApiOptions()).downloadExecutiveReport(
+        targetPeriod,
+      ),
+    getDashboard: async (targetPeriod: ReportsPeriod) =>
+      createReportsApi(await createReportsApiOptions()).getDashboard(
+        targetPeriod,
+      ),
   };
-}
-
-function money(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    style: "currency",
-  }).format(cents / 100);
 }
 
 function formatGeneratedAt(value: string) {
@@ -240,4 +353,15 @@ function errorMessage(error: unknown) {
     error,
     "Não foi possível carregar os relatórios.",
   );
+}
+
+function triggerBrowserDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.download = fileName;
+  anchor.href = url;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

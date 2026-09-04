@@ -201,7 +201,7 @@ async function installLocationRoute(
       address: "Av. Paulista, 1000",
       latitude: -23.56168,
       longitude: -46.65598,
-      name: "Loja",
+      name: "Horizonte Seminovos Campinas",
     });
     await route.fulfill({
       body: JSON.stringify({

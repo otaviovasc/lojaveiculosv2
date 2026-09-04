@@ -144,11 +144,17 @@ Before adding or moving a module:
 - `pnpm run validate:release`: release gate. It runs the push gate and then enforces V8
   coverage thresholds for every runtime workspace and emits both deployable
   production bundles. Keep deployment smoke checks separate.
+- Successful validation steps are cached for six hours against the exact Git
+  index/worktree snapshot, runtime, and validation scope. Commit, push, and
+  release gates reuse only identical successful steps; changed files or a
+  different merged staging tree invalidate the cache automatically. Set
+  `VALIDATION_CACHE=off` to force every step, or change
+  `VALIDATION_CACHE_BUST` to invalidate operator-local cached results.
 - `pnpm run test:quality-tools`: regression suite for the AST/static guard
   implementations themselves. It runs in commit and push validation.
-- `pnpm run check:format`: runs a repository-wide, non-mutating Prettier check
-  so generated and AI-authored changes cannot bypass formatting through an
-  unstaged file or a skipped editor integration.
+- `pnpm run check:format`: runs a non-mutating Prettier check over the branch
+  diff plus staged, unstaged, and untracked files. Unchanged repository files
+  are not reformatted or rechecked.
 - `pnpm run check:test-contracts`: blocks focused or unconditionally disabled
   tests, rejects literal tautologies, requires an assertion in every test, and
   prevents runtime workspaces from being silently omitted from tests.

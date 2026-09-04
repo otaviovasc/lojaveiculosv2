@@ -65,13 +65,21 @@ export function toBrandOption(
 
 export function toYearOption(input: FipeOption): VehicleCatalogYearOption {
   const code = String(input.code);
-  const modelYear = Number.parseInt(code.slice(0, 4), 10);
   const fuelCode = code.includes("-") ? (code.split("-")[1] ?? null) : null;
   return {
     ...toOption(input),
     fuelCode,
-    modelYear: Number.isFinite(modelYear) ? modelYear : null,
+    modelYear: parseFipeModelYear(code),
   };
+}
+
+export function parseFipeModelYear(code: string): number | null {
+  const yearSegment = code.split("-")[0];
+  if (yearSegment === "32000") return null;
+  const modelYear = Number.parseInt(yearSegment ?? "", 10);
+  return Number.isInteger(modelYear) && modelYear >= 1900 && modelYear <= 2200
+    ? modelYear
+    : null;
 }
 
 export function toCatalogSnapshot(input: {

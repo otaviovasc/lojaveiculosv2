@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { FeaturePageShell } from "../../../components/ui/FeatureLayout";
+import "../../../styles/vehicleDetail.css";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
@@ -12,12 +13,14 @@ import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
 import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
 import { InventoryDetailVitrineTab } from "./InventoryDetailVitrineTab";
-import { buildSalesRouteFromInventoryDetail } from "./InventoryDetailSalesRoute";
 import {
-  initialOpcionais,
-  initialObservacoes,
-  formatPrice,
-} from "./InventoryDetailWorkspaceMocks";
+  buildSaleContextFromInventoryDetail,
+  buildSalesRouteFromInventoryDetail,
+} from "./InventoryDetailSalesRoute";
+import { formatPrice } from "./InventoryDetailWorkspaceMocks";
+import { LeadFinancingSimulationModal } from "../../crm/LeadFinancingSimulationModal";
+import { LeadSaleModal } from "../../crm/LeadSaleModal";
+import type { SimulationPrefill } from "../../simulations/SimulationForm";
 import {
   InventoryDetailEmptyTab,
   InventoryDetailWorkspaceTabs,
@@ -36,6 +39,8 @@ import {
 } from "./InventoryDetailPublicRoute";
 import { InventoryDetailDeleteDialog } from "./InventoryDetailDeleteDialog";
 import { InventoryVehiclePrintSheet } from "./InventoryVehiclePrintSheet";
+import { useOptionalAccountSession } from "../../account/accountSession";
+import { readSessionEffectivePermissions } from "../../account/sessionPermissions";
 
 export function InventoryDetailWorkspace({
   api,
@@ -52,14 +57,23 @@ export function InventoryDetailWorkspace({
   selectedUnitId?: string | null;
   stores?: readonly InventoryDetailStoreLink[];
 }) {
+  const accountSession = useOptionalAccountSession();
+  const canManagePublicSite = accountSession
+    ? readSessionEffectivePermissions(accountSession).includes(
+        "store_public_site.manage",
+      )
+    : true;
   const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
+  const [isEditRequested, setIsEditRequested] = useState(false);
 
   const [notification, setNotification] = useState<string | null>(null);
   const [isPrintSheetOpen, setIsPrintSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
 
   const primaryUnit =
     detail.units.find((unit) => unit.id === selectedUnitId) ??
@@ -72,10 +86,6 @@ export function InventoryDetailWorkspace({
     [listing, primaryUnit],
   );
 
-  const [opcionais, setOpcionais] = useState(initialOpcionais);
-
-  const [observacoes, setObservacoes] = useState(initialObservacoes);
-
   const [notasInternas, setNotasInternas] = useState(
     listing.internalNotes ?? "",
   );
@@ -86,14 +96,33 @@ export function InventoryDetailWorkspace({
     [detail, stores],
   );
 
+  const simulationPrefill: SimulationPrefill = useMemo(
+    () => ({
+      listingId: listing.id,
+      vehiclePlate: specs.plate !== "-" ? specs.plate : undefined,
+      vehiclePriceCents: listing.priceCents ?? undefined,
+      vehicleTitle: listing.title,
+    }),
+    [listing.id, listing.priceCents, listing.title, specs.plate],
+  );
+
+  const saleContext = useMemo(
+    () => buildSaleContextFromInventoryDetail(detail, primaryUnitId),
+    [detail, primaryUnitId],
+  );
+
   const showNotification = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
   };
 
   const handleAction = (action: WorkspaceTopBarAction) => {
+    if (action === "simulate") {
+      setIsSimulationModalOpen(true);
+      return;
+    }
     if (action === "sell") {
-      openSaleWorkspace();
+      setIsSaleModalOpen(true);
       return;
     }
     if (action === "view-public-listing") {
@@ -119,35 +148,13 @@ export function InventoryDetailWorkspace({
     }
   };
 
-  const openSaleWorkspace = () => {
-    window.location.hash = buildSalesRouteFromInventoryDetail(
-      detail,
-      primaryUnitId,
-    );
-  };
-
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
   };
 
-  const handleToggleOpcional = (id: string) => {
-    setOpcionais((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
-    );
-    showNotification("Opcional atualizado!");
-  };
-  const handleToggleObservacao = (id: string) => {
-    setObservacoes((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
-    );
-    showNotification("Observação especial atualizada!");
-  };
   const handleUpdatedDetail = (updated: InventoryListingDetail) => {
     setDetail(updated);
+    setNotasInternas(updated.listing.internalNotes ?? "");
     onUpdated(updated);
   };
 
@@ -161,7 +168,10 @@ export function InventoryDetailWorkspace({
   const margin = calculateMargin(listing.priceCents, acquisitionCost);
 
   return (
-    <FeaturePageShell mainClassName="text-app-text">
+    <FeaturePageShell
+      className="vehicle-detail-shell"
+      mainClassName="text-app-text"
+    >
       {/* Toast Notification */}
       <AnimatePresence>
         {notification && (
@@ -200,12 +210,19 @@ export function InventoryDetailWorkspace({
 
       <InventoryDetailOverview
         detail={detail}
+        onEditVehicle={() => {
+          setActiveTab("geral");
+          setIsEditRequested(true);
+        }}
+        onSell={() => setIsSaleModalOpen(true)}
+        onSimulate={() => setIsSimulationModalOpen(true)}
         primaryUnit={primaryUnit}
         specs={specs}
       />
 
       <InventoryDetailWorkspaceTabs
         activeTab={activeTab}
+        showVitrine={canManagePublicSite}
         onTabChange={handleTabChange}
       />
 
@@ -215,9 +232,9 @@ export function InventoryDetailWorkspace({
           <InventoryDetailGeneralTab
             api={api}
             detail={detail}
+            isEditRequested={isEditRequested}
             initialUnitId={primaryUnitId}
             notasInternas={notasInternas}
-            observacoes={observacoes}
             onUpdated={handleUpdatedDetail}
             onSaveNotasInternas={(notes) => {
               void handleSaveInternalNotes(notes);
@@ -225,9 +242,7 @@ export function InventoryDetailWorkspace({
             onEditSaved={() =>
               showNotification("Veículo atualizado com sucesso!")
             }
-            onToggleObservacao={handleToggleObservacao}
-            onToggleOpcional={handleToggleOpcional}
-            opcionais={opcionais}
+            onEditRequestHandled={() => setIsEditRequested(false)}
             specs={specs}
           />
         )}
@@ -236,6 +251,8 @@ export function InventoryDetailWorkspace({
           <InventoryDetailFinanceiroTab
             api={api}
             detail={detail}
+            onSell={() => setIsSaleModalOpen(true)}
+            onSimulate={() => setIsSimulationModalOpen(true)}
             onUpdated={handleUpdatedDetail}
             unit={primaryUnit}
           />
@@ -267,7 +284,7 @@ export function InventoryDetailWorkspace({
           />
         )}
 
-        {activeTab === "vitrine" && (
+        {activeTab === "vitrine" && canManagePublicSite && (
           <InventoryDetailVitrineTab
             detail={detail}
             primaryUnit={primaryUnit}
@@ -296,6 +313,22 @@ export function InventoryDetailWorkspace({
         }}
         onConfirm={() => void handleDeleteListing()}
       />
+
+      {isSimulationModalOpen && (
+        <LeadFinancingSimulationModal
+          onClose={() => setIsSimulationModalOpen(false)}
+          prefill={simulationPrefill}
+          title={`Simulação de Financiamento · ${listing.title}`}
+        />
+      )}
+
+      {isSaleModalOpen && (
+        <LeadSaleModal
+          context={saleContext}
+          onClose={() => setIsSaleModalOpen(false)}
+          title={`Nova Venda · ${listing.title}`}
+        />
+      )}
     </FeaturePageShell>
   );
 

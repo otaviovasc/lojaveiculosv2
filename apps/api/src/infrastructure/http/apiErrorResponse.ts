@@ -1,6 +1,14 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import { crmHttpErrorEnvelopeSchema } from "@lojaveiculosv2/shared";
+import {
+  sanitizeDiagnosticString,
+  toSafeErrorMetadata,
+} from "../../shared/errors/errorDescriptor.js";
+import { observabilitySchemas } from "../../shared/observabilityOntology.js";
 import { readHttpRequestId } from "./requestMetadata.js";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export const httpErrorMetadataContextKey = "httpErrorMetadata";
 
@@ -11,11 +19,14 @@ export type ApiErrorResponseInput = {
   details?: ApiErrorDetails;
   error?: unknown;
   message: string;
+  providerOperationId?: string | null;
+  retryable?: boolean;
   status: ContentfulStatusCode;
 };
 
 export type HttpErrorMetadata = {
   code: string;
+  diagnostics?: SafeAuditMetadata;
   errorName?: string;
   message: string;
   status: number;
@@ -24,9 +35,18 @@ export type HttpErrorMetadata = {
 export function jsonApiError(context: Context, input: ApiErrorResponseInput) {
   const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
   const errorName = readErrorName(input.error);
+  const diagnostics =
+    input.error === undefined
+      ? undefined
+      : toSafeErrorMetadata(input.error, {
+          boundary: "http",
+          code: input.code,
+          httpStatus: input.status,
+        });
 
   context.set(httpErrorMetadataContextKey, {
     code: input.code,
+    ...(diagnostics ? { diagnostics } : {}),
     ...(errorName ? { errorName } : {}),
     message: input.message,
     status: input.status,
@@ -38,15 +58,28 @@ export function jsonApiError(context: Context, input: ApiErrorResponseInput) {
     logInternalApiError(context, input, requestId, normalizedError);
   }
 
+  const body = {
+    message: input.message,
+    code: input.code,
+    requestId,
+    ...(input.details ? { details: input.details } : {}),
+    ...(input.providerOperationId !== undefined
+      ? { providerOperationId: input.providerOperationId }
+      : {}),
+    ...(isCrmRequest(context)
+      ? { retryable: input.retryable ?? false }
+      : input.retryable !== undefined
+        ? { retryable: input.retryable }
+        : {}),
+  };
   return context.json(
-    {
-      message: input.message,
-      code: input.code,
-      requestId,
-      ...(input.details ? { details: input.details } : {}),
-    },
+    isCrmRequest(context) ? crmHttpErrorEnvelopeSchema.parse(body) : body,
     input.status,
   );
+}
+
+function isCrmRequest(context: Context): boolean {
+  return /^\/api\/v1\/crm(?:\/|$)/u.test(context.req.path);
 }
 
 export function readHttpErrorMetadata(
@@ -68,11 +101,10 @@ function normalizeError(error: unknown) {
   return new Error(error === undefined ? "Unknown error" : String(error));
 }
 
-// Internal (5xx) errors are otherwise invisible in staging/production: the
-// per-request HTTP logger only runs when APP_ENV === "local", so a 500 leaves no
-// server-side trace to pair with the requestId returned to the client. Log the
-// stack here (the single choke point for every formatted API error) so failures
-// are diagnosable from Railway logs. The client response is unchanged.
+// Internal (5xx) errors need a dedicated line because the request-completion
+// middleware can be disabled for noise control. Log the stack here (the single
+// choke point for every formatted API error) so failures remain diagnosable from
+// Railway logs. The client response is unchanged.
 function logInternalApiError(
   context: Context,
   input: ApiErrorResponseInput,
@@ -82,15 +114,33 @@ function logInternalApiError(
   console.error(
     JSON.stringify({
       component: "http",
+      correlationId: context.req.header("x-correlation-id") ?? requestId,
+      ...(context.req.header("x-causation-id")
+        ? { causationId: context.req.header("x-causation-id") }
+        : {}),
       event: "request.internal_error",
       code: input.code,
+      ...(input.error === undefined
+        ? {}
+        : toSafeErrorMetadata(input.error, {
+            boundary: "http",
+            code: input.code,
+            httpStatus: input.status,
+          })),
+      level: "error",
       method: context.req.method,
-      path: context.req.path,
+      path: sanitizeHttpPath(context.req.path),
       requestId,
+      ...(context.req.header("idempotency-key")
+        ? { idempotencyKey: context.req.header("idempotency-key") }
+        : {}),
+      schema: observabilitySchemas.httpLog,
+      service: "api",
       status: input.status,
+      timestamp: new Date().toISOString(),
       errorName: error.name,
-      errorMessage: error.message,
-      stack: error.stack ?? null,
+      errorMessage: sanitizeDiagnosticString(error.message),
+      stack: error.stack ? sanitizeDiagnosticString(error.stack, 8_000) : null,
     }),
   );
 }

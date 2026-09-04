@@ -17,13 +17,13 @@ import {
 describe("cancelFiscalDocument", () => {
   it.each([
     ["cancelled", "cancelled", "succeeded"],
-    ["queued", "queued", "succeeded"],
-    ["authorized", "authorized", "succeeded"],
+    ["queued", "queued", "failed"],
+    ["authorized", "authorized", "failed"],
     ["failed", "failed", "failed"],
     ["error", "error", "failed"],
     ["rejected", "rejected", "failed"],
-    ["issued", "issued", "succeeded"],
-    ["processing", "processing", "succeeded"],
+    ["issued", "issued", "failed"],
+    ["processing", "processing", "failed"],
   ] as const)(
     "maps provider status %s to %s with %s audit outcome",
     async (providerStatus, expectedStatus, outcome) => {
@@ -41,6 +41,7 @@ describe("cancelFiscalDocument", () => {
         tenantId: "tenant_1",
       });
       expect(harness.cancelDocument).toHaveBeenCalledWith({
+        documentKind: "nfe",
         providerDocumentId: "persisted_provider_document",
         reason: "Customer requested cancellation",
         storeId: "store_1",
@@ -111,7 +112,7 @@ describe("cancelFiscalDocument", () => {
     expect(harness.findDocumentById).not.toHaveBeenCalled();
   });
 
-  it("requires the nfe entitlement before repository access", async () => {
+  it("requires the fiscal entitlement before repository access", async () => {
     const harness = createHarness();
 
     await expect(
@@ -120,7 +121,7 @@ describe("cancelFiscalDocument", () => {
         { documentId: "document_1", reason: "Customer requested cancellation" },
         harness.ports,
       ),
-    ).rejects.toThrow("Missing entitlement: nfe");
+    ).rejects.toThrow("Missing entitlement: fiscal");
 
     expect(harness.findDocumentById).not.toHaveBeenCalled();
   });
@@ -173,7 +174,7 @@ function createContext(
       storeId: overrides.storeId === undefined ? "store_1" : overrides.storeId,
       tenantId: "tenant_1",
     }),
-    { entitlements: overrides.entitlements ?? ["nfe"] },
+    { entitlements: overrides.entitlements ?? ["fiscal"] },
   );
 }
 

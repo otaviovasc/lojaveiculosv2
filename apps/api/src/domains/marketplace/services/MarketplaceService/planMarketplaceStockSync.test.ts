@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type {
-  MarketplaceCatalogMapping,
-  MarketplaceListingProjection,
-  MarketplaceProviderListing,
-} from "../../ports/marketplaceRepository.js";
 import {
   listListingBlockers,
   planMarketplaceStockItem,
+  summarizeMarketplaceStockPlan,
 } from "./planMarketplaceStockSync.js";
+import {
+  providerListing,
+  readyListing,
+  resolvedMapping,
+} from "../../testSupportMarketplaceStockPlan.js";
 
 describe("planMarketplaceStockItem", () => {
   it("plans publish for a ready public listing without provider state", () => {
@@ -58,6 +59,66 @@ describe("planMarketplaceStockItem", () => {
 
     expect(item.decision).toBe("no_op");
     expect(item.jobType).toBeNull();
+  });
+
+  it("accounts for every local stock listing exactly once", () => {
+    const current = planMarketplaceStockItem({
+      catalogMapping: resolvedMapping(),
+      listing: readyListing(),
+      provider: "olx",
+      providerListing: null,
+    });
+    const historical = Array.from({ length: 4 }, (_, index) =>
+      planMarketplaceStockItem({
+        catalogMapping: null,
+        listing: readyListing({
+          listingId: `historical_${index}`,
+          status: "draft",
+        }),
+        provider: "olx",
+        providerListing: null,
+      }),
+    );
+    const linkedRemoval = planMarketplaceStockItem({
+      catalogMapping: null,
+      listing: readyListing({
+        isVisibleOnPublicSite: false,
+        listingId: "linked_removal",
+      }),
+      provider: "olx",
+      providerListing: { ...providerListing(), listingId: "linked_removal" },
+    });
+
+    expect(
+      summarizeMarketplaceStockPlan([current, ...historical, linkedRemoval]),
+    ).toMatchObject({
+      accounting: {
+        excluded: 5,
+        found: 6,
+        needsCorrection: 0,
+        processing: 0,
+        ready: 1,
+      },
+      noOp: 4,
+      pending: 0,
+      publish: 1,
+      total: 6,
+      unpublish: 1,
+    });
+    const plan = summarizeMarketplaceStockPlan([
+      current,
+      ...historical,
+      linkedRemoval,
+    ]);
+    expect(
+      plan.accounting.ready +
+        plan.accounting.needsCorrection +
+        plan.accounting.excluded +
+        plan.accounting.processing,
+    ).toBe(plan.accounting.found);
+    expect(new Set(plan.items.map((item) => item.listing.listingId)).size).toBe(
+      plan.items.length,
+    );
   });
 
   it("blocks public listings that are missing required sync fields", () => {
@@ -149,76 +210,3 @@ describe("planMarketplaceStockItem", () => {
     ).not.toContain("MARKETPLACE_LISTING_LICENSE_PLATE_MISSING");
   });
 });
-
-function readyListing(
-  overrides: Partial<MarketplaceListingProjection> = {},
-): MarketplaceListingProjection {
-  return {
-    catalog: {
-      brandCode: "21",
-      brandName: "BMW",
-      fipeCode: "001267-0",
-      fuel: "Gasolina",
-      modelCode: "4828",
-      modelName: "M3 Competition M",
-      modelYear: 2024,
-      referenceMonth: "julho de 2026",
-      source: "fipe",
-      vehicleType: "cars",
-      yearCode: "2024-1",
-      yearName: "2024 Gasolina",
-    },
-    condition: "used",
-    contactPhone: "5511999999999",
-    description: "BMW M3 Competition M.",
-    doors: 4,
-    fuelType: "gasoline",
-    isVisibleOnPublicSite: true,
-    licensePlate: "ABC1D23",
-    listingId: "listing_1",
-    locationZipCode: "01310-100",
-    mediaUrls: ["https://cdn.local/m3-front.jpg"],
-    mileageKm: 12000,
-    modelYear: 2024,
-    priceCents: 75990000,
-    publicSlug: "bmw-m3-competition-m-2024",
-    selectedMedia: [
-      { altText: "BMW M3 dianteira", url: "https://cdn.local/m3-front.jpg" },
-    ],
-    selectedUnitId: "unit_1",
-    status: "published",
-    stockLabel: "M3-001",
-    title: "BMW M3 Competition M 2024",
-    trimName: "Competition M",
-    vehicleType: "cars",
-    ...overrides,
-  };
-}
-
-function providerListing(): MarketplaceProviderListing {
-  return {
-    accountId: "account_1",
-    externalId: "external_1",
-    listingId: "listing_1",
-    metadata: {},
-    storeId: "store_1" as never,
-    tenantId: "tenant_1" as never,
-  };
-}
-
-function resolvedMapping(): MarketplaceCatalogMapping {
-  return {
-    fipeBrandCode: "21",
-    fipeCode: "001267-0",
-    fipeModelCode: "4828",
-    fipeYearCode: "2024-1",
-    provider: "mercado_livre",
-    providerBrandCode: "BMW",
-    providerModelCode: "M3",
-    providerTrimCode: "COMPETITION_M",
-    providerYearCode: "2024",
-    status: "resolved",
-    unresolvedReason: null,
-    vehicleType: "cars",
-  };
-}

@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { animate } from "animejs";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export type FeatureStatusTone =
@@ -18,14 +19,14 @@ export function FeatureEmptyState({
   className?: string;
   density?: "compact" | "default";
   icon: FeatureIcon;
-  title: ReactNode;
+  title?: ReactNode;
   tone?: "accent" | "blue" | "green" | "neutral" | "warning";
 }) {
   return (
     <div
       className={cx(
-        "feature-empty-state glass-panel-branded flex flex-col items-center justify-center p-12 text-center",
-        density === "compact" && "!p-6",
+        "feature-empty-state glass-panel-branded flex w-full h-full min-h-[200px] flex-1 flex-col items-center justify-center p-8 text-center",
+        density === "compact" && "!p-5 min-h-[140px]",
         className,
       )}
     >
@@ -36,13 +37,17 @@ export function FeatureEmptyState({
           tone !== "accent" && `feature-empty-state__chip--${tone}`,
         )}
       >
-        <IconComponent aria-hidden="true" className="size-7" />
+        <IconComponent aria-hidden="true" className="size-6" />
       </span>
-      <h3 className="feature-empty-state__title mt-5">{title}</h3>
-      <div className="mt-2 flex w-full justify-center">
+      {title ? (
+        <h3 className="feature-empty-state__title mt-4">{title}</h3>
+      ) : null}
+      <div
+        className={cx(title ? "mt-2" : "mt-3", "flex w-full justify-center")}
+      >
         <p className="w-full max-w-md text-sm font-medium text-muted">{body}</p>
       </div>
-      {action ? <div className="mt-6">{action}</div> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
@@ -87,9 +92,16 @@ export function FeatureAlert({
   );
 }
 
+/**
+ * Branded loading surface. The default density renders the premium panel
+ * (watermark, progress-ring chip, indeterminate track) used by the module
+ * Suspense fallback; a caller-provided `className` or `density="compact"`
+ * keeps the small inline variant for nested panels. Entry motion is a short
+ * Anime.js fade/slide, skipped under reduced motion.
+ */
 export function FeatureLoadingState({
   children,
-  className = "feature-empty",
+  className,
   density = "default",
   icon: IconComponent,
   title,
@@ -100,20 +112,88 @@ export function FeatureLoadingState({
   icon?: FeatureIcon;
   title?: ReactNode;
 }) {
+  const rootRef = useFeatureLoadingMotion<HTMLElement>();
+  const inline = density === "compact" || className !== undefined;
+
+  if (inline) {
+    return (
+      <section
+        aria-busy="true"
+        aria-live="polite"
+        className={cx(
+          "feature-loading-inline",
+          density === "compact" && "p-6",
+          className ?? "feature-empty",
+        )}
+        ref={rootRef}
+        role="status"
+      >
+        {IconComponent ? (
+          <IconComponent aria-hidden="true" className="size-5 animate-spin" />
+        ) : (
+          <span aria-hidden="true" className="feature-loading-inline__ring" />
+        )}
+        {title ? <strong>{title}</strong> : null}
+        {children}
+      </section>
+    );
+  }
+
   return (
     <section
       aria-busy="true"
       aria-live="polite"
-      className={cx(density === "compact" && "p-6", className)}
+      className="feature-loading-state glass-panel-branded"
+      ref={rootRef}
       role="status"
     >
-      {IconComponent ? (
-        <IconComponent aria-hidden="true" className="size-5" />
+      <span aria-hidden="true" className="feature-empty-state__watermark" />
+      <span className="feature-loading-state__chip" data-loading-motion>
+        {IconComponent ? (
+          <IconComponent aria-hidden="true" className="size-7" />
+        ) : (
+          <span aria-hidden="true" className="feature-loading-state__ring" />
+        )}
+      </span>
+      {title ? (
+        <strong className="feature-loading-state__title" data-loading-motion>
+          {title}
+        </strong>
       ) : null}
-      {title ? <strong>{title}</strong> : null}
-      {children}
+      {children ? (
+        <div className="feature-loading-state__body" data-loading-motion>
+          {children}
+        </div>
+      ) : null}
+      <span
+        aria-hidden="true"
+        className="feature-loading-state__track"
+        data-loading-motion
+      />
     </section>
   );
+}
+
+function useFeatureLoadingMotion<T extends HTMLElement>() {
+  const rootRef = useRef<T>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const animation = animate(root, {
+      duration: 240,
+      ease: "out(4)",
+      opacity: { from: 0 },
+      y: { from: 8 },
+    });
+    return () => {
+      animation.revert();
+    };
+  }, []);
+
+  return rootRef;
 }
 
 export function FeatureStatusBadge({
@@ -158,7 +238,7 @@ function statusToneClass(tone: FeatureStatusTone) {
     return "border border-danger/30 bg-danger/10 text-danger";
   }
   if (tone === "blue") {
-    return "border border-blue-start/30 bg-blue-soft text-blue-start";
+    return "border border-blue-start/30 bg-blue-soft text-info-soft-foreground";
   }
   return "bg-panel text-muted border border-line";
 }

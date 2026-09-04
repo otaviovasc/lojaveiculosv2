@@ -1,21 +1,24 @@
-import {
-  assertEntitlement,
-  assertPermission,
-} from "../../../shared/authorization.js";
+import { assertPermission } from "../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
-  type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
-import { createApiBrasilVehiclePlateProvider } from "../../../infrastructure/vehicleEnrichment/apiBrasilVehiclePlateProvider.js";
-import { createOpenAiVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openAiVehicleAnalysisProvider.js";
 import type { VehiclePlateLookupRepository } from "../../../domains/vehicle/ports/vehicleEnrichmentRepository.js";
+import type { VehicleCatalogRepository } from "../../../domains/vehicle/ports/vehicleCatalogRepository.js";
 import type { BillingQuotaGuard } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisRequest,
   InventoryResaleAnalysisResponse,
 } from "./inventoryEnrichmentTypes.js";
+import {
+  createDefaultInventoryAnalysisProvider,
+  createDefaultInventoryPlateProvider,
+} from "./inventoryEnrichmentProviders.js";
+import {
+  lookupPlateWithCache,
+  type VehiclePlateProvider,
+} from "./inventoryPlateLookup.js";
 
 const permission = "inventory.read";
 const defaultPlateLookupCacheTtlMs = 30 * 24 * 60 * 60 * 1000;
@@ -37,20 +40,18 @@ export type VehicleAnalysisProvider = {
   ) => Promise<InventoryResaleAnalysisResponse>;
 };
 
-export type VehiclePlateProvider = {
-  lookupPlate: (input: {
-    plate: string;
-  }) => Promise<InventoryPlateLookupResponse>;
-};
+export type { VehiclePlateProvider } from "./inventoryPlateLookup.js";
 
 export function createInventoryEnrichmentServices({
   analysisProvider,
+  catalogRepository,
   plateLookupCacheTtlMs = defaultPlateLookupCacheTtlMs,
   plateLookupRepository,
   plateProvider,
   quotaGuard,
 }: {
   analysisProvider?: VehicleAnalysisProvider;
+  catalogRepository?: VehicleCatalogRepository;
   plateLookupCacheTtlMs?: number;
   plateLookupRepository?: VehiclePlateLookupRepository;
   plateProvider?: VehiclePlateProvider;
@@ -58,10 +59,10 @@ export function createInventoryEnrichmentServices({
 } = {}): InventoryEnrichmentServices {
   const getAnalysisProvider = analysisProvider
     ? () => analysisProvider
-    : lazy(createDefaultAnalysisProvider);
+    : lazy(createDefaultInventoryAnalysisProvider);
   const getPlateProvider = plateProvider
     ? () => plateProvider
-    : lazy(createDefaultPlateProvider);
+    : lazy(createDefaultInventoryPlateProvider);
 
   return {
     analyzeResale: (context, input) =>
@@ -76,6 +77,7 @@ export function createInventoryEnrichmentServices({
         "inventory.enrichment.plate_lookup",
         () =>
           lookupPlateWithCache({
+            catalogRepository,
             context,
             plate: input.plate,
             plateLookupCacheTtlMs,
@@ -135,85 +137,6 @@ async function withInventoryEnrichmentAudit<T>(
     });
     throw error;
   }
-}
-
-function normalizePlate(plate: string) {
-  return plate.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-}
-
-async function lookupPlateWithCache({
-  context,
-  plate,
-  plateLookupCacheTtlMs,
-  plateLookupRepository,
-  plateProvider,
-  quotaGuard,
-}: {
-  context: ServiceContext;
-  plate: string;
-  plateLookupCacheTtlMs: number;
-  plateLookupRepository?: VehiclePlateLookupRepository | undefined;
-  plateProvider: VehiclePlateProvider;
-  quotaGuard?: BillingQuotaGuard | undefined;
-}) {
-  const normalizedPlate = normalizePlate(plate);
-  if (plateLookupRepository && context.storeId && context.tenantId) {
-    const minFetchedAt = new Date(Date.now() - plateLookupCacheTtlMs);
-    const cached = await plateLookupRepository.findLatest({
-      minFetchedAt,
-      plate: normalizedPlate,
-      provider: "apibrasil",
-      storeId: context.storeId,
-      tenantId: context.tenantId,
-    });
-    if (cached) return cached.response;
-  }
-
-  if (!context.storeId || !context.tenantId) {
-    throw new Error("Plate lookup requires resolved store billing scope.");
-  }
-  assertEntitlement(context as StoreScopedServiceContext, "plate_lookup");
-  await quotaGuard?.assertAvailable({
-    quotaKey: "plate_lookup",
-    storeId: context.storeId,
-    tenantId: context.tenantId,
-  });
-
-  const result = await plateProvider.lookupPlate({ plate: normalizedPlate });
-  if (plateLookupRepository && context.storeId && context.tenantId) {
-    await plateLookupRepository.upsert({
-      fetchedAt: new Date(),
-      plate: normalizePlate(result.plate || normalizedPlate),
-      provider: "apibrasil",
-      response: result,
-      storeId: context.storeId,
-      tenantId: context.tenantId,
-    });
-  }
-  return result;
-}
-
-function createDefaultAnalysisProvider(): VehicleAnalysisProvider {
-  return createOpenAiVehicleAnalysisProvider({
-    apiKey: process.env.API_OPENAI_KEY,
-    model:
-      process.env.API_OPENAI_INVENTORY_RESALE_MODEL ??
-      process.env.API_OPENAI_DEFAULT_MODEL ??
-      process.env.API_OPENAI_MODEL ??
-      "gpt-5.4-mini",
-  });
-}
-
-function createDefaultPlateProvider(): VehiclePlateProvider {
-  return createApiBrasilVehiclePlateProvider({
-    ...(process.env.API_PLACA_BASE_URL
-      ? { baseUrl: process.env.API_PLACA_BASE_URL }
-      : {}),
-    ...(process.env.API_PLACA_DADOS_PATH
-      ? { dadosPath: process.env.API_PLACA_DADOS_PATH }
-      : {}),
-    token: process.env.API_PLACA_KEY,
-  });
 }
 
 function lazy<T>(create: () => T): () => T {

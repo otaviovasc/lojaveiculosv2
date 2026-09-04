@@ -1,16 +1,16 @@
 import {
-  CrmWhatsappGatewayError,
+  CrmMessagingGatewayError,
   type CrmWhatsappDeleteMessageInput,
   type CrmWhatsappDeleteMessageResult,
-  type CrmWhatsappMessageActionResult,
+  type CrmMessageActionResult,
   type CrmWhatsappRemoveReactionInput,
   type CrmWhatsappSendReactionInput,
-} from "../../domains/crm/ports/crmWhatsappGateway.js";
+} from "../../domains/crm/ports/crmMessagingGateway.js";
 import {
   buildInstanceUrl,
+  fetchZapi,
   parseJson,
-  readProviderMessageId,
-  summarize,
+  requireProviderMessageId,
   type ZapiCredentials,
 } from "./zapiCrmWhatsappGatewaySupport.js";
 
@@ -24,7 +24,9 @@ export async function deleteZapiMessage(
     owner: String(input.owner),
     phone: input.phone,
   });
-  const response = await fetchImpl(
+  const response = await fetchZapi(
+    credentials,
+    fetchImpl,
     `${buildInstanceUrl(credentials)}/messages?${params.toString()}`,
     {
       headers: {
@@ -36,18 +38,19 @@ export async function deleteZapiMessage(
   );
   const text = await response.text();
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
-      `ZAPI delete message failed with HTTP ${response.status}: ${summarize(text)}`,
+    throw new CrmMessagingGatewayError(
+      `ZAPI delete message failed with HTTP ${response.status}`,
     );
   }
-  return { raw: parseJson(text) };
+  parseJson(text);
+  return { deleted: true };
 }
 
 export async function sendZapiReaction(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
   input: CrmWhatsappSendReactionInput,
-): Promise<CrmWhatsappMessageActionResult> {
+): Promise<CrmMessageActionResult> {
   return postZapiMessageAction(
     credentials,
     fetchImpl,
@@ -65,7 +68,7 @@ export async function removeZapiReaction(
   credentials: ZapiCredentials,
   fetchImpl: typeof fetch,
   input: CrmWhatsappRemoveReactionInput,
-): Promise<CrmWhatsappMessageActionResult> {
+): Promise<CrmMessageActionResult> {
   return postZapiMessageAction(
     credentials,
     fetchImpl,
@@ -85,25 +88,29 @@ async function postZapiMessageAction(
   body: Record<string, unknown>,
   label: string,
 ) {
-  const response = await fetchImpl(`${buildInstanceUrl(credentials)}${path}`, {
-    body: JSON.stringify(body),
-    headers: {
-      Accept: "application/json",
-      "Client-Token": credentials.clientToken,
-      "Content-Type": "application/json",
+  const response = await fetchZapi(
+    credentials,
+    fetchImpl,
+    `${buildInstanceUrl(credentials)}${path}`,
+    {
+      body: JSON.stringify(body),
+      headers: {
+        Accept: "application/json",
+        "Client-Token": credentials.clientToken,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
     },
-    method: "POST",
-  });
+  );
   const text = await response.text();
   const payload = parseJson(text);
   if (!response.ok) {
-    throw new CrmWhatsappGatewayError(
-      `${label} failed with HTTP ${response.status}: ${summarize(text)}`,
+    throw new CrmMessagingGatewayError(
+      `${label} failed with HTTP ${response.status}`,
     );
   }
   return {
-    externalId: readProviderMessageId(payload) ?? `${path.slice(1)}-ok`,
+    externalId: requireProviderMessageId(payload, label),
     providerTimestamp: new Date(),
-    raw: payload,
   };
 }

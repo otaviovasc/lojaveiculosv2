@@ -2,11 +2,9 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import {
-  createAuditSpy,
-  createTestApp,
-} from "./crm.whatsapp.controller.testSupport.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
+import { createAuditSpy, createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
@@ -15,7 +13,7 @@ const connectionId = "24000000-0000-4000-8000-000000000101";
 describe("CRM WhatsApp message actions", () => {
   it("sends and removes provider-backed reactions", async () => {
     const { audit, record } = createAuditSpy();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const inbound = await createInboundMessage(whatsappRepository);
     const sendReaction = vi.fn(async () => ({
       externalId: "zapi-reaction-1",
@@ -27,20 +25,23 @@ describe("CRM WhatsApp message actions", () => {
       providerTimestamp: new Date("2026-07-02T19:02:00.000Z"),
       raw: { messageId: "zapi-reaction-remove-1" },
     }));
+    const connectionRepository = createMemoryCrmConnectionRepository([
+      createZapiConnection(),
+    ]);
     const app = createTestApp({
       audit,
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappGateway: {
+      crmConnectionRepository: connectionRepository,
+      crmRoutingConnectionRepository:
+        connectionRepository.routingConnectionRepository,
+      crmMessagingGateway: {
         removeReaction,
         sendReaction,
       },
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     });
 
     const reactionResponse = await app.request(
-      `/api/v1/crm/whatsapp/messages/${inbound.message.id}/reaction`,
+      `/api/v1/crm/messages/${inbound.message.id}/reaction`,
       {
         body: JSON.stringify({ reaction: "👍" }),
         headers: { "Content-Type": "application/json" },
@@ -68,7 +69,7 @@ describe("CRM WhatsApp message actions", () => {
     );
 
     const removeResponse = await app.request(
-      `/api/v1/crm/whatsapp/messages/${inbound.message.id}/reaction`,
+      `/api/v1/crm/messages/${inbound.message.id}/reaction`,
       { method: "DELETE" },
     );
 
@@ -97,21 +98,24 @@ describe("CRM WhatsApp message actions", () => {
   });
 
   it("deletes messages through the provider and persists deletedAt", async () => {
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const inbound = await createInboundMessage(whatsappRepository);
-    const deleteMessage = vi.fn(async () => ({ raw: { ok: true } }));
+    const deleteMessage = vi.fn(async () => ({ deleted: true }));
+    const connectionRepository = createMemoryCrmConnectionRepository([
+      createZapiConnection(),
+    ]);
     const app = createTestApp({
-      crmConnectionRepository: createMemoryCrmConnectionRepository([
-        createZapiConnection(),
-      ]),
-      crmWhatsappGateway: {
+      crmConnectionRepository: connectionRepository,
+      crmRoutingConnectionRepository:
+        connectionRepository.routingConnectionRepository,
+      crmMessagingGateway: {
         deleteMessage,
       },
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     });
 
     const response = await app.request(
-      `/api/v1/crm/whatsapp/messages/${inbound.message.id}`,
+      `/api/v1/crm/messages/${inbound.message.id}`,
       { method: "DELETE" },
     );
 
@@ -130,11 +134,11 @@ describe("CRM WhatsApp message actions", () => {
 });
 
 async function createInboundMessage(
-  whatsappRepository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
+  whatsappRepository: ReturnType<typeof createMemoryCrmConversationRepository>,
 ) {
   return whatsappRepository.ingestMessage({
-    buyerName: "Ana",
-    buyerPhone: "5511999999999",
+    customerDisplayName: "Ana",
+    customerPhone: "5511999999999",
     channel: "WHATSAPP",
     connectionId,
     content: "Ola",
@@ -142,6 +146,7 @@ async function createInboundMessage(
     externalId: "zapi-inbound-1",
     metadata: {},
     providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+    senderOrigin: "customer",
     senderType: "CUSTOMER",
     status: "DELIVERED",
     storeId,
@@ -153,19 +158,17 @@ async function createInboundMessage(
 function createZapiConnection(
   overrides: Partial<CrmConnection> = {},
 ): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
+  return createConfiguredZapiTestConnection({
     id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
+    overrides: {
+      ...overrides,
+      metadata: {
+        capabilities: { delete: true, reactions: true },
+        providerConnected: true,
+        ...overrides.metadata,
+      },
+    },
     storeId,
     tenantId,
-    webhookUrl: null,
-    ...overrides,
-  };
+  });
 }

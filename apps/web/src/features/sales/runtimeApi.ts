@@ -2,6 +2,7 @@ import type { CreateSalesApiOptions } from "./apiClient";
 import type { SalesAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -11,7 +12,7 @@ export async function createSalesApiOptions(): Promise<CreateSalesApiOptions> {
 
   return {
     auth: createSalesAuth(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readBaseUrl(),
   };
 }

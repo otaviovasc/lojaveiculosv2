@@ -4,12 +4,17 @@ import type {
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
+  fetchOlx,
+  readBoundedOlxRecord,
+} from "./httpMarketplaceProviderGatewayOlxRequest.js";
+import {
   baseUrl,
   expiresAt,
   MarketplaceProviderGatewayError,
   providerHttpError,
   readString,
 } from "./httpMarketplaceProviderGatewaySupport.js";
+import { fetchOlxBasicUserInfo } from "./olxBasicUserInfo.js";
 
 export async function exchangeToken(
   fetchImpl: typeof fetch,
@@ -23,25 +28,64 @@ export async function exchangeToken(
       : {}),
     ...values,
   });
-  const response = await fetchImpl(options.tokenUrl, {
+  const request: RequestInit = {
     body,
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     method: "POST",
-  });
-  const payload = (await response.json()) as Record<string, unknown>;
+    redirect: "error",
+  };
+  const response =
+    options.provider === "olx"
+      ? await fetchOlx(fetchImpl, options.tokenUrl, request)
+      : await fetchImpl(options.tokenUrl, request);
+  const payload =
+    options.provider === "olx"
+      ? await readBoundedOlxRecord(response)
+      : ((await response.json()) as Record<string, unknown>);
   if (!response.ok) {
     throw providerHttpError(options.provider, response, payload, {
       tokenRefresh: values.grant_type === "refresh_token",
     });
   }
+  const accessToken = readString(payload.access_token);
+  if (!accessToken) {
+    throw new MarketplaceProviderGatewayError(
+      "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
+      "Marketplace provider returned an invalid token response.",
+      options.provider,
+      502,
+      { provider: options.provider },
+    );
+  }
   return {
-    accessToken: readString(payload.access_token) ?? "",
+    accessToken,
     expiresAt: expiresAt(payload.expires_in),
     providerAccountId: readString(payload.user_id),
     refreshToken: readString(payload.refresh_token),
-    scope: readString(payload.scope),
+    scope:
+      normalizeScope(payload.scope) ??
+      (values.grant_type === "authorization_code"
+        ? normalizeScope(options.authorizationScope)
+        : null),
     tokenType: readString(payload.token_type),
   };
+}
+
+function normalizeScope(value: unknown): string | null {
+  const values = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\s,]+/u)
+      : [];
+  const normalized = [
+    ...new Set(
+      values
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ].sort();
+  return normalized.length ? normalized.join(" ") : null;
 }
 
 export async function checkAccount(
@@ -60,6 +104,7 @@ export async function checkAccount(
   const response = await fetchImpl(`${baseUrl(options)}${path}`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },
     method: "GET",
+    redirect: "error",
   });
   const payload = (await response.json().catch(() => ({}))) as Record<
     string,
@@ -80,18 +125,13 @@ async function checkOlxAccount(
   token: MarketplaceTokenSet,
   path: string,
 ): Promise<MarketplaceProviderAccountStatus> {
-  const response = await fetchImpl(`${baseUrl(options)}${path}`, {
-    body: JSON.stringify({ access_token: token.accessToken }),
-    headers: {
-      "Content-Type": "application/json;charset=UTF-8",
-      "User-Agent": "Mozilla/5.0",
-    },
-    method: "POST",
-  });
-  const payload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const { payload, response } =
+    path === "/oauth_api/basic_user_info"
+      ? await fetchOlxBasicUserInfo(fetchImpl, {
+          accessToken: token.accessToken,
+          baseUrl: baseUrl(options),
+        })
+      : await postOlxAccountCheck(fetchImpl, options, token, path);
   if (!response.ok) {
     throw providerHttpError(options.provider, response, payload);
   }
@@ -103,6 +143,24 @@ async function checkOlxAccount(
     requirements: [...(options.requirementConfig?.requirements ?? [])],
     status: "connected",
   };
+}
+
+async function postOlxAccountCheck(
+  fetchImpl: typeof fetch,
+  options: HttpMarketplaceGatewayOptions,
+  token: MarketplaceTokenSet,
+  path: string,
+) {
+  const response = await fetchOlx(fetchImpl, `${baseUrl(options)}${path}`, {
+    body: JSON.stringify({ access_token: token.accessToken }),
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "User-Agent": "Mozilla/5.0",
+    },
+    method: "POST",
+  });
+  const payload = await readBoundedOlxRecord(response);
+  return { payload, response };
 }
 
 export function assertOlxContract(options: HttpMarketplaceGatewayOptions) {

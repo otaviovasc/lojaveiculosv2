@@ -30,11 +30,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    var(--color-accent-strong) 100%
-  );
+  background: var(--color-accent);
   border: 1px solid rgba(225, 31, 38, 0.25);
   color: var(--color-inverse);
   border-radius: 1rem;
@@ -157,46 +153,29 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Light Theme Mode button - Violet theme */
+/* Light Theme Mode button - flat neutral surface */
 :root[data-theme="light"] .theme-toggle-btn {
-  background: linear-gradient(
-    135deg,
-    rgba(143, 107, 255, 0.08) 0%,
-    rgba(113, 78, 230, 0.02) 100%
-  );
-  border-color: rgba(143, 107, 255, 0.25);
-  color: var(--color-violet-end);
+  background: var(--color-panel);
+  border-color: var(--color-line-strong);
+  color: var(--color-primary);
 }
 
 :root[data-theme="light"] .theme-toggle-btn:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(143, 107, 255, 0.16) 0%,
-    rgba(113, 78, 230, 0.06) 100%
-  );
-  border-color: rgba(143, 107, 255, 0.45);
-  color: var(--color-violet-start);
+  background: var(--color-app-elevated);
+  border-color: var(--color-muted);
   transform: translateY(-1px);
 }
 
-/* Dark Theme Mode button - Amber/Gold theme */
+/* Dark Theme Mode button - warm gold accent */
 :root[data-theme="dark"] .theme-toggle-btn {
-  background: linear-gradient(
-    135deg,
-    rgba(184, 148, 24, 0.08) 0%,
-    rgba(184, 148, 24, 0.01) 100%
-  );
-  border-color: rgba(184, 148, 24, 0.2);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
   color: var(--color-warning);
 }
 
 :root[data-theme="dark"] .theme-toggle-btn:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(184, 148, 24, 0.16) 0%,
-    rgba(184, 148, 24, 0.04) 100%
-  );
-  border-color: rgba(184, 148, 24, 0.45);
+  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
   transform: translateY(-1px);
 }
 

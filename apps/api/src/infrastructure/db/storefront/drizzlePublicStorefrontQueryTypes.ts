@@ -37,6 +37,7 @@ export type ListingRow = {
 export type MediaRow = {
   altText: string | null;
   displayOrder: number;
+  id: string;
   kind: PublicVehicleMedia["kind"];
   unitId: string;
   url: string;
@@ -58,6 +59,11 @@ export type UnitRow = {
 
 export type PublicSiteRow = {
   addressCity: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  addressState: string | null;
+  addressZipCode: string | null;
+  businessHours: unknown;
   contactEmail: string | null;
   contactPhone: string | null;
   customDomain: string | null;
@@ -79,6 +85,7 @@ type SelectLimitBuilder<Row> = {
 
 type SelectOrderBuilder<Row> = {
   limit: (count: number) => Promise<readonly Row[]>;
+  offset: (count: number) => SelectLimitBuilder<Row>;
 };
 
 type SelectWhereResultBuilder<Row> = SelectLimitBuilder<Row> & {
@@ -100,6 +107,11 @@ export type DrizzlePublicStorefrontClient = {
   select: {
     (selection: {
       addressCity: unknown;
+      addressLine1: unknown;
+      addressLine2: unknown;
+      addressState: unknown;
+      addressZipCode: unknown;
+      businessHours: unknown;
       contactEmail: unknown;
       contactPhone: unknown;
       customDomain: unknown;
@@ -142,6 +154,7 @@ export type DrizzlePublicStorefrontClient = {
     (selection: {
       altText: unknown;
       displayOrder: unknown;
+      id: unknown;
       kind: unknown;
       unitId: unknown;
       url: unknown;

@@ -1,0 +1,499 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getApiErrorDisplay, getApiErrorRecovery } from "../../lib/apiErrors";
+import { useOptionalAccountSession } from "../account/accountSession";
+import { readSessionActiveStore } from "../account/sessionPermissions";
+import type { CrmConversationApi } from "./crmConversationApi";
+import type { ProductCrmApi } from "./productCrmApi";
+import {
+  createRuntimeCrmConversationApi,
+  createRuntimeProductCrmApi,
+} from "./runtimeApi";
+import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
+import {
+  prefetchCrmScopedData,
+  CRM_EXTERNAL_BOT_CACHE_KEY,
+  CRM_CAMPAIGNS_CACHE_KEY,
+  CRM_VISITS_CACHE_KEY,
+  crmScheduledMessagesCacheKey,
+} from "./crmScopedCache";
+import { useCrmInbox } from "./useCrmInbox";
+import { CrmNotice } from "./CrmNotice";
+import { CrmConnectionAdmin } from "./CrmConnectionAdmin";
+import { CrmTagManager } from "./CrmTagManager";
+import {
+  findCrmStatusConnection,
+  readCrmConnectionStatus,
+  readCrmRealtimeStatus,
+} from "./crmConnectionStatus";
+import { totalUnreadCycles } from "./crmQueueState";
+import { CrmScopedNav, type CrmScope } from "./CrmScopedNav";
+import { CrmConversationWorkspace } from "./CrmConversationWorkspace";
+import {
+  CrmCampaignsSection,
+  CrmIntegrationsSection,
+  CrmSchedulesSection,
+} from "./CrmScopedSections";
+import { CrmVisitsPage } from "./CrmVisitsPage";
+import { MessageCircle, PlugZap } from "lucide-react";
+import { readPendingComposioConnectionId } from "./crmComposioOAuth";
+import { consumeCrmOlxOauthReturn } from "./crmOlxOauthReturn";
+import { CrmStatsPage } from "./CrmStatsPage";
+import {
+  crmConversationCycleHash,
+  crmScopeHash,
+  readCrmRouteStateFromHash,
+} from "./crmRouteState";
+import type { CrmConversationCycleId } from "./crmConversationTypes";
+
+type CrmInboxProps = {
+  api?: CrmConversationApi;
+  productApi?: ProductCrmApi;
+};
+
+export function CrmInbox(props: CrmInboxProps) {
+  const session = useOptionalAccountSession();
+  const storeScopeKey = readSessionActiveStore(session)?.storeId ?? "no-store";
+  return <StoreScopedCrmInbox key={storeScopeKey} {...props} />;
+}
+
+function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
+  const conversationApi = useMemo(
+    () => api ?? createRuntimeCrmConversationApi(),
+    [api],
+  );
+  const leadApi = useMemo(
+    () => productApi ?? createRuntimeProductCrmApi(),
+    [productApi],
+  );
+  const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
+  const [routeState, setRouteState] = useState(() => {
+    const state = readCrmRouteStateFromHash(window.location.hash);
+    return readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
+      ? { cycleId: null, scope: "connection" as const }
+      : state;
+  });
+  const inbox = useCrmInbox(conversationApi, routeState.cycleId);
+  const activeScope = routeState.scope;
+  const [visitedScopes, setVisitedScopes] = useState<ReadonlySet<CrmScope>>(
+    () => new Set<CrmScope>([activeScope]),
+  );
+  const originalTitleRef = useRef(
+    typeof document === "undefined" ? "CRM" : document.title,
+  );
+  const unreadCount = totalUnreadCycles(inbox.conversationCycles);
+  const selectedConnection = findCrmStatusConnection(
+    inbox.connections,
+    inbox.connectionId ? String(inbox.connectionId) : null,
+  );
+  const providerStatus = readCrmConnectionStatus({
+    hasConnection: inbox.hasConnection,
+    isLoading: inbox.connectionIsLoading,
+    connectionError: inbox.connectionError,
+    ...(selectedConnection?.provider
+      ? { provider: selectedConnection.provider }
+      : {}),
+    ...(selectedConnection?.state ? { state: selectedConnection.state } : {}),
+  });
+  const realtimeStatus = readCrmRealtimeStatus(inbox.realtimeStatus);
+  const errorRecovery = getApiErrorRecovery(inbox.error);
+  const errorDisplay = getApiErrorDisplay(
+    inbox.error,
+    "Não foi possível carregar o WhatsApp.",
+  );
+  const transientErrorId = inbox.errorId;
+
+  useEffect(() => {
+    const syncRouteFromHash = () => {
+      setRouteState(readCrmRouteStateFromHash(window.location.hash));
+    };
+    window.addEventListener("hashchange", syncRouteFromHash);
+    return () => window.removeEventListener("hashchange", syncRouteFromHash);
+  }, []);
+
+  const navigateToHash = useCallback((hash: string) => {
+    const normalizedHash = `#${hash}`;
+    setRouteState(readCrmRouteStateFromHash(normalizedHash));
+    if (window.location.hash !== normalizedHash) window.location.hash = hash;
+  }, []);
+  const setActiveScope = useCallback(
+    (scope: CrmScope) => navigateToHash(crmScopeHash(scope)),
+    [navigateToHash],
+  );
+  const setActiveCycle = useCallback(
+    (cycleId: CrmConversationCycleId | null) =>
+      navigateToHash(
+        cycleId
+          ? crmConversationCycleHash(cycleId)
+          : crmScopeHash("conversations"),
+      ),
+    [navigateToHash],
+  );
+
+  useEffect(() => {
+    setVisitedScopes((current) =>
+      current.has(activeScope) ? current : new Set(current).add(activeScope),
+    );
+  }, [activeScope]);
+
+  useEffect(() => {
+    document.title = unreadCount
+      ? `(${unreadCount}) Nova mensagem - CRM`
+      : originalTitleRef.current;
+  }, [unreadCount]);
+
+  // Warm the other scopes' list data shortly after the primary inbox load, so
+  // the first visit to each tab renders cached content instead of a loading
+  // state. Sections still refetch on mount and update in the background.
+  const { connectionId, isLoading: inboxIsLoading, permissions } = inbox;
+  useEffect(() => {
+    if (inboxIsLoading || !permissions.canList) return undefined;
+    const timer = setTimeout(() => {
+      if (permissions.canCampaignRead) {
+        prefetchCrmScopedData(conversationApi, CRM_CAMPAIGNS_CACHE_KEY, () =>
+          conversationApi.listCampaigns({ limit: 50 }),
+        );
+      }
+      if (permissions.canScheduleRead) {
+        prefetchCrmScopedData(
+          conversationApi,
+          crmScheduledMessagesCacheKey(connectionId),
+          () =>
+            conversationApi.listScheduledMessages({
+              limit: 100,
+              ...(connectionId ? { connectionId } : {}),
+            }),
+        );
+      }
+      if (permissions.canIntegrationsManage) {
+        prefetchCrmScopedData(
+          conversationApi,
+          CRM_EXTERNAL_BOT_CACHE_KEY,
+          async () => (await conversationApi.getBotIntegration()).configuration,
+        );
+      }
+      if (permissions.canVisitsRead) {
+        prefetchCrmScopedData(visitsApi, CRM_VISITS_CACHE_KEY, () =>
+          visitsApi.listVisits({ limit: 100 }),
+        );
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [connectionId, inboxIsLoading, permissions, visitsApi, conversationApi]);
+
+  const scopePanelClassName = (scope: CrmScope) =>
+    activeScope === scope ? "flex-1 flex flex-col min-h-0" : "hidden";
+
+  return (
+    <main className="crm-page">
+      {inbox.error ? (
+        <CrmNotice
+          durationMs={transientErrorId ? 10_000 : null}
+          inline={!transientErrorId}
+          {...(transientErrorId
+            ? {
+                onDismiss: () => {
+                  inbox.clearError(transientErrorId);
+                },
+              }
+            : {})}
+          {...(errorRecovery
+            ? {
+                actionLabel:
+                  errorRecovery.kind === "retry" &&
+                  !inbox.hasRetryableSessionAction
+                    ? "Atualizar e verificar"
+                    : errorRecovery.label,
+                onAction: () => {
+                  if (errorRecovery.kind === "configure") {
+                    setActiveScope("connection");
+                    return;
+                  }
+                  if (
+                    errorRecovery.kind === "retry" &&
+                    inbox.hasRetryableSessionAction
+                  ) {
+                    void inbox.retryLastSessionAction();
+                    return;
+                  }
+                  void inbox.refreshSessions();
+                },
+              }
+            : {})}
+          message={errorDisplay.message}
+          {...(transientErrorId ? { noticeId: transientErrorId } : {})}
+          {...(errorDisplay.requestId
+            ? { requestId: errorDisplay.requestId }
+            : {})}
+        />
+      ) : null}
+      {!inbox.permissions.canList ? (
+        <CrmNotice
+          inline
+          message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM."
+        />
+      ) : null}
+      {inbox.permissions.canList ? (
+        <>
+          <CrmScopedNav
+            activeScope={activeScope}
+            onChange={setActiveScope}
+            providerStatus={providerStatus}
+            realtimeStatus={realtimeStatus}
+            tagCount={inbox.availableTags.length}
+            unreadCount={unreadCount}
+          />
+          <div className="crm-tab-panel flex-1 flex flex-col min-h-0">
+            {visitedScopes.has("conversations") ? (
+              <div
+                className={scopePanelClassName("conversations")}
+                key="conversations"
+              >
+                {inbox.hasConnection === false ? (
+                  <CrmDisconnectedState
+                    canManage={inbox.permissions.canConnectionSetup}
+                    onConnect={() => setActiveScope("connection")}
+                  />
+                ) : (
+                  <CrmConversationWorkspace
+                    inbox={inbox}
+                    onCycleChange={setActiveCycle}
+                    onScopeChange={setActiveScope}
+                    routeCycleId={routeState.cycleId}
+                  />
+                )}
+              </div>
+            ) : null}
+            {visitedScopes.has("connection") ? (
+              <div
+                className={scopePanelClassName("connection")}
+                key="connection"
+              >
+                <section className="crm-section">
+                  <CrmConnectionAdmin
+                    canManageRouting={inbox.permissions.canRoutingDefaultManage}
+                    connections={inbox.connections}
+                    disabled={!inbox.permissions.canConnectionPair}
+                    embedded
+                    onClose={() => setActiveScope("conversations")}
+                    onRefresh={inbox.refreshConnections}
+                    onRoutingPolicyChange={inbox.refreshRoutingPolicy}
+                    routingApi={conversationApi}
+                    selfService={{
+                      availableSetups: inbox.availableConnectionSetups,
+                      canPair: inbox.permissions.canConnectionPair,
+                      canRepairCredentials:
+                        inbox.permissions.canConnectionCredentialsManage,
+                      canSetup: inbox.permissions.canConnectionSetup,
+                      connectionAllowance: inbox.connectionAllowance,
+                      handlers: {
+                        onAuthorizeComposio: inbox.authorizeComposioConnection,
+                        onCompleteComposio: async (connectionId) => {
+                          const result =
+                            await inbox.completeComposioConnection(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onConfigureZapiWebhooks: async (connectionId) => {
+                          const result =
+                            await inbox.configureZapiWebhooks(connectionId);
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onCreate: async (input) => {
+                          const result = await inbox.createConnection(input);
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
+                        onDisconnectZapi: inbox.disconnectZapiConnection,
+                        onDisconnectUazapi: inbox.disconnectUazapiConnection,
+                        onConfigureUazapiWebhooks: async (connectionId) => {
+                          const result =
+                            await inbox.configureUazapiWebhooks(connectionId);
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onGrantConnectionMember: inbox.grantConnectionMember,
+                        onListConnectionMembers: inbox.listConnectionMembers,
+                        onListUazapiInstances: inbox.listUazapiInstances,
+                        onRevokeConnectionMember: inbox.revokeConnectionMember,
+                        onRefreshConnections: inbox.refreshConnections,
+                        onRefreshConnectionsWithPayload:
+                          inbox.refreshConnectionsAndRead,
+                        onRepairZapiCredentials: async (
+                          connectionId,
+                          input,
+                        ) => {
+                          const result =
+                            await inbox.repairZapiConnectionCredentials(
+                              connectionId,
+                              input,
+                            );
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
+                        onReplaceZapiConnection: async (
+                          connectionId,
+                          input,
+                        ) => {
+                          const result = await inbox.replaceZapiConnection(
+                            connectionId,
+                            input,
+                          );
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
+                        onRequestZapiPairingCode: inbox.requestZapiPairingCode,
+                        onRequestZapiPairingQr: inbox.requestZapiPairingQr,
+                        onRequestUazapiPairingCode:
+                          inbox.requestUazapiPairingCode,
+                        onRequestUazapiPairingQr: inbox.requestUazapiPairingQr,
+                        onRefreshUazapiStatus: async (connectionId) => {
+                          const result =
+                            await inbox.refreshUazapiConnectionStatus(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onRefreshZapiStatus: async (connectionId) => {
+                          const result =
+                            await inbox.refreshZapiConnectionStatus(
+                              connectionId,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onSelectComposioSender: async (
+                          connectionId,
+                          sender,
+                        ) => {
+                          const result =
+                            await inbox.selectComposioConnectionSender(
+                              connectionId,
+                              sender,
+                            );
+                          await inbox.refreshRoutingPolicy();
+                          return result;
+                        },
+                        onSetConnectionPaused: inbox.setConnectionPaused,
+                      },
+                      isCrmEntitled: inbox.isCrmEntitled,
+                    }}
+                  />
+                </section>
+              </div>
+            ) : null}
+            {visitedScopes.has("campaigns") ? (
+              <div className={scopePanelClassName("campaigns")} key="campaigns">
+                <CrmCampaignsSection
+                  api={conversationApi}
+                  inbox={inbox}
+                  leadApi={leadApi}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("schedules") ? (
+              <div className={scopePanelClassName("schedules")} key="schedules">
+                <CrmSchedulesSection api={conversationApi} inbox={inbox} />
+              </div>
+            ) : null}
+            {visitedScopes.has("integrations") ? (
+              <div
+                className={scopePanelClassName("integrations")}
+                key="integrations"
+              >
+                <CrmIntegrationsSection
+                  api={conversationApi}
+                  canManage={inbox.permissions.canIntegrationsManage}
+                  canRead={inbox.permissions.canRead}
+                  canRetry={inbox.permissions.canSend}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("tags") ? (
+              <div className={scopePanelClassName("tags")} key="tags">
+                <section className="crm-section">
+                  <CrmTagManager
+                    disabled={!inbox.permissions.canTagManage}
+                    embedded
+                    onClose={() => setActiveScope("conversations")}
+                    onCreate={inbox.createTag}
+                    onDelete={inbox.deleteTag}
+                    onReorder={inbox.reorderTags}
+                    onUpdate={inbox.updateTag}
+                    tags={inbox.availableTags}
+                  />
+                </section>
+              </div>
+            ) : null}
+            {visitedScopes.has("visits") ? (
+              <div className={scopePanelClassName("visits")} key="visits">
+                <CrmVisitsPage
+                  activeSession={inbox.activeSession}
+                  api={visitsApi}
+                  canManage={inbox.permissions.canVisitsManage}
+                  canRead={inbox.permissions.canVisitsRead}
+                  listVehicles={inbox.listVehicles}
+                />
+              </div>
+            ) : null}
+            {visitedScopes.has("statistics") ? (
+              <div
+                className={scopePanelClassName("statistics")}
+                key="statistics"
+              >
+                <section className="crm-section">
+                  <CrmStatsPage
+                    api={conversationApi}
+                    canRead={inbox.permissions.canList}
+                    connections={inbox.connections}
+                  />
+                </section>
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+    </main>
+  );
+}
+
+function CrmDisconnectedState({
+  canManage,
+  onConnect,
+}: {
+  canManage: boolean;
+  onConnect: () => void;
+}) {
+  return (
+    <section className="crm-disconnected">
+      <span className="crm-disconnected-icon">
+        <MessageCircle aria-hidden="true" />
+      </span>
+      <div>
+        <strong>WhatsApp desconectado</strong>
+        <h2>Conecte o número da loja para abrir o atendimento.</h2>
+        <p>
+          As conversas e ferramentas de envio aparecem assim que a conexão
+          estiver ativa.
+        </p>
+      </div>
+      {canManage ? (
+        <button className="crm-action" onClick={onConnect} type="button">
+          <PlugZap aria-hidden="true" />
+          Configurar conexão
+        </button>
+      ) : (
+        <p>Solicite a um administrador da loja para configurar a conexão.</p>
+      )}
+    </section>
+  );
+}

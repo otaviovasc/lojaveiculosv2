@@ -24,7 +24,9 @@ export async function materializeSaleAutoEntryEvents(
       event,
       ports,
     );
-    await materializeFinanceAutoEntries(context, resolvedEvent, ports);
+    await materializeFinanceAutoEntries(context, resolvedEvent, ports, {
+      entitlement: "sales",
+    });
   }
 }
 
@@ -65,6 +67,7 @@ export function buildSaleAutoEntryEvents(
   ];
 
   for (const financing of facts.financing) {
+    if (financing.rank === "R0") continue;
     events.push({
       ...common,
       attributes: { financingRank: financing.rank },

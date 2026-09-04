@@ -7,6 +7,8 @@ import type {
   MarketplaceProvider,
   MarketplaceProviderListing,
 } from "../../../../domains/marketplace/ports/marketplaceRepository.js";
+import { readMarketplaceProviderCapabilities } from "../../../../domains/marketplace/readModels/marketplaceProviderCapabilities.js";
+export { MemoryMarketplaceReconciliation } from "./memoryMarketplaceReconciliation.js";
 
 export const memoryMarketplaceProviders = [
   "olx",
@@ -74,20 +76,22 @@ export function toMemoryMarketplaceOverview(
     jobs: jobs.filter((item) =>
       scopedAccounts.some((account) => account.id === item.accountId),
     ),
-    providerStates: memoryMarketplaceProviders.map((provider) => ({
-      accountId:
-        scopedAccounts.find((account) => account.provider === provider)?.id ??
-        null,
-      connectionStatus: scopedAccounts.some(
-        (account) =>
-          account.provider === provider && account.status === "active",
-      )
-        ? "connected"
-        : "not_configured",
-      lastSyncSummary: null,
-      provider,
-      requirements: [],
-    })),
+    providerStates: memoryMarketplaceProviders.map((provider) => {
+      const account = scopedAccounts.find((item) => item.provider === provider);
+      return {
+        accountId: account?.id ?? null,
+        capabilities: readMarketplaceProviderCapabilities(provider, account),
+        connectionStatus: scopedAccounts.some(
+          (account) =>
+            account.provider === provider && account.status === "active",
+        )
+          ? "connected"
+          : "not_configured",
+        lastSyncSummary: null,
+        provider,
+        requirements: [],
+      };
+    }),
     providers: memoryMarketplaceProviders,
     storeId,
     tenantId,

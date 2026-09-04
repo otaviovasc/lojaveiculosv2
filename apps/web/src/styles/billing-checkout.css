@@ -103,49 +103,6 @@
   flex-shrink: 0;
 }
 
-.billing-methods {
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 0.6rem;
-}
-
-.billing-methods button {
-  align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  display: flex;
-  gap: 0.65rem;
-  min-height: 4rem;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-.billing-methods button.billing-method-active {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
-  color: var(--color-accent-strong);
-}
-
-.billing-methods strong,
-.billing-methods small {
-  display: block;
-}
-
-.billing-methods strong {
-  font-size: var(--font-size-sm);
-  font-weight: 900;
-}
-
-.billing-methods small {
-  color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-  margin-top: 0.1rem;
-}
-
 .billing-checkout-readiness,
 .billing-checkout-total {
   background: var(--color-app);

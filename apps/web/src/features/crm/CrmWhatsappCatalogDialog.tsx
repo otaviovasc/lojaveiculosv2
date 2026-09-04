@@ -1,6 +1,6 @@
 import { BookOpen, PackageSearch } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
+import { ActionDialog } from "./CrmActionDialogFrame";
 import {
   FullCatalogFields,
   ProductPicker,
@@ -12,18 +12,18 @@ import type {
   CrmWhatsappListCatalogProductsInput,
   CrmWhatsappSendCatalogInput,
   CrmWhatsappSendCatalogProductInput,
-} from "./crmWhatsappTypes";
+} from "./crmConversationTypes";
 
 export type CatalogDialogSend = (
-  input: Omit<CrmWhatsappSendCatalogInput, "sessionId">,
+  input: Omit<CrmWhatsappSendCatalogInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type CatalogProductDialogSend = (
-  input: Omit<CrmWhatsappSendCatalogProductInput, "sessionId">,
+  input: Omit<CrmWhatsappSendCatalogProductInput, "cycleId">,
 ) => Promise<boolean>;
 
 export type CatalogProductLoader = (
-  input?: Omit<CrmWhatsappListCatalogProductsInput, "sessionId">,
+  input?: Omit<CrmWhatsappListCatalogProductsInput, "cycleId">,
 ) => Promise<CrmWhatsappCatalogProductsPage | null>;
 
 type CatalogMode = "catalog" | "product";
@@ -48,12 +48,12 @@ export function CatalogDialog({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [message] = useState("Confira nosso catalogo de veiculos:");
+  const [message] = useState("Confira nosso catálogo de veículos:");
   const [mode, setMode] = useState<CatalogMode>("product");
   const [page, setPage] = useState<CrmWhatsappCatalogProductsPage | null>(null);
   const [productId, setProductId] = useState("");
   const [query, setQuery] = useState("");
-  const [title] = useState("Catalogo da loja");
+  const [title] = useState("Catálogo da loja");
   const [url] = useState(catalogUrl ?? "");
   const loadProductsRef = useRef(onLoadProducts);
   const products = useMemo(
@@ -80,7 +80,7 @@ export function CatalogDialog({
       .then((nextPage) => {
         if (!active) return;
         if (!nextPage) {
-          setLoadError("Nao foi possivel carregar o catalogo do WhatsApp.");
+          setLoadError("Não foi possível carregar o catálogo do WhatsApp.");
           return;
         }
         setPage(nextPage);
@@ -90,7 +90,7 @@ export function CatalogDialog({
       })
       .catch(() => {
         if (active)
-          setLoadError("Nao foi possivel carregar o catalogo do WhatsApp.");
+          setLoadError("Não foi possível carregar o catálogo do WhatsApp.");
       })
       .finally(() => {
         if (active) setIsLoadingProducts(false);
@@ -150,9 +150,9 @@ export function CatalogDialog({
           setIsSaving(false);
         }
       }}
-      title="Catalogo WhatsApp"
+      title="Catálogo WhatsApp"
     >
-      <div className="crm-whatsapp-action-segmented" role="tablist">
+      <div className="crm-action-segmented" role="tablist">
         <button
           aria-selected={mode === "product"}
           onClick={() => setMode("product")}
@@ -167,7 +167,7 @@ export function CatalogDialog({
           role="tab"
           type="button"
         >
-          Catalogo completo
+          Catálogo completo
         </button>
       </div>
 

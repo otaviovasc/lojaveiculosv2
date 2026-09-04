@@ -13,6 +13,7 @@ import {
   analyticsServices,
   type AnalyticsServices,
 } from "./analyticsServices.js";
+import { parseDashboardPeriod } from "./dashboardPeriod.js";
 
 export type AnalyticsContextFactory = (
   context: Context,
@@ -31,10 +32,52 @@ export function createAnalyticsFeature(
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
 
+  feature.get("/home", async (context) =>
+    handleAnalytics(context, async () => {
+      const period = parseDashboardPeriod({
+        from: context.req.query("from"),
+        to: context.req.query("to"),
+      });
+      const serviceContext = await createUserContext(context, contextFactory);
+      return context.json(
+        await services.getHomeDashboard(serviceContext, { period }),
+      );
+    }),
+  );
+
   feature.get("/dashboard", async (context) =>
     handleAnalytics(context, async () => {
+      const period = parseDashboardPeriod({
+        from: context.req.query("from"),
+        to: context.req.query("to"),
+      });
       const serviceContext = await createUserContext(context, contextFactory);
-      return context.json(await services.getDashboard(serviceContext));
+      return context.json(
+        await services.getDashboard(serviceContext, { period }),
+      );
+    }),
+  );
+
+  feature.get("/dashboard.pdf", async (context) =>
+    handleAnalytics(context, async () => {
+      const period = parseDashboardPeriod({
+        from: context.req.query("from"),
+        to: context.req.query("to"),
+      });
+      const serviceContext = await createUserContext(context, contextFactory);
+      const report = await services.exportExecutiveReport(serviceContext, {
+        period,
+      });
+      return new Response(Uint8Array.from(report.bytes).buffer, {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+          "Content-Disposition": `attachment; filename="${report.fileName}"`,
+          "Content-Length": String(report.bytes.byteLength),
+          "Content-Security-Policy": "default-src 'none'; sandbox",
+          "Content-Type": "application/pdf",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
     }),
   );
 

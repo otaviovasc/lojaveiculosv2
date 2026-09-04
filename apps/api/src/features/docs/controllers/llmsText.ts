@@ -11,9 +11,8 @@ export const llmsText = `# Loja Veiculos API
 - Public storefront lead capture: POST /api/v1/public/storefront/listings/{listingSlug}/leads
 - Role management matrix: GET /api/v1/identity/roles
 - Update member access: PATCH /api/v1/identity/memberships/{membershipId}/access
-- Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/provider/checkout, PATCH /api/v1/billing/entitlements/{featureKey}
-- Agency tenant billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/billing/provider/checkout, POST /api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync
-- Update agency-managed store entitlement: PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}
+- Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/plan-hires, GET /api/v1/billing/plan-hires/{hireId}, POST /api/v1/billing/plan-quotes
+- Agency store billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires, GET /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-hires/{hireId}, POST /api/v1/agency/tenants/{tenantId}/stores/{storeId}/billing/plan-quotes
 - Fiscal overview: GET /api/v1/fiscal/overview\n- List fiscal service recipients: GET /api/v1/fiscal/recipients
 - Create fiscal service recipient: POST /api/v1/fiscal/recipients\n- List fiscal NFS-e templates: GET /api/v1/fiscal/templates
 - Create fiscal NFS-e template: POST /api/v1/fiscal/templates\n- Preview fiscal NFS-e template: POST /api/v1/fiscal/templates/preview
@@ -26,7 +25,7 @@ export const llmsText = `# Loja Veiculos API
 - Download finance entry document: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/download\n- Stream finance entry document content: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/content
 - Update recurring finance entry: PATCH /api/v1/finance/recurring-entries/{recurringEntryId}\n- Cancel recurring finance entry: DELETE /api/v1/finance/recurring-entries/{recurringEntryId}
 - Materialize recurring finance entries: POST /api/v1/finance/recurring-entries/materialize
-- Analytics dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
+- Core home dashboard: GET /api/v1/analytics/home\n- Analytics reports dashboard: GET /api/v1/analytics/dashboard\n- Executive analytics PDF: GET /api/v1/analytics/dashboard.pdf\n- Compliance snapshot: GET /api/v1/compliance/snapshot
 - Marketplace overview: GET /api/v1/marketplaces/overview\n- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
 - Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete\n- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
 - Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs\n- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
@@ -43,7 +42,11 @@ export const llmsText = `# Loja Veiculos API
 - External lead create: POST /api/v1/external-api/leads
 - External lead detail: GET /api/v1/external-api/leads/{leadId}
 - External lead update: PATCH /api/v1/external-api/leads/{leadId}
+- External Credere preflight: POST /api/v1/external-api/financing/credere/preflight
+- External Credere simulation create: POST /api/v1/external-api/financing/credere/simulations
+- External Credere simulation detail: GET /api/v1/external-api/financing/credere/simulations/{inquiryId}
 - Admin observability snapshot: GET /api/v1/internal/health
+- Platform observability snapshot: GET /api/v1/internal/platform/health
 - List inventory units: GET /api/v1/inventory/units
 - List inventory listing groups: GET /api/v1/inventory/listings
 - Create listing: POST /api/v1/inventory/listings
@@ -70,6 +73,7 @@ export const llmsText = `# Loja Veiculos API
 - Cancel unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/cancel
 - Expire unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/expire
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
+- CRM bot actions: POST /api/v1/crm/bot/actions
 ## Authentication
 - API clients should send a bearer token in the Authorization header.
 - Scoped API keys may send x-api-key: lv2_... or Authorization: Bearer lv2_...
@@ -91,14 +95,17 @@ export const llmsText = `# Loja Veiculos API
 - inventory.media_update: required to reorder media or update media metadata/visibility.
 - inventory.media_delete: required to delete media records and request object cleanup.
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
+- inventory.cost_update: required to correct active vehicle costs and linked finance entries.
+- inventory.cost_void: required to void active vehicle costs with a reason while preserving audit history.
 - inventory.checklist_read: required to read vehicle readiness checklists.
 - inventory.checklist_update: required to create and update vehicle readiness checklists.
 - inventory.reserve: required to reserve, release, cancel, or expire vehicle unit reservations and emit reservation receipts.
 - inventory.sell: required to sell vehicle units and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
-- billing.manage: required to read store billing, read agency tenant billing, sync billing providers, and mutate store entitlements.
-- analytics.read: required to read reports and commercial dashboards.
+- billing.manage: required to read billing, create or poll plan hires, and request server-owned quotes.
+- dashboard.read: required to read the core operational home dashboard.
+- analytics.read: required to read detailed commercial reports.
 - compliance.manage: required to read and operate LGPD/security controls.
 - fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
 - fiscal.document.issue: required to emit NF-e or NFS-e documents.
@@ -117,6 +124,8 @@ export const llmsText = `# Loja Veiculos API
 - marketplace.listing_update: required to update listings.
 - marketplace.listing_unpublish: required to remove listings.
 - external_api.manage: required to create and revoke scoped API keys.
+- financing.simulation.read: required to preflight and read official Credere simulations.
+- financing.simulation.create: required to create consented official Credere simulations.
 - documents.read: required to list shared store-scoped documents.
 - documents.download: required to generate authorized document download descriptors.
 - documents.preview: required to render document previews.
@@ -159,7 +168,7 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 ## Current identity endpoints
 - GET /api/v1/session/bootstrap: resolves the authenticated Clerk user, store access, tenant memberships, platform admin flag, and onboarding status.
-- POST /api/v1/onboarding/owner-store: creates the first owner store with trial entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
+- POST /api/v1/onboarding/owner-store: creates the first owner store with a permanent Free contract and projected entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
 - POST /api/v1/admin/agencies: creates an agency tenant and optional first-user invitation; requires platform/tenant management access.
 - POST /api/v1/agency/stores: creates one store under an active agency tenant; requires agency tenant role and store.manage.
 - GET /api/v1/identity/roles: returns agency, owner, supervisor, salesman, and investor role templates, grouped permission catalog, memberships, assignability, base permissions, effective permissions, and overrides.
@@ -167,17 +176,16 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/identity/invitations/{invitationId}/resend: resends a pending, failed, sent, or expired identity invitation.
 - PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
 ## Current billing endpoints
-- /api/v1/billing/*: store-scoped overview, provider status, hosted Asaas checkout, and entitlement update routes for the active store; entitlement updates write product history and critical audit; requires billing.manage.
+- /api/v1/billing/*: store-scoped overview, provider readiness, plan-hire creation/polling, and server-owned Escala quotes; only verified payment evidence activates a paid contract; requires billing.manage.
 - GET /api/v1/agency/tenants/{tenantId}/overview: agency tenant-scoped overview for an active agency tenant membership or platform admin support access; returns tenant, managed stores, vehicle counts, persisted subscription_items charge preview, financial summary, and entitlement events.
-- GET/POST /api/v1/agency/tenants/{tenantId}/billing/provider/*: agency tenant-scoped Asaas readiness, hosted checkout, and subscription sync from persisted subscription_items; checkout and sync write critical audit.
-- PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}: updates one agency-managed store entitlement and writes critical audit.
+- Agency billing mirrors plan-hire creation, polling, and quote requests under the selected managed store; it does not expose direct entitlement mutation.
 ## Current fiscal endpoints
 - GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
 - GET/POST /api/v1/fiscal/recipients: lists and creates store-scoped NFS-e tomadores/financeiras; writes require fiscal.recipient.manage and nfe entitlement.
 - GET/POST /api/v1/fiscal/templates: lists and creates store-scoped NFS-e templates with service codes, retention config, and safe description variables; writes require fiscal.template.manage and nfe entitlement.
 - POST /api/v1/fiscal/templates/preview: renders a template preview and reports unresolved variables without sending a provider request.
-- POST /api/v1/fiscal/documents: records one fiscal issue attempt, snapshots provider payload/response, and persists provider status; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.issue and nfe entitlement.
-- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.cancel and nfe entitlement.
+- POST /api/v1/fiscal/documents: records one fiscal issue attempt, snapshots provider payload/response, and persists provider status; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.manage, fiscal.document.issue, and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.manage, fiscal.document.cancel, and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/repeat: creates a draft from a prior note with source metadata and review-required flag; it never sends a provider request.
 - POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
 ## Current finance endpoints
@@ -200,7 +208,9 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/finance/commission-rules and POST /api/v1/finance/commission-rules: list and create commission rules.
 
 ## Current analytics endpoints
-- GET /api/v1/analytics/dashboard: returns DB-backed inventory, finance, lead funnel, source attribution, and KPI snapshots; requires analytics.read and analytics entitlement.
+- GET /api/v1/analytics/home: returns the core store dashboard summary; requires dashboard.read and is not entitlement-gated.
+- GET /api/v1/analytics/dashboard: returns the selected DB-backed period with inventory, sales, lead funnel, source attribution, owner vehicle margins, finance planned/paid category totals, CRM interactions, document status/kind totals, and marketing availability; requires analytics.read and the analytics entitlement. Closed-sales totals count only current revisions closed in the period, open receivables are pending revenue due in the period, and availableAskingValueCents sums each published listing asking price once rather than once per unit. Owner and finance data additionally require finance.read, CRM data requires crm.pipeline.read or crm.access, and document data requires documents.read. Without finance.read, financialAvailability is restricted, base revenue/ticket/margin/overdue values are null, financial KPI strings are omitted, and owner/finance sections return zero or empty values with an explicit restriction reason. Other restricted sections also return an explicit reason with zero or empty values. Marketing reports unavailable until visit/click events are persisted.
+- GET /api/v1/analytics/dashboard.pdf: materializes the selected period as downloadable PDF bytes; requires analytics.read, finance.read, and the analytics entitlement.
 
 ## Current compliance endpoints
 - GET /api/v1/compliance/snapshot: returns LGPD workflow, access review, audit export, retention, provider webhook, and secret-rotation posture; requires compliance.manage and compliance entitlement.
@@ -213,7 +223,7 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/marketplaces/integrations/{provider}/sync-jobs: queues inventory, lead, publish, update, or unpublish sync jobs after provider setup; requires the matching marketplace permission.
 - POST /api/v1/marketplaces/sync-jobs/{jobId}/run: runs one queued provider job, maps the scoped listing payload for publish/update jobs, fails closed before provider IO unless the listing is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo, allows unpublish from the stored provider external id after the local listing projection is gone, then stores provider external ids and marks the job succeeded or failed.
 - Mercado Livre runtime uses OAuth token exchange and item endpoints when MERCADO_LIVRE_CLIENT_ID is configured.
-- OLX runtime is partner-configurable through OLX_AUTHORIZATION_URL, OLX_API_BASE_URL, OLX_TOKEN_URL, and OLX_LISTINGS_PATH because public official OLX Brasil API docs were not available in this environment.
+- OLX uses the fixed official authorization, token, basic-user, and Autoupload contracts. OAuth requests the exact basic_user_info, autoupload, autoservice, and chat scopes.
 - Provider tokens are encrypted at rest with MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY in production and redacted from API responses, docs, audit metadata, and UI state.
 
 ## Current documents endpoints
@@ -230,10 +240,13 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/external-api/openapi.json: returns the scoped Public API OpenAPI document without the internal backend surface.
 - GET /api/v1/external-api/llms.txt: returns the scoped Public API llms.txt index with concise canonical links and safety notes.
 - GET /api/v1/external-api/manifest: returns the public API capability manifest with live routes, auth rules, docs URLs, and AI-native discovery URLs.
-- GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search and lead creation.
+- GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search, lead creation, and Credere financing.
 - GET /api/v1/external-api/clients: returns scoped API clients and key prefixes; requires external_api.manage.
 - POST /api/v1/external-api/clients: creates a scoped API client and returns the plaintext key once; requires external_api.manage.
 - POST /api/v1/external-api/clients/{clientId}/revoke: revokes the client and active keys; requires external_api.manage.
+- POST /api/v1/external-api/financing/credere/preflight: checks readiness, usable banks, requirements, and safe applicant hydration; requires financing.simulation.read.
+- POST /api/v1/external-api/financing/credere/simulations: creates an official consented simulation with Idempotency-Key; requires financing.simulation.create.
+- GET /api/v1/external-api/financing/credere/simulations/{inquiryId}: reads official status and bank conditions; requires financing.simulation.read.
 - GET /api/v1/external-api/vehicles: lists clean external vehicle DTOs without tenant/store ids, VIN, or full plate fields; requires inventory.read.
 - GET /api/v1/external-api/vehicles/search: supports q/search, available, status, price, year, mileage, color, fuel, transmission, and sort aliases for V1-compatible integrations; requires inventory.read.
 - GET /api/v1/external-api/vehicles/{listingId}: returns vehicle detail with public media, safe unit refs, price history, and status history; requires inventory.read.
@@ -241,18 +254,22 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and an Idempotency-Key deduplication key.
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
+## Current CRM bot endpoints
+- POST /api/v1/crm/bot/actions: executes external bot actions for CRM conversations; supports send_text, send_image, send_audio, send_document, add_note, schedule_message, set_visita, remove_visita, create_tag, assign_tag, remove_tag, list_tags, set_intervention, update_session, close_session, get_session, and check_connection; requires bot authentication with X-Webhook-Secret header or Bearer token.
 ## Current internal monitoring endpoints
-- GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
+- GET /api/v1/internal/health: returns scoped admin observability with filterable audit events, safe diagnostic metadata, request/source context, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; supports limit, actorId, action, category, correlationId, criticality, entityId, entityType, outcome, providerName, requestId, severity, from, and to; requires audit.read.
+- GET /api/v1/internal/platform/health: returns the same safe, filterable observability projection across all stores and tenants; requires both active, non-delegable platformAdmin authority and audit.read. Store/agency roles and audit.read alone are insufficient. Use requestId/correlationId/action/entity/provider filters to build an AI-ready incident context.
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.
 - Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_listing, vehicle_unit, sale, and sale_payment.
 ## Vehicle document kinds
-- Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.
+- Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, power_of_attorney, and buyer_acknowledgment.
 ## External API safety limits
 - External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.
-- API-key mutations use Idempotency-Key to reject duplicate processing with 409; prior responses are not replayed. Request ids provide audit correlation.
+- Public lead metadata is flat and accepts only bounded message and title strings; unknown, reserved, or nested keys are rejected.
+- API-key mutations replay the original bounded JSON status/body for the same completed Idempotency-Key and validated payload. Changed payloads and in-flight attempts return 409; retry a 5xx attempt with a new key. Request ids provide audit correlation.
 - Rate limits, payload size limits, and pagination caps are enforced on external API-key requests.
 - Destructive operations require explicit delete scopes and audit records.
 `;

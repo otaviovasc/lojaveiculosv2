@@ -1,0 +1,87 @@
+import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import type {
+  VehicleListingRepository,
+  VehicleMediaRepository,
+  VehicleUnitRepository,
+} from "../../../vehicle/ports/vehicleInventoryRepository.js";
+import type { CrmExternalBotIntegrationRepository } from "../../ports/crmExternalBotIntegrationRepository.js";
+import type { CrmAudioNormalizer } from "../../ports/crmAudioNormalizer.js";
+import type { CrmAssigneeMembershipRepository } from "../../ports/crmAssigneeMembershipRepository.js";
+import type { CrmCanonicalInboundRepository } from "../../ports/crmCanonicalInboundRepository.js";
+import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmRoutingConnectionRepository } from "../../ports/crmRoutingConnectionRepository.js";
+import type { CrmRoutingPolicyRepository } from "../../ports/crmRoutingPolicyRepository.js";
+import type {
+  ComposioCrmOnboardingProvider,
+  CrmConnectionCredentialVault,
+  CrmZapiSupportAuthorizer,
+  OlxCrmWebhookSetupProvider,
+  UazapiConnectionSetupProvider,
+  ZapiConnectionSetupProvider,
+} from "../../ports/crmConnectionSetupProvider.js";
+import type { CrmOlxWebhookSecurity } from "../../ports/crmOlxWebhookSecurity.js";
+import type { CrmOutcomeRepository } from "../../ports/crmOutcomeRepository.js";
+import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
+import type { CrmPushDeliveryProvider } from "../../ports/crmPushDeliveryProvider.js";
+import type { CrmPushRepository } from "../../ports/crmPushRepository.js";
+import type { CrmRealtimePublisher } from "../../ports/crmRealtimePublisher.js";
+import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
+import type { CrmRepository } from "../../ports/crmRepository.js";
+import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
+import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
+import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
+import type { CrmUazapiProvisioningProvider } from "../../ports/crmUazapiProvisioningProvider.js";
+import type { CrmConnectionMemberRepository } from "../../ports/crmConnectionMemberRepository.js";
+import type { CrmOutboundIntentRepository } from "../../ports/crmOutboundIntentRepository.js";
+import type { CrmConversationRepository } from "../../ports/crmConversationRepository.js";
+import type { CrmConversationCycleCommandRepository } from "../../ports/crmConversationCycleCommandRepository.js";
+import type { ExternalBotManagerPorts } from "../../bot/ports/externalBotPorts.js";
+import type { CrmStatisticsReadModel } from "../../readModels/crmStatisticsReadModel.js";
+
+export type CrmServicePorts = {
+  crmAudioNormalizer?: CrmAudioNormalizer;
+  crmAssigneeMembershipRepository?: CrmAssigneeMembershipRepository;
+  crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
+  externalBotManager?: ExternalBotManagerPorts;
+  crmCanonicalInboundRepository?: CrmCanonicalInboundRepository;
+  crmConnectionRepository?: CrmConnectionRepository;
+  crmRoutingConnectionRepository?: CrmRoutingConnectionRepository;
+  crmRoutingPolicyRepository?: CrmRoutingPolicyRepository;
+  crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmConnectionMemberRepository?: CrmConnectionMemberRepository;
+  crmOlxWebhookSecurity?: CrmOlxWebhookSecurity;
+  crmOutcomeRepository?: CrmOutcomeRepository;
+  olxCrmCallbackOrigin?: string;
+  olxCrmWebhookSetupProvider?: OlxCrmWebhookSetupProvider;
+  crmProviderRuntime?: {
+    olxChatEnabled: boolean;
+  };
+  crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
+  composioChannelOnboardingProvider?: ComposioCrmOnboardingProvider;
+  crmPipelineRepository?: CrmPipelineRepository;
+  crmPushDeliveryProvider?: CrmPushDeliveryProvider;
+  crmPushRepository?: CrmPushRepository;
+  crmRealtimePublisher?: CrmRealtimePublisher;
+  crmRepository: CrmRepository;
+  crmVisitRepository?: CrmVisitRepository;
+  crmWebhookEventRepository?: CrmWebhookEventRepository;
+  crmMessagingGateway?: CrmMessagingGateway;
+  crmMediaFetcher?: CrmRemoteMediaFetcher;
+  crmMediaStorage?: ObjectStorage;
+  crmOutboundIntentRepository?: CrmOutboundIntentRepository;
+  crmConversationRepository?: CrmConversationRepository;
+  crmConversationCycleCommandRepository?: CrmConversationCycleCommandRepository;
+  crmStatisticsReadModel?: CrmStatisticsReadModel;
+  crmUazapiProvisioningProvider?: CrmUazapiProvisioningProvider;
+  environment?: string;
+  transaction?: <T>(
+    action: (ports: CrmServicePorts) => Promise<T>,
+  ) => Promise<T>;
+  vehicleInventory?: {
+    listingRepository: VehicleListingRepository;
+    mediaRepository: VehicleMediaRepository;
+    unitRepository: VehicleUnitRepository;
+  };
+  uazapiConnectionSetupProvider?: UazapiConnectionSetupProvider;
+  zapiConnectionSetupProvider?: ZapiConnectionSetupProvider;
+};

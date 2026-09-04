@@ -1,149 +1,245 @@
-import {
-  and,
-  eq,
-  getTableColumns,
-  gt,
-  inArray,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
-import {
-  crmConnections,
-  storeEntitlements,
-  stores,
-  tenants,
-} from "@lojaveiculosv2/db";
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type {
-  CrmConnection,
-  CrmConnectionRepository,
-} from "../../../domains/crm/ports/crmConnectionRepository.js";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { crmChannelConnections } from "@lojaveiculosv2/db";
+import { canonicalCrmConnectionMetadata } from "../../../domains/crm/ports/crmChannelConnectionProjection.js";
+import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import {
+  abandonedZapiConditions,
+  activeCrmConnectionQuery,
+  canonicalProviderConditions,
+  readConfiguredString,
+  readRecord,
+  toCanonicalConnectionValues,
+  toCrmConnection,
+  updateCanonicalCrmConnection,
+} from "./drizzleCrmConnectionRepositorySupport.js";
+import {
+  claimOlxWebhookSetup,
+  finishOlxWebhookSetup,
+  upsertOlxConnection,
+} from "./drizzleCrmOlxConnectionSetup.js";
 
 export function createDrizzleCrmConnectionRepository(
   db: DrizzleCrmClient,
 ): CrmConnectionRepository {
   return {
-    async findConnectionById(connectionId) {
-      const now = new Date();
-      const [row] = await db
-        .select(getTableColumns(crmConnections))
-        .from(crmConnections)
-        .innerJoin(
-          stores,
-          and(
-            eq(stores.id, crmConnections.storeId),
-            eq(stores.tenantId, crmConnections.tenantId),
-            eq(stores.isDeleted, false),
-            isNull(stores.deletedAt),
-          ),
-        )
-        .innerJoin(
-          tenants,
-          and(
-            eq(tenants.id, crmConnections.tenantId),
-            eq(tenants.isDeleted, false),
-            isNull(tenants.deletedAt),
-          ),
-        )
-        .innerJoin(
-          storeEntitlements,
-          and(
-            eq(storeEntitlements.storeId, crmConnections.storeId),
-            eq(storeEntitlements.tenantId, crmConnections.tenantId),
-            eq(storeEntitlements.featureKey, "crm"),
-            or(
-              eq(storeEntitlements.status, "active"),
-              eq(storeEntitlements.status, "trialing"),
-            ),
-            or(
-              isNull(storeEntitlements.startsAt),
-              lte(storeEntitlements.startsAt, now),
-            ),
-            or(
-              isNull(storeEntitlements.endsAt),
-              gt(storeEntitlements.endsAt, now),
-            ),
-          ),
-        )
-        .where(eq(crmConnections.id, connectionId))
-        .limit(1);
-
-      return row ? toCrmConnection(row) : null;
-    },
-    async listConnections(input) {
-      const filters = [
-        eq(crmConnections.storeId, input.storeId),
-        eq(crmConnections.tenantId, input.tenantId),
-      ];
-      if (input.providers?.length) {
-        filters.push(inArray(crmConnections.provider, [...input.providers]));
-      }
-
+    async archiveAbandonedZapiConnections(input) {
+      const eligible = await db
+        .select({ id: crmChannelConnections.id })
+        .from(crmChannelConnections)
+        .where(abandonedZapiConditions(input.cutoff))
+        .limit(input.limit);
+      if (!eligible.length) return [];
       const rows = await db
-        .select()
-        .from(crmConnections)
-        .where(and(...filters));
-
+        .update(crmChannelConnections)
+        .set({ state: "archived", updatedAt: new Date() })
+        .where(
+          and(
+            inArray(
+              crmChannelConnections.id,
+              eligible.map((item) => item.id),
+            ),
+            abandonedZapiConditions(input.cutoff),
+          ),
+        )
+        .returning();
       return rows.map(toCrmConnection);
     },
-    async updateConnection(input) {
+    async createConnection(input) {
       const [row] = await db
-        .update(crmConnections)
+        .insert(crmChannelConnections)
+        .values(toCanonicalConnectionValues(input))
+        .returning();
+      if (!row)
+        throw new Error("CRM channel connection insert returned no row.");
+      return toCrmConnection(row);
+    },
+    async upsertOlxConnection(input) {
+      return upsertOlxConnection(db, input);
+    },
+    async configureInitialZapiCredentials(input) {
+      const [configured] = await db
+        .update(crmChannelConnections)
         .set({
-          ...(input.credentialsRef
-            ? { credentialsRef: input.credentialsRef }
-            : {}),
-          ...(input.displayName ? { displayName: input.displayName } : {}),
-          ...(input.externalConnectionId !== undefined
-            ? { externalConnectionId: input.externalConnectionId }
-            : {}),
-          ...(input.externalInstanceId !== undefined
-            ? { externalInstanceId: input.externalInstanceId }
-            : {}),
-          ...(input.metadata ? { metadata: input.metadata } : {}),
-          ...(input.phone !== undefined ? { phone: input.phone } : {}),
-          ...(input.status ? { status: input.status } : {}),
-          ...(input.webhookUrl !== undefined
-            ? { webhookUrl: input.webhookUrl }
-            : {}),
+          externalInstanceId: null,
+          metadata: sql`${crmChannelConnections.metadata} || jsonb_build_object('credentialsRef', ${JSON.stringify(input.credentialsRef)}::jsonb)`,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(crmConnections.id, input.connectionId),
-            eq(crmConnections.storeId, input.storeId),
-            eq(crmConnections.tenantId, input.tenantId),
+            eq(crmChannelConnections.id, input.connectionId),
+            eq(crmChannelConnections.storeId, input.storeId),
+            eq(crmChannelConnections.tenantId, input.tenantId),
+            canonicalProviderConditions(ZAPI_CONNECTION_IDENTITY),
+            sql`${crmChannelConnections.state} <> 'archived'`,
+            sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'instanceId'), ''), '') = ''`,
+            sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'instanceToken'), ''), '') = ''`,
+            sql`coalesce(nullif(btrim(${crmChannelConnections.metadata}->'credentialsRef'->'stored'->>'clientToken'), ''), '') = ''`,
+          ),
+        )
+        .returning();
+      if (configured) {
+        return {
+          connection: toCrmConnection(configured),
+          status: "configured",
+        };
+      }
+      const [current] = await db
+        .select({ metadata: crmChannelConnections.metadata })
+        .from(crmChannelConnections)
+        .where(
+          and(
+            eq(crmChannelConnections.id, input.connectionId),
+            eq(crmChannelConnections.storeId, input.storeId),
+            eq(crmChannelConnections.tenantId, input.tenantId),
+            canonicalProviderConditions(ZAPI_CONNECTION_IDENTITY),
+            sql`${crmChannelConnections.state} <> 'archived'`,
+          ),
+        )
+        .limit(1);
+      if (!current) return { status: "not_found" };
+      const stored = readRecord(
+        readRecord(readRecord(current.metadata).credentialsRef).stored,
+      );
+      const instanceId = readConfiguredString(stored.instanceId);
+      const instanceToken = readConfiguredString(stored.instanceToken);
+      const clientToken = readConfiguredString(stored.clientToken);
+      return {
+        status:
+          clientToken && instanceId && instanceToken
+            ? "already_configured"
+            : "partial_state",
+      };
+    },
+    async claimZapiWebhookSetup(input) {
+      const [row] = await db
+        .update(crmChannelConnections)
+        .set({
+          metadata: sql`${crmChannelConnections.metadata} || jsonb_build_object(
+            'connected', false,
+            'webhookSetup',
+            coalesce(${crmChannelConnections.metadata}->'webhookSetup', '{}'::jsonb) ||
+            jsonb_build_object(
+              'attemptCount', coalesce((${crmChannelConnections.metadata}->'webhookSetup'->>'attemptCount')::integer, 0) + 1,
+              'lastErrorCode', null,
+              'leaseExpiresAt', ${input.leaseExpiresAt.toISOString()}::text,
+              'leaseOwner', ${input.leaseOwner}::text,
+              'status', 'configuring',
+              'updatedAt', ${input.now.toISOString()}::text
+            )
+          )`,
+          updatedAt: input.now,
+        })
+        .where(
+          and(
+            eq(crmChannelConnections.id, input.connectionId),
+            eq(crmChannelConnections.storeId, input.storeId),
+            eq(crmChannelConnections.tenantId, input.tenantId),
+            canonicalProviderConditions(ZAPI_CONNECTION_IDENTITY),
+            sql`${crmChannelConnections.state} <> 'archived'`,
+            ...(input.allowConfigured
+              ? []
+              : [
+                  sql`coalesce(${crmChannelConnections.metadata}->'webhookSetup'->>'status', '') <> 'configured'`,
+                ]),
+            sql`(
+              ${crmChannelConnections.metadata}->'webhookSetup'->>'leaseOwner' is null
+              or ${crmChannelConnections.metadata}->'webhookSetup'->>'leaseExpiresAt' is null
+              or (${crmChannelConnections.metadata}->'webhookSetup'->>'leaseExpiresAt')::timestamptz <= ${input.now.toISOString()}::timestamptz
+            )`,
           ),
         )
         .returning();
       return row ? toCrmConnection(row) : null;
     },
+    async claimOlxWebhookSetup(input) {
+      return claimOlxWebhookSetup(db, input);
+    },
+    async finishZapiWebhookSetup(input) {
+      const webhookSetup = readRecord(input.metadata.webhookSetup);
+      const projected = canonicalCrmConnectionMetadata({
+        metadata: input.metadata,
+      });
+      const [row] = await db
+        .update(crmChannelConnections)
+        .set({
+          metadata: sql`${crmChannelConnections.metadata} || ${JSON.stringify({
+            capabilities: projected.capabilities,
+            connected: false,
+            degraded: projected.degraded,
+            errorCode: projected.errorCode,
+            webhookSetup,
+          })}::jsonb`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(crmChannelConnections.id, input.connectionId),
+            eq(crmChannelConnections.storeId, input.storeId),
+            eq(crmChannelConnections.tenantId, input.tenantId),
+            canonicalProviderConditions(ZAPI_CONNECTION_IDENTITY),
+            sql`${crmChannelConnections.metadata}->'webhookSetup'->>'leaseOwner' = ${input.leaseOwner}`,
+          ),
+        )
+        .returning();
+      return row ? toCrmConnection(row) : null;
+    },
+    async finishOlxWebhookSetup(input) {
+      return finishOlxWebhookSetup(db, input);
+    },
+    async findConnectionByExternalId(input) {
+      if (!input.channels.length || !input.providers.length) return null;
+      const [row] = await activeCrmConnectionQuery(db, new Date())
+        .where(
+          and(
+            eq(
+              crmChannelConnections.externalConnectionId,
+              input.externalConnectionId,
+            ),
+            inArray(crmChannelConnections.channel, input.channels),
+            inArray(crmChannelConnections.provider, input.providers),
+            ...(input.brokers?.length
+              ? [inArray(crmChannelConnections.broker, input.brokers)]
+              : []),
+          ),
+        )
+        .limit(1);
+      return row ? toCrmConnection(row) : null;
+    },
+    async findConnectionById(connectionId) {
+      const [row] = await activeCrmConnectionQuery(db, new Date())
+        .where(eq(crmChannelConnections.id, connectionId))
+        .limit(1);
+      return row ? toCrmConnection(row) : null;
+    },
+    async listConnections(input) {
+      const filters = [
+        eq(crmChannelConnections.storeId, input.storeId),
+        eq(crmChannelConnections.tenantId, input.tenantId),
+      ];
+      if (input.providers?.length) {
+        filters.push(inArray(crmChannelConnections.provider, input.providers));
+      }
+      if (input.channels?.length) {
+        filters.push(inArray(crmChannelConnections.channel, input.channels));
+      }
+      if (input.brokers?.length) {
+        filters.push(inArray(crmChannelConnections.broker, input.brokers));
+      }
+      const rows = await db
+        .select()
+        .from(crmChannelConnections)
+        .where(and(...filters));
+      return rows.map(toCrmConnection);
+    },
+    async updateConnection(input) {
+      return updateCanonicalCrmConnection(db, input);
+    },
   };
 }
 
-function toCrmConnection(
-  row: typeof crmConnections.$inferSelect,
-): CrmConnection {
-  return {
-    credentialsRef: readRecord(row.credentialsRef),
-    displayName: row.displayName,
-    externalConnectionId: row.externalConnectionId,
-    externalInstanceId: row.externalInstanceId,
-    id: row.id,
-    metadata: readRecord(row.metadata),
-    phone: row.phone,
-    provider: row.provider,
-    status: row.status,
-    storeId: row.storeId as StoreId,
-    tenantId: row.tenantId as TenantId,
-    webhookUrl: row.webhookUrl,
-  };
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
+const ZAPI_CONNECTION_IDENTITY = {
+  broker: "direct",
+  channel: "whatsapp",
+  provider: "zapi",
+} as const;

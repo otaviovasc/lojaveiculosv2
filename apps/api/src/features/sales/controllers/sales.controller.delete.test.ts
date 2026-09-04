@@ -58,6 +58,7 @@ function createTestApp() {
       contextFactory: async () =>
         createServiceContext({
           actor: { id: "user-1", kind: "user" },
+          entitlements: ["sales"],
           permissions: ["sale.cancel", "sale.draft", "sale.read"],
           request: { requestId: "test-request" },
           storeId,

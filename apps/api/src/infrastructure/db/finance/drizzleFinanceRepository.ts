@@ -7,10 +7,7 @@ import {
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type {
-  FinanceRepository,
-  ListFinanceEntriesInput,
-} from "../../../domains/finance/ports/financeRepository.js";
+import type { FinanceRepository } from "../../../domains/finance/ports/financeRepository.js";
 import {
   toCommissionRule,
   toEntry,
@@ -19,8 +16,11 @@ import {
   toInsertLink,
   toLink,
   toUpdateEntry,
-  type LinkRow,
 } from "./drizzleFinanceMappers.js";
+import {
+  findLinksForEntries,
+  findTargetEntryIds,
+} from "./drizzleFinanceEntryLinks.js";
 import { validateFinanceLinkTargets } from "./drizzleFinanceLinkTargets.js";
 import { createDrizzleFinanceRecurringEntriesRepository } from "./drizzleFinanceRecurringEntries.js";
 import { requireFinanceScope } from "./drizzleFinanceScope.js";
@@ -75,7 +75,7 @@ export function createDrizzleFinanceRepository(
         );
 
       if (!entryRow) return null;
-      const linkRows = await findLinksForEntries([entryRow.id], scope);
+      const linkRows = await findLinksForEntries(db, [entryRow.id], scope);
       return { entry: toEntry(entryRow), links: linkRows.map(toLink) };
     },
     async list(input) {
@@ -86,7 +86,7 @@ export function createDrizzleFinanceRepository(
       ];
       if (input.type) filters.push(eq(financeEntries.type, input.type));
       if (input.status) filters.push(eq(financeEntries.status, input.status));
-      const targetEntryIds = await findTargetEntryIds(input, scope);
+      const targetEntryIds = await findTargetEntryIds(db, input, scope);
       if (targetEntryIds?.size === 0) return [];
       if (targetEntryIds) {
         filters.push(inArray(financeEntries.id, [...targetEntryIds]));
@@ -100,6 +100,7 @@ export function createDrizzleFinanceRepository(
         .limit(input.limit)
         .offset(input.offset);
       const linkRows = await findLinksForEntries(
+        db,
         rows.map((row) => row.id),
         scope,
       );
@@ -163,40 +164,10 @@ export function createDrizzleFinanceRepository(
             .values(input.links.map((link) => toInsertLink(row, row.id, link)));
         }
       }
-      const linkRows = await findLinksForEntries([row.id], scope);
+      const linkRows = await findLinksForEntries(db, [row.id], scope);
       return { entry: toEntry(row), links: linkRows.map(toLink) };
     },
   };
-
-  async function findLinksForEntries(
-    entryIds: readonly string[],
-    scope: { storeId: string; tenantId: string },
-  ): Promise<LinkRow[]> {
-    if (!entryIds.length) return [];
-    const rows = await db.select().from(financeEntryLinks);
-    return rows.filter(
-      (row) =>
-        entryIds.includes(row.entryId) &&
-        row.storeId === scope.storeId &&
-        row.tenantId === scope.tenantId,
-    );
-  }
-
-  async function findTargetEntryIds(
-    input: ListFinanceEntriesInput,
-    scope: { storeId: string; tenantId: string },
-  ): Promise<Set<string> | null> {
-    if (!input.targetId || !input.targetType) return null;
-    const rows = await db.select().from(financeEntryLinks);
-    return new Set(
-      rows
-        .filter((row) => row.storeId === scope.storeId)
-        .filter((row) => row.tenantId === scope.tenantId)
-        .filter((row) => row.targetId === input.targetId)
-        .filter((row) => row.targetType === input.targetType)
-        .map((row) => row.entryId),
-    );
-  }
 }
 
 export class FinanceEntryDrizzleNotFoundError extends Error {

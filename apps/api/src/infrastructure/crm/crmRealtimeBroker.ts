@@ -7,6 +7,14 @@ import type {
   CrmRealtimeSubscription,
   CrmRealtimeTicket,
 } from "../../domains/crm/ports/crmRealtimePublisher.js";
+import {
+  filterCrmRealtimeReplayByHistoricalVisibility,
+  isStaleCrmRealtimeAssignmentEvent,
+  matchesCrmRealtimeQueueVisibility,
+  readCrmRealtimeConversationCycleBoundary,
+  updateCrmRealtimeAssignmentBoundary,
+  type CrmRealtimeAssignmentBoundary,
+} from "../../domains/crm/messaging/crmQueueVisibilityRealtime.js";
 
 const ticketTtlMs = 60_000;
 const maxBufferedEvents = 500;
@@ -18,6 +26,7 @@ export type LocalCrmRealtimeBroker = CrmRealtimeBroker & {
 export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
   const subscriptions = new Map<string, CrmRealtimeSubscription>();
   const history: CrmRealtimeEventEnvelope[] = [];
+  const assignmentBoundaries = new Map<string, CrmRealtimeAssignmentBoundary>();
   const tickets = new Map<string, CrmRealtimeTicket>();
 
   const broker: LocalCrmRealtimeBroker = {
@@ -35,12 +44,28 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
       await broker.publishEnvelope(createEnvelope(event));
     },
     async publishEnvelope(envelope) {
-      if (!history.some((event) => event.id === envelope.id)) {
+      const hasStaleAssignment = isStaleCrmRealtimeAssignmentEvent(
+        assignmentBoundaries,
+        envelope.event,
+      );
+      updateCrmRealtimeAssignmentBoundary(assignmentBoundaries, envelope.event);
+      if (
+        envelope.event.type !== "presence" &&
+        !history.some((event) => event.id === envelope.id)
+      ) {
         history.push(envelope);
         trimHistory(history);
       }
       for (const subscription of subscriptions.values()) {
-        if (!matchesSubscription(subscription, envelope.event)) continue;
+        if (
+          !matchesSubscription(
+            subscription,
+            envelope.event,
+            assignmentBoundaries,
+            hasStaleAssignment,
+          )
+        )
+          continue;
         subscription.onEvent(envelope);
       }
     },
@@ -49,7 +74,9 @@ export function createCrmRealtimeBroker(): LocalCrmRealtimeBroker {
     },
     async resolveTicket(ticket) {
       purgeExpiredTickets(tickets);
-      return tickets.get(ticket) ?? null;
+      const resolved = tickets.get(ticket) ?? null;
+      if (resolved) tickets.delete(ticket);
+      return resolved;
     },
     subscribe(subscription) {
       const id = randomUUID();
@@ -72,9 +99,23 @@ function purgeExpiredTickets(tickets: Map<string, CrmRealtimeTicket>) {
 function matchesSubscription(
   subscription: CrmRealtimeSubscription,
   event: CrmRealtimeEvent,
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
+  hasStaleAssignment: boolean,
 ) {
   if (subscription.storeId !== event.storeId) return false;
   if (subscription.tenantId !== event.tenantId) return false;
+  if (hasStaleAssignment && subscription.queueVisibility.kind === "assigned") {
+    return false;
+  }
+  if (
+    !matchesCrmRealtimeQueueVisibility(
+      subscription.queueVisibility,
+      event,
+      resolveBoundary(boundaries, event),
+    )
+  ) {
+    return false;
+  }
   if (!subscription.connectionId) return true;
   return subscription.connectionId === event.connectionId;
 }
@@ -92,14 +133,22 @@ function replayFromHistory(
   input: CrmRealtimeReplayInput,
 ) {
   if (!input.sinceEventId) return [];
-  const matching = history.filter((envelope) =>
+  const scoped = history.filter((envelope) =>
     matchesReplayScope(input, envelope.event),
   );
-  const cursorIndex = matching.findIndex(
+  const cursorIndex = scoped.findIndex(
     (envelope) => envelope.id === input.sinceEventId,
   );
-  const replay = cursorIndex >= 0 ? matching.slice(cursorIndex + 1) : matching;
-  return replay.slice(-(input.limit ?? maxBufferedEvents));
+  const visible = filterCrmRealtimeReplayByHistoricalVisibility(
+    scoped,
+    cursorIndex >= 0 ? cursorIndex + 1 : 0,
+    input.queueVisibility,
+  );
+  return selectReplayWindow(
+    visible,
+    input.queueVisibility,
+    input.limit ?? maxBufferedEvents,
+  );
 }
 
 function matchesReplayScope(
@@ -110,6 +159,29 @@ function matchesReplayScope(
   if (input.tenantId !== event.tenantId) return false;
   if (!input.connectionId) return true;
   return input.connectionId === event.connectionId;
+}
+
+function resolveBoundary(
+  boundaries: Map<string, CrmRealtimeAssignmentBoundary>,
+  event: CrmRealtimeEvent,
+) {
+  const observed = readCrmRealtimeConversationCycleBoundary(event);
+  return observed ? boundaries.get(observed.cycleKey) : undefined;
+}
+
+function selectReplayWindow(
+  events: CrmRealtimeEventEnvelope[],
+  visibility: CrmRealtimeReplayInput["queueVisibility"],
+  limit: number,
+) {
+  const includesRevocation =
+    visibility.kind === "assigned" &&
+    events.some(
+      ({ event }) =>
+        event.type === "conversationCycle" &&
+        event.revokedUserId === visibility.userId,
+    );
+  return includesRevocation ? events.slice(-limit) : events.slice(0, limit);
 }
 
 function trimHistory(history: CrmRealtimeEventEnvelope[]) {

@@ -1,0 +1,519 @@
+/* CRM External Bot Integration Form & Policies - Modern Billing Style */
+
+.crm-bot-form,
+.crm-bot-policy {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 5%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bot-form:hover,
+.crm-bot-policy:hover {
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  transform: translateY(-2px);
+}
+
+/* Decorative Background Watermarks */
+.crm-bot-card-watermark,
+.crm-bot-policy-watermark {
+  position: absolute;
+  right: -1.25rem;
+  bottom: -1.5rem;
+  width: 8.5rem;
+  height: 8.5rem;
+  pointer-events: none;
+  opacity: 0.05;
+  transform: rotate(-10deg);
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bot-card-watermark svg,
+.crm-bot-policy-watermark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.crm-bot-form:hover .crm-bot-card-watermark,
+.crm-bot-policy:hover .crm-bot-policy-watermark {
+  opacity: 0.09;
+  transform: rotate(-6deg) scale(1.08);
+}
+
+/* Headers */
+.crm-bot-form-header,
+.crm-bot-policy-header {
+  align-items: start;
+  display: grid;
+  gap: 1.15rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  position: relative;
+  z-index: 1;
+}
+
+.crm-bot-header-icon,
+.crm-bot-policy-icon {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #059669;
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .crm-bot-header-icon,
+:root[data-theme="dark"] .crm-bot-policy-icon,
+.dark .crm-bot-header-icon,
+.dark .crm-bot-policy-icon {
+  color: #34d399;
+}
+
+.crm-bot-header-icon svg,
+.crm-bot-policy-icon svg {
+  height: 1.85rem;
+  width: 1.85rem;
+}
+
+.crm-bot-header-info,
+.crm-bot-policy-info {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.crm-bot-eyebrow,
+.crm-bot-policy-eyebrow {
+  color: #059669;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+:root[data-theme="dark"] .crm-bot-eyebrow,
+:root[data-theme="dark"] .crm-bot-policy-eyebrow,
+.dark .crm-bot-eyebrow,
+.dark .crm-bot-policy-eyebrow {
+  color: #34d399;
+}
+
+.crm-bot-form-header h2,
+.crm-bot-policy-header h3 {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-xl);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.crm-bot-form-header p,
+.crm-bot-policy-header p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-bot-form-status,
+.crm-bot-policy-status {
+  border-radius: 9999px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+/* Form Layout */
+.crm-bot-form-grid {
+  display: grid;
+  gap: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.crm-bot-inputs-row {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+}
+
+.crm-bot-form-field {
+  display: grid;
+  gap: 0.4rem;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.crm-bot-form-field:focus-within {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.crm-bot-field-label {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.crm-bot-input-wrap {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  gap: 0.65rem;
+  min-height: 2.85rem;
+  padding: 0 0.95rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.crm-bot-input-wrap:focus-within {
+  background: var(--color-panel);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+  outline: none;
+}
+
+.crm-bot-input-wrap svg {
+  color: var(--color-muted);
+  flex-shrink: 0;
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.crm-bot-input-wrap input {
+  background: transparent;
+  border: 0;
+  color: var(--color-text);
+  flex: 1 1 auto;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  min-width: 0;
+  outline: none;
+}
+
+/* Modern Switch Card */
+.crm-bot-form-switch-card {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  cursor: pointer;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1rem 1.25rem;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.crm-bot-form-switch-card:hover {
+  border-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+}
+
+.crm-bot-switch-info {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.crm-bot-switch-info strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.crm-bot-switch-info p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.crm-bot-switch-toggle {
+  position: relative;
+  width: 3rem;
+  height: 1.65rem;
+  flex-shrink: 0;
+}
+
+.crm-bot-switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.crm-bot-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-line);
+  border-radius: 9999px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bot-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 1.25rem;
+  width: 1.25rem;
+  left: 0.2rem;
+  bottom: 0.2rem;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bot-switch-toggle input:checked + .crm-bot-switch-slider {
+  background-color: #10b981;
+}
+
+.crm-bot-switch-toggle input:checked + .crm-bot-switch-slider:before {
+  transform: translateX(1.35rem);
+}
+
+/* Callout */
+.crm-bot-routing-callout {
+  background: color-mix(in srgb, #10b981 8%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 25%, var(--color-line));
+  border-radius: 0.875rem;
+  padding: 0.85rem 1.15rem;
+}
+
+.crm-bot-routing-callout p {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-bot-routing-callout strong {
+  font-weight: 750;
+}
+
+/* Form Actions */
+.crm-bot-form-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.crm-bot-form-actions .crm-action {
+  box-shadow: none !important;
+  border-radius: 0.625rem;
+  font-weight: 750;
+  font-size: var(--font-size-sm);
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  gap: 0.45rem;
+}
+
+/* Channel Policies Overview */
+.crm-bot-channel-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.crm-bot-channel-tab {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bot-channel-tab:hover {
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-text) 25%, var(--color-line));
+  color: var(--color-text);
+}
+
+.crm-bot-channel-tab-active {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel)) !important;
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line)) !important;
+  color: var(--color-crm-active-emerald) !important;
+  font-weight: 800;
+}
+
+.crm-bot-channel-tab[data-channel="instagram"].crm-bot-channel-tab-active {
+  background: color-mix(in srgb, #e1306c 12%, var(--color-panel)) !important;
+  border-color: color-mix(in srgb, #e1306c 40%, var(--color-line)) !important;
+  color: var(--color-crm-active-instagram) !important;
+}
+
+.crm-bot-channel-tab[data-channel="olx_chat"].crm-bot-channel-tab-active {
+  background: color-mix(in srgb, #6e0ad6 12%, var(--color-panel)) !important;
+  border-color: color-mix(in srgb, #6e0ad6 40%, var(--color-line)) !important;
+  color: var(--color-crm-active-olx) !important;
+}
+
+.crm-bot-action-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  position: relative;
+  z-index: 1;
+}
+
+.crm-bot-action-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  transition: all 0.15s ease;
+}
+
+.crm-bot-action-card:hover {
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, #10b981 35%, var(--color-line));
+}
+
+.crm-bot-action-card code {
+  color: var(--color-text);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.crm-bot-action-badge {
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  padding: 0.2rem 0.65rem;
+  white-space: nowrap;
+}
+
+.crm-bot-action-ready {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 30%, var(--color-line));
+  color: var(--color-crm-active-emerald);
+}
+
+.crm-bot-action-blocked {
+  background: color-mix(in srgb, #f59e0b 10%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, var(--color-line));
+  color: #d97706;
+}
+
+.crm-bot-policy-footer {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.5;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Permission Card */
+.crm-bot-permission-card {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.crm-bot-permission-card svg {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.crm-bot-permission-card strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.crm-bot-permission-card p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  margin: 0.2rem 0 0;
+}
+
+@media (max-width: 720px) {
+  .crm-bot-form-header,
+  .crm-bot-policy-header {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .crm-bot-inputs-row {
+    grid-template-columns: 1fr;
+  }
+}
