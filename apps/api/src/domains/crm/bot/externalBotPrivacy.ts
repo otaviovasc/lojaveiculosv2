@@ -8,6 +8,8 @@ const allowedEventFields = new Set<keyof ExternalBotEventPayload>([
   "contactRef",
   "direction",
   "humanAttendanceActive",
+  "humanAttendanceState",
+  "humanAttendanceStateVersion",
   "messageRef",
   "summary",
   "threadState",

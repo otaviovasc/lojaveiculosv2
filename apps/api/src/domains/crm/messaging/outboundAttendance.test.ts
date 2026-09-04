@@ -119,6 +119,35 @@ describe("transitionConfirmedHumanOutboundAttendance", () => {
     expect(repository.transitionAttendance).not.toHaveBeenCalled();
   });
 
+  it("acknowledges an AI pause when the seller sends through CRM", async () => {
+    const cycle = createTestCrmConversationCycle({
+      assignedUserId: "user-1" as never,
+      humanAttendanceState: "WAITING_HUMAN",
+      humanAttendanceStateVersion: 1,
+      humanTakeoverAt: new Date("2026-08-10T14:00:00.000Z"),
+      interventionId: "ai-intervention",
+      metadata: { humanAttendance: { active: true, source: "ai_request" } },
+      status: "HUMAN_TAKEOVER",
+    });
+    const result = await transitionConfirmedHumanOutboundAttendance({
+      actorId: "user-1",
+      actorKind: "user",
+      conversationCycle: cycle,
+      interventionId: "outbound-1",
+      providerTimestamp,
+      repository: createFakeRepository(cycle),
+      senderOrigin: "human_crm",
+      senderType: "HUMAN",
+    });
+    expect(result.changed).toBe(true);
+    expect(result.conversationCycle).toMatchObject({
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 2,
+      interventionId: "ai-intervention",
+      humanTakeoverAt: cycle.humanTakeoverAt,
+    });
+  });
+
   it("ignores non-human senders", async () => {
     const cycle = createTestCrmConversationCycle();
     const repository = createFakeRepository(cycle);

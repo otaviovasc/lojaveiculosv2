@@ -68,7 +68,7 @@ export function mapExternalBotEvent(row: ExternalBotRow): ExternalBotEvent {
     modelVersion: String(row.model_version),
     type: row.event_type as ExternalBotEvent["type"],
     payload,
-    grant: String(row.grant_token),
+    grant: row.grant_token == null ? null : String(row.grant_token),
     authorizedRequestDigest: String(row.authorized_request_digest),
     grantExpiresAt: new Date(String(row.grant_expires_at)),
     occurredAt: new Date(String(row.occurred_at)),
