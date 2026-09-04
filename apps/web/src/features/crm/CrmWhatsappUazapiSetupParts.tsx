@@ -165,7 +165,7 @@ export function UazapiAccountStage({
       ) : null}
       <div className="crm-zapi-inline-actions">
         <button
-          className="crm-connection-save"
+          className="crm-action crm-action-primary crm-connection-save"
           disabled={busy !== null || !canSubmit}
           onClick={onValidate}
           type="button"
@@ -353,7 +353,7 @@ export function UazapiInstanceStage({
           Voltar para a conta
         </button>
         <button
-          className="crm-connection-save"
+          className="crm-action crm-action-primary crm-connection-save"
           disabled={busy !== null || !canSubmit}
           onClick={onSubmit}
           type="button"

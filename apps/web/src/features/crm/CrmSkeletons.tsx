@@ -109,3 +109,74 @@ export function DetailsPanelSkeleton() {
     </aside>
   );
 }
+
+export function CrmInboxSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Carregando WhatsApp CRM"
+      className="crm-page"
+      role="status"
+    >
+      <div className="crm-scope-nav" style={{ pointerEvents: "none" }}>
+        <strong className="crm-scope-brand">CRM</strong>
+        <div className="crm-scope-tabs" style={{ cursor: "default" }}>
+          <div
+            className="crm-scope-tab crm-scope-tab-active"
+            style={{ cursor: "default" }}
+          >
+            <div className="crm-skeleton h-4 w-20 rounded-md" />
+          </div>
+          <div className="crm-scope-tab" style={{ cursor: "default" }}>
+            <div className="crm-skeleton h-4 w-16 rounded-md" />
+          </div>
+          <div className="crm-scope-tab" style={{ cursor: "default" }}>
+            <div className="crm-skeleton h-4 w-20 rounded-md" />
+          </div>
+          <div className="crm-scope-tab" style={{ cursor: "default" }}>
+            <div className="crm-skeleton h-4 w-24 rounded-md" />
+          </div>
+        </div>
+        <div className="crm-scope-trailing">
+          <div className="crm-skeleton h-6 w-24 rounded-full" />
+        </div>
+      </div>
+
+      <div className="crm-shell" style={{ pointerEvents: "none" }}>
+        <aside className="crm-list" aria-hidden="true">
+          <div className="crm-toolbar">
+            <div className="crm-toolbar-top flex justify-between items-center">
+              <div className="crm-skeleton h-5 w-28 rounded-md" />
+              <div className="crm-skeleton h-7 w-16 rounded-md" />
+            </div>
+            <div className="crm-skeleton h-9 w-full rounded-lg" />
+            <div className="crm-skeleton h-8 w-full rounded-lg" />
+          </div>
+          <SessionListSkeleton count={7} />
+        </aside>
+
+        <section className="crm-chat" aria-hidden="true">
+          <div className="crm-chat-header">
+            <div className="crm-chat-header-main flex items-center gap-3">
+              <div className="crm-avatar crm-skeleton size-10 rounded-full" />
+              <div className="flex flex-col gap-1.5">
+                <div className="crm-skeleton h-4 w-36 rounded-md" />
+                <div className="crm-skeleton h-3 w-24 rounded-md" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="crm-skeleton h-8 w-8 rounded-md" />
+              <div className="crm-skeleton h-8 w-8 rounded-md" />
+            </div>
+          </div>
+
+          <MessageListSkeleton />
+
+          <div className="crm-composer">
+            <div className="crm-skeleton h-12 w-full rounded-xl" />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

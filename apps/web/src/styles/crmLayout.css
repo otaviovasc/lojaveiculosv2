@@ -183,6 +183,15 @@
 /* Tabs */
 .crm-scope-tabs {
   align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   cursor: grab;
   display: flex;
   flex: 1 1 auto;
@@ -190,6 +199,7 @@
   min-width: 0;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
+  padding: 0.25rem;
   scrollbar-width: none;
   width: 100%;
 }
@@ -206,14 +216,14 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 0.625rem;
+  border-radius: 0.5rem;
   color: var(--color-muted);
   display: inline-flex;
   flex-direction: row;
   flex: 1 1 0%;
   gap: 0.45rem;
   justify-content: center;
-  min-height: 2.25rem;
+  min-height: 2.15rem;
   min-width: 0;
   padding: 0.35rem 0.5rem;
   text-align: center;
@@ -268,15 +278,15 @@
 
 .crm-scope-tab-active svg {
   animation: crm-scope-tab-icon-enter 0.18s ease-out;
+  color: var(--color-crm-active-emerald);
 }
 
 .crm-scope-tab-badge {
   align-items: center;
-  background: var(--color-accent);
-  border: 1px solid
-    color-mix(in srgb, var(--color-accent-strong) 22%, var(--color-accent));
+  background: #10b981;
+  border: 1px solid color-mix(in srgb, #047857 22%, #10b981);
   border-radius: 9999px;
-  color: var(--color-accent-foreground);
+  color: #ffffff;
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
@@ -286,31 +296,23 @@
   justify-content: center;
   min-width: 1.15rem;
   padding: 0 0.35rem;
-  box-shadow: 0 1px 4px -1px
-    color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: 0 1px 4px -1px rgba(16, 185, 129, 0.45);
 }
 
 .crm-scope-tab-active {
-  background: color-mix(
-    in srgb,
-    var(--color-accent-soft) 92%,
-    var(--color-panel)
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--color-accent) 18%, var(--color-line));
-  color: var(--color-accent-strong);
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 25%, var(--color-line));
+  color: var(--color-crm-active-emerald);
   font-weight: 750;
-  box-shadow: 0 1px 2px 0
-    color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: 0 1px 2px 0 rgba(16, 185, 129, 0.1);
 }
 
 :root[data-theme="dark"] .crm-scope-tab-active,
 .dark .crm-scope-tab-active {
-  background: color-mix(in srgb, var(--color-accent) 9%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-accent) 28%, transparent);
-  color: white;
-  box-shadow: 0 2px 12px -8px
-    color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: color-mix(in srgb, #10b981 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 35%, transparent);
+  color: #34d399;
+  box-shadow: 0 2px 12px -8px rgba(16, 185, 129, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {

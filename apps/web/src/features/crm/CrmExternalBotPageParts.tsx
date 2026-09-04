@@ -55,11 +55,17 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
 
       <div className="crm-bot-form-grid">
         <div className="crm-bot-inputs-row">
-          <label className="crm-bot-form-field">
-            <span className="crm-bot-field-label">Webhook URL</span>
+          <div className="crm-bot-form-field">
+            <label
+              className="crm-bot-field-label"
+              htmlFor="crm-bot-webhook-url"
+            >
+              Webhook URL
+            </label>
             <span className="crm-bot-input-wrap">
               <LinkIcon aria-hidden="true" />
               <input
+                id="crm-bot-webhook-url"
                 onChange={(event) =>
                   props.onWebhookUrlChange(event.target.value)
                 }
@@ -68,15 +74,16 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
                 value={props.webhookUrl}
               />
             </span>
-          </label>
+          </div>
 
-          <label className="crm-bot-form-field">
-            <span className="crm-bot-field-label">
+          <div className="crm-bot-form-field">
+            <label className="crm-bot-field-label" htmlFor="crm-bot-secret">
               Novo segredo (Header X-Webhook-Secret)
-            </span>
+            </label>
             <span className="crm-bot-input-wrap">
               <KeyRound aria-hidden="true" />
               <input
+                id="crm-bot-secret"
                 onChange={(event) => props.onSecretChange(event.target.value)}
                 placeholder={
                   secretConfigured
@@ -87,7 +94,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
                 value={props.secretDraft}
               />
             </span>
-          </label>
+          </div>
         </div>
 
         <label className="crm-bot-form-switch-card">

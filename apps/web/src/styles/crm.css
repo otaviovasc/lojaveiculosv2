@@ -151,7 +151,61 @@
   box-shadow: none;
 }
 
-.crm-action-secondary {
+.crm-action-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid #047857;
+  color: #ffffff;
+  box-shadow: none;
+  font-weight: 750;
+}
+
+.crm-action-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #065f46;
+  color: #ffffff;
+  transform: translateY(-0.5px);
+  box-shadow: none;
+}
+
+.crm-action-primary:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.crm-connection-save {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: 1px solid #047857 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  font-weight: 750 !important;
+}
+
+.crm-connection-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #065f46 !important;
+  color: #ffffff !important;
+  transform: translateY(-0.5px) !important;
+  box-shadow: none !important;
+}
+
+.crm-connection-save:active:not(:disabled) {
+  transform: scale(0.98) !important;
+  box-shadow: none !important;
+}
+
+.crm-action-primary:disabled,
+.crm-connection-save:disabled {
+  background: color-mix(in srgb, var(--color-line) 80%, var(--color-app));
+  border-color: var(--color-line);
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+  transform: none;
+}
+
+.crm-action-secondary,
+.crm-action-muted {
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
@@ -159,10 +213,12 @@
   );
   border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: none;
   color: var(--color-text);
 }
 
-.crm-action-secondary:hover:not(:disabled) {
+.crm-action-secondary:hover:not(:disabled),
+.crm-action-muted:hover:not(:disabled) {
   background: var(--color-panel);
   border-color: color-mix(in srgb, var(--color-text) 22%, var(--color-line));
   color: var(--color-text);

@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FeatureLoadingState } from "../../components/ui/FeatureStates";
+import { CrmInboxSkeleton } from "./CrmSkeletons";
 
 export const CrmInbox = lazy(() =>
   import("./CrmInbox").then((module) => ({
@@ -8,13 +8,5 @@ export const CrmInbox = lazy(() =>
 );
 
 export function CrmSurfaceBoundary({ children }: { children: ReactNode }) {
-  return (
-    <Suspense
-      fallback={
-        <FeatureLoadingState density="compact" title="Carregando CRM" />
-      }
-    >
-      {children}
-    </Suspense>
-  );
+  return <Suspense fallback={<CrmInboxSkeleton />}>{children}</Suspense>;
 }

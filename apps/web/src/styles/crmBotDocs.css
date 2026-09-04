@@ -13,54 +13,68 @@
    -------------------------------------------------------------------------- */
 .crm-bot-docs-nav {
   align-items: center;
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
   border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: space-between;
-  padding: 0.4rem;
+  padding: 0.35rem 0.5rem;
   width: 100%;
 }
 
 .crm-bot-docs-nav-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .crm-bot-nav-tab {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   color: var(--color-muted);
   cursor: pointer;
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 700;
   gap: 0.55rem;
-  min-height: 2.65rem;
-  padding: 0 1.15rem;
+  min-height: 2.35rem;
+  padding: 0 1rem;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: none;
 }
 
 .crm-bot-nav-tab:hover {
-  background: var(--color-app);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
   color: var(--color-text);
 }
 
 .crm-bot-nav-tab-active {
-  background: var(--color-app) !important;
-  border-color: var(--color-line) !important;
-  color: var(--color-text) !important;
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel)) !important;
+  border-color: color-mix(in srgb, #10b981 35%, var(--color-line)) !important;
+  color: var(--color-crm-active-emerald) !important;
+  box-shadow: none !important;
   font-weight: 800;
 }
 
 .crm-bot-nav-tab-active svg {
-  color: #059669;
+  color: #10b981;
+}
+
+:root[data-theme="dark"] .crm-bot-nav-tab-active,
+.dark .crm-bot-nav-tab-active {
+  background: color-mix(in srgb, #10b981 14%, var(--color-panel)) !important;
+  border-color: color-mix(in srgb, #10b981 35%, transparent) !important;
+  color: #34d399 !important;
 }
 
 :root[data-theme="dark"] .crm-bot-nav-tab-active svg,
