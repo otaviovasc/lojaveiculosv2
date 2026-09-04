@@ -127,7 +127,10 @@ describe("InventoryDetailAnuncioTab", () => {
     expect(screen.queryByText("Configurar integração")).toBeNull();
     expect(
       screen.getAllByText("Integração não disponível nesta tela."),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("link", { name: "Gerenciar integração" }),
+    ).toHaveLength(2);
     expect(
       screen.getByRole("link", { name: "Visualizar anúncio" }),
     ).toHaveAttribute("href", "/test-store?listing=veiculo-teste");
