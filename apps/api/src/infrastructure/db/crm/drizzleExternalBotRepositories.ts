@@ -197,7 +197,7 @@ export function createExternalBotEventOutbox(
       (id, tenant_id, store_id, integration_id, provider_connection_id, thread_id, provider, action_class, model_version, event_type, payload, grant_token, authorized_request_digest, grant_expires_at, occurred_at)
       values (${event.id}::uuid, ${event.tenantId}::uuid, ${event.storeId}::uuid, ${event.integrationId}::uuid,
         ${event.connectionId}::uuid, ${event.threadId}::uuid, ${event.provider}, ${event.actionClass}, ${event.modelVersion}, ${event.type}, ${JSON.stringify(event.payload)}::jsonb,
-        ${event.grant}, ${event.authorizedRequestDigest}, ${event.grantExpiresAt}, ${event.occurredAt})`);
+        ${event.grant}, ${event.authorizedRequestDigest}, ${event.grantExpiresAt}, ${event.occurredAt}) on conflict (id) do nothing`);
     },
     claim: async (now) => {
       await db.execute(sql`update crm_external_bot_event_outbox
@@ -208,7 +208,7 @@ export function createExternalBotEventOutbox(
       const rows =
         await db.execute(sql`update crm_external_bot_event_outbox set state = 'processing', attempt_count = attempt_count + 1, updated_at = now()
         where id = (select id from crm_external_bot_event_outbox where state = 'pending' and next_attempt_at <= ${now}
-          and grant_expires_at > ${now} and grant_token is not null
+          and grant_expires_at > ${now} and (grant_token is not null or (action_class = 'notification' and event_type = 'human_attendance_changed'))
           order by next_attempt_at, created_at for update skip locked limit 1) returning *`);
       const row = (rows as unknown as ExternalBotRow[])[0];
       return row ? mapExternalBotEvent(row) : null;

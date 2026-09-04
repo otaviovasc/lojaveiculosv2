@@ -2,6 +2,7 @@ import {
   createServiceContext,
   type ServiceContext,
 } from "../../../shared/serviceContext.js";
+import { enqueueAttendanceNotification } from "./services/ExternalBotManagerService/enqueueAttendanceNotification.js";
 import { enqueueExternalBotEvent } from "./services/ExternalBotManagerService/enqueueExternalBotEvent.js";
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type {
@@ -61,14 +62,16 @@ export async function enqueueCrmAttendanceExternalBotEvent(
   },
   ports: CrmServicePorts,
 ) {
-  if (input.active) return;
   await enqueueCanonicalEvent(
     context,
     input,
     ports,
     {
       channel: input.connection.channel,
-      humanAttendanceActive: false,
+      humanAttendanceActive: input.active,
+      humanAttendanceState: input.conversationCycle.humanAttendanceState,
+      humanAttendanceStateVersion:
+        input.conversationCycle.humanAttendanceStateVersion,
     },
     "human_attendance_changed",
     false,
@@ -110,6 +113,26 @@ async function enqueueCanonicalEvent(
     tenantId: input.connection.tenantId,
   });
   try {
+    if (type === "human_attendance_changed" && payload.humanAttendanceActive) {
+      await enqueueAttendanceNotification(
+        scopedContext,
+        {
+          channel: input.connection.channel,
+          connectionId: input.connection.id,
+          expectedAttendanceRevision:
+            input.conversationCycle.humanAttendanceStateVersion ?? 0,
+          expectedRevision: input.conversationCycle.revision,
+          idempotencyKey: `crm-bot-attendance:${input.conversationCycle.id}:${input.conversationCycle.humanAttendanceStateVersion ?? 0}`,
+          integrationId: integration.id,
+          modelVersion: manager.modelVersion,
+          payload: { ...payload, channel: input.connection.channel },
+          provider: input.connection.provider,
+          threadId: input.conversationCycle.threadId,
+        },
+        manager,
+      );
+      return;
+    }
     await enqueueExternalBotEvent(
       scopedContext,
       {

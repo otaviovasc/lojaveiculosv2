@@ -99,6 +99,8 @@ export type ExternalBotEventPayload = {
   contactRef?: string;
   direction?: "inbound" | "outbound";
   humanAttendanceActive?: boolean;
+  humanAttendanceState?: "WAITING_HUMAN" | "IN_HUMAN_SERVICE" | null;
+  humanAttendanceStateVersion?: number | null;
   messageRef?: string;
   summary?: string;
   threadState?: string;
@@ -106,13 +108,13 @@ export type ExternalBotEventPayload = {
 };
 
 export type ExternalBotEvent = ExternalBotScope & {
-  actionClass: "effect" | "proposal";
+  actionClass: "effect" | "proposal" | "notification";
   authorizedRequestDigest: string;
   id: string;
   type: ExternalBotEventType;
   occurredAt: Date;
   payload: ExternalBotEventPayload;
-  grant: string;
+  grant: string | null;
   grantExpiresAt: Date;
 };
 

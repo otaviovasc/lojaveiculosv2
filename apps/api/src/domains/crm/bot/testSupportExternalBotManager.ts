@@ -17,9 +17,7 @@ import {
   type MemoryExternalBotManagerOptions,
 } from "./testSupportExternalBotManagerHelpers.js";
 
-export { hashExternalBotCredential };
-export type { MemoryExternalBotManagerOptions };
-
+export { hashExternalBotCredential, type MemoryExternalBotManagerOptions };
 export function createMemoryExternalBotManager(
   options: MemoryExternalBotManagerOptions = {},
 ) {
@@ -159,12 +157,14 @@ export function createMemoryExternalBotManager(
       options.effectDispatcher ??
       ({ dispatch: async () => ({ kind: "succeeded" }) } as const),
     eventOutbox: {
-      enqueue: async (event) =>
-        void events.push({
+      enqueue: async (event) => {
+        if (events.some((row) => row.event.id === event.id)) return;
+        events.push({
           event,
           retryAt: event.occurredAt,
           status: "pending",
-        }),
+        });
+      },
       claim: async (now) => {
         const row = events.find(
           (item) => item.status === "pending" && item.retryAt <= now,
