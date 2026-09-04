@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/marketplaces.css";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
   FeatureActionButton,
