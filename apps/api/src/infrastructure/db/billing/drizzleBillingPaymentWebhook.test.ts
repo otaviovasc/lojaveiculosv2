@@ -10,8 +10,18 @@ import {
   refundAffectsEffectiveContract,
   refundRequiresGrace,
 } from "./drizzleBillingRefundHandling.js";
+import { activationStartAt } from "./drizzleBillingPaidActivationRules.js";
 
 describe("billing payment webhook lifecycle", () => {
+  it("starts an immediate paid contract when it is observed", () => {
+    const observedAt = new Date("2026-09-03T20:30:00.000Z");
+
+    expect(activationStartAt(null, observedAt)).toBe(observedAt);
+    expect(
+      activationStartAt(new Date("2026-09-10T00:00:00.000Z"), observedAt),
+    ).toEqual(new Date("2026-09-10T00:00:00.000Z"));
+  });
+
   it("encodes provider timestamps in the payment conflict update", () => {
     const paidAt = new Date("2026-08-27T12:47:13.000Z");
     const query = billingProviderPaymentUpsertQuery(

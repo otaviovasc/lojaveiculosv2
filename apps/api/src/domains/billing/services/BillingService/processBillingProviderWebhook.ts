@@ -12,6 +12,7 @@ import {
 } from "./serviceSupport.js";
 import { parseAsaasWebhook } from "../../readModels/asaasWebhookParser.js";
 import { BillingWebhookAuthenticationError } from "../../readModels/billingWebhookErrors.js";
+import { acknowledgeDeferredBillingWebhook } from "./acknowledgeDeferredBillingWebhook.js";
 import { webhookResultStatus } from "./billingWebhookResultStatus.js";
 import { syncBillingWebhookEvidence } from "./billingWebhookSync.js";
 
@@ -21,6 +22,7 @@ const processingLeaseMs = 5 * 60 * 1_000;
 export type ProcessBillingProviderWebhookInput = {
   payload: Record<string, unknown>;
   provider: "asaas";
+  deferProcessing?: boolean;
   webhookToken: string | null;
 };
 
@@ -55,6 +57,25 @@ export async function processBillingProviderWebhook(
     provider: input.provider,
     providerEventId: webhook.providerEventId,
   });
+
+  if (input.deferProcessing) {
+    if (recorded.created) {
+      try {
+        await repository.updateStatus({
+          eventId: recorded.event.id,
+          expectedStatus: "received",
+          status: "pending_reconciliation",
+        });
+      } catch (error) {
+        context.logger.error("alert.billing.webhook.defer_status_failed", {
+          errorName: error instanceof Error ? error.name : "UnknownError",
+          providerEventId: webhook.providerEventId,
+        });
+      }
+    }
+    return acknowledgeDeferredBillingWebhook(context, recorded, webhook);
+  }
+
   const processingStartedAt = new Date();
   const processingToken = randomUUID();
   const claimed = await repository.claimForProcessing({
@@ -208,7 +229,6 @@ async function auditWebhook(
     summary: input.summary,
   });
 }
-
 async function auditWebhookBestEffort(
   context: ServiceContext,
   input: Parameters<typeof auditWebhook>[1],

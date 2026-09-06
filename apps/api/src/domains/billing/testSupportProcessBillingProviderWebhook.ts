@@ -129,6 +129,9 @@ export function createWebhookRepository(): BillingWebhookRepository {
     async updateStatus(input) {
       const event = events.find((item) => item.id === input.eventId);
       if (!event) return null;
+      if (input.expectedStatus && event.status !== input.expectedStatus) {
+        return null;
+      }
       if (
         input.processingToken &&
         event.processingToken !== input.processingToken

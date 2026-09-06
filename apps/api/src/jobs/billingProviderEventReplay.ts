@@ -165,6 +165,7 @@ export function billingProviderEventReplayCandidatesQuery(
             inArray(productSchema.providerEvents.status, [
               "failed",
               "pending_reconciliation",
+              "received",
             ]),
             sql`${productSchema.providerEvents.updatedAt} + make_interval(secs => least(${providerEventRetryMaxMs / 1_000}, ${providerEventRetryBaseMs / 1_000} * power(2, greatest(${productSchema.providerEvents.processingAttempts} - 1, 0)))) <= ${sql.param(now, productSchema.providerEvents.updatedAt)}`,
           ),

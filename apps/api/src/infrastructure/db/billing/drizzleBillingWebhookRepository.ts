@@ -85,6 +85,9 @@ export function createDrizzleBillingWebhookRepository(
     },
     async updateStatus(input) {
       const filters = [eq(providerEvents.id, input.eventId)];
+      if (input.expectedStatus) {
+        filters.push(eq(providerEvents.status, input.expectedStatus));
+      }
       if (input.processingToken) {
         filters.push(
           eq(providerEvents.status, "processing"),

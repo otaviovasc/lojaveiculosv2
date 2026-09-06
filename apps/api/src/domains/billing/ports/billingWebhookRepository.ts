@@ -94,6 +94,11 @@ export type BillingProviderSyncResult = {
 export type UpdateBillingProviderWebhookEventStatusInput = {
   errorMessage?: string | null;
   eventId: string;
+  /**
+   * When set, the update only applies if the event's current status matches.
+   * Prevents a deferred transition from clobbering an in-flight worker claim.
+   */
+  expectedStatus?: BillingProviderEventStatus;
   processingToken?: string;
   status: Exclude<BillingProviderEventStatus, "processing" | "received">;
   storeId?: StoreId | null;

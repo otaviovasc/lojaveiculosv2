@@ -136,6 +136,7 @@ export function createBillingFeature(
         await services.processAsaasWebhook(serviceContext, {
           payload,
           provider: "asaas",
+          deferProcessing: true,
           webhookToken,
         }),
       );
