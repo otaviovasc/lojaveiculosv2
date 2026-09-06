@@ -25,10 +25,15 @@ type FakePublicStorefrontRows = {
 
 export function createFakePublicStorefrontDb(
   overrides: Partial<FakePublicStorefrontRows> = {},
+  publicSiteOverrides: Partial<PublicSiteRow> = {},
 ) {
   const orderByArgumentCounts: number[] = [];
   const queriedTables: unknown[] = [];
   const rows = { ...defaultRows(), ...overrides };
+  rows.publicSites = rows.publicSites.map((row) => ({
+    ...row,
+    ...publicSiteOverrides,
+  }));
   const db = {
     orderByArgumentCounts,
     queriedTables,
@@ -151,6 +156,7 @@ function defaultRows(): FakePublicStorefrontRows {
         customDomain: null,
         heroImageUrl: "https://cdn.local/hero.jpg",
         layoutKey: "default",
+        logoImageUrl: null,
         name: "Loja Demo",
         seoDescription: "Estoque selecionado",
         seoTitle: "Loja Demo",

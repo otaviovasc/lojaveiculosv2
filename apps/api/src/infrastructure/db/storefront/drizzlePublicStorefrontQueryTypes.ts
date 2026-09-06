@@ -69,6 +69,7 @@ export type PublicSiteRow = {
   customDomain: string | null;
   heroImageUrl: string | null;
   layoutKey: string;
+  logoImageUrl: string | null;
   name: string;
   seoDescription: string | null;
   seoTitle: string | null;
@@ -117,6 +118,7 @@ export type DrizzlePublicStorefrontClient = {
       customDomain: unknown;
       heroImageUrl: unknown;
       layoutKey: unknown;
+      logoImageUrl: unknown;
       name: unknown;
       seoDescription: unknown;
       seoTitle: unknown;

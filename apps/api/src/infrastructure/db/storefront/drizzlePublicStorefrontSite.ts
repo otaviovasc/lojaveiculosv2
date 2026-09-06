@@ -31,6 +31,7 @@ export async function findPublicSiteBySlug(
       customDomain: storePublicSiteSettings.customDomain,
       heroImageUrl: storePublicSiteSettings.heroImageUrl,
       layoutKey: storePublicSiteSettings.layoutKey,
+      logoImageUrl: storeProfiles.logoImageUrl,
       name: stores.tradingName,
       seoDescription: storePublicSiteSettings.seoDescription,
       seoTitle: storePublicSiteSettings.seoTitle,
@@ -110,7 +111,10 @@ function toSite(row: PublicSiteRow): PublicStorefrontSite {
     layoutKey: row.layoutKey,
     seoDescription: row.seoDescription,
     seoTitle: row.seoTitle,
-    theme: toRecord(row.theme),
+    theme: {
+      ...toRecord(row.theme),
+      ...(row.logoImageUrl ? { logoUrl: row.logoImageUrl } : {}),
+    },
   };
 }
 
