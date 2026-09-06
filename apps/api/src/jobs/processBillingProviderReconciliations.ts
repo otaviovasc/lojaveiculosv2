@@ -39,7 +39,6 @@ export {
 export { billingMonitoringSnapshot } from "./billingProviderReconciliationMonitoring.js";
 
 loadLocalEnv();
-
 const logger = createConsoleServiceLogger({
   component: "job.billing-provider-reconciliation",
   environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
@@ -145,13 +144,11 @@ function createAuditSink() {
     sink: createDrizzleAuditSink(db as unknown as DrizzleAuditSinkClient),
   };
 }
-
 function requireEnv(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} must be configured.`);
   return value;
 }
-
 if (isDirectExecution()) {
   void main().catch((error) => {
     logger.error("job.billing_provider_reconciliation.failed", {
@@ -161,7 +158,6 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
-
 function isDirectExecution() {
   const entrypoint = process.argv[1];
   return Boolean(

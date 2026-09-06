@@ -102,7 +102,7 @@ describe("billing controller webhooks", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       providerEventId: "evt_route_1",
-      status: "processed",
+      status: "pending_reconciliation",
     });
   });
 

@@ -17,6 +17,7 @@ import { repairPaidActiveProviderIdentity } from "./drizzleBillingPaidActiveRepa
 import {
   activationIsDue,
   addBillingMonth,
+  activationStartAt,
   paidEvidenceCanActivateHire,
 } from "./drizzleBillingPaidActivationRules.js";
 import {
@@ -103,7 +104,7 @@ export async function activatePaidPlanHire(
     storeId: hire.storeId,
     tenantId: hire.tenantId,
   });
-  const activationAt = hire.effectiveAt ?? now;
+  const activationAt = activationStartAt(hire.effectiveAt, observedAt);
   if (!activationIsDue(activationAt, observedAt)) {
     await schedulePaidPlanActivation(db, {
       activationAt,
@@ -239,6 +240,7 @@ export async function activatePaidPlanHire(
 }
 
 export {
+  activationStartAt,
   activationIsDue,
   paidEvidenceCanActivateHire,
 } from "./drizzleBillingPaidActivationRules.js";

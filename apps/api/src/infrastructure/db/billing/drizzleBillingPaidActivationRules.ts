@@ -13,6 +13,10 @@ export function activationIsDue(effectiveAt: Date, observedAt: Date) {
   return effectiveAt <= observedAt;
 }
 
+export function activationStartAt(effectiveAt: Date | null, observedAt: Date) {
+  return effectiveAt ?? observedAt;
+}
+
 export function addBillingMonth(date: Date): Date {
   const result = new Date(date);
   result.setUTCMonth(result.getUTCMonth() + 1);

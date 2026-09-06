@@ -31,7 +31,11 @@ export function billingProviderEventCanReplay(
         now.getTime() - providerEventProcessingLeaseMs
     );
   }
-  if (input.status !== "failed" && input.status !== "pending_reconciliation") {
+  if (
+    input.status !== "failed" &&
+    input.status !== "pending_reconciliation" &&
+    input.status !== "received"
+  ) {
     return false;
   }
   return (
