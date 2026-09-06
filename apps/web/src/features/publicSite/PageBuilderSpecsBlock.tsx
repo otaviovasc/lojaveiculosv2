@@ -13,8 +13,11 @@ import type { StorefrontBuilderComponent } from "@lojaveiculosv2/shared";
 import type { BuilderRenderContext } from "./pageBuilderRenderTypes";
 import { textProp } from "./pageBuilderRenderUtils";
 
+import { isVehicleVitrine } from "./vehicleVitrineContent";
+
 export function VehicleSpecsBlock({
   component,
+  context,
 }: {
   component: StorefrontBuilderComponent;
   context: BuilderRenderContext;
@@ -48,7 +51,10 @@ export function VehicleSpecsBlock({
   );
 
   return (
-    <section className="bg-panel border-y border-line/45 py-14">
+    <section
+      className="bg-panel border-y border-line/45 py-14"
+      id={isVehicleVitrine(context.allComponents) ? "specs" : undefined}
+    >
       <div className="public-storefront-shell px-4 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
