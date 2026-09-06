@@ -15,7 +15,18 @@ import {
   textProp,
 } from "./pageBuilderRenderUtils";
 
-export function GalleryBlock({ component, context }: BuilderBlockProps) {
+import { VehicleVitrineGallery } from "./VehicleVitrineGallery";
+import { isVehicleVitrine } from "./vehicleVitrineContent";
+
+export function GalleryBlock(props: BuilderBlockProps) {
+  return isVehicleVitrine(props.context.allComponents) ? (
+    <VehicleVitrineGallery {...props} />
+  ) : (
+    <StandardGalleryBlock {...props} />
+  );
+}
+
+function StandardGalleryBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const images = recordArrayProp(props.images).filter((image) =>
     textProp(image.url),
