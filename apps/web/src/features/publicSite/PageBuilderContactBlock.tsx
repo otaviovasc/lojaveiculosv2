@@ -1,5 +1,6 @@
 import { Check, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 import { useState, type FormEvent, type InputHTMLAttributes } from "react";
+import { readRuntimeApiBaseUrl } from "../account/runtimeAuth";
 import { formatApiErrorDisplay, readApiVoid } from "../../lib/apiErrors";
 import {
   applyInputMask,
@@ -19,11 +20,14 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
   const show = (key: string) => fields[key] !== false;
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    if (context.preview || status.kind === "sending") return;
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const baseUrl = readRuntimeApiBaseUrl().baseUrl ?? "/api/v1";
     setStatus({ kind: "sending" });
     try {
       const response = await fetch(
-        `/api/v1/public/storefront/pages/${encodeURIComponent(context.pageSlug)}/leads`,
+        `${baseUrl}/public/storefront/pages/${encodeURIComponent(context.pageSlug)}/leads`,
         {
           body: JSON.stringify({
             buyerEmail: value(formData, "email"),
@@ -41,7 +45,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
         },
       );
       await readApiVoid(response, { feature: "Vitrine pública" });
-      event.currentTarget.reset();
+      form.reset();
       setStatus({ kind: "sent" });
     } catch (error) {
       setStatus({
@@ -102,7 +106,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           ) : null}
           <button
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded px-6 text-xs font-bold text-inverse transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75 cursor-pointer"
-            disabled={status.kind === "sending"}
+            disabled={context.preview || status.kind === "sending"}
             style={{ background: context.accent }}
             type="submit"
           >
