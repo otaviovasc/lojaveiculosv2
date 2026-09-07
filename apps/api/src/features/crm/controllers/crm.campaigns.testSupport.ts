@@ -1,4 +1,5 @@
 import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
 import { expect, vi } from "vitest";
 import type { CrmConversationRepository } from "../../../domains/crm/ports/crmConversationRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
@@ -16,6 +17,9 @@ export const campaignTenantId = "tenant_1" as TenantId;
 export function createCampaignTestApp(
   conversationRepository: CrmConversationRepository,
   permissions?: PermissionKey[],
+  crmMediaStorage?: unknown,
+  audit?: AuditSink,
+  auditFailureTier?: AuditFailureTier,
 ) {
   const connections = createMemoryCrmConnectionRepository([
     createZapiConnection(),
@@ -39,6 +43,9 @@ export function createCampaignTestApp(
     crmRoutingPolicyRepository: routing.policyRepository,
     crmMessagingGateway: { sendText: createSendTextSpy() },
     crmConversationRepository: conversationRepository,
+    ...(crmMediaStorage ? { crmMediaStorage: crmMediaStorage as never } : {}),
+    ...(audit ? { audit } : {}),
+    ...(auditFailureTier ? { auditFailureTier } : {}),
     ...(permissions ? { permissions } : {}),
   });
 }
@@ -145,7 +152,7 @@ export function createTag(repository: CrmConversationRepository, name: string) {
 export function postZapiReply(
   app: ReturnType<typeof createTestApp>,
   phone: string,
-  input: { content?: string; messageId?: string } = {},
+  input: { content?: string; messageId?: string; timestamp?: number } = {},
 ) {
   return app.request(
     `/api/v1/crm/whatsapp/webhooks/zapi/${campaignConnectionId}/received`,
@@ -155,7 +162,7 @@ export function postZapiReply(
         phone,
         senderName: "Ana",
         text: { message: input.content ?? "Tenho interesse" },
-        timestamp: 1893492300,
+        timestamp: input.timestamp ?? 1893492300,
       },
       withTestZapiWebhookToken(),
     ),

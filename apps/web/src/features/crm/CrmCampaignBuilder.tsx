@@ -24,12 +24,15 @@ import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
 export function CrmCampaignBuilder({
   audienceSource,
   campaignName,
+  canUseImage,
   canCreate,
   canLaunch,
   csvInput,
   effectiveSelectedIds,
   filteredSessions,
   initialTagId,
+  imageError,
+  imageFile,
   intervalMinutes,
   isAudienceLoading,
   isSaving,
@@ -43,6 +46,9 @@ export function CrmCampaignBuilder({
   onCampaignNameChange,
   onCsvInputChange,
   onInitialTagChange,
+  onImageError,
+  onImageRemove,
+  onImageSelect,
   onIntervalMinutesChange,
   onLeadFiltersChange,
   onLaunch,
@@ -73,12 +79,15 @@ export function CrmCampaignBuilder({
 }: {
   audienceSource: CampaignAudienceSource;
   campaignName: string;
+  canUseImage: boolean;
   canCreate: boolean;
   canLaunch: boolean;
   csvInput: string;
   effectiveSelectedIds: Set<string>;
   filteredSessions: CrmConversationCycle[];
   initialTagId: string;
+  imageError: string | null;
+  imageFile: File | null;
   intervalMinutes: number;
   isAudienceLoading: boolean;
   isSaving: boolean;
@@ -92,6 +101,9 @@ export function CrmCampaignBuilder({
   onCampaignNameChange: (value: string) => void;
   onCsvInputChange: (value: string) => void;
   onInitialTagChange: (value: string) => void;
+  onImageError: (error: string | null) => void;
+  onImageRemove: () => void;
+  onImageSelect: (file: File) => void;
   onIntervalMinutesChange: (value: number) => void;
   onLeadFiltersChange: (value: CampaignLeadFilters) => void;
   onLaunch: () => void;
@@ -122,7 +134,7 @@ export function CrmCampaignBuilder({
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const canContinue = [
-    Boolean(campaignName.trim() && text.trim()),
+    Boolean(campaignName.trim() && text.trim() && !imageError),
     reviewRows.length > 0,
     Boolean(selectedCount && !reviewSummary.blockedIncluded),
     canLaunch,
@@ -146,8 +158,14 @@ export function CrmCampaignBuilder({
             <CampaignMessagePanel
               canCreate={canCreate}
               campaignName={campaignName}
+              canUseImage={canUseImage}
+              imageError={imageError}
+              imageFile={imageFile}
               isSaving={isSaving}
               onCampaignNameChange={onCampaignNameChange}
+              onImageError={onImageError}
+              onImageRemove={onImageRemove}
+              onImageSelect={onImageSelect}
               onTextChange={onTextChange}
               text={text}
             />

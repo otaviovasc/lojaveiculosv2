@@ -589,6 +589,13 @@
       "when": 1788439702000,
       "tag": "0083_store_profile_billing_address",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1788500000000,
+      "tag": "0084_crm_special_dates_and_lead_birth_date",
+      "breakpoints": true
     }
   ]
 }

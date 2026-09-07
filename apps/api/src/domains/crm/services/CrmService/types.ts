@@ -27,6 +27,7 @@ import type { CrmPushRepository } from "../../ports/crmPushRepository.js";
 import type { CrmRealtimePublisher } from "../../ports/crmRealtimePublisher.js";
 import type { CrmRemoteMediaFetcher } from "../../ports/crmRemoteMediaFetcher.js";
 import type { CrmRepository } from "../../ports/crmRepository.js";
+import type { CrmSpecialDateRepository } from "../../ports/crmSpecialDateRepository.js";
 import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmMessagingGateway } from "../../ports/crmMessagingGateway.js";
@@ -63,6 +64,7 @@ export type CrmServicePorts = {
   crmPushRepository?: CrmPushRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
+  crmSpecialDateRepository?: CrmSpecialDateRepository;
   crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
   crmMessagingGateway?: CrmMessagingGateway;

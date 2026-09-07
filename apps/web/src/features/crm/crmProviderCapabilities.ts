@@ -102,6 +102,21 @@ export function readCrmConnectionCapabilities(
   };
 }
 
+export function hasCrmSchedulingCapability(
+  connection: Pick<CrmProviderConnection, "capabilities">,
+) {
+  const capabilities = connection.capabilities;
+  if (Array.isArray(capabilities)) {
+    return capabilities.some((capability) => capability === "scheduling");
+  }
+  return (
+    capabilities !== undefined &&
+    typeof capabilities === "object" &&
+    "scheduling" in capabilities &&
+    capabilities.scheduling === true
+  );
+}
+
 function readProviderWindowNotice(provider: string, channel?: string) {
   if (provider === "meta_cloud" && channel === "whatsapp") {
     return "WhatsApp oficial: mensagens livres exigem interação recente do cliente. Fora da janela, inicie com um template aprovado.";

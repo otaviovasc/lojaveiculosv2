@@ -4,13 +4,25 @@ import { crmMessages, crmOutboundIntents } from "@lojaveiculosv2/db";
 import type { CrmOutboundIntentRepository } from "../../../domains/crm/ports/crmOutboundIntentRepository.js";
 import { findCanonicalThreadIdForCycle } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
-
 export function createDrizzleCrmOutboundIntentRepository(
   db: DrizzleCrmClient,
 ): CrmOutboundIntentRepository {
   return {
+    async findByIdempotencyKey(input) {
+      const [existing] = await db
+        .select()
+        .from(crmOutboundIntents)
+        .where(
+          and(
+            eq(crmOutboundIntents.tenantId, input.tenantId),
+            eq(crmOutboundIntents.storeId, input.storeId),
+            eq(crmOutboundIntents.idempotencyKey, input.idempotencyKey),
+          ),
+        )
+        .limit(1);
+      return existing ? map(existing) : null;
+    },
     async claim(input) {
-      const claimToken = randomUUID();
       const threadId = input.cycleId
         ? await findCanonicalThreadIdForCycle(db, {
             connectionId: input.connectionId,
@@ -22,7 +34,7 @@ export function createDrizzleCrmOutboundIntentRepository(
       const [inserted] = await db
         .insert(crmOutboundIntents)
         .values({
-          claimToken,
+          claimToken: randomUUID(),
           connectionId: input.connectionId,
           cycleId: input.cycleId,
           fingerprint: input.fingerprint,
@@ -52,7 +64,7 @@ export function createDrizzleCrmOutboundIntentRepository(
         const [retried] = await db
           .update(crmOutboundIntents)
           .set({
-            claimToken,
+            claimToken: randomUUID(),
             providerResult: null,
             startedAt: input.now,
             status: "started",
@@ -217,14 +229,12 @@ async function findOwnedMessageContext(
   if (!row) throw new Error("Canonical CRM outbound message was not found.");
   return row;
 }
-
 function owned(input: { claimToken: string; id: string }) {
   return and(
     eq(crmOutboundIntents.id, input.id),
     eq(crmOutboundIntents.claimToken, input.claimToken),
   );
 }
-
 function map(row: typeof crmOutboundIntents.$inferSelect) {
   return {
     claimToken: row.claimToken,

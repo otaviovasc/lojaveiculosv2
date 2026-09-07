@@ -15,6 +15,7 @@ export async function createIdempotentCrmLead(
     .insert(leads)
     .values({
       assignedUserId: input.assignedUserId ?? null,
+      birthDate: input.birthDate ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerName: input.buyerName ?? null,
       buyerPhone: input.buyerPhone ?? null,

@@ -20,6 +20,7 @@ import { useOptionalAccountSession } from "../account/accountSession";
 import { readCrmCapabilities } from "./crmPermissions";
 import { createRuntimeCrmConversationApi } from "./runtimeApi";
 import { sourceLabels } from "./crmPipelineConfig";
+import { formatLeadBirthDate } from "./crmLeadBirthDate";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -227,6 +228,15 @@ export function CrmLeadDetailsSidebar({
               </button>
             </div>
           ) : null}
+          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-panel/20 border border-line/15">
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar className="size-3.5 text-muted shrink-0" />
+              <span className="truncate">Data de nascimento</span>
+            </div>
+            <span className="shrink-0 text-app-text">
+              {formatLeadBirthDate(lead.birthDate)}
+            </span>
+          </div>
         </div>
       </div>
 

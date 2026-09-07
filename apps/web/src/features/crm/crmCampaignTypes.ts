@@ -10,6 +10,9 @@ export type CrmCampaign = {
   id: string;
   initialTagId: string | null;
   intervalMinutes: number;
+  mediaFileName?: string | null;
+  mediaType: string | null;
+  mediaUrl: string | null;
   name: string;
   repliedCount: number;
   replyRate: number;
@@ -67,6 +70,9 @@ export type CrmCreateCampaignInput = {
   content: string;
   initialTagId?: string | null;
   intervalMinutes?: number;
+  mediaBase64?: string | null;
+  mediaFileName?: string | null;
+  mediaType?: string | null;
   name: string;
   recipients: Array<{
     cycleId: string;

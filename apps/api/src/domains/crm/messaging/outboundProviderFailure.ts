@@ -6,9 +6,11 @@ import type { CrmOutboundIntentRepository } from "../ports/crmOutboundIntentRepo
 import {
   CrmMessageActionError,
   CrmMessageDtoNotFoundError,
+  CrmOutboundReconciliationPendingError,
 } from "./crmMessagingErrors.js";
 
-type FailureKind = "failed" | "indeterminate" | "retryable_failed";
+export type OutboundProviderFailureKind =
+  "failed" | "indeterminate" | "retryable_failed";
 
 export async function recordOutboundProviderFailure(
   repository: CrmOutboundIntentRepository,
@@ -30,6 +32,27 @@ export async function recordOutboundProviderFailure(
     .catch(() => undefined);
 }
 
+/**
+ * A preflight failure happened before the provider effect was attempted. Keep
+ * the intent retryable so an operator can fix the route/window and try the
+ * same idempotency key again. The normal provider failure classifier must not
+ * be used here: a route rejection is deterministic for this attempt, but it
+ * does not prove that the idempotent operation should become terminal.
+ */
+export async function releaseOutboundIntentAfterPreflightFailure(
+  repository: CrmOutboundIntentRepository,
+  intent: { claimToken: string; id: string },
+  error: unknown,
+) {
+  await repository
+    .recordProviderFailure({
+      ...intent,
+      failure: failureDescriptor(error),
+      retryable: true,
+    })
+    .catch(() => undefined);
+}
+
 export function throwPersistedOutboundFailure(
   value: Record<string, unknown> | null,
 ): never {
@@ -44,7 +67,12 @@ export function throwPersistedOutboundFailure(
   );
 }
 
-function classifyOutboundProviderFailure(error: unknown): FailureKind {
+export function classifyOutboundProviderFailure(
+  error: unknown,
+): OutboundProviderFailureKind {
+  if (error instanceof CrmOutboundReconciliationPendingError) {
+    return "indeterminate";
+  }
   if (error instanceof CrmMessagingCapabilityError) return "failed";
   if (error instanceof CrmMessagingGatewayError) {
     if (error.code === "timeout" || error.code === "request_failed") {

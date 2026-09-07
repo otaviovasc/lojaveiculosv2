@@ -9,6 +9,8 @@ import type {
   CrmScheduledMessage,
 } from "./crmConversationTypes";
 import type { CrmCampaign } from "./crmCampaignTypes";
+import type { CrmProviderConnection } from "./crmConversationTypes";
+import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 import {
   peekCrmScopedCache,
   CRM_CAMPAIGNS_CACHE_KEY,
@@ -16,6 +18,7 @@ import {
   writeCrmScopedCache,
 } from "./crmScopedCache";
 import type { useCrmInbox } from "./useCrmInbox";
+import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
 
 type InboxState = ReturnType<typeof useCrmInbox>;
 
@@ -37,11 +40,16 @@ export function CrmCampaignsSection({
     api,
     CRM_CAMPAIGNS_CACHE_KEY,
   );
+  const campaignConnection = inbox.activeConnection;
+  const campaignCapabilities =
+    readCrmConnectionCapabilities(campaignConnection);
   return (
     <CrmCampaignsPage
+      campaignConnectionKey={inbox.connectionId}
       canCancel={inbox.permissions.canCampaignManage}
       canCreate={inbox.permissions.canCampaignManage}
       canRead={inbox.permissions.canCampaignRead}
+      canUseImage={campaignCapabilities.allowImages}
       {...(initialCampaigns ? { initialCampaigns } : {})}
       onCancelCampaign={api.cancelCampaign}
       onCreateCampaign={api.createCampaign}
@@ -62,11 +70,17 @@ export function CrmIntegrationsSection({
   canManage,
   canRead,
   canRetry,
+  canManageSpecialDates = false,
+  connections = [],
+  specialDateApi,
 }: {
   api: CrmConversationApi;
   canManage: boolean;
   canRead: boolean;
   canRetry: boolean;
+  canManageSpecialDates?: boolean;
+  connections?: readonly CrmProviderConnection[];
+  specialDateApi?: CrmSpecialDateApi;
 }) {
   return (
     <CrmExternalBotPage
@@ -74,6 +88,9 @@ export function CrmIntegrationsSection({
       canManage={canManage}
       canRead={canRead}
       canRetry={canRetry}
+      canManageSpecialDates={canManageSpecialDates}
+      connections={connections}
+      {...(specialDateApi ? { specialDateApi } : {})}
     />
   );
 }

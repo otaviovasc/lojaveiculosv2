@@ -68,6 +68,7 @@ export type CrmLeadDetailsPageProps = {
   activities: ProductCrmLeadActivity[];
   stages: PipelineStage[];
   onBack: () => void;
+  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
   onMoveLeadPipelineStage: (
     leadId: string,
     pipelineStageId: string,

@@ -12,6 +12,7 @@ import {
   connectionId,
   createZapiConnection,
   expectForbidden,
+  grantActorConnectionMembership,
   ingestText,
   jsonPost,
   otherUserId,
@@ -56,7 +57,9 @@ describe("CRM queue", () => {
       storeId,
       tenantId,
     });
+    const connectionMemberRepository = await grantActorConnectionMembership();
     const app = createTestApp({
+      crmConnectionMemberRepository: connectionMemberRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
@@ -168,7 +171,9 @@ describe("CRM queue", () => {
       storeId,
       tenantId,
     });
+    const connectionMemberRepository = await grantActorConnectionMembership();
     const app = createTestApp({
+      crmConnectionMemberRepository: connectionMemberRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),

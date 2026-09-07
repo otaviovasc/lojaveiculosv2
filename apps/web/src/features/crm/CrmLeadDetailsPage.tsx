@@ -12,6 +12,7 @@ import {
   Landmark,
   LayoutDashboard,
   MessageSquare,
+  Pencil,
   Phone,
   ReceiptText,
   StickyNote,
@@ -30,6 +31,7 @@ import type {
 } from "./CrmPipelineViewTypes";
 import { CrmLeadDetailsTabs } from "./CrmLeadDetailsTabs";
 import { CrmLeadDetailsSidebar } from "./CrmLeadDetailsSidebar";
+import { CrmLeadEditDialog } from "./CrmLeadEditDialog";
 import { sourceLabels } from "./crmPipelineConfig";
 import { CrmLeadChatModal } from "./CrmLeadChatModal";
 import { LeadFinancingSimulationModal } from "./LeadFinancingSimulationModal";
@@ -47,6 +49,7 @@ export function CrmLeadDetailsPage({
   onBack,
   onMoveLeadPipelineStage,
   onCreateActivity,
+  onUpdateLead,
   onSetLeadArchived,
   vehicleOptions,
 }: CrmLeadDetailsPageProps) {
@@ -54,6 +57,7 @@ export function CrmLeadDetailsPage({
   const [isStageDropdownOpen, setIsStageDropdownOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeSaleModalId, setActiveSaleModalId] = useState<string | null>(
     null,
   );
@@ -186,6 +190,17 @@ export function CrmLeadDetailsPage({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <button
+            aria-label={`Editar dados de ${leadName}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text cursor-pointer"
+            onClick={() => setIsEditDialogOpen(true)}
+            title="Editar dados do cliente"
+            type="button"
+          >
+            <Pencil aria-hidden="true" className="size-3.5" />
+            <span className="hidden sm:inline">Editar</span>
+          </button>
+
           <button
             aria-label={`Abrir chat de ${leadName} no CRM`}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-3 text-xs font-black text-primary transition-all hover:bg-primary/20 cursor-pointer"
@@ -419,6 +434,14 @@ export function CrmLeadDetailsPage({
           onStartSale={() => setActiveSaleModalId("new")}
         />
       )}
+
+      {isEditDialogOpen ? (
+        <CrmLeadEditDialog
+          lead={lead}
+          onClose={() => setIsEditDialogOpen(false)}
+          onSave={(input) => onUpdateLead(lead.id, input)}
+        />
+      ) : null}
 
       {isSimulationModalOpen && (
         <LeadFinancingSimulationModal

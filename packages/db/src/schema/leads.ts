@@ -1,4 +1,5 @@
 import {
+  date,
   foreignKey,
   index,
   integer,
@@ -59,6 +60,7 @@ export const leads = pgTable(
     ...lifecycleColumns,
     ...softDeleteColumns,
     assignedUserId: uuid("assigned_user_id").references(() => users.id),
+    birthDate: date("birth_date"),
     buyerEmail: varchar("buyer_email", { length: 254 }),
     buyerName: varchar("buyer_name", { length: 191 }),
     buyerPhone: varchar("buyer_phone", { length: 40 }),

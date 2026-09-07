@@ -1,9 +1,11 @@
 import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
 import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmPushRepository } from "../../../domains/crm/testSupportCrmPush.js";
+import { createMemoryCrmSpecialDateRepository } from "../../../domains/crm/testSupportSpecialDates.js";
 import { createTestCrmConnectionCredentialVault } from "./crm.channelConnections.testSupport.js";
 import { createTestCrmMessagingGateway } from "./crm.messagingGateway.testSupport.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
@@ -20,6 +22,9 @@ export function buildTestCrmServicePorts(
 ): NonNullable<CreateCrmServicesOptions["ports"]> {
   const assigneeMembershipRepository =
     createMemoryCrmAssigneeMembershipRepository();
+  const conversationRepository =
+    options.crmConversationRepository ??
+    createMemoryCrmConversationRepository();
   const routingConnectionRepository =
     options.crmRoutingConnectionRepository ??
     createTestRoutingConnectionRepository(options.crmConnectionRepository);
@@ -92,6 +97,11 @@ export function buildTestCrmServicePorts(
     crmPushRepository:
       options.crmPushRepository ?? createMemoryCrmPushRepository(),
     crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
+    crmSpecialDateRepository:
+      options.crmSpecialDateRepository ??
+      createMemoryCrmSpecialDateRepository({
+        conversationRepository: conversationRepository,
+      }),
     crmVisitRepository:
       options.crmVisitRepository ?? createMemoryCrmVisitRepository(),
     ...(options.transaction
@@ -105,9 +115,7 @@ export function buildTestCrmServicePorts(
             )) satisfies TestCrmServicePorts["transaction"],
         }
       : {}),
-    ...(options.crmConversationRepository
-      ? { crmConversationRepository: options.crmConversationRepository }
-      : {}),
+    crmConversationRepository: conversationRepository,
     ...(options.crmWebhookEventRepository
       ? { crmWebhookEventRepository: options.crmWebhookEventRepository }
       : {}),

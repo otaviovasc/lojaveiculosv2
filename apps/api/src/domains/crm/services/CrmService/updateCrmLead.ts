@@ -10,10 +10,13 @@ import {
   type CrmServicePorts,
 } from "./serviceSupport.js";
 
+import { isValidIsoCalendarBirthDate } from "../../messaging/crmSpecialDateCalculator.js";
+
 const permission = "lead.update";
 
 export type UpdateCrmLeadInput = {
   assignedUserId?: string | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -29,6 +32,17 @@ export async function updateCrmLead(
 ): Promise<CrmLead> {
   assertPermission(context, permission);
   const scope = requireCrmScope(context);
+
+  if (
+    input.birthDate !== undefined &&
+    input.birthDate !== null &&
+    !isValidIsoCalendarBirthDate(input.birthDate)
+  ) {
+    throw new Error(
+      "Invalid birthDate: must be a valid calendar date (YYYY-MM-DD) not in the future",
+    );
+  }
+
   const repository = getCrmRepository(ports);
   const before = await repository.findLeadById({
     leadId: input.leadId,
@@ -51,6 +65,7 @@ export async function updateCrmLead(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId as UserId | null }
       : {}),
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
@@ -85,6 +100,7 @@ export async function updateCrmLead(
 function summarizeChangedFields(before: CrmLead, after: CrmLead) {
   return [
     ["assignedUserId", before.assignedUserId, after.assignedUserId],
+    ["birthDate", before.birthDate, after.birthDate],
     ["buyerEmail", before.buyerEmail, after.buyerEmail],
     ["buyerName", before.buyerName, after.buyerName],
     ["buyerPhone", before.buyerPhone, after.buyerPhone],

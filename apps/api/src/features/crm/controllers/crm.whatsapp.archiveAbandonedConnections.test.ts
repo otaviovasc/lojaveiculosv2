@@ -117,6 +117,7 @@ describe("archiveAbandonedZapiConnections", () => {
         crmOutboundIntentRepository: {
           claim: vi.fn(),
           complete: vi.fn(),
+          findByIdempotencyKey: vi.fn(),
           markIndeterminate: vi.fn(),
           purgeExpiredRecoveryPayloads,
           recordProviderFailure: vi.fn(),

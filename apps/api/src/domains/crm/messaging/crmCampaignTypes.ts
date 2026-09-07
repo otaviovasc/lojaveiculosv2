@@ -17,6 +17,9 @@ export type CreateCrmCampaignInput = {
   content: string;
   initialTagId?: string | null;
   intervalMinutes?: number;
+  mediaBase64?: string | null;
+  mediaFileName?: string | null;
+  mediaType?: string | null;
   name: string;
   recipients: readonly CrmCampaignRecipientInput[];
   replyTagId?: string | null;
@@ -45,6 +48,10 @@ export type NormalizedCrmCampaignInput = {
   content: string;
   initialTagId: string | null;
   intervalMinutes: number;
+  mediaFileName?: string | null;
+  mediaStorageKey?: string | null;
+  mediaType?: string | null;
+  mediaUrl?: string | null;
   name: string;
   recipients: readonly CrmCampaignRecipientInput[];
   replyTagId: string | null;

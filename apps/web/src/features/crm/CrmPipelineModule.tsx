@@ -174,7 +174,10 @@ export function CrmPipelineModule({
   };
 
   const updateLeadContact = async (leadId: string, input: LeadContactPatch) => {
-    await crmApi.updateLead(leadId, input);
+    const updatedLead = await crmApi.updateLead(leadId, input);
+    setLinkedLead((current) =>
+      current?.id === leadId ? updatedLead : current,
+    );
     await board.refresh();
   };
 

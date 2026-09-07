@@ -1,4 +1,4 @@
-import type { AuditSink } from "@lojaveiculosv2/audit";
+import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import type { CrmExternalBotIntegrationRepository } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
@@ -27,6 +27,7 @@ import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 export type CreateCrmTestAppOptions = {
   actorDisplayName?: string;
   audit?: AuditSink;
+  auditFailureTier?: AuditFailureTier;
   crmAudioNormalizer?: CrmServicePorts["crmAudioNormalizer"];
   composioChannelOnboardingProvider?: CrmServicePorts["composioChannelOnboardingProvider"];
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
@@ -48,6 +49,7 @@ export type CreateCrmTestAppOptions = {
   crmRoutingConnectionRepository?: CrmServicePorts["crmRoutingConnectionRepository"];
   crmRoutingPolicyRepository?: CrmServicePorts["crmRoutingPolicyRepository"];
   crmRepository?: CrmRepository;
+  crmSpecialDateRepository?: CrmServicePorts["crmSpecialDateRepository"];
   crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
   crmMessagingGateway?: Partial<CrmMessagingGateway>;

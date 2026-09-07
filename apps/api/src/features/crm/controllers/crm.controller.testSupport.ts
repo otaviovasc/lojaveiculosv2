@@ -66,6 +66,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
               kind: "user",
             },
             ...(options.audit ? { audit: options.audit } : {}),
+            ...(options.auditFailureTier
+              ? { auditFailureTier: options.auditFailureTier }
+              : {}),
             ...(options.logger ? { logger: options.logger } : {}),
             permissions: options.permissions ?? defaultWhatsappPermissions,
             request: { requestId: "req_1" },
@@ -83,6 +86,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
             displayName: actor.displayName,
           },
           ...(options.audit ? { audit: options.audit } : {}),
+          ...(options.auditFailureTier
+            ? { auditFailureTier: options.auditFailureTier }
+            : {}),
           ...(options.logger ? { logger: options.logger } : {}),
           permissions: ["crm.messages.ingest", "crm.conversations.manage"],
           request: { requestId: "req_1" },

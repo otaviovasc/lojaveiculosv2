@@ -24,6 +24,7 @@ export type CrmLeadSource =
 
 export type ProductCrmLead = {
   assignedUserId: string | null;
+  birthDate?: string | null;
   buyerEmail: string | null;
   buyerName: string | null;
   buyerPhone: string | null;
@@ -64,6 +65,7 @@ export type ProductCrmLeadActivity = {
 };
 
 export type CreateProductCrmLeadInput = {
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -74,6 +76,7 @@ export type CreateProductCrmLeadInput = {
 
 export type UpdateProductCrmLeadInput = {
   assignedUserId?: string | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;

@@ -1,13 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type {
-  CrmCampaign,
-  CrmConversationRepository,
-  CrmConversationCycle,
-} from "../../ports/crmConversationRepository.js";
-import { CrmMessageActionError } from "../../messaging/crmMessagingErrors.js";
+import type { CrmCampaign } from "../../ports/crmConversationRepository.js";
 import {
   getCrmConversationRepository,
+  getCrmMediaStorage,
   requireCrmMessagingScope,
   runCrmTransaction,
   type CrmServicePorts,
@@ -21,20 +17,23 @@ import {
   campaignReadPermission,
   type CreateCrmCampaignInput,
   type ListCrmCampaignsInput,
-  type NormalizedCrmCampaignInput,
 } from "../../messaging/crmCampaignTypes.js";
 import {
-  assertValidCampaignText,
-  campaignScheduledAt,
   campaignScheduledEnd,
-  dedupeCampaignRecipients,
-  normalizePositiveInt,
-  renderCampaignText,
   requireCampaignTags,
   resolveCampaignSessions,
   singleCampaignConnectionId,
 } from "../../messaging/crmCampaignSupport.js";
 import { resolveCrmConnectionScopedQueueVisibility } from "../../messaging/crmQueueVisibility.js";
+import { ingestCampaignMedia } from "../../messaging/crmCampaignMediaIngestion.js";
+import {
+  normalizeCampaignInput,
+  validateCampaignBeforeUpload,
+} from "../../messaging/crmCampaignInput.js";
+import {
+  createInitialSchedules,
+  tagCampaignSessions,
+} from "../../messaging/crmCampaignScheduling.js";
 
 export async function listCrmCampaigns(
   context: ServiceContext,
@@ -57,64 +56,82 @@ export async function createCrmCampaign(
   ports: CrmServicePorts,
 ): Promise<CrmCampaign> {
   assertPermission(context, campaignManagePermission);
-  const normalized = normalizeCampaignInput(input);
+  const scope = requireCrmMessagingScope(context);
+  // Validate the complete campaign envelope and recipient visibility before
+  // any object-storage side effect can occur. A malformed or unauthorized
+  // campaign therefore cannot leave an orphaned upload behind.
+  const inputWithoutMedia = normalizeCampaignInput(input);
+  await validateCampaignBeforeUpload(context, inputWithoutMedia, ports, scope);
+  const mediaResult = await ingestCampaignMedia(context, ports, {
+    ...(input.mediaBase64 !== undefined
+      ? { mediaBase64: input.mediaBase64 }
+      : {}),
+    ...(input.mediaFileName !== undefined
+      ? { mediaFileName: input.mediaFileName }
+      : {}),
+    ...(input.mediaType !== undefined ? { mediaType: input.mediaType } : {}),
+  });
+  const normalized = {
+    ...inputWithoutMedia,
+    mediaFileName: mediaResult.mediaFileName,
+    mediaStorageKey: mediaResult.storageKey,
+    mediaType: mediaResult.mediaType,
+    mediaUrl: mediaResult.mediaUrl,
+  };
   logCrmServiceEvent(context, "crm.campaign.create.started", {
+    hasMedia: Boolean(normalized.mediaUrl),
     recipientCount: normalized.recipients.length,
   });
-  return recordCrmServiceMutation(
-    context,
-    {
-      action: "crm.campaign.create",
-      category: "data_change",
-      metadata: {
-        hasInitialTag: Boolean(normalized.initialTagId),
-        hasReplyTag: Boolean(normalized.replyTagId),
-        recipientCount: normalized.recipients.length,
+  let transactionCommitted = false;
+  try {
+    return await recordCrmServiceMutation(
+      context,
+      {
+        action: "crm.campaign.create",
+        category: "data_change",
+        metadata: {
+          hasInitialTag: Boolean(normalized.initialTagId),
+          hasMedia: Boolean(normalized.mediaUrl),
+          hasReplyTag: Boolean(normalized.replyTagId),
+          recipientCount: normalized.recipients.length,
+        },
+        permission: campaignManagePermission,
+        summary: "Created CRM WhatsApp campaign",
       },
-      permission: campaignManagePermission,
-      summary: "Created CRM WhatsApp campaign",
-    },
-    () =>
-      runCrmTransaction(ports, (tx) =>
-        createCampaignRecords(context, normalized, tx),
-      ),
-  );
-}
-
-function normalizeCampaignInput(
-  input: CreateCrmCampaignInput,
-): NormalizedCrmCampaignInput {
-  const name = input.name.trim();
-  const content = input.content.trim();
-  assertValidCampaignText(name, content);
-  if (input.scheduledStartAt <= new Date()) {
-    throw new CrmMessageActionError(
-      "Campaign start time must be in the future.",
+      async () => {
+        const result = await runCrmTransaction(ports, (tx) =>
+          createCampaignRecords(context, normalized, tx),
+        );
+        transactionCommitted = true;
+        return result;
+      },
     );
+  } catch (error) {
+    // Object storage is outside the database transaction. Compensate when the
+    // campaign write fails after a managed upload has already succeeded.
+    if (!transactionCommitted && mediaResult.storageKey) {
+      const storage = getCrmMediaStorage(ports);
+      if (storage?.deleteObject) {
+        await storage
+          .deleteObject({ storageKey: mediaResult.storageKey })
+          .catch((cleanupError) => {
+            context.logger.warn("crm.campaign.media_cleanup.failed", {
+              errorName:
+                cleanupError instanceof Error
+                  ? cleanupError.name
+                  : "UnknownError",
+              requestId: context.requestId,
+            });
+          });
+      }
+    }
+    throw error;
   }
-  const recipients = dedupeCampaignRecipients(input.recipients);
-  if (!recipients.length) {
-    throw new CrmMessageActionError("At least one recipient is required.");
-  }
-  return {
-    content,
-    initialTagId: input.initialTagId ?? null,
-    intervalMinutes: normalizePositiveInt(input.intervalMinutes, 1),
-    name,
-    recipients,
-    replyTagId: input.replyTagId ?? null,
-    scheduledStartAt: input.scheduledStartAt,
-    secondaryContent: input.secondaryContent?.trim() || null,
-    secondaryDelayMinutes: normalizePositiveInt(
-      input.secondaryDelayMinutes,
-      1440,
-    ),
-  };
 }
 
 async function createCampaignRecords(
   context: ServiceContext,
-  input: NormalizedCrmCampaignInput,
+  input: ReturnType<typeof normalizeCampaignInput>,
   ports: CrmServicePorts,
 ) {
   const scope = requireCrmMessagingScope(context);
@@ -135,7 +152,14 @@ async function createCampaignRecords(
       context.actor.kind === "user" ? (context.actor.id as never) : null,
     initialTagId: input.initialTagId,
     intervalMinutes: input.intervalMinutes,
-    metadata: {},
+    mediaType: input.mediaType ?? null,
+    mediaUrl: input.mediaUrl ?? null,
+    metadata: {
+      ...(input.mediaStorageKey
+        ? { mediaStorageKey: input.mediaStorageKey }
+        : {}),
+      ...(input.mediaFileName ? { mediaFileName: input.mediaFileName } : {}),
+    },
     name: input.name,
     replyTagId: input.replyTagId,
     scheduledCount: conversationCycles.length,
@@ -165,61 +189,4 @@ async function createCampaignRecords(
     );
   }
   return campaign;
-}
-
-async function createInitialSchedules(
-  repository: CrmConversationRepository,
-  campaign: CrmCampaign,
-  input: NormalizedCrmCampaignInput,
-  conversationCycles: readonly CrmConversationCycle[],
-  scope: { storeId: string; tenantId: string },
-) {
-  for (const [sequence, conversationCycle] of conversationCycles.entries()) {
-    const variables = input.recipients[sequence]?.variables ?? {};
-    const scheduled = await repository.createScheduledMessage({
-      campaignId: campaign.id,
-      campaignMessageType: "initial",
-      campaignRecipientKey: conversationCycle.id,
-      campaignSequence: sequence,
-      connectionId: conversationCycle.connectionId,
-      createdByUserId: campaign.createdByUserId,
-      metadata: { campaignId: campaign.id, sequence, variables },
-      recipientAddress: conversationCycle.customerPhone,
-      scheduledAt: campaignScheduledAt(input, sequence),
-      cycleId: conversationCycle.id,
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-      content: renderCampaignText(input.content, variables),
-    });
-    await repository.createCampaignRecipient({
-      campaignId: campaign.id,
-      connectionId: conversationCycle.connectionId,
-      initialScheduledMessageId: scheduled.id,
-      leadId: conversationCycle.leadId,
-      recipientAddress: conversationCycle.customerPhone,
-      sequence,
-      cycleId: conversationCycle.id,
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-      variables,
-    });
-  }
-}
-
-async function tagCampaignSessions(
-  repository: CrmConversationRepository,
-  conversationCycles: readonly CrmConversationCycle[],
-  tagId: string,
-  scope: { storeId: string; tenantId: string },
-) {
-  await Promise.all(
-    conversationCycles.map((conversationCycle) =>
-      repository.addConversationCycleTag({
-        cycleId: conversationCycle.id,
-        storeId: scope.storeId as never,
-        tagId,
-        tenantId: scope.tenantId as never,
-      }),
-    ),
-  );
 }

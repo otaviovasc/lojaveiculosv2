@@ -20,6 +20,7 @@ import {
   shouldAutoAssignHumanCrmOutbound,
 } from "./autoAssignHumanCrmOutbound.js";
 import { ConversationCycleNotFoundError } from "./crmMessagingErrors.js";
+import { releaseOutboundIntentAfterPreflightFailure } from "./outboundProviderFailure.js";
 
 type ClaimAndAssignmentInput = {
   claim: Parameters<CrmOutboundIntentRepository["claim"]>[0];
@@ -31,6 +32,13 @@ type ClaimAndAssignmentInput = {
   senderOrigin: CrmMessageSenderOrigin;
   senderType: CrmMessageSenderType;
   conversationCycle: CrmConversationCycle;
+  /**
+   * Runs after a fresh/reclaimed intent is claimed and before assignment. A
+   * caller can use this for provider route/window checks; if it rejects, the
+   * claim is released as retryable so memory adapters and transaction-backed
+   * adapters both avoid a stuck in-progress intent.
+   */
+  beforeAssignment?: (conversationCycle: CrmConversationCycle) => Promise<void>;
 };
 
 export async function claimOutboundIntentWithHumanAssignment(
@@ -40,12 +48,33 @@ export async function claimOutboundIntentWithHumanAssignment(
   claimed: ClaimOutboundIntentResult;
   conversationCycle: CrmConversationCycle;
 }> {
-  let attemptedIntentId: string | null = null;
+  let attemptedIntent: { claimToken: string; id: string } | null = null;
   try {
     const state = await runCrmTransaction(input.ports, async (ports) => {
       const claimed = await getCrmOutboundIntentRepository(ports).claim(
         input.claim,
       );
+      if (claimed.kind === "claimed") {
+        attemptedIntent = {
+          claimToken: claimed.intent.claimToken,
+          id: claimed.intent.id,
+        };
+        if (input.beforeAssignment) {
+          try {
+            await input.beforeAssignment(input.conversationCycle);
+          } catch (error) {
+            await releaseOutboundIntentAfterPreflightFailure(
+              getCrmOutboundIntentRepository(ports),
+              {
+                claimToken: claimed.intent.claimToken,
+                id: claimed.intent.id,
+              },
+              error,
+            );
+            throw error;
+          }
+        }
+      }
       if (claimed.kind === "conflict" || !shouldApplyAssignment(input)) {
         return {
           assignment: null,
@@ -53,7 +82,6 @@ export async function claimOutboundIntentWithHumanAssignment(
           conversationCycle: input.conversationCycle,
         };
       }
-      attemptedIntentId = claimed.intent.id;
       await auditHumanCrmOutboundAssignment(
         input.context,
         auditInput(input, claimed.intent.id, "attempted"),
@@ -75,13 +103,23 @@ export async function claimOutboundIntentWithHumanAssignment(
     }
     return state;
   } catch (error) {
-    if (attemptedIntentId) {
-      await auditHumanCrmOutboundAssignment(
-        input.context,
-        auditInput(input, attemptedIntentId, "failed", error),
-        "failed",
-      );
-    }
+    // The value is assigned inside the transaction callback, so keep the
+    // runtime guard explicit for TypeScript's closure narrowing.
+    const failedIntent = attemptedIntent as {
+      claimToken: string;
+      id: string;
+    } | null;
+    if (!failedIntent) throw error;
+    await releaseOutboundIntentAfterPreflightFailure(
+      getCrmOutboundIntentRepository(input.ports),
+      failedIntent,
+      error,
+    );
+    await auditHumanCrmOutboundAssignment(
+      input.context,
+      auditInput(input, failedIntent.id, "failed", error),
+      "failed",
+    );
     throw error;
   }
 }

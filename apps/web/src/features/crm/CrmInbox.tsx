@@ -6,6 +6,7 @@ import type { CrmConversationApi } from "./crmConversationApi";
 import type { ProductCrmApi } from "./productCrmApi";
 import {
   createRuntimeCrmConversationApi,
+  createRuntimeCrmSpecialDateApi,
   createRuntimeProductCrmApi,
 } from "./runtimeApi";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
@@ -66,6 +67,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
     [productApi],
   );
   const visitsApi = useMemo(() => createRuntimeCrmVisitsApi(), []);
+  const specialDateApi = useMemo(() => createRuntimeCrmSpecialDateApi(), []);
   const [routeState, setRouteState] = useState(() => {
     const state = readCrmRouteStateFromHash(window.location.hash);
     return readPendingComposioConnectionId() || consumeCrmOlxOauthReturn()
@@ -271,6 +273,10 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                 <section className="crm-section">
                   <CrmConnectionAdmin
                     canManageRouting={inbox.permissions.canRoutingDefaultManage}
+                    canManageSpecialDates={
+                      inbox.isCrmEntitled &&
+                      inbox.permissions.canConnectionSetup
+                    }
                     connections={inbox.connections}
                     disabled={!inbox.permissions.canConnectionPair}
                     embedded
@@ -386,7 +392,12 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         onSetConnectionPaused: inbox.setConnectionPaused,
                       },
                       isCrmEntitled: inbox.isCrmEntitled,
+                      canManageSpecialDates:
+                        inbox.isCrmEntitled &&
+                        inbox.permissions.canConnectionSetup,
+                      specialDateApi,
                     }}
+                    specialDateApi={specialDateApi}
                   />
                 </section>
               </div>
@@ -415,6 +426,11 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                   canManage={inbox.permissions.canIntegrationsManage}
                   canRead={inbox.permissions.canRead}
                   canRetry={inbox.permissions.canSend}
+                  canManageSpecialDates={
+                    inbox.isCrmEntitled && inbox.permissions.canConnectionSetup
+                  }
+                  connections={inbox.connections}
+                  specialDateApi={specialDateApi}
                 />
               </div>
             ) : null}

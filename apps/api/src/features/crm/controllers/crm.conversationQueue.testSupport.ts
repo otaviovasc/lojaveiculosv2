@@ -2,6 +2,7 @@ import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { expect } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmConversationRepository } from "../../../domains/crm/ports/crmConversationRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { expectApiError } from "./crm.controller.testSupport.js";
 
 export const actorUserId = "02020202-0202-4202-8202-020202020202";
@@ -52,6 +53,18 @@ export function ingestText(
     tenantId,
     type: "TEXT",
   });
+}
+
+export async function grantActorConnectionMembership() {
+  const repository = createMemoryCrmConnectionMemberRepository();
+  await repository.grantMember({
+    connectionId,
+    grantedBy: null,
+    storeId,
+    tenantId,
+    userId: actorUserId as never,
+  });
+  return repository;
 }
 
 export async function expectForbidden(

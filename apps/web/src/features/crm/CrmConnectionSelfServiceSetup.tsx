@@ -34,6 +34,7 @@ import {
 } from "./crmComposioOAuth";
 import { needsConnectionRepair } from "./CrmChannelDirectoryParts";
 import { isUiDemoConnection } from "./crmConnectionSelection";
+import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 export type CrmConnectionSelfServiceHandlers = {
   onAuthorizeComposio: (
@@ -135,8 +136,10 @@ export function CrmConnectionSelfServiceSetup({
   existingConnection = null,
   handlers,
   isCrmEntitled,
+  canManageSpecialDates = false,
   marketplaceApi,
   onRedirect = (url) => window.location.assign(url),
+  specialDateApi,
   startAtDirectory = false,
 }: {
   availableSetups: readonly CrmAvailableSetup[];
@@ -148,8 +151,10 @@ export function CrmConnectionSelfServiceSetup({
   existingConnection?: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
   isCrmEntitled: boolean;
+  canManageSpecialDates?: boolean;
   marketplaceApi?: MarketplaceApi;
   onRedirect?: (url: string) => void;
+  specialDateApi?: CrmSpecialDateApi;
   startAtDirectory?: boolean;
 }) {
   const setupAllowed = canSetup;
@@ -445,10 +450,12 @@ export function CrmConnectionSelfServiceSetup({
       </FeatureDialog>
       <CrmConnectionManageDialog
         canManage={canSetup}
+        canManageSpecialDates={canManageSpecialDates}
         connection={managedConnection}
         isRefreshing={isBusy}
         onClose={() => setManagedConnectionId(null)}
         onRefresh={handlers.onRefreshConnections}
+        {...(specialDateApi ? { specialDateApi } : {})}
         {...(handlers.onListConnectionMembers
           ? { onListConnectionMembers: handlers.onListConnectionMembers }
           : {})}

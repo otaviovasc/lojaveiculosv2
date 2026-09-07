@@ -8,6 +8,10 @@ import {
   type CrmConversationApi,
 } from "./crmConversationApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
+import {
+  createCrmSpecialDateApi,
+  type CrmSpecialDateApi,
+} from "./crmSpecialDateApi";
 import { readRuntimeStoreSlug } from "../account/currentStore";
 import {
   createRuntimeActorAuth,
@@ -405,6 +409,22 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
         unsubscribe?.();
       };
     },
+  };
+}
+
+export function createRuntimeCrmSpecialDateApi(): CrmSpecialDateApi {
+  return {
+    getConfigs: async (connectionId, options) =>
+      createCrmSpecialDateApi(await createProductCrmApiOptions()).getConfigs(
+        connectionId,
+        options,
+      ),
+    updateConfig: async (connectionId, dateType, input) =>
+      createCrmSpecialDateApi(await createProductCrmApiOptions()).updateConfig(
+        connectionId,
+        dateType,
+        input,
+      ),
   };
 }
 

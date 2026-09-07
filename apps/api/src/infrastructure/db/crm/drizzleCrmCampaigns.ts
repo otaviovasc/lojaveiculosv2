@@ -134,8 +134,9 @@ function campaignScope(input: {
   );
 }
 
-function toCrmCampaign(row: typeof crmCampaigns.$inferSelect) {
+export function toCrmCampaign(row: typeof crmCampaigns.$inferSelect) {
   const replyRate = row.sentCount > 0 ? row.repliedCount / row.sentCount : 0;
+  const metadata = readRecord(row.metadata);
   return {
     content: row.content,
     createdAt: row.createdAt,
@@ -144,9 +145,17 @@ function toCrmCampaign(row: typeof crmCampaigns.$inferSelect) {
     id: row.id,
     initialTagId: row.initialTagId,
     intervalMinutes: row.intervalMinutes,
+    mediaFileName:
+      typeof metadata.mediaFileName === "string"
+        ? metadata.mediaFileName
+        : null,
+    mediaStorageKey:
+      typeof metadata.mediaStorageKey === "string"
+        ? metadata.mediaStorageKey
+        : null,
     mediaType: row.mediaType,
     mediaUrl: row.mediaUrl,
-    metadata: readRecord(row.metadata),
+    metadata,
     name: row.name,
     repliedCount: row.repliedCount,
     replyRate,

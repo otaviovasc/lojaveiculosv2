@@ -3,6 +3,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Image as ImageIcon,
   Layers,
   MessageCircle,
   MessageSquare,
@@ -111,6 +112,13 @@ export function CrmCampaignDetailPanel({
 
       {/* Message and Automation Cards Grid */}
       <div className="crm-campaign-detail-grid">
+        {campaign.mediaUrl ? (
+          <CampaignMediaPreview
+            fileName={campaign.mediaFileName}
+            mediaType={campaign.mediaType}
+            mediaUrl={campaign.mediaUrl}
+          />
+        ) : null}
         <MessagePreview
           icon={MessageSquare}
           title="Mensagem inicial"
@@ -130,6 +138,37 @@ export function CrmCampaignDetailPanel({
         recipients={recipients}
       />
     </section>
+  );
+}
+
+function CampaignMediaPreview({
+  fileName,
+  mediaType,
+  mediaUrl,
+}: {
+  fileName?: string | null | undefined;
+  mediaType: string | null;
+  mediaUrl: string;
+}) {
+  return (
+    <figure className="crm-campaign-media-preview-card">
+      <div className="crm-campaign-message-preview-header">
+        <ImageIcon aria-hidden="true" className="size-3.5 text-muted" />
+        <h4>Imagem inicial</h4>
+      </div>
+      <img
+        alt={
+          fileName
+            ? `Imagem inicial: ${fileName}`
+            : "Imagem inicial da campanha"
+        }
+        src={mediaUrl}
+      />
+      <figcaption>
+        <strong>{fileName ?? "Imagem da campanha"}</strong>
+        {mediaType ? <span>{mediaType}</span> : null}
+      </figcaption>
+    </figure>
   );
 }
 

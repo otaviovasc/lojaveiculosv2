@@ -26,6 +26,7 @@ export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
 export type CrmLead = {
   assignedUserId: UserId | null;
+  birthDate?: string | null;
   buyerEmail: string | null;
   buyerName: string | null;
   buyerPhone: string | null;
@@ -64,6 +65,7 @@ export type CrmLeadActivity = {
 
 export type CreateCrmLeadInput = {
   assignedUserId?: UserId | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -87,6 +89,7 @@ export type CreateIdempotentCrmLeadResult = {
 
 export type UpdateCrmLeadInput = {
   assignedUserId?: UserId | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;

@@ -229,6 +229,13 @@ export function getCrmVehicleInventory(
   return ports.vehicleInventory;
 }
 
+export function getCrmSpecialDateRepository(ports: CrmServicePorts) {
+  if (!ports.crmSpecialDateRepository) {
+    throw new CrmScopeError("crmSpecialDateRepository");
+  }
+  return ports.crmSpecialDateRepository;
+}
+
 export function runCrmTransaction<T>(
   ports: CrmServicePorts,
   action: (ports: CrmServicePorts) => Promise<T>,

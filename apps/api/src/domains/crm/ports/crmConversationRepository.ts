@@ -45,6 +45,8 @@ import type {
   CreateCrmCampaignRecipientInput,
   FindCrmCampaignInput,
   IncrementCrmCampaignCountsInput,
+  RecordCrmCampaignDeliveryInput,
+  ClaimCrmCampaignReplyInput,
   ListCrmCampaignRecipientsInput,
   ListCrmCampaignsInput,
   UpdateCrmCampaignInput,
@@ -64,6 +66,8 @@ export type {
   CreateCrmCampaignRecipientInput,
   FindCrmCampaignInput,
   IncrementCrmCampaignCountsInput,
+  RecordCrmCampaignDeliveryInput,
+  ClaimCrmCampaignReplyInput,
   ListCrmCampaignRecipientsInput,
   ListCrmCampaignsInput,
   UpdateCrmCampaignInput,
@@ -172,6 +176,12 @@ export type CrmConversationRepository = {
   ) => Promise<IngestCrmMessageResult>;
   incrementCampaignCounts: (
     input: IncrementCrmCampaignCountsInput,
+  ) => Promise<CrmCampaign | null>;
+  recordCampaignDelivery: (
+    input: RecordCrmCampaignDeliveryInput,
+  ) => Promise<CrmCampaign | null>;
+  claimCampaignReply: (
+    input: ClaimCrmCampaignReplyInput,
   ) => Promise<CrmCampaign | null>;
   listMessages: (input: ListCrmMessagesInput) => Promise<readonly CrmMessage[]>;
   listCampaigns: (
