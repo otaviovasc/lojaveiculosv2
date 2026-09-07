@@ -1,6 +1,7 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
 import {
@@ -200,6 +201,14 @@ async function createFixture(permissions: readonly PermissionKey[]) {
     providerTimestamp: new Date("2026-08-17T12:10:00.000Z"),
     raw: {},
   }));
+  const memberRepository = createMemoryCrmConnectionMemberRepository();
+  await memberRepository.grantMember({
+    connectionId,
+    grantedBy: null,
+    storeId,
+    tenantId,
+    userId: actorUserId as never,
+  });
   return {
     app: createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
@@ -209,6 +218,7 @@ async function createFixture(permissions: readonly PermissionKey[]) {
           tenantId,
         }),
       ]),
+      crmConnectionMemberRepository: memberRepository,
       crmMessagingGateway: { sendReaction, sendText },
       crmConversationRepository: repository,
       permissions: [...permissions],

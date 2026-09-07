@@ -11,6 +11,8 @@ import {
   FeatureTextarea,
 } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
+import { CrmCampaignImagePicker } from "./CrmCampaignImagePicker";
+import { CAMPAIGN_IMAGE_CAPTION_MAX_LENGTH } from "./crmCampaignMedia";
 import type { CrmCampaign } from "./crmCampaignTypes";
 
 export function CampaignStats({ campaigns }: { campaigns: CrmCampaign[] }) {
@@ -35,18 +37,32 @@ export function CampaignStats({ campaigns }: { campaigns: CrmCampaign[] }) {
 export function CampaignMessagePanel({
   canCreate,
   campaignName,
+  canUseImage,
+  imageError,
+  imageFile,
   isSaving,
   onCampaignNameChange,
+  onImageError,
+  onImageRemove,
+  onImageSelect,
   onTextChange,
   text,
 }: {
   canCreate: boolean;
   campaignName: string;
+  canUseImage: boolean;
+  imageError: string | null;
+  imageFile: File | null;
   isSaving: boolean;
   onCampaignNameChange: (value: string) => void;
+  onImageError: (error: string | null) => void;
+  onImageRemove: () => void;
+  onImageSelect: (file: File) => void;
   onTextChange: (value: string) => void;
   text: string;
 }) {
+  const hasImage = Boolean(imageFile);
+  const textLimit = hasImage ? CAMPAIGN_IMAGE_CAPTION_MAX_LENGTH : 4000;
   return (
     <section className="crm-campaign-panel">
       <h3>Mensagem e ritmo</h3>
@@ -60,18 +76,28 @@ export function CampaignMessagePanel({
         />
       </FeatureField>
       <FeatureField
-        hint={`${text.length}/4000 caracteres · Use {nome} para personalizar.`}
-        label="Mensagem inicial"
+        hint={`${text.length}/${textLimit} caracteres · Use {nome} para personalizar.`}
+        label={hasImage ? "Legenda da imagem" : "Mensagem inicial"}
       >
         <FeatureTextarea
-          aria-label="Mensagem inicial"
+          aria-label={hasImage ? "Legenda da imagem" : "Mensagem inicial"}
           disabled={!canCreate || isSaving}
-          maxLength={4000}
+          maxLength={textLimit}
           onChange={(event) => onTextChange(event.target.value)}
           rows={7}
           value={text}
         />
       </FeatureField>
+      {canUseImage ? (
+        <CrmCampaignImagePicker
+          disabled={!canCreate || isSaving}
+          error={imageError}
+          file={imageFile}
+          onError={onImageError}
+          onRemove={onImageRemove}
+          onSelect={onImageSelect}
+        />
+      ) : null}
       <p>
         A variável <code>{"{nome}"}</code> usa o nome da conversa ou “cliente”
         quando essa informação não estiver disponível.

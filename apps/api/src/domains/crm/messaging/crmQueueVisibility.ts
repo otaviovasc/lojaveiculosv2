@@ -45,15 +45,15 @@ export async function resolveCrmConnectionScopedQueueVisibility(
     return { ...visibility, connectionIds: [] };
   }
   if (!ports.crmConnectionMemberRepository) {
-    // Fail-soft until the port is wired into the runtime ports: keep the
-    // legacy connection-unrestricted assigned visibility.
+    // A restricted user must never regain connection access because the
+    // membership adapter was omitted from a composition root.
     context.logger.warn("crm.queue_visibility.connection_scope_unavailable", {
       actorId: context.actor.id,
       requestId: context.requestId,
       storeId: context.storeId,
       tenantId: context.tenantId,
     });
-    return visibility;
+    return { ...visibility, connectionIds: [] };
   }
   const connectionIds =
     await ports.crmConnectionMemberRepository.listConnectionIdsForUser({

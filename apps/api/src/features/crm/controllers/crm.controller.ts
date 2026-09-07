@@ -29,6 +29,7 @@ import {
   registerCrmLeadDetailRoutes,
 } from "./crm.leads.routes.js";
 import { registerCrmRoutingRoutes } from "./crm.routing.routes.js";
+import { registerCrmSpecialDateRoutes } from "./crm.specialDates.routes.js";
 import { registerCrmMetaWebhookRoutes } from "./crm.metaWebhookRoutes.js";
 import type { CrmPushPublicConfig } from "./crm.push.routes.js";
 
@@ -90,6 +91,7 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
   });
 
   registerCrmRoutingRoutes(crmFeature, { createContext, services });
+  registerCrmSpecialDateRoutes(crmFeature, { createContext, services });
 
   if (options.coreRepository) {
     registerCrmCoreRoutes(crmFeature, {

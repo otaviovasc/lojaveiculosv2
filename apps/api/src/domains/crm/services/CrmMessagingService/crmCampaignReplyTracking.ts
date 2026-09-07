@@ -20,7 +20,7 @@ import {
   renderCampaignText,
   truncateCampaignPreview,
 } from "../../messaging/crmCampaignSupport.js";
-import { updateCampaignCounts } from "../../messaging/crmCampaignDeliveryMetrics.js";
+import { findUnrepliedCampaignRecipient } from "../../messaging/crmCampaignReplyCandidates.js";
 
 export async function trackCrmCampaignReply(
   context: ServiceContext,
@@ -30,9 +30,11 @@ export async function trackCrmCampaignReply(
   if (input.message.direction !== "INBOUND") return;
   assertPermission(context, campaignIngestPermission);
   const repository = getCrmConversationRepository(ports);
-  const recipient = await findUnrepliedRecipient(
+  const repliedAt = input.message.providerTimestamp ?? input.message.createdAt;
+  const recipient = await findUnrepliedCampaignRecipient(
     repository,
     input.conversationCycle,
+    repliedAt,
   );
   if (!recipient) return;
   const campaign = await repository.findCampaignById({
@@ -67,42 +69,6 @@ export async function trackCrmCampaignReply(
   );
 }
 
-async function findUnrepliedRecipient(
-  repository: CrmConversationRepository,
-  conversationCycle: CrmConversationCycle,
-) {
-  const cycleCandidates = await repository.listCampaignRecipients({
-    limit: 10,
-    cycleId: conversationCycle.id,
-    statuses: ["sent"],
-    storeId: conversationCycle.storeId,
-    tenantId: conversationCycle.tenantId,
-  });
-  const cycleRecipients = cycleCandidates.filter(
-    (recipient) => !recipient.replyReceivedAt,
-  );
-  if (cycleRecipients.length === 1) return cycleRecipients[0];
-  if (cycleRecipients.length > 1) return null;
-
-  // A reply may start a new cycle for an existing conversation thread. The
-  // canonical DB resolves cycles through that thread, but bounded in-memory
-  // adapters and recovery paths may only have the stable route/customer pair.
-  // Attribute only a unique unreplied recipient so concurrent campaigns for
-  // the same customer can never be guessed.
-  const routeCandidates = await repository.listCampaignRecipients({
-    connectionId: conversationCycle.connectionId,
-    limit: 2,
-    recipientAddress: conversationCycle.customerPhone,
-    statuses: ["sent"],
-    storeId: conversationCycle.storeId,
-    tenantId: conversationCycle.tenantId,
-  });
-  const unreplied = routeCandidates.filter(
-    (recipient) => !recipient.replyReceivedAt,
-  );
-  return unreplied.length === 1 ? unreplied[0] : null;
-}
-
 async function applyCampaignReply(
   repository: CrmConversationRepository,
   campaign: CrmCampaign,
@@ -111,44 +77,29 @@ async function applyCampaignReply(
 ) {
   const repliedAt = input.message.providerTimestamp ?? input.message.createdAt;
   const preview = truncateCampaignPreview(input.message.content);
-  const claimed = await repository.updateCampaignRecipient({
-    expectedStatus: "sent",
+  const secondarySchedule = campaign.secondaryContent
+    ? buildSecondarySchedule(campaign, recipient, repliedAt)
+    : undefined;
+  const claimed = await repository.claimCampaignReply({
+    campaignId: campaign.id,
     recipientId: recipient.id,
     replyContentPreview: preview,
     replyMessageId: input.message.id,
     replyReceivedAt: repliedAt,
-    status: "replied",
+    ...(secondarySchedule ? { secondarySchedule } : {}),
     storeId: recipient.storeId,
     tenantId: recipient.tenantId,
   });
   if (!claimed) return;
-  const secondary = campaign.secondaryContent
-    ? await createSecondarySchedule(repository, campaign, recipient, repliedAt)
-    : null;
-  if (secondary) {
-    await repository.updateCampaignRecipient({
-      expectedStatus: "replied",
-      recipientId: recipient.id,
-      secondaryScheduledMessageId: secondary.id,
-      status: "secondary_scheduled",
-      storeId: recipient.storeId,
-      tenantId: recipient.tenantId,
-    });
-  }
-  await updateCampaignCounts(repository, campaign, {
-    repliedDelta: 1,
-    scheduledDelta: secondary ? 1 : 0,
-  });
   await applyReplyTagTransition(
     repository,
-    campaign,
+    claimed,
     input.conversationCycle,
     recipient.cycleId,
   );
 }
 
-async function createSecondarySchedule(
-  repository: CrmConversationRepository,
+function buildSecondarySchedule(
   campaign: CrmCampaign,
   recipient: CrmCampaignRecipient,
   repliedAt: Date,
@@ -156,9 +107,7 @@ async function createSecondarySchedule(
   const scheduledAt = new Date(
     repliedAt.getTime() + campaign.secondaryDelayMinutes * 60_000,
   );
-  return repository.createScheduledMessage({
-    campaignId: campaign.id,
-    campaignMessageType: "secondary",
+  return {
     campaignRecipientKey: recipient.cycleId,
     campaignSequence: recipient.sequence,
     connectionId: recipient.connectionId,
@@ -167,13 +116,11 @@ async function createSecondarySchedule(
     recipientAddress: recipient.recipientAddress,
     scheduledAt,
     cycleId: recipient.cycleId,
-    storeId: recipient.storeId,
-    tenantId: recipient.tenantId,
     content: renderCampaignText(
       campaign.secondaryContent ?? "",
       recipient.variables,
     ),
-  });
+  };
 }
 
 async function applyReplyTagTransition(

@@ -67,6 +67,8 @@ import {
   mutateConversationCycleTagWithTransaction,
 } from "./drizzleCrmConversationCycleTags.js";
 import { createSessionIdentityFinder } from "./drizzleCrmConversationCycleIdentity.js";
+import { recordCrmCampaignDelivery } from "./drizzleCrmCampaignDelivery.js";
+import { claimCrmCampaignReply } from "./drizzleCrmCampaignReply.js";
 
 export function createDrizzleCrmConversationRepository(
   db: DrizzleCrmClient,
@@ -140,6 +142,10 @@ export function createDrizzleCrmConversationRepository(
     ingestMessage: (input) =>
       ingestMessageWithTransaction(db, input, !!options.disableTransactions),
     incrementCampaignCounts: (input) => incrementCrmCampaignCounts(db, input),
+    recordCampaignDelivery: (input) =>
+      recordCrmCampaignDelivery(db, input, !!options.disableTransactions),
+    claimCampaignReply: (input) =>
+      claimCrmCampaignReply(db, input, !!options.disableTransactions),
     async listMessages(input) {
       return listMessages(db, input);
     },
@@ -189,18 +195,10 @@ export function createDrizzleCrmConversationRepository(
         ),
       );
     },
-    async createScheduledMessage(input) {
-      return createCrmScheduledMessage(db, input);
-    },
-    async findDueScheduledMessages(input) {
-      return findDueCrmScheduledMessages(db, input);
-    },
-    async listScheduledMessages(input) {
-      return listCrmScheduledMessages(db, input);
-    },
-    async updateScheduledMessage(input) {
-      return updateCrmScheduledMessage(db, input);
-    },
+    createScheduledMessage: (input) => createCrmScheduledMessage(db, input),
+    findDueScheduledMessages: (input) => findDueCrmScheduledMessages(db, input),
+    listScheduledMessages: (input) => listCrmScheduledMessages(db, input),
+    updateScheduledMessage: (input) => updateCrmScheduledMessage(db, input),
     async deleteQuickMessage(input) {
       return deleteCrmQuickMessage(db, input);
     },

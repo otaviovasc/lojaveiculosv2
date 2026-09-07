@@ -1,5 +1,6 @@
 import { financeAutoEntryMaxAmountCents } from "@lojaveiculosv2/shared";
 import { z } from "zod";
+import { isValidIsoCalendarBirthDate } from "../../../domains/crm/messaging/crmSpecialDateCalculator.js";
 
 export {
   crmMessagesQuerySchema,
@@ -87,8 +88,20 @@ export const crmStatisticsQuerySchema = z
     }
   });
 
+export { isValidIsoCalendarBirthDate };
+
+export const leadBirthDateSchema = z
+  .string()
+  .refine(isValidIsoCalendarBirthDate, {
+    message:
+      "Invalid birthDate: must be a valid calendar date (YYYY-MM-DD) not in the future",
+  })
+  .nullable()
+  .optional();
+
 export const createLeadSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
+  birthDate: leadBirthDateSchema,
   buyerEmail: z.string().email().nullable().optional(),
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
@@ -99,6 +112,7 @@ export const createLeadSchema = z.object({
 
 export const updateLeadSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
+  birthDate: leadBirthDateSchema,
   buyerEmail: z.string().email().nullable().optional(),
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),

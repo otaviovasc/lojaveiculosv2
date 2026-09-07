@@ -64,14 +64,16 @@ export function CrmCreateSelect({
 
 export function CrmCreateDateField({
   className,
+  max,
   ...props
 }: {
   className?: string | undefined;
   label: string;
+  max?: string | undefined;
   onChange: (value: string) => void;
   value: string;
 }) {
-  return <CrmDateField {...props} className={className} />;
+  return <CrmDateField {...props} className={className} max={max} />;
 }
 
 export function CrmCreateTextarea({

@@ -9,6 +9,7 @@ import { createMemoryCrmConversationRepository } from "../adapters/memory/crmCon
 import {
   connection,
   context,
+  outboundConnectionMembership,
   storeId,
   tenantId,
 } from "./crm.messages.outboundIdempotency.testSupport.js";
@@ -45,6 +46,7 @@ describe("CRM outbound idempotency auto-assignment", () => {
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),
       ]),
+      crmConnectionMemberRepository: outboundConnectionMembership(),
       ...createTestCrmRoutingPorts([connection()]),
       crmRepository: createMemoryCrmRepository(),
       crmMessagingGateway: { sendText } as never,

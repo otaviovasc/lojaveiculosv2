@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmCampaignsPage } from "./CrmCampaignsPage";
 import {
@@ -10,10 +16,12 @@ import {
   createLead,
   createSession,
 } from "./CrmCampaignsPage.testFixtures";
+import type { CrmCampaign } from "./crmCampaignTypes";
 
 describe("CrmCampaignsPage", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
@@ -227,5 +235,277 @@ describe("CrmCampaignsPage", () => {
     expect(screen.getByLabelText(/nome da campanha/i)).toHaveValue(
       "Clientes premium",
     );
+  });
+
+  it("keeps the image and caption available after the campaign API rejects the save", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:campaign-api-error"),
+      revokeObjectURL: vi.fn(),
+    });
+    const user = userEvent.setup();
+    const onCreateCampaign = vi.fn(async () => {
+      throw new Error("campaign media rejected");
+    });
+    render(
+      <CrmCampaignsPage
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={onCreateCampaign}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /nova campanha/i }));
+    const imageInput = screen.getByLabelText("Selecionar imagem da campanha");
+    await user.upload(
+      imageInput,
+      new File(["png"], "oferta.png", { type: "image/png" }),
+    );
+    const caption = screen.getByLabelText("Legenda da imagem");
+    await user.clear(caption);
+    await user.type(caption, "Legenda da oferta");
+    expect(caption).toHaveAttribute("maxlength", "1000");
+
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getByRole("button", { name: /Ana/i }));
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.type(
+      screen.getByLabelText(/inicio da campanha/i),
+      "2099-01-01T10:00",
+    );
+    await user.click(screen.getByRole("button", { name: /agendar campanha/i }));
+
+    expect(await screen.findByText("campaign media rejected")).toBeVisible();
+    expect(onCreateCampaign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mediaFileName: "oferta.png",
+        mediaType: "image/png",
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /voltar/i }));
+    await user.click(screen.getByRole("button", { name: /voltar/i }));
+    await user.click(screen.getByRole("button", { name: /voltar/i }));
+    expect(screen.getByAltText("Pré-visualização oferta.png")).toHaveAttribute(
+      "src",
+      "blob:campaign-api-error",
+    );
+    expect(screen.getByLabelText("Legenda da imagem")).toHaveValue(
+      "Legenda da oferta",
+    );
+  });
+
+  it("preserves a long message and shows the image caption validation", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmCampaignsPage
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={vi.fn(async () => createCampaign())}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /nova campanha/i }));
+    const longMessage = "x".repeat(1001);
+    const message = screen.getByLabelText("Mensagem inicial");
+    fireEvent.change(message, { target: { value: longMessage } });
+    await user.upload(
+      screen.getByLabelText("Selecionar imagem da campanha"),
+      new File(["png"], "oferta.png", { type: "image/png" }),
+    );
+
+    expect(screen.getByLabelText("Legenda da imagem")).toHaveValue(longMessage);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "A legenda da imagem deve ter no máximo 1000 caracteres após a personalização.",
+    );
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeDisabled();
+  });
+
+  it("validates rendered caption length after recipient personalization", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmCampaignsPage
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={vi.fn(async () => createCampaign())}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[
+          createSession({ customerDisplayName: "Ana Premium" }),
+        ]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /nova campanha/i }));
+    fireEvent.change(screen.getByLabelText("Mensagem inicial"), {
+      target: { value: `${"x".repeat(990)}{nome}` },
+    });
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getByRole("button", { name: /Ana/i }));
+    await user.click(screen.getByRole("button", { name: /voltar/i }));
+    await user.upload(
+      screen.getByLabelText("Selecionar imagem da campanha"),
+      new File(["png"], "oferta.png", { type: "image/png" }),
+    );
+
+    expect(screen.getByLabelText("Legenda da imagem")).toHaveValue(
+      `${"x".repeat(990)}{nome}`,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "destinatário 1 excede 1000 caracteres após a personalização",
+    );
+  });
+
+  it("clears an image draft when the selected connection changes", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:connection-change"),
+      revokeObjectURL: vi.fn(),
+    });
+    const user = userEvent.setup();
+    const view = render(
+      <CrmCampaignsPage
+        campaignConnectionKey="connection-a"
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={vi.fn(async () => createCampaign())}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /nova campanha/i }));
+    await user.upload(
+      screen.getByLabelText("Selecionar imagem da campanha"),
+      new File(["png"], "oferta.png", { type: "image/png" }),
+    );
+    expect(screen.getByAltText("Pré-visualização oferta.png")).toBeVisible();
+
+    view.rerender(
+      <CrmCampaignsPage
+        campaignConnectionKey="connection-b"
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={vi.fn(async () => createCampaign())}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.queryByAltText("Pré-visualização oferta.png"),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("ignores a pending image submission after the campaign scope changes", async () => {
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:stale-submit"),
+      revokeObjectURL: vi.fn(),
+    });
+    const user = userEvent.setup();
+    let resolveCreate: ((campaign: CrmCampaign) => void) | undefined;
+    const pendingCreate = new Promise<CrmCampaign>((resolve) => {
+      resolveCreate = resolve;
+    });
+    const onCreateCampaign = vi.fn(() => pendingCreate);
+    const view = render(
+      <CrmCampaignsPage
+        campaignConnectionKey="connection-a"
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={onCreateCampaign}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /nova campanha/i }));
+    await user.upload(
+      screen.getByLabelText("Selecionar imagem da campanha"),
+      new File(["png"], "oferta.png", { type: "image/png" }),
+    );
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getByRole("button", { name: /Ana/i }));
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.click(screen.getByRole("button", { name: /continuar/i }));
+    await user.type(
+      screen.getByLabelText(/inicio da campanha/i),
+      "2099-01-01T10:00",
+    );
+    await user.click(screen.getByRole("button", { name: /agendar campanha/i }));
+    await waitFor(() => expect(onCreateCampaign).toHaveBeenCalledTimes(1));
+
+    view.rerender(
+      <CrmCampaignsPage
+        campaignConnectionKey="connection-b"
+        canCancel
+        canCreate
+        canRead
+        canUseImage
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={onCreateCampaign}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        conversationCycles={[createSession()]}
+        tags={[]}
+      />,
+    );
+    resolveCreate?.(createCampaign());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Nova campanha" }),
+      ).toBeVisible(),
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Campanhas de mensagens" }),
+    ).not.toBeInTheDocument();
   });
 });

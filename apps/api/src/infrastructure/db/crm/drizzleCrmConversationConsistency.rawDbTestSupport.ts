@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import * as schema from "@lojaveiculosv2/db";
 import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { expect } from "vitest";
@@ -93,6 +94,7 @@ export async function seedRawCrmConversationFixture(
   const [roleTemplate] = await transaction
     .select({ id: schema.roleTemplates.id })
     .from(schema.roleTemplates)
+    .where(eq(schema.roleTemplates.name, "Owner"))
     .limit(1);
   expect(
     roleTemplate,

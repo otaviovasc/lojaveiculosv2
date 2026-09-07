@@ -3,6 +3,7 @@ import { createTestCrmConnectionRepository } from "../../../domains/crm/testSupp
 import { createTestCrmRoutingPorts } from "../../../domains/crm/testSupportConnections.js";
 import { sendMessage } from "../../../domains/crm/services/CrmMessagingService/sendMessage.js";
 import { executeDurableOutboundProviderCall } from "../../../domains/crm/messaging/executeDurableOutboundProviderCall.js";
+import { CrmOutboundReconciliationPendingError } from "../../../domains/crm/messaging/crmMessagingErrors.js";
 import { CrmMessagingGatewayError } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
@@ -11,6 +12,7 @@ import { createMemoryCrmConversationRepository } from "../adapters/memory/crmCon
 import {
   connection,
   context,
+  outboundConnectionMembership,
   storeId,
   tenantId,
 } from "./crm.messages.outboundIdempotency.testSupport.js";
@@ -39,15 +41,17 @@ describe("CRM outbound idempotency", () => {
       externalId: "provider_1",
       providerTimestamp: new Date("2026-08-10T12:00:00.000Z"),
     }));
+    const connectionRepository = createTestCrmConnectionRepository([
+      connection(),
+    ]);
     const ports = {
       crmAssigneeMembershipRepository: {
         isActiveStoreMember: async () => true,
       },
       crmExternalBotIntegrationRepository:
         createMemoryCrmExternalBotIntegrationRepository(),
-      crmConnectionRepository: createTestCrmConnectionRepository([
-        connection(),
-      ]),
+      crmConnectionRepository: connectionRepository,
+      crmConnectionMemberRepository: outboundConnectionMembership(),
       ...createTestCrmRoutingPorts([connection()]),
       crmRepository: createMemoryCrmRepository(),
       crmMessagingGateway: { sendText } as never,
@@ -73,9 +77,18 @@ describe("CRM outbound idempotency", () => {
       text: "hello",
     };
 
-    await expect(sendMessage(context(), input, ports)).rejects.toThrow(
-      "local write unavailable",
+    await expect(sendMessage(context(), input, ports)).rejects.toBeInstanceOf(
+      CrmOutboundReconciliationPendingError,
     );
+    await expect(
+      connectionRepository.updateConnection({
+        connectionId: "connection_1",
+        status: "paused",
+        storeId,
+        tenantId,
+        expectedRevision: 0,
+      }),
+    ).resolves.toMatchObject({ status: "paused" });
     const recovered = await sendMessage(context(), input, ports);
 
     expect(recovered.externalId).toBe("provider_1");
@@ -113,6 +126,7 @@ describe("CRM outbound idempotency", () => {
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),
       ]),
+      crmConnectionMemberRepository: outboundConnectionMembership(),
       ...createTestCrmRoutingPorts([connection()]),
       crmRepository: createMemoryCrmRepository(),
       crmMessagingGateway: {

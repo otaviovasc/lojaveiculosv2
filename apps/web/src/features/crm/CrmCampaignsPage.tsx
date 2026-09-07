@@ -9,13 +9,20 @@ import {
 } from "./CrmCampaignsPageSupport";
 import { useCrmCampaignAudience } from "./useCrmCampaignAudience";
 import { useCrmCampaignReview } from "./useCrmCampaignReview";
+import {
+  normalizeCampaignImageMimeType,
+  readCampaignImageAsBase64,
+  validateCampaignImageCaption,
+} from "./crmCampaignMedia";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmCampaign, CrmCampaignDetail } from "./crmCampaignTypes";
 
 export function CrmCampaignsPage({
+  campaignConnectionKey,
   canCancel,
   canCreate,
   canRead,
+  canUseImage = false,
   initialCampaigns,
   onCancelCampaign,
   onCreateCampaign,
@@ -33,6 +40,13 @@ export function CrmCampaignsPage({
     initialCampaigns ?? [],
   );
   const hasCampaignsDataRef = useRef(initialCampaigns !== undefined);
+  const campaignScopeKey = JSON.stringify([
+    campaignConnectionKey ?? null,
+    canUseImage,
+  ]);
+  const campaignScopeRef = useRef(campaignScopeKey);
+  campaignScopeRef.current = campaignScopeKey;
+  const campaignRequestTokenRef = useRef(0);
   const [mode, setMode] = useState<"create" | "overview">("overview");
   const [campaignDetail, setCampaignDetail] =
     useState<CrmCampaignDetail | null>(null);
@@ -47,6 +61,8 @@ export function CrmCampaignsPage({
   const [secondaryContent, setSecondaryContent] = useState("");
   const [secondaryDelayMinutes, setSecondaryDelayMinutes] = useState(60);
   const [text, setText] = useState("Ola {nome}, tudo bem?");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -71,6 +87,20 @@ export function CrmCampaignsPage({
     startAt,
     text,
   });
+  const imageCaptionError = imageFile
+    ? validateCampaignImageCaption(text, review.validRecipients)
+    : null;
+  const imageValidationError = imageError ?? imageCaptionError;
+
+  useEffect(() => {
+    campaignRequestTokenRef.current += 1;
+    setImageFile(null);
+    setImageError(null);
+    setIsSaving(false);
+    return () => {
+      campaignRequestTokenRef.current += 1;
+    };
+  }, [campaignScopeKey]);
 
   const loadCampaigns = useCallback(async () => {
     if (!canRead) return;
@@ -130,16 +160,38 @@ export function CrmCampaignsPage({
   }, [loadCampaignDetail, loadCampaigns]);
 
   const launch = async () => {
-    if (!review.canLaunch) return;
+    if (!review.canLaunch || imageValidationError) return;
     const firstDate = new Date(startAt);
     if (Number.isNaN(firstDate.getTime()) || firstDate <= new Date()) {
       setLocalError("Escolha uma data futura para iniciar a campanha.");
       return;
     }
+    const requestToken = ++campaignRequestTokenRef.current;
+    const requestScope = campaignScopeKey;
+    const isCurrentRequest = () =>
+      requestToken === campaignRequestTokenRef.current &&
+      requestScope === campaignScopeRef.current;
     setIsSaving(true);
     setLocalError(null);
     setLastResult(null);
     let campaign: CrmCampaign | null = null;
+    let mediaBase64: string | undefined;
+    if (imageFile) {
+      try {
+        mediaBase64 = await readCampaignImageAsBase64(imageFile);
+      } catch (caught) {
+        if (!isCurrentRequest()) return;
+        setLocalError(
+          formatApiErrorDisplay(
+            caught,
+            "Não foi possível preparar a imagem da campanha.",
+          ),
+        );
+        setIsSaving(false);
+        return;
+      }
+    }
+    if (!isCurrentRequest()) return;
     try {
       campaign = await onCreateCampaign(
         buildCampaignInput({
@@ -147,6 +199,15 @@ export function CrmCampaignsPage({
           firstDate,
           initialTagId,
           intervalMinutes,
+          ...(mediaBase64
+            ? {
+                mediaBase64,
+                mediaFileName: imageFile?.name ?? null,
+                mediaType: imageFile
+                  ? normalizeCampaignImageMimeType(imageFile.type)
+                  : null,
+              }
+            : {}),
           replyTagId,
           secondaryContent,
           secondaryDelayMinutes,
@@ -155,10 +216,15 @@ export function CrmCampaignsPage({
         }),
       );
     } catch (caught) {
-      setCampaignError(
-        formatApiErrorDisplay(caught, "Não foi possível criar a campanha."),
+      if (!isCurrentRequest()) return;
+      const errorMessage = formatApiErrorDisplay(
+        caught,
+        "Não foi possível criar a campanha.",
       );
+      setCampaignError(errorMessage);
+      setLocalError(errorMessage);
     }
+    if (!isCurrentRequest()) return;
     setIsSaving(false);
     if (campaign) {
       setCampaignError(null);
@@ -171,10 +237,13 @@ export function CrmCampaignsPage({
       review.resetReview();
       setSecondaryContent("");
       setSecondaryDelayMinutes(60);
+      setImageFile(null);
+      setImageError(null);
       setSelectedCampaignId(campaign.id);
       setStartAt("");
       setText("Ola {nome}, tudo bem?");
       await loadCampaigns();
+      if (!isCurrentRequest()) return;
       setMode("overview");
     }
   };
@@ -226,8 +295,9 @@ export function CrmCampaignsPage({
           <CrmCampaignBuilder
             audienceSource={audience.audienceSource}
             campaignName={campaignName}
+            canUseImage={canUseImage}
             canCreate={canCreate}
-            canLaunch={review.canLaunch}
+            canLaunch={review.canLaunch && !imageValidationError}
             csvInput={csvInput}
             effectiveSelectedIds={review.effectiveSelectedIds}
             filteredSessions={audience.filteredSessions}
@@ -237,6 +307,8 @@ export function CrmCampaignsPage({
             isSaving={isSaving}
             lastResult={lastResult}
             leadFilters={audience.leadFilters}
+            imageError={imageValidationError}
+            imageFile={imageFile}
             localError={localError ?? audience.error}
             matchedCsvSessionCount={review.matchedCsvSessionCount}
             matchedLeadCount={audience.matchedLeadCount}
@@ -245,6 +317,17 @@ export function CrmCampaignsPage({
             onCampaignNameChange={setCampaignName}
             onCsvInputChange={setCsvInput}
             onInitialTagChange={setInitialTagId}
+            onImageError={setImageError}
+            onImageRemove={() => {
+              campaignRequestTokenRef.current += 1;
+              setImageFile(null);
+              setImageError(null);
+            }}
+            onImageSelect={(file) => {
+              campaignRequestTokenRef.current += 1;
+              setImageFile(file);
+              setImageError(null);
+            }}
             onIntervalMinutesChange={setIntervalMinutes}
             onLeadFiltersChange={audience.setLeadFilters}
             onLaunch={() => void launch()}

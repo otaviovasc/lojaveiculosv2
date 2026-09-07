@@ -45,6 +45,10 @@ import {
   type CrmMessagingServices,
 } from "./crmMessagingServiceBindings.js";
 import { resolveCrmPorts } from "./crmServicePorts.js";
+import {
+  createCrmSpecialDateServiceBindings,
+  type CrmSpecialDateServices,
+} from "./crmSpecialDateServiceBindings.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
 import { getCrmRoutingPolicy } from "../../../domains/crm/services/CrmRoutingService/getCrmRoutingPolicy.js";
 import {
@@ -58,96 +62,97 @@ import {
   type GetCrmStatisticsResult,
 } from "../../../domains/crm/services/CrmStatisticsService/getCrmStatistics.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
-export type CrmServices = CrmMessagingServices & {
-  getStatistics: (
-    context: ServiceContext,
-    input: GetCrmStatisticsInput,
-  ) => Promise<GetCrmStatisticsResult>;
-  getRoutingPolicy: (
-    context: ServiceContext,
-  ) => Promise<CrmRoutingPolicyReadModel>;
-  archiveLead: (
-    context: ServiceContext,
-    input: { leadId: string },
-  ) => Promise<CrmLead>;
-  createActivity: (
-    context: ServiceContext,
-    input: CreateLeadActivityInput,
-  ) => Promise<CrmLeadActivity>;
-  createLead: (
-    context: ServiceContext,
-    input: CreateCrmLeadInput,
-  ) => Promise<CrmLead>;
-  createPipeline: (
-    context: ServiceContext,
-    input: CreateCrmPipelineInput,
-  ) => Promise<CrmPipeline>;
-  createVisit: (
-    context: ServiceContext,
-    input: Parameters<typeof createLeadVisit>[1],
-  ) => Promise<CrmLeadVisit>;
-  cancelVisit: (
-    context: ServiceContext,
-    input: { visitId: string },
-  ) => Promise<CrmLeadVisit>;
-  completeVisit: (
-    context: ServiceContext,
-    input: { visitId: string },
-  ) => Promise<CrmLeadVisit>;
-  concludeCrmAttendance: (
-    context: ServiceContext,
-    input: ConcludeWhatsappAttendanceInput,
-  ) => Promise<ConcludeWhatsappAttendanceResult>;
-  deletePipeline: (
-    context: ServiceContext,
-    input: DeleteCrmPipelineInput,
-  ) => Promise<{ deleted: true }>;
-  getLead: (
-    context: ServiceContext,
-    input: GetCrmLeadInput,
-  ) => Promise<CrmLead>;
-  listActivities: (
-    context: ServiceContext,
-    input: ListLeadActivitiesInput,
-  ) => Promise<readonly CrmLeadActivity[]>;
-  listLeadBoard: (
-    context: ServiceContext,
-    input: Parameters<typeof listCrmLeadBoard>[1],
-  ) => ReturnType<typeof listCrmLeadBoard>;
-  listLeads: (
-    context: ServiceContext,
-    input: ListCrmLeadsInput,
-  ) => Promise<ListCrmLeadsResult>;
-  listPipelines: (context: ServiceContext) => Promise<readonly CrmPipeline[]>;
-  listVisits: (
-    context: ServiceContext,
-    input: Parameters<typeof listLeadVisits>[1],
-  ) => Promise<readonly CrmLeadVisit[]>;
-  moveLeadPipelineStage: (
-    context: ServiceContext,
-    input: MoveCrmLeadPipelineStageInput,
-  ) => Promise<CrmLead>;
-  restoreLead: (
-    context: ServiceContext,
-    input: { leadId: string },
-  ) => Promise<CrmLead>;
-  updatePipeline: (
-    context: ServiceContext,
-    input: UpdateCrmPipelineInput,
-  ) => Promise<CrmPipeline>;
-  updateVisit: (
-    context: ServiceContext,
-    input: Parameters<typeof updateLeadVisit>[1],
-  ) => Promise<CrmLeadVisit>;
-  updateLead: (
-    context: ServiceContext,
-    input: UpdateCrmLeadInput,
-  ) => Promise<CrmLead>;
-  updateRoutingPolicy: (
-    context: ServiceContext,
-    input: UpdateCrmRoutingPolicyInput,
-  ) => Promise<CrmRoutingPolicyReadModel>;
-};
+export type CrmServices = CrmMessagingServices &
+  CrmSpecialDateServices & {
+    getStatistics: (
+      context: ServiceContext,
+      input: GetCrmStatisticsInput,
+    ) => Promise<GetCrmStatisticsResult>;
+    getRoutingPolicy: (
+      context: ServiceContext,
+    ) => Promise<CrmRoutingPolicyReadModel>;
+    archiveLead: (
+      context: ServiceContext,
+      input: { leadId: string },
+    ) => Promise<CrmLead>;
+    createActivity: (
+      context: ServiceContext,
+      input: CreateLeadActivityInput,
+    ) => Promise<CrmLeadActivity>;
+    createLead: (
+      context: ServiceContext,
+      input: CreateCrmLeadInput,
+    ) => Promise<CrmLead>;
+    createPipeline: (
+      context: ServiceContext,
+      input: CreateCrmPipelineInput,
+    ) => Promise<CrmPipeline>;
+    createVisit: (
+      context: ServiceContext,
+      input: Parameters<typeof createLeadVisit>[1],
+    ) => Promise<CrmLeadVisit>;
+    cancelVisit: (
+      context: ServiceContext,
+      input: { visitId: string },
+    ) => Promise<CrmLeadVisit>;
+    completeVisit: (
+      context: ServiceContext,
+      input: { visitId: string },
+    ) => Promise<CrmLeadVisit>;
+    concludeCrmAttendance: (
+      context: ServiceContext,
+      input: ConcludeWhatsappAttendanceInput,
+    ) => Promise<ConcludeWhatsappAttendanceResult>;
+    deletePipeline: (
+      context: ServiceContext,
+      input: DeleteCrmPipelineInput,
+    ) => Promise<{ deleted: true }>;
+    getLead: (
+      context: ServiceContext,
+      input: GetCrmLeadInput,
+    ) => Promise<CrmLead>;
+    listActivities: (
+      context: ServiceContext,
+      input: ListLeadActivitiesInput,
+    ) => Promise<readonly CrmLeadActivity[]>;
+    listLeadBoard: (
+      context: ServiceContext,
+      input: Parameters<typeof listCrmLeadBoard>[1],
+    ) => ReturnType<typeof listCrmLeadBoard>;
+    listLeads: (
+      context: ServiceContext,
+      input: ListCrmLeadsInput,
+    ) => Promise<ListCrmLeadsResult>;
+    listPipelines: (context: ServiceContext) => Promise<readonly CrmPipeline[]>;
+    listVisits: (
+      context: ServiceContext,
+      input: Parameters<typeof listLeadVisits>[1],
+    ) => Promise<readonly CrmLeadVisit[]>;
+    moveLeadPipelineStage: (
+      context: ServiceContext,
+      input: MoveCrmLeadPipelineStageInput,
+    ) => Promise<CrmLead>;
+    restoreLead: (
+      context: ServiceContext,
+      input: { leadId: string },
+    ) => Promise<CrmLead>;
+    updatePipeline: (
+      context: ServiceContext,
+      input: UpdateCrmPipelineInput,
+    ) => Promise<CrmPipeline>;
+    updateVisit: (
+      context: ServiceContext,
+      input: Parameters<typeof updateLeadVisit>[1],
+    ) => Promise<CrmLeadVisit>;
+    updateLead: (
+      context: ServiceContext,
+      input: UpdateCrmLeadInput,
+    ) => Promise<CrmLead>;
+    updateRoutingPolicy: (
+      context: ServiceContext,
+      input: UpdateCrmRoutingPolicyInput,
+    ) => Promise<CrmRoutingPolicyReadModel>;
+  };
 export function createCrmServices(
   options: CreateCrmServicesOptions = {},
 ): CrmServices {
@@ -189,6 +194,7 @@ export function createCrmServices(
     updateRoutingPolicy: (context, input) =>
       updateCrmRoutingPolicy(context, input, ports),
     ...createCrmMessagingServiceBindings(ports),
+    ...createCrmSpecialDateServiceBindings(ports),
   };
 }
 export const crmServices = createCrmServices();

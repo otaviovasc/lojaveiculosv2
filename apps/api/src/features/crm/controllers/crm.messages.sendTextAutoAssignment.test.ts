@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmRealtimeEvent } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createConfiguredZapiTestConnection } from "./crm.channelConnections.testSupport.js";
@@ -64,8 +65,18 @@ describe("CRM send text auto-assignment", () => {
         raw: { messageId: "zapi-outbound-1" },
       };
     });
+    const connectionMemberRepository =
+      createMemoryCrmConnectionMemberRepository();
+    await connectionMemberRepository.grantMember({
+      connectionId,
+      grantedBy: null,
+      storeId,
+      tenantId,
+      userId: actorUserId as never,
+    });
     const app = createTestApp({
       audit,
+      crmConnectionMemberRepository: connectionMemberRepository,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),

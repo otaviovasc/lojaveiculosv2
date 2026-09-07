@@ -197,6 +197,37 @@ describe("CRM WhatsApp API", () => {
     });
   });
 
+  it("posts an initial campaign image with its MIME and original filename", async () => {
+    const fake = createFakeFetch([{ id: "campaign_1" }]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+
+    await api.createCampaign({
+      content: "Confira esta oferta, {nome}.",
+      mediaBase64: "iVBORw0KGgo=",
+      mediaFileName: "oferta.png",
+      mediaType: "image/png",
+      name: "Oferta de janeiro",
+      recipients: [{ cycleId: "session_1", variables: { nome: "Ana" } }],
+      scheduledStartAt: "2099-01-01T10:00:00.000Z",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/campaigns",
+      init: {
+        body: JSON.stringify({
+          content: "Confira esta oferta, {nome}.",
+          mediaBase64: "iVBORw0KGgo=",
+          mediaFileName: "oferta.png",
+          mediaType: "image/png",
+          name: "Oferta de janeiro",
+          recipients: [{ cycleId: "session_1", variables: { nome: "Ana" } }],
+          scheduledStartAt: "2099-01-01T10:00:00.000Z",
+        }),
+        method: "POST",
+      },
+    });
+  });
+
   it("loads WhatsApp connections through V2", async () => {
     const connection = canonicalConnection();
     const fake = createFakeFetch([

@@ -8,6 +8,7 @@ import {
   fingerprintOutboundIntent,
   outboundIdempotencyConflictError,
   outboundReconciliationPendingError,
+  readOutboundProviderReceipt,
   resolveOutboundClientRequestId,
 } from "./outboundMessageSupport.js";
 import {
@@ -106,14 +107,7 @@ export async function completeDurableOutboundProviderCall(
 }
 
 function readReceipt(value: Record<string, unknown> | null) {
-  if (
-    !value ||
-    typeof value.externalId !== "string" ||
-    typeof value.providerTimestamp !== "string"
-  )
-    throw outboundReconciliationPendingError();
-  return {
-    externalId: value.externalId,
-    providerTimestamp: new Date(value.providerTimestamp),
-  };
+  const receipt = readOutboundProviderReceipt(value);
+  if (!receipt) throw outboundReconciliationPendingError();
+  return receipt;
 }

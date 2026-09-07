@@ -15,6 +15,7 @@ export async function createLeadWithInitialStage(
 
 function toCreateLeadInput(input: LeadCreateDraft): CreateProductCrmLeadInput {
   return {
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),

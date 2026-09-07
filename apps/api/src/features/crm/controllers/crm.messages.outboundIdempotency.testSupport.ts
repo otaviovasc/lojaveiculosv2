@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { crmChannelConnectionCapabilityFacts } from "../../../domains/crm/channelConnections/connectionCreation.js";
+import type { CrmConnectionMemberRepository } from "../../../domains/crm/ports/crmConnectionMemberRepository.js";
 
 export const storeId = "store_1" as StoreId;
 export const tenantId = "tenant_1" as TenantId;
@@ -69,5 +70,17 @@ export function claimInput(now: Date) {
     staleBefore: new Date(now.getTime() - 120_000),
     storeId,
     tenantId,
+  };
+}
+
+export function outboundConnectionMembership(): CrmConnectionMemberRepository {
+  return {
+    grantMember: async () => {},
+    listConnectionIdsForUser: async () => ["connection_1"],
+    listMemberUserIdsByConnectionIds: async () => ({
+      connection_1: ["user_1"],
+    }),
+    listMembers: async () => [],
+    revokeMember: async () => ({ revoked: true }),
   };
 }

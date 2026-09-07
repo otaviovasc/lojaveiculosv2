@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmProvider } from "@lojaveiculosv2/shared";
 import { CrmConnectionAdmin } from "./CrmConnectionAdmin";
 import type { CrmProviderConnection } from "./crmConversationTypes";
+import { CRM_SPECIAL_DATE_TYPES } from "./crmSpecialDateTypes";
+import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 describe("CrmConnectionAdmin", () => {
   afterEach(() => {
@@ -30,6 +32,40 @@ describe("CrmConnectionAdmin", () => {
       screen.queryByLabelText(/Token do cliente/i),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/webhook/i)).not.toBeInTheDocument();
+  });
+
+  it("loads special-date settings for the selected connection", async () => {
+    const specialDateApi: CrmSpecialDateApi = {
+      getConfigs: vi.fn(async (connectionId: string) => ({
+        configs: CRM_SPECIAL_DATE_TYPES.map((dateType) => ({
+          connectionId,
+          dateType,
+          enabled: false,
+          leadDays: 0,
+          messageTemplate: "Mensagem para {nome}.",
+          sendTime: "09:00",
+        })),
+      })),
+      updateConfig: vi.fn(),
+    };
+    const connection = createConnection("zapi", "connected", true);
+    render(
+      <CrmConnectionAdmin
+        canManageSpecialDates
+        connections={[connection]}
+        onRefresh={vi.fn(async () => undefined)}
+        specialDateApi={specialDateApi}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /CRM channel/i }));
+    expect(
+      await screen.findByRole("heading", { name: "Datas especiais" }),
+    ).toBeVisible();
+    const getConfigs = vi.mocked(specialDateApi.getConfigs);
+    const firstCall = getConfigs.mock.calls.at(0);
+    expect(firstCall?.[0]).toBe("zapi-connection");
+    expect(firstCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("closes the manage dialog with Escape and restores focus", () => {
@@ -121,6 +157,7 @@ function createConnection(
   configured: boolean,
 ): CrmProviderConnection {
   return {
+    capabilities: ["outbound", "scheduling", "text"],
     channel:
       provider === "olx"
         ? "olx_chat"

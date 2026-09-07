@@ -11,6 +11,7 @@ import {
 type MainSectionProps = {
   onChange: (updates: Partial<LeadCreateFullState>) => void;
   state: LeadCreateFullState;
+  todayIsoDate: string;
 };
 
 const personTypes = [
@@ -35,6 +36,7 @@ const maritalStatusOptions = [
 export function CrmLeadCreateMainSection({
   onChange,
   state,
+  todayIsoDate,
 }: MainSectionProps) {
   return (
     <CrmCreateSection title="Dados principais">
@@ -112,6 +114,7 @@ export function CrmLeadCreateMainSection({
           <CrmCreateField label="Data de nascimento">
             <CrmCreateDateField
               label="Nascimento"
+              max={todayIsoDate}
               onChange={(dataNascimento) => onChange({ dataNascimento })}
               value={state.dataNascimento}
             />

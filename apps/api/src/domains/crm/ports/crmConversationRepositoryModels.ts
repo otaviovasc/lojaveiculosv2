@@ -116,6 +116,8 @@ export type CrmCampaign = {
   id: string;
   initialTagId: string | null;
   intervalMinutes: number;
+  mediaFileName: string | null;
+  mediaStorageKey: string | null;
   mediaType: string | null;
   mediaUrl: string | null;
   metadata: Record<string, unknown>;

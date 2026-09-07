@@ -59,6 +59,9 @@ export function registerCrmCampaignRoutes(
         ...(input.intervalMinutes
           ? { intervalMinutes: input.intervalMinutes }
           : {}),
+        ...(input.mediaBase64 ? { mediaBase64: input.mediaBase64 } : {}),
+        ...(input.mediaFileName ? { mediaFileName: input.mediaFileName } : {}),
+        ...(input.mediaType ? { mediaType: input.mediaType } : {}),
         name: input.name,
         recipients: input.recipients.map((recipient) => ({
           cycleId: recipient.cycleId,

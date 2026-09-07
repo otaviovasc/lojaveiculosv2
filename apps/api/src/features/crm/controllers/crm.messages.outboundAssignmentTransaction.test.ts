@@ -13,6 +13,7 @@ import { createMemoryCrmConversationRepository } from "../adapters/memory/crmCon
 import {
   connection,
   context,
+  outboundConnectionMembership,
   storeId,
   tenantId,
 } from "./crm.messages.outboundIdempotency.testSupport.js";
@@ -156,6 +157,7 @@ function outboundPorts(
     crmExternalBotIntegrationRepository:
       createMemoryCrmExternalBotIntegrationRepository(),
     crmConnectionRepository: createTestCrmConnectionRepository([connection()]),
+    crmConnectionMemberRepository: outboundConnectionMembership(),
     ...createTestCrmRoutingPorts([connection()]),
     crmRepository: createMemoryCrmRepository(),
     crmMessagingGateway: { sendText } as never,
@@ -177,6 +179,7 @@ function transactionalIntentPorts(
   const repository: CrmOutboundIntentRepository = {
     claim: (input) => committed.claim(input),
     complete: (input) => committed.complete(input),
+    findByIdempotencyKey: (input) => committed.findByIdempotencyKey(input),
     markIndeterminate: (input) => committed.markIndeterminate(input),
     purgeExpiredRecoveryPayloads: (input) =>
       committed.purgeExpiredRecoveryPayloads(input),

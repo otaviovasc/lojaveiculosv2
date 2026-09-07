@@ -8,6 +8,9 @@ export function createCampaignBootstrap() {
     "crm.conversations.assign",
     "crm.conversations.manage",
     "crm.conversations.read",
+    "crm.leads.read",
+    "lead.read",
+    "lead.write",
     "crm.campaigns.manage",
     "crm.campaigns.read",
     "crm.messaging.connection.pair",
@@ -30,7 +33,7 @@ export function createCampaignBootstrap() {
   return {
     defaultStore: {
       effectivePermissions,
-      entitlements: ["crm"],
+      entitlements: ["crm", "sales"],
       role: "OWNER",
       status: "active",
       storeId: "50000000-0000-4000-8000-000000000001",
@@ -291,6 +294,5 @@ function createSession(input: {
       },
     ],
     unreadCount: 0,
-    uuid: input.id,
   };
 }

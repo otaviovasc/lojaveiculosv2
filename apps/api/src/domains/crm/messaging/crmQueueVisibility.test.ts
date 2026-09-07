@@ -130,6 +130,24 @@ describe("resolveCrmConnectionScopedQueueVisibility", () => {
       false,
     );
   });
+
+  it("fails closed when restricted membership wiring is missing", async () => {
+    const visibility = await resolveCrmConnectionScopedQueueVisibility(
+      context({
+        actor: { id: "user_1", kind: "user" },
+        permissions: ["crm.conversations.read"],
+      }),
+      {},
+    );
+    expect(visibility).toMatchObject({
+      connectionIds: [],
+      kind: "assigned",
+      userId: "user_1",
+    });
+    expect(matchesCrmQueueVisibility(visibility, "user_1", "conn_1")).toBe(
+      false,
+    );
+  });
 });
 
 describe("matchesCrmQueueVisibility with connection scope", () => {

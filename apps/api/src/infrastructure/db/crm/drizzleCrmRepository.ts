@@ -67,6 +67,7 @@ export function createDrizzleCrmRepository(
         .insert(leads)
         .values({
           assignedUserId: input.assignedUserId ?? null,
+          birthDate: input.birthDate ?? null,
           buyerEmail: input.buyerEmail ?? null,
           buyerName: input.buyerName ?? null,
           buyerPhone: input.buyerPhone ?? null,
@@ -150,6 +151,9 @@ export function createDrizzleCrmRepository(
         .set({
           ...(input.assignedUserId !== undefined
             ? { assignedUserId: input.assignedUserId }
+            : {}),
+          ...(input.birthDate !== undefined
+            ? { birthDate: input.birthDate }
             : {}),
           ...(input.buyerEmail !== undefined
             ? { buyerEmail: input.buyerEmail }

@@ -2,12 +2,17 @@ import { Bot, KeyRound, LinkIcon, Save, ShieldCheck } from "lucide-react";
 import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import type { CrmConversationApi } from "./crmConversationApi";
+import type { CrmProviderConnection } from "./crmConversationTypes";
+import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 export type CrmExternalBotPageProps = {
   api: CrmConversationApi;
   canManage: boolean;
   canRead: boolean;
   canRetry: boolean;
+  canManageSpecialDates?: boolean;
+  connections?: readonly CrmProviderConnection[];
+  specialDateApi?: CrmSpecialDateApi;
 };
 
 export type BotIntegrationFormProps = {

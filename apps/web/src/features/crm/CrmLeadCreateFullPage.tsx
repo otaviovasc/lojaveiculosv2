@@ -9,6 +9,10 @@ import type {
   LeadCreateFullState,
 } from "./CrmLeadCreateTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
+import {
+  getSaoPauloTodayIsoDate,
+  normalizeLeadBirthDateInput,
+} from "./crmLeadBirthDate";
 
 export function CrmLeadCreateFullPage({
   onCancel,
@@ -60,7 +64,12 @@ export function CrmLeadCreateFullPage({
 
   const handleUpdateState = (updates: Partial<LeadCreateFullState>) => {
     setState((current) => ({ ...current, ...updates }));
-    if (updates.buyerName !== undefined) setValidationMessage(null);
+    if (
+      updates.buyerName !== undefined ||
+      updates.dataNascimento !== undefined
+    ) {
+      setValidationMessage(null);
+    }
   };
 
   const handleCreate = async () => {
@@ -71,7 +80,13 @@ export function CrmLeadCreateFullPage({
 
     setIsSaving(true);
     try {
+      const birthDate = normalizeLeadBirthDateInput(state.dataNascimento);
+      if (state.dataNascimento.trim() && !birthDate) {
+        setValidationMessage("Informe uma data de nascimento válida.");
+        return;
+      }
       const draft: LeadCreateDraft = {
+        ...(birthDate ? { birthDate } : {}),
         buyerEmail: state.buyerEmail.trim() || null,
         buyerName: state.buyerName.trim(),
         buyerPhone:
@@ -134,6 +149,7 @@ export function CrmLeadCreateFullPage({
           <CrmLeadCreateMainSection
             onChange={handleUpdateState}
             state={state}
+            todayIsoDate={getSaoPauloTodayIsoDate()}
           />
           <CrmLeadCreateAddressSection
             onChange={handleUpdateState}

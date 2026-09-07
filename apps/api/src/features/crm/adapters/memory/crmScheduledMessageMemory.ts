@@ -1,12 +1,25 @@
 import { randomUUID } from "node:crypto";
 import type {
   CreateCrmScheduledMessageInput,
+  CrmCampaign,
   CrmScheduledMessage,
   FindDueCrmScheduledMessageScopesInput,
   FindDueCrmScheduledMessagesInput,
   ListCrmScheduledMessagesInput,
   UpdateCrmScheduledMessageInput,
 } from "../../../../domains/crm/ports/crmConversationRepository.js";
+import {
+  isCampaignBookkeepingRetryDue,
+  isDueScheduledMessage,
+  isScheduledMessageRetryDue,
+  SCHEDULED_CLAIM_TOKEN_KEY,
+} from "../../../../domains/crm/messaging/crmScheduledMessageScheduling.js";
+import {
+  cloneScheduledMessage,
+  hasCampaignBookkeepingPending,
+  isProcessableScheduledMessage,
+  isProcessableSpecialDate,
+} from "./crmScheduledMessageMemoryFilters.js";
 
 export function createMemoryScheduledMessage(
   messages: CrmScheduledMessage[],
@@ -24,7 +37,7 @@ export function createMemoryScheduledMessage(
     createdByUserId: input.createdByUserId ?? null,
     errorMessage: null,
     id: randomUUID(),
-    metadata: input.metadata ?? {},
+    metadata: structuredClone(input.metadata ?? {}),
     recipientAddress: input.recipientAddress,
     scheduledAt: input.scheduledAt,
     sentAt: null,
@@ -37,7 +50,7 @@ export function createMemoryScheduledMessage(
     updatedAt: now,
   };
   messages.push(message);
-  return message;
+  return cloneScheduledMessage(message);
 }
 
 export function listMemoryScheduledMessages(
@@ -60,38 +73,73 @@ export function listMemoryScheduledMessages(
     )
     .filter((message) => !input.cycleId || message.cycleId === input.cycleId)
     .filter((message) => !input.status || message.status === input.status)
+    .filter(
+      (message) =>
+        input.campaignBookkeepingPending === undefined ||
+        (hasCampaignBookkeepingPending(message) ===
+          input.campaignBookkeepingPending &&
+          (input.campaignBookkeepingPending !== true ||
+            isCampaignBookkeepingRetryDue(
+              message.metadata,
+              input.now ?? new Date(),
+            ))),
+    )
     .sort(
       (left, right) => right.scheduledAt.getTime() - left.scheduledAt.getTime(),
     )
-    .slice(0, input.limit);
+    .slice(0, input.limit)
+    .map(cloneScheduledMessage);
 }
 
 export function findDueMemoryScheduledMessages(
   messages: readonly CrmScheduledMessage[],
+  campaigns: readonly CrmCampaign[] = [],
   input: FindDueCrmScheduledMessagesInput,
 ) {
+  const now = input.now ?? new Date();
+  const staleBefore = input.staleBefore ?? new Date(now.getTime() - 120_000);
   return messages
     .filter((message) => message.storeId === input.storeId)
     .filter((message) => message.tenantId === input.tenantId)
-    .filter((message) => message.status === "pending")
-    .filter((message) => message.scheduledAt <= input.dueAt)
+    .filter((message) =>
+      isDueScheduledMessage(message, input.dueAt, staleBefore, now),
+    )
+    .filter((message) =>
+      isProcessableSpecialDate(message, input.specialDateConfigs),
+    )
+    .filter(
+      (message) =>
+        message.status === "sending" ||
+        isProcessableScheduledMessage(message, campaigns),
+    )
     .sort(
       (left, right) => left.scheduledAt.getTime() - right.scheduledAt.getTime(),
     )
-    .slice(0, input.limit);
+    .slice(0, input.limit)
+    .map(cloneScheduledMessage);
 }
 
 export function findDueMemoryScheduledMessageScopes(
   messages: readonly CrmScheduledMessage[],
+  campaigns: readonly CrmCampaign[] = [],
   input: FindDueCrmScheduledMessageScopesInput,
 ) {
+  const now = input.now ?? new Date();
+  const staleBefore = input.staleBefore ?? new Date(now.getTime() - 120_000);
   const scopes = new Map<
     string,
     Pick<CrmScheduledMessage, "storeId" | "tenantId">
   >();
   const dueMessages = messages
-    .filter((message) => message.status === "pending")
-    .filter((message) => message.scheduledAt <= input.dueAt)
+    .filter(
+      (message) =>
+        (isDueScheduledMessage(message, input.dueAt, staleBefore, now) &&
+          (message.status === "sending" ||
+            isProcessableScheduledMessage(message, campaigns)) &&
+          isProcessableSpecialDate(message, input.specialDateConfigs)) ||
+        (hasCampaignBookkeepingPending(message) &&
+          isCampaignBookkeepingRetryDue(message.metadata, now)),
+    )
     .sort(
       (left, right) => left.scheduledAt.getTime() - right.scheduledAt.getTime(),
     );
@@ -122,6 +170,40 @@ export function updateMemoryScheduledMessage(
   if (input.expectedStatus && message.status !== input.expectedStatus) {
     return null;
   }
+  if (input.expectedStatuses?.length) {
+    if (input.staleBefore) {
+      const isPending =
+        message.status === "pending" &&
+        input.expectedStatuses.includes("pending");
+      const isAbandonedSending =
+        message.status === "sending" &&
+        input.expectedStatuses.includes("sending") &&
+        message.updatedAt <= input.staleBefore &&
+        isScheduledMessageRetryDue(message, input.now ?? new Date());
+      if (!isPending && !isAbandonedSending) return null;
+    } else if (!input.expectedStatuses.includes(message.status)) {
+      return null;
+    }
+  }
+  if (
+    input.dueAt &&
+    message.status === "pending" &&
+    message.scheduledAt > input.dueAt
+  ) {
+    return null;
+  }
+  if (
+    input.expectedUpdatedAt &&
+    message.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()
+  ) {
+    return null;
+  }
+  if (
+    input.expectedClaimToken &&
+    message.metadata[SCHEDULED_CLAIM_TOKEN_KEY] !== input.expectedClaimToken
+  ) {
+    return null;
+  }
   message.cancelledAt =
     input.cancelledAt !== undefined ? input.cancelledAt : message.cancelledAt;
   message.content =
@@ -130,6 +212,9 @@ export function updateMemoryScheduledMessage(
     input.errorMessage !== undefined
       ? input.errorMessage
       : message.errorMessage;
+  if (input.metadata !== undefined) {
+    message.metadata = structuredClone(input.metadata);
+  }
   message.sentAt = input.sentAt !== undefined ? input.sentAt : message.sentAt;
   message.sentMessageId =
     input.sentMessageId !== undefined
@@ -138,6 +223,8 @@ export function updateMemoryScheduledMessage(
   message.scheduledAt =
     input.scheduledAt !== undefined ? input.scheduledAt : message.scheduledAt;
   message.status = input.status;
-  message.updatedAt = new Date();
-  return message;
+  message.updatedAt =
+    input.updatedAt ??
+    new Date(Math.max(Date.now(), message.updatedAt.getTime() + 1));
+  return cloneScheduledMessage(message);
 }

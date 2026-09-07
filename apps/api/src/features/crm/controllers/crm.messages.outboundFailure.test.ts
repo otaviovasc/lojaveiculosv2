@@ -10,6 +10,7 @@ import { CrmMessagingGatewayError } from "../../../domains/crm/ports/crmMessagin
 import {
   connection,
   context,
+  outboundConnectionMembership,
   storeId,
   tenantId,
 } from "./crm.messages.outboundIdempotency.testSupport.js";
@@ -50,6 +51,7 @@ describe("sendWhatsappOutboundMessage failure classification", () => {
       crmConnectionRepository: createTestCrmConnectionRepository([
         connection(),
       ]),
+      crmConnectionMemberRepository: outboundConnectionMembership(),
       ...createTestCrmRoutingPorts([connection()]),
       crmRepository: createMemoryCrmRepository(),
       crmMessagingGateway: { sendText } as never,

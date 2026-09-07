@@ -1,6 +1,7 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
+import { createMemoryCrmConnectionMemberRepository } from "../adapters/memory/crmConnectionMemberRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
 import {
@@ -17,6 +18,15 @@ const filters = ["all", "fresh", "mine", "others", "unassigned"] as const;
 
 async function createQueueApp(permissions: PermissionKey[]) {
   const repository = createMemoryCrmConversationRepository();
+  const connectionMemberRepository =
+    createMemoryCrmConnectionMemberRepository();
+  await connectionMemberRepository.grantMember({
+    connectionId,
+    grantedBy: null,
+    storeId,
+    tenantId,
+    userId: actorUserId as never,
+  });
   await ingestText(repository, {
     customerDisplayName: "Fresh",
     customerPhone: "5511999999921",
@@ -65,6 +75,7 @@ async function createQueueApp(permissions: PermissionKey[]) {
     tenantId,
   });
   return createTestApp({
+    crmConnectionMemberRepository: connectionMemberRepository,
     crmConnectionRepository: createMemoryCrmConnectionRepository([
       createZapiConnection(),
     ]),

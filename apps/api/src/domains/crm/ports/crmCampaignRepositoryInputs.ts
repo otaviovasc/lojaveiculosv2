@@ -57,6 +57,40 @@ export type IncrementCrmCampaignCountsInput = FindCrmCampaignInput & {
   sentDelta?: number;
 };
 
+/**
+ * Records a provider result and its campaign metric in one repository
+ * operation. `campaignRecipientKey` is the stable conversation-cycle id that
+ * was copied to the scheduled message; sequence remains part of the identity
+ * so a malformed or stale cycle key cannot select another delivery.
+ */
+export type RecordCrmCampaignDeliveryInput = FindCrmCampaignInput & {
+  campaignMessageType?: string | null;
+  campaignRecipientKey?: string | null;
+  campaignSequence: number;
+  errorMessage?: string;
+  sentAt?: Date;
+  sentMessageId?: string | null;
+};
+
+/** Claims one inbound campaign reply and its reply metric atomically. */
+export type ClaimCrmCampaignReplyInput = FindCrmCampaignInput & {
+  recipientId: string;
+  replyContentPreview: string | null;
+  replyMessageId: string;
+  replyReceivedAt: Date;
+  secondarySchedule?: {
+    campaignRecipientKey: string;
+    campaignSequence: number;
+    connectionId: string;
+    content: string;
+    createdByUserId?: UserId | null;
+    cycleId: string;
+    metadata?: Record<string, unknown>;
+    recipientAddress: string;
+    scheduledAt: Date;
+  };
+};
+
 export type ListCrmCampaignRecipientsInput = {
   campaignId?: string;
   campaignSequence?: number;

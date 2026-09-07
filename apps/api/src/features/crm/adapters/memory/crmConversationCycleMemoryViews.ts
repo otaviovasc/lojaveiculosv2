@@ -106,6 +106,11 @@ function matchesQueueVisibility(
   cycle: CrmConversationCycle,
   query: CountCrmConversationCyclesInput,
 ) {
+  if (query.queueVisibility?.connectionIds != null) {
+    if (!query.queueVisibility.connectionIds.includes(cycle.connectionId)) {
+      return false;
+    }
+  }
   switch (query.queueVisibility?.kind) {
     case undefined:
     case "global":

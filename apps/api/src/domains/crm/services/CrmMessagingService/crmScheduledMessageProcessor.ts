@@ -6,17 +6,13 @@ import {
   requireCrmMessagingScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
-import { sendMessage } from "./sendMessage.js";
 import {
   logCrmServiceEvent,
   recordCrmServiceMutation,
 } from "./serviceSupport.js";
-import {
-  findProcessableCampaignForSchedule,
-  recordCampaignScheduledSendResult,
-} from "../../messaging/crmCampaignDeliveryMetrics.js";
-import { assertCrmScheduledConnectionBinding } from "../../messaging/assertCrmScheduledConnectionBinding.js";
-import { assertSchedulingRoute } from "../../messaging/assertSchedulingRoute.js";
+import { CRM_SCHEDULED_MESSAGE_LEASE_MS } from "../../messaging/crmScheduledMessageScheduling.js";
+import { processDueMessages } from "../../messaging/crmScheduledMessageProcessorLoop.js";
+import { listEnabledSpecialDateConfigSnapshotsForAllScopes } from "../../messaging/crmScheduledMessageReadiness.js";
 
 const processPermission = "crm.scheduled_messages.process";
 
@@ -44,6 +40,9 @@ export async function listDueCrmScheduledMessageScopes(
   assertPermission(context, processPermission);
   const dueAt = input.dueAt ?? new Date();
   const limit = input.limit ?? 100;
+  const now = new Date();
+  const specialDateConfigs =
+    await listEnabledSpecialDateConfigSnapshotsForAllScopes(ports);
   logCrmServiceEvent(context, "crm.scheduled_message.scopes_due.started", {
     dueAt: dueAt.toISOString(),
     limit,
@@ -61,6 +60,9 @@ export async function listDueCrmScheduledMessageScopes(
       getCrmConversationRepository(ports).findDueScheduledMessageScopes({
         dueAt,
         limit,
+        now,
+        ...(specialDateConfigs ? { specialDateConfigs } : {}),
+        staleBefore: new Date(now.getTime() - CRM_SCHEDULED_MESSAGE_LEASE_MS),
       }),
   );
 }
@@ -90,94 +92,4 @@ export async function processDueCrmScheduledMessages(
     },
     () => processDueMessages(context, { dueAt, limit, scope }, ports),
   );
-}
-
-async function processDueMessages(
-  context: ServiceContext,
-  input: {
-    dueAt: Date;
-    limit: number;
-    scope: { storeId: string; tenantId: string };
-  },
-  ports: CrmServicePorts,
-) {
-  const repository = getCrmConversationRepository(ports);
-  const dueMessages = await repository.findDueScheduledMessages({
-    dueAt: input.dueAt,
-    limit: input.limit,
-    storeId: input.scope.storeId as never,
-    tenantId: input.scope.tenantId as never,
-  });
-  let processed = 0;
-  let sent = 0;
-  let failed = 0;
-  for (const scheduled of dueMessages) {
-    const campaignGate = await findProcessableCampaignForSchedule(
-      scheduled,
-      ports,
-    );
-    if (campaignGate?.blocked) continue;
-    const claimed = await repository.updateScheduledMessage({
-      expectedStatus: "pending",
-      id: scheduled.id,
-      status: "sending",
-      storeId: input.scope.storeId as never,
-      tenantId: input.scope.tenantId as never,
-    });
-    if (!claimed) continue;
-    processed += 1;
-    try {
-      await assertSchedulingRoute(scheduled.connectionId, input.scope, ports);
-      await assertCrmScheduledConnectionBinding(
-        scheduled,
-        input.scope,
-        repository,
-      );
-      const message = await sendMessage(
-        context,
-        {
-          idempotencyKey: `scheduled:${scheduled.id}`,
-          senderOrigin: "system",
-          senderType: "SYSTEM",
-          cycleId: scheduled.cycleId,
-          text: scheduled.content,
-        },
-        ports,
-      );
-      await repository.updateScheduledMessage({
-        id: scheduled.id,
-        sentAt: new Date(),
-        sentMessageId: String(message.id),
-        status: "sent",
-        storeId: input.scope.storeId as never,
-        tenantId: input.scope.tenantId as never,
-      });
-      await recordCampaignScheduledSendResult(
-        scheduled,
-        {
-          sentAt: new Date(),
-          sentMessageId: String(message.id),
-        },
-        ports,
-      );
-      sent += 1;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      await repository.updateScheduledMessage({
-        errorMessage,
-        id: scheduled.id,
-        status: "failed",
-        storeId: input.scope.storeId as never,
-        tenantId: input.scope.tenantId as never,
-      });
-      await recordCampaignScheduledSendResult(
-        scheduled,
-        { errorMessage },
-        ports,
-      );
-      failed += 1;
-    }
-  }
-  return { failed, processed, sent };
 }

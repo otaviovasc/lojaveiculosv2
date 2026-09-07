@@ -67,6 +67,8 @@ import {
   type MemoryCrmTagState,
 } from "./crmTagMemory.js";
 import { transitionMemoryWhatsappAttendance } from "./crmConversationMemoryAttendance.js";
+import { recordMemoryCampaignDelivery } from "./crmCampaignDeliveryMemory.js";
+import { claimMemoryCampaignReply } from "./crmCampaignReplyMemory.js";
 
 export function createMemoryCrmConversationRepository(
   initialCycles: readonly CrmConversationCycle[] = [],
@@ -83,6 +85,13 @@ export function createMemoryCrmConversationRepository(
   const tagState: MemoryCrmTagState = { cycleTags: [], tags: [] };
 
   return {
+    claimCampaignReply: async (input) =>
+      claimMemoryCampaignReply(
+        campaigns,
+        campaignRecipients,
+        scheduledMessages,
+        input,
+      ),
     async addConversationCycleTag(input) {
       return addMemoryCycleTag(tagState, cycles, messages, input);
     },
@@ -99,23 +108,19 @@ export function createMemoryCrmConversationRepository(
       return findOrCreateMemoryTag(tagState, input);
     },
     async findDueScheduledMessageScopes(input) {
-      return findDueMemoryScheduledMessageScopes(scheduledMessages, input);
+      return findDueMemoryScheduledMessageScopes(
+        scheduledMessages,
+        campaigns,
+        input,
+      );
     },
     async createTag(input) {
       return createMemoryTag(tagState, input);
     },
-    async updateTag(input) {
-      return updateMemoryTag(tagState, input);
-    },
-    async deleteTag(input) {
-      return deleteMemoryTag(tagState, input);
-    },
-    async reorderTags(input) {
-      return reorderMemoryTags(tagState, input);
-    },
-    async listTags(input) {
-      return listMemoryTags(tagState, input);
-    },
+    updateTag: async (input) => updateMemoryTag(tagState, input),
+    deleteTag: async (input) => deleteMemoryTag(tagState, input),
+    reorderTags: async (input) => reorderMemoryTags(tagState, input),
+    listTags: async (input) => listMemoryTags(tagState, input),
     async createQuickMessage(input) {
       return createMemoryQuickMessage(quickMessages, input);
     },
@@ -156,6 +161,8 @@ export function createMemoryCrmConversationRepository(
       }),
     incrementCampaignCounts: (input) =>
       Promise.resolve(incrementMemoryCampaignCounts(campaigns, input)),
+    recordCampaignDelivery: async (input) =>
+      recordMemoryCampaignDelivery(campaigns, campaignRecipients, input),
     async listMessages(input) {
       return messages
         .filter((message) => message.storeId === input.storeId)
@@ -189,7 +196,11 @@ export function createMemoryCrmConversationRepository(
       return createMemoryScheduledMessage(scheduledMessages, input);
     },
     async findDueScheduledMessages(input) {
-      return findDueMemoryScheduledMessages(scheduledMessages, input);
+      return findDueMemoryScheduledMessages(
+        scheduledMessages,
+        campaigns,
+        input,
+      );
     },
     async listScheduledMessages(input) {
       return listMemoryScheduledMessages(scheduledMessages, input);

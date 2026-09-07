@@ -60,6 +60,7 @@ export function applyMemoryLeadUpdate(
   if (input.assignedUserId !== undefined) {
     lead.assignedUserId = input.assignedUserId;
   }
+  if (input.birthDate !== undefined) lead.birthDate = input.birthDate;
   if (input.buyerEmail !== undefined) lead.buyerEmail = input.buyerEmail;
   if (input.buyerName !== undefined) lead.buyerName = input.buyerName;
   if (input.buyerPhone !== undefined) lead.buyerPhone = input.buyerPhone;

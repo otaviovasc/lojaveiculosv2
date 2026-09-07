@@ -73,6 +73,15 @@ async function processDueScheduledMessages(input: {
   scopeLimit: number;
   services: CrmServices;
 }) {
+  const specialDateContext = createWorkerContext({
+    ...(input.audit ? { audit: input.audit } : {}),
+    logger: input.logger,
+    requestId: `crm_special_date_discovery_${Date.now()}`,
+  });
+  const specialDates = await input.services.evaluateConfiguredSpecialDates(
+    specialDateContext,
+    { limit: input.scopeLimit, referenceDate: input.dueAt },
+  );
   const discoveryContext = createWorkerContext({
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
@@ -105,6 +114,9 @@ async function processDueScheduledMessages(input: {
     processed,
     scopes: scopes.length,
     sent,
+    specialDateEvaluatedConfigs: specialDates.evaluatedConfigs,
+    specialDateScheduledMessages: specialDates.scheduledMessages,
+    specialDateScopes: specialDates.scopes,
   };
 }
 
@@ -117,8 +129,8 @@ function createWorkerContext(input: {
     actor: { id: "crm_schedule_worker", kind: "system" },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
+    entitlements: ["crm"],
     permissions: [
-      "crm.messaging.connection.setup",
       "crm.messages.ingest",
       "crm.scheduled_messages.process",
       "crm.messages.send",
@@ -137,6 +149,7 @@ function createWorkerStoreContext(input: {
     actor: { id: "crm_schedule_worker", kind: "system" },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
+    entitlements: ["crm"],
     permissions: ["crm.scheduled_messages.process", "crm.messages.send"],
     request: {
       requestId: `crm_schedule_${input.scope.storeId}_${Date.now()}`,

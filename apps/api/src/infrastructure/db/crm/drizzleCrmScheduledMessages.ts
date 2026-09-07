@@ -1,15 +1,7 @@
+import { and, asc, desc, eq, getTableColumns, or, sql } from "drizzle-orm";
 import {
-  and,
-  asc,
-  desc,
-  eq,
-  getTableColumns,
-  gt,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
-import {
+  crmCampaigns,
+  crmSpecialDateConfigs,
   crmScheduledMessages,
   storeEntitlements,
   stores,
@@ -25,6 +17,18 @@ import type {
 import { findCanonicalThreadIdForCycle } from "./drizzleCrmCanonicalWorkflowReferences.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { toScheduledMessage } from "./drizzleCrmScheduledMessageMapper.js";
+import {
+  activeCampaignJoin,
+  activeCrmEntitlementJoin,
+  activeStoreJoin,
+  activeTenantJoin,
+  buildScheduledMessageUpdateFilters,
+  campaignBookkeepingPendingPredicate,
+  dueScheduledPredicate,
+  processableScheduledMessagePredicate,
+  processableSpecialDatePredicate,
+  specialDateConfigJoin,
+} from "./drizzleCrmScheduledMessageFilters.js";
 
 export async function createCrmScheduledMessage(
   db: DrizzleCrmClient,
@@ -82,6 +86,13 @@ export async function listCrmScheduledMessages(
   if (input.status) {
     filters.push(eq(crmScheduledMessages.status, input.status));
   }
+  if (input.campaignBookkeepingPending !== undefined) {
+    filters.push(
+      input.campaignBookkeepingPending
+        ? campaignBookkeepingPendingPredicate(true, input.now ?? new Date())!
+        : campaignBookkeepingPendingPredicate(false)!,
+    );
+  }
   const rows = await db
     .select()
     .from(crmScheduledMessages)
@@ -95,19 +106,23 @@ export async function findDueCrmScheduledMessages(
   db: DrizzleCrmClient,
   input: FindDueCrmScheduledMessagesInput,
 ) {
-  const now = new Date();
+  const now = input.now ?? new Date();
+  const staleBefore = input.staleBefore ?? new Date(now.getTime() - 120_000);
   const rows = await db
     .select(getTableColumns(crmScheduledMessages))
     .from(crmScheduledMessages)
     .innerJoin(storeEntitlements, activeCrmEntitlementJoin(now))
     .innerJoin(stores, activeStoreJoin())
     .innerJoin(tenants, activeTenantJoin())
+    .leftJoin(crmCampaigns, activeCampaignJoin())
+    .leftJoin(crmSpecialDateConfigs, specialDateConfigJoin())
     .where(
       and(
         eq(crmScheduledMessages.storeId, input.storeId),
         eq(crmScheduledMessages.tenantId, input.tenantId),
-        eq(crmScheduledMessages.status, "pending"),
-        lte(crmScheduledMessages.scheduledAt, input.dueAt),
+        dueScheduledPredicate(input.dueAt, staleBefore, now),
+        processableScheduledMessagePredicate(),
+        processableSpecialDatePredicate(input.specialDateConfigs),
       ),
     )
     .orderBy(asc(crmScheduledMessages.scheduledAt))
@@ -119,7 +134,13 @@ export async function findDueCrmScheduledMessageScopes(
   db: DrizzleCrmClient,
   input: FindDueCrmScheduledMessageScopesInput,
 ) {
-  const now = new Date();
+  const now = input.now ?? new Date();
+  const staleBefore = input.staleBefore ?? new Date(now.getTime() - 120_000);
+  const due = and(
+    dueScheduledPredicate(input.dueAt, staleBefore, now),
+    processableScheduledMessagePredicate(),
+    processableSpecialDatePredicate(input.specialDateConfigs),
+  );
   const rows = await db
     .selectDistinct({
       storeId: crmScheduledMessages.storeId,
@@ -129,12 +150,9 @@ export async function findDueCrmScheduledMessageScopes(
     .innerJoin(storeEntitlements, activeCrmEntitlementJoin(now))
     .innerJoin(stores, activeStoreJoin())
     .innerJoin(tenants, activeTenantJoin())
-    .where(
-      and(
-        eq(crmScheduledMessages.status, "pending"),
-        lte(crmScheduledMessages.scheduledAt, input.dueAt),
-      ),
-    )
+    .leftJoin(crmCampaigns, activeCampaignJoin())
+    .leftJoin(crmSpecialDateConfigs, specialDateConfigJoin())
+    .where(or(due, campaignBookkeepingPendingPredicate(true, now)))
     .limit(input.limit);
   return rows.map((row) => ({
     storeId: row.storeId as never,
@@ -142,41 +160,11 @@ export async function findDueCrmScheduledMessageScopes(
   }));
 }
 
-function activeCrmEntitlementJoin(now: Date) {
-  return and(
-    eq(storeEntitlements.storeId, crmScheduledMessages.storeId),
-    eq(storeEntitlements.tenantId, crmScheduledMessages.tenantId),
-    eq(storeEntitlements.featureKey, "crm"),
-    eq(storeEntitlements.status, "active"),
-    or(
-      isNull(storeEntitlements.startsAt),
-      lte(storeEntitlements.startsAt, now),
-    ),
-    or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
-  );
-}
-
-function activeStoreJoin() {
-  return and(
-    eq(stores.id, crmScheduledMessages.storeId),
-    eq(stores.tenantId, crmScheduledMessages.tenantId),
-    eq(stores.isDeleted, false),
-    isNull(stores.deletedAt),
-  );
-}
-
-function activeTenantJoin() {
-  return and(
-    eq(tenants.id, crmScheduledMessages.tenantId),
-    eq(tenants.isDeleted, false),
-    isNull(tenants.deletedAt),
-  );
-}
-
 export async function updateCrmScheduledMessage(
   db: DrizzleCrmClient,
   input: UpdateCrmScheduledMessageInput,
 ) {
+  const filters = buildScheduledMessageUpdateFilters(input);
   const [row] = await db
     .update(crmScheduledMessages)
     .set({
@@ -187,6 +175,7 @@ export async function updateCrmScheduledMessage(
       ...(input.errorMessage !== undefined
         ? { errorMessage: input.errorMessage }
         : {}),
+      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
       ...(input.sentAt !== undefined ? { sentAt: input.sentAt } : {}),
       ...(input.sentMessageId !== undefined
         ? { sentMessageId: input.sentMessageId }
@@ -195,18 +184,11 @@ export async function updateCrmScheduledMessage(
         ? { scheduledAt: input.scheduledAt }
         : {}),
       status: input.status,
-      updatedAt: new Date(),
+      updatedAt:
+        input.updatedAt ??
+        sql`greatest(${crmScheduledMessages.updatedAt} + interval '1 millisecond', now())`,
     })
-    .where(
-      and(
-        eq(crmScheduledMessages.id, input.id),
-        eq(crmScheduledMessages.storeId, input.storeId),
-        eq(crmScheduledMessages.tenantId, input.tenantId),
-        ...(input.expectedStatus
-          ? [eq(crmScheduledMessages.status, input.expectedStatus)]
-          : []),
-      ),
-    )
+    .where(and(...filters))
     .returning();
   if (!row) return null;
   const [scheduled] = await hydrateScheduledMessages(db, [row]);

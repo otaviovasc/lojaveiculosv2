@@ -11,10 +11,13 @@ import {
 } from "./serviceSupport.js";
 import { ensureLeadPipeline } from "../../pipeline/ensureLeadPipeline.js";
 
+import { isValidIsoCalendarBirthDate } from "../../messaging/crmSpecialDateCalculator.js";
+
 const permission = "lead.create";
 
 export type CreateCrmLeadInput = {
   assignedUserId?: string | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -30,6 +33,16 @@ export async function createCrmLead(
 ): Promise<CrmLead> {
   assertPermission(context, permission);
   const scope = requireCrmScope(context);
+
+  if (
+    input.birthDate !== undefined &&
+    input.birthDate !== null &&
+    !isValidIsoCalendarBirthDate(input.birthDate)
+  ) {
+    throw new Error(
+      "Invalid birthDate: must be a valid calendar date (YYYY-MM-DD) not in the future",
+    );
+  }
 
   context.logger.info(
     "crm.lead.create.started",
@@ -59,6 +72,9 @@ export async function createCrmLead(
           ...(!existing.assignedUserId && input.assignedUserId
             ? { assignedUserId: input.assignedUserId as UserId }
             : {}),
+          ...(!existing.birthDate && input.birthDate
+            ? { birthDate: input.birthDate }
+            : {}),
           ...(!existing.buyerEmail && input.buyerEmail
             ? { buyerEmail: input.buyerEmail }
             : {}),
@@ -80,6 +96,7 @@ export async function createCrmLead(
         ...(input.assignedUserId
           ? { assignedUserId: input.assignedUserId as UserId }
           : {}),
+        birthDate: input.birthDate ?? null,
         buyerEmail: input.buyerEmail ?? null,
         buyerName: input.buyerName ?? null,
         buyerPhone: input.buyerPhone ?? null,

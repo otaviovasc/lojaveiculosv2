@@ -2,6 +2,7 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertOfficialMessagingWindow } from "./assertOfficialMessagingWindow.js";
 import type { CrmConversationCycle } from "../ports/crmConversationRepository.js";
 import {
+  getCrmConnectionRepository,
   getCrmConversationRepository,
   isCrmOlxChatEnabled,
   type CrmServicePorts,
@@ -37,6 +38,94 @@ export async function resolveOutboundConnection(
     getCrmConversationRepository(ports),
   );
   return connection;
+}
+
+/**
+ * Resolves the connection needed to materialize a provider-confirmed intent.
+ * This path deliberately checks only durable tenant/store/connection
+ * identity. A replay must remain possible after the connection is paused or
+ * the official messaging window has closed, and it must never invoke the
+ * provider again merely because current readiness changed.
+ */
+export async function resolveOutboundConnectionForReplay(
+  context: ServiceContext,
+  conversationCycle: CrmConversationCycle,
+  ports: CrmServicePorts,
+) {
+  const connection = await getCrmConnectionRepository(ports).findConnectionById(
+    conversationCycle.connectionId,
+  );
+  if (
+    !connection ||
+    connection.storeId !== conversationCycle.storeId ||
+    connection.tenantId !== conversationCycle.tenantId ||
+    connection.storeId !== context.storeId ||
+    connection.tenantId !== context.tenantId ||
+    connection.channel !== providerChannel(conversationCycle.channel)
+  ) {
+    throw new CrmConnectionNotFoundError(conversationCycle.connectionId);
+  }
+  return connection;
+}
+
+export async function resolveOutboundConnectionForDelivery(input: {
+  claimKind: "claimed" | "provider_succeeded";
+  context: ServiceContext;
+  conversationCycle: CrmConversationCycle;
+  ports: CrmServicePorts;
+  preflightConnection: Awaited<
+    ReturnType<typeof resolveOutboundConnection>
+  > | null;
+  requiredCapabilities: readonly CrmRoutingCapability[];
+}) {
+  if (input.claimKind === "provider_succeeded") {
+    return resolveOutboundConnectionForReplay(
+      input.context,
+      input.conversationCycle,
+      input.ports,
+    );
+  }
+  return (
+    input.preflightConnection ??
+    resolveOutboundConnection(
+      input.context,
+      input.conversationCycle,
+      input.ports,
+      input.requiredCapabilities,
+    )
+  );
+}
+
+export function createOutboundConnectionResolver(
+  context: ServiceContext,
+  ports: CrmServicePorts,
+  requiredCapabilities: readonly CrmRoutingCapability[] = ["outbound"],
+) {
+  let preflightConnection: Awaited<
+    ReturnType<typeof resolveOutboundConnection>
+  > | null = null;
+  return {
+    beforeAssignment: async (conversationCycle: CrmConversationCycle) => {
+      preflightConnection = await resolveOutboundConnection(
+        context,
+        conversationCycle,
+        ports,
+        requiredCapabilities,
+      );
+    },
+    resolve: (
+      claimKind: "claimed" | "provider_succeeded",
+      conversationCycle: CrmConversationCycle,
+    ) =>
+      resolveOutboundConnectionForDelivery({
+        claimKind,
+        context,
+        conversationCycle,
+        ports,
+        preflightConnection,
+        requiredCapabilities,
+      }),
+  };
 }
 
 function providerChannel(channel: CrmConversationCycle["channel"]) {

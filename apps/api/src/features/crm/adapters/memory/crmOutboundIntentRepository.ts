@@ -7,8 +7,12 @@ import type {
 export function createMemoryCrmOutboundIntentRepository(): CrmOutboundIntentRepository {
   const rows = new Map<string, OutboundIntent>();
   return {
+    async findByIdempotencyKey(input) {
+      const row = rows.get(intentKey(input));
+      return row ? snapshot(row) : null;
+    },
     async claim(input) {
-      const key = `${input.tenantId}:${input.storeId}:${input.idempotencyKey}`;
+      const key = intentKey(input);
       const existing = rows.get(key);
       if (existing) {
         if (existing.fingerprint !== input.fingerprint)
@@ -97,6 +101,27 @@ export function createMemoryCrmOutboundIntentRepository(): CrmOutboundIntentRepo
     const row = [...rows.values()].find((item) => item.id === input.id);
     if (row?.claimToken === input.claimToken) action(row);
   }
+}
+
+function intentKey(input: {
+  idempotencyKey: string;
+  storeId: string;
+  tenantId: string;
+}) {
+  return `${input.tenantId}:${input.storeId}:${input.idempotencyKey}`;
+}
+
+function snapshot(row: OutboundIntent): OutboundIntent {
+  return {
+    ...row,
+    providerResult: row.providerResult
+      ? structuredClone(row.providerResult)
+      : null,
+    recoveryExpiresAt: row.recoveryExpiresAt
+      ? new Date(row.recoveryExpiresAt)
+      : null,
+    startedAt: new Date(row.startedAt),
+  };
 }
 
 function minimalReceipt(value: Record<string, unknown> | null) {

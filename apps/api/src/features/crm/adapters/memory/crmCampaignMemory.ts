@@ -13,6 +13,7 @@ export function createMemoryCampaign(
   input: CreateCrmCampaignInput,
 ) {
   const now = new Date();
+  const metadata = input.metadata ?? {};
   const campaign: CrmCampaign = {
     content: input.content,
     createdAt: now,
@@ -21,9 +22,17 @@ export function createMemoryCampaign(
     id: randomUUID(),
     initialTagId: input.initialTagId ?? null,
     intervalMinutes: input.intervalMinutes,
+    mediaFileName:
+      typeof metadata.mediaFileName === "string"
+        ? metadata.mediaFileName
+        : null,
+    mediaStorageKey:
+      typeof metadata.mediaStorageKey === "string"
+        ? metadata.mediaStorageKey
+        : null,
     mediaType: input.mediaType ?? null,
     mediaUrl: input.mediaUrl ?? null,
-    metadata: input.metadata ?? {},
+    metadata,
     name: input.name,
     repliedCount: input.repliedCount ?? 0,
     replyRate: 0,
@@ -79,7 +88,17 @@ export function updateMemoryCampaign(
   const campaign = findMemoryCampaign(campaigns, input);
   if (!campaign) return null;
   if (input.failedCount !== undefined) campaign.failedCount = input.failedCount;
-  if (input.metadata !== undefined) campaign.metadata = input.metadata;
+  if (input.metadata !== undefined) {
+    campaign.metadata = input.metadata;
+    campaign.mediaFileName =
+      typeof input.metadata.mediaFileName === "string"
+        ? input.metadata.mediaFileName
+        : null;
+    campaign.mediaStorageKey =
+      typeof input.metadata.mediaStorageKey === "string"
+        ? input.metadata.mediaStorageKey
+        : null;
+  }
   if (input.repliedCount !== undefined) {
     campaign.repliedCount = input.repliedCount;
   }

@@ -1,22 +1,19 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { interventionActorKind } from "./humanAttendanceTransition.js";
 import {
-  getCrmRealtimePublisher,
   getCrmMessagingGateway,
   getCrmOutboundIntentRepository,
   getCrmConversationRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 import type { CrmMessage } from "../ports/crmConversationRepository.js";
-import { enqueueCrmMessageExternalBotEvent } from "../bot/externalBotEventForwarding.js";
 import { providerAddressForSession } from "./crmMessagingProvider.js";
 import {
+  classifyOutboundIntentRecovery,
   defaultOutboundSenderType,
   fingerprintOutboundIntent,
   outboundIdempotencyConflictError,
   outboundReconciliationPendingError,
   readPreparedOutboundResult,
-  recordOutboundLeadInteraction,
   resolveOutboundClientRequestId,
   withOutboundClientRequestId,
   writePreparedOutboundResult,
@@ -26,18 +23,14 @@ import type {
   SendOutboundMessageInput,
 } from "./outboundMessageTypes.js";
 import {
-  notifyHumanOutboundAttendanceStarted,
-  transitionConfirmedHumanOutboundAttendance,
-} from "./outboundAttendance.js";
-import {
   recordOutboundProviderFailure,
   throwPersistedOutboundFailure,
 } from "./outboundProviderFailure.js";
 import { claimOutboundIntentWithHumanAssignment } from "./claimOutboundIntentWithHumanAssignment.js";
 import { findOutboundConversationCycle } from "../services/CrmMessagingService/conversationCycleMutationSupport.js";
-import { resolveOutboundConnection } from "./resolveOutboundConnection.js";
+import { createOutboundConnectionResolver } from "./resolveOutboundConnection.js";
 import { withHumanCrmSenderSnapshot } from "./crmMessageSender.js";
-
+import { finalizeOutboundMessage } from "./finalizeOutboundMessage.js";
 export async function sendOutboundMessage(
   context: ServiceContext,
   input: SendOutboundMessageInput,
@@ -49,13 +42,6 @@ export async function sendOutboundMessage(
     conversationCycle: initialSession,
   } = await findOutboundConversationCycle(context, input, ports);
   const whatsappRepository = getCrmConversationRepository(ports);
-
-  const connection = await resolveOutboundConnection(
-    context,
-    initialSession,
-    ports,
-    input.requiredCapabilities,
-  );
   const intents = getCrmOutboundIntentRepository(ports);
   const now = new Date();
   const senderType = input.senderType ?? defaultOutboundSenderType(context);
@@ -70,9 +56,14 @@ export async function sendOutboundMessage(
     input.idempotencyKey,
     intentFingerprint,
   );
+  const connectionResolver = createOutboundConnectionResolver(
+    context,
+    ports,
+    input.requiredCapabilities,
+  );
   const outbound = await claimOutboundIntentWithHumanAssignment({
     claim: {
-      connectionId: connection.id,
+      connectionId: initialSession.connectionId,
       fingerprint: intentFingerprint,
       idempotencyKey: clientRequestId,
       now,
@@ -89,6 +80,7 @@ export async function sendOutboundMessage(
     senderOrigin: input.senderOrigin,
     senderType,
     conversationCycle: initialSession,
+    beforeAssignment: connectionResolver.beforeAssignment,
   });
   const claimed = outbound.claimed;
   if (claimed.kind === "conflict") {
@@ -112,6 +104,11 @@ export async function sendOutboundMessage(
   if (claimed.kind === "failed") {
     throwPersistedOutboundFailure(claimed.intent.providerResult);
   }
+  const connection = await connectionResolver.resolve(
+    claimed.kind,
+    conversationCycle,
+  );
+  let providerConfirmed = claimed.kind === "provider_succeeded";
   let prepared: PreparedOutboundCrmMessage;
   if (claimed.kind === "provider_succeeded") {
     prepared = readPreparedOutboundResult(claimed.intent.providerResult);
@@ -124,6 +121,11 @@ export async function sendOutboundMessage(
         scope,
         conversationCycle,
       });
+    } catch (error) {
+      await recordOutboundProviderFailure(intents, claimed.intent, error);
+      throw error;
+    }
+    try {
       prepared = {
         ...prepared,
         metadata: withHumanCrmSenderSnapshot(context, {
@@ -137,113 +139,47 @@ export async function sendOutboundMessage(
         id: claimed.intent.id,
         providerResult: writePreparedOutboundResult(prepared),
       });
-    } catch (error) {
-      await recordOutboundProviderFailure(intents, claimed.intent, error);
-      throw error;
+      providerConfirmed = true;
+    } catch {
+      // A persistence timeout can happen after the provider-success update
+      // committed. Do not overwrite a possibly durable receipt with an
+      // indeterminate status; the scheduler resolves the persisted state.
+      throw outboundReconciliationPendingError();
     }
   }
   prepared = {
     ...prepared,
     metadata: withOutboundClientRequestId(prepared.metadata, clientRequestId),
   };
-  const result = await whatsappRepository.ingestMessage({
-    ...(conversationCycle.customerChatId
-      ? { customerChatId: conversationCycle.customerChatId }
-      : {}),
-    ...(conversationCycle.customerDisplayName
-      ? { customerDisplayName: conversationCycle.customerDisplayName }
-      : {}),
-    customerPhone: conversationCycle.customerPhone,
-    channel: conversationCycle.channel,
-    ...(conversationCycle.externalThreadId
-      ? { externalThreadId: conversationCycle.externalThreadId }
-      : {}),
-    connectionId: connection.id,
-    content: prepared.content,
-    direction: "OUTBOUND",
-    externalId: prepared.sent.externalId,
-    firstHandledAt: prepared.sent.providerTimestamp,
-    leadId: conversationCycle.leadId,
-    ...(prepared.mediaType ? { mediaType: prepared.mediaType } : {}),
-    ...(prepared.mediaUrl ? { mediaUrl: prepared.mediaUrl } : {}),
-    metadata: prepared.metadata,
-    providerTimestamp: prepared.sent.providerTimestamp,
-    senderOrigin: input.senderOrigin,
-    senderType,
-    status: "SENT",
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-    type: prepared.type,
-  });
-  const attendanceTransition = await transitionConfirmedHumanOutboundAttendance(
-    {
-      actorId: context.actor.id,
-      actorKind: interventionActorKind(context.actor.kind, "admin"),
-      interventionId: claimed.intent.id,
-      providerTimestamp: prepared.sent.providerTimestamp,
-      repository: whatsappRepository,
-      senderOrigin: result.message.senderOrigin,
-      senderType,
-      conversationCycle: result.conversationCycle,
-    },
-  );
-  const currentSession = attendanceTransition.conversationCycle;
-  if (conversationCycle.leadId && result.createdMessage) {
-    await recordOutboundLeadInteraction(
+  try {
+    return await finalizeOutboundMessage(
       context,
       {
-        content: prepared.leadActivityContent ?? prepared.content,
-        leadId: conversationCycle.leadId,
-        messageExternalId: prepared.sent.externalId,
-        occurredAt: prepared.sent.providerTimestamp,
-        provider: connection.provider,
-        cycleId: conversationCycle.id,
+        claimToken: claimed.intent.claimToken,
+        connection,
+        conversationCycle,
+        id: claimed.intent.id,
+        prepared,
+        scope,
+        senderOrigin: input.senderOrigin,
+        senderType,
       },
       ports,
     );
+  } catch (error) {
+    const persisted = await intents
+      .findByIdempotencyKey({
+        idempotencyKey: clientRequestId,
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+      })
+      .catch(() => null);
+    if (
+      providerConfirmed ||
+      classifyOutboundIntentRecovery(persisted) === "confirmed"
+    ) {
+      throw outboundReconciliationPendingError();
+    }
+    throw error;
   }
-
-  const message = result.message;
-  await intents.complete({
-    claimToken: claimed.intent.claimToken,
-    id: claimed.intent.id,
-    messageId: String(result.message.id),
-    cycleId: String(currentSession.id),
-  });
-  const realtimeSession = currentSession;
-  await getCrmRealtimePublisher(ports).publish({
-    connectionId: connection.id,
-    message,
-    conversationCycle: realtimeSession,
-    storeId: connection.storeId,
-    tenantId: connection.tenantId,
-    type: "message",
-  });
-  await getCrmRealtimePublisher(ports).publish({
-    connectionId: connection.id,
-    conversationCycle: realtimeSession,
-    storeId: connection.storeId,
-    tenantId: connection.tenantId,
-    type: "conversationCycle",
-  });
-  await enqueueCrmMessageExternalBotEvent(
-    context,
-    {
-      connection,
-      message: result.message,
-      conversationCycle: currentSession,
-    },
-    ports,
-  );
-  await notifyHumanOutboundAttendanceStarted(
-    context,
-    {
-      changed: attendanceTransition.changed,
-      connection,
-      providerTimestamp: prepared.sent.providerTimestamp,
-      conversationCycle: currentSession,
-    },
-    ports,
-  );
-  return message;
 }

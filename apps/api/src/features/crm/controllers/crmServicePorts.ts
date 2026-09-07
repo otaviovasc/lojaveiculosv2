@@ -21,6 +21,7 @@ import { createDrizzleCrmConversationRepository } from "../../../infrastructure/
 import { createDrizzleCrmConversationCycleCommandRepository } from "../../../infrastructure/db/crm/drizzleCrmConversationCycleCommandRepository.js";
 import { createDrizzleCrmPushRepository } from "../../../infrastructure/db/crm/drizzleCrmPushRepository.js";
 import { createDrizzleCrmStatisticsReadModel } from "../../../infrastructure/db/crm/drizzleCrmStatisticsReadModel.js";
+import { createDrizzleCrmSpecialDateRepository } from "../../../infrastructure/db/crm/drizzleCrmSpecialDateRepository.js";
 import { emptyCrmStatisticsSnapshot } from "../../../domains/crm/readModels/crmStatisticsReadModel.js";
 import {
   createOlxWebhookSecurity,
@@ -40,6 +41,7 @@ import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWeb
 import { createMemoryCrmOutboundIntentRepository } from "../adapters/memory/crmOutboundIntentRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import { createMemoryCrmConversationCycleCommandRepository } from "../adapters/memory/crmConversationCycleCommandRepository.js";
+import { createMemoryCrmSpecialDateRepository } from "../../../domains/crm/testSupportSpecialDates.js";
 import { createCrmConnectionSetupPorts } from "./crmConnectionSetupPorts.js";
 import type { CreateCrmServicesOptions } from "./crmServices.types.js";
 import { createCrmVehicleInventoryPorts } from "./crmVehicleInventoryPorts.js";
@@ -60,6 +62,9 @@ export function resolveCrmPorts(
   const memoryConversationRepository =
     options.ports?.crmConversationRepository ??
     createMemoryCrmConversationRepository();
+  const memoryOutboundIntentRepository =
+    options.ports?.crmOutboundIntentRepository ??
+    createMemoryCrmOutboundIntentRepository();
   const defaultPorts = options.drizzleClient
     ? {
         ...connectionSetupPorts,
@@ -92,6 +97,9 @@ export function resolveCrmPorts(
           options.drizzleClient,
         ),
         crmRepository: createDrizzleCrmRepository(options.drizzleClient),
+        crmSpecialDateRepository: createDrizzleCrmSpecialDateRepository(
+          options.drizzleClient,
+        ),
         crmVisitRepository: createDrizzleCrmVisitRepository(
           options.drizzleClient,
         ),
@@ -136,8 +144,12 @@ export function resolveCrmPorts(
         crmRepository: createMemoryCrmRepository(),
         crmVisitRepository: createMemoryCrmVisitRepository(),
         crmWebhookEventRepository: createMemoryCrmWebhookEventRepository(),
-        crmOutboundIntentRepository: createMemoryCrmOutboundIntentRepository(),
+        crmOutboundIntentRepository: memoryOutboundIntentRepository,
         crmConversationRepository: memoryConversationRepository,
+        crmSpecialDateRepository: createMemoryCrmSpecialDateRepository({
+          conversationRepository: memoryConversationRepository,
+          outboundIntentRepository: memoryOutboundIntentRepository,
+        }),
         crmConversationCycleCommandRepository:
           createMemoryCrmConversationCycleCommandRepository(),
         crmStatisticsReadModel: {
@@ -182,6 +194,10 @@ export function resolveCrmPorts(
             tx as DrizzleCrmClient,
           ),
           crmRepository: createDrizzleCrmRepository(tx as DrizzleCrmClient),
+          crmSpecialDateRepository: createDrizzleCrmSpecialDateRepository(
+            tx as DrizzleCrmClient,
+            { disableTransactions: true },
+          ),
           crmVisitRepository: createDrizzleCrmVisitRepository(
             tx as DrizzleCrmClient,
           ),

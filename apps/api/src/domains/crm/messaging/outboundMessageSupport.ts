@@ -4,12 +4,16 @@ import type {
   CrmMessage,
   CrmMessageSenderType,
 } from "../ports/crmConversationRepository.js";
+import type { OutboundIntent } from "../ports/crmOutboundIntentRepository.js";
 import {
   getCrmRepository,
   requireCrmScope,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
-import type { PreparedOutboundCrmMessage } from "./outboundMessageTypes.js";
+import type {
+  PreparedOutboundCrmMessage,
+  ProviderSentMessage,
+} from "./outboundMessageTypes.js";
 import {
   CrmMessageActionError,
   CrmOutboundReconciliationPendingError,
@@ -99,22 +103,62 @@ export function readPreparedOutboundResult(
   value: Record<string, unknown> | null,
 ): PreparedOutboundCrmMessage {
   if (!value || !value.sent || typeof value.sent !== "object") {
-    throw new Error("Outbound provider receipt is unavailable.");
+    throw outboundReconciliationPendingError();
   }
-  const sent = value.sent as Record<string, unknown>;
-  if (
-    typeof sent.externalId !== "string" ||
-    typeof sent.providerTimestamp !== "string"
-  ) {
-    throw new Error("Outbound provider receipt is invalid.");
-  }
+  const receipt = readOutboundProviderReceipt(value);
+  if (!receipt) throw outboundReconciliationPendingError();
   return {
     ...(value as Omit<PreparedOutboundCrmMessage, "sent">),
-    sent: {
-      externalId: sent.externalId,
-      providerTimestamp: new Date(sent.providerTimestamp),
-    },
+    sent: receipt,
   };
+}
+
+/**
+ * Reads the provider receipt persisted by either the generic durable sender
+ * (top-level fields) or the full outbound-message preparation (under `sent`).
+ * Workers use this to distinguish a known provider confirmation from an
+ * indeterminate attempt without making another provider call.
+ */
+export function readOutboundProviderReceipt(
+  value: Record<string, unknown> | null,
+): ProviderSentMessage | null {
+  const nested =
+    value?.sent && typeof value.sent === "object"
+      ? (value.sent as Record<string, unknown>)
+      : null;
+  const externalId = nested?.externalId ?? value?.externalId;
+  const providerTimestamp =
+    nested?.providerTimestamp ?? value?.providerTimestamp;
+  if (typeof externalId !== "string" || typeof providerTimestamp !== "string") {
+    return null;
+  }
+  const parsedTimestamp = new Date(providerTimestamp);
+  if (Number.isNaN(parsedTimestamp.getTime())) return null;
+  return { externalId, providerTimestamp: parsedTimestamp };
+}
+
+export type OutboundIntentRecoveryKind =
+  "confirmed" | "failed" | "indeterminate" | "retryable";
+
+/** Classifies durable evidence after a worker catches a delivery-side error. */
+export function classifyOutboundIntentRecovery(
+  intent: Pick<
+    OutboundIntent,
+    "messageId" | "providerResult" | "status"
+  > | null,
+): OutboundIntentRecoveryKind {
+  if (intent?.status === "completed" && intent.messageId !== null) {
+    return "confirmed";
+  }
+  if (
+    intent?.status === "provider_succeeded" &&
+    readOutboundProviderReceipt(intent.providerResult)
+  ) {
+    return "confirmed";
+  }
+  if (intent?.status === "retryable_failed") return "retryable";
+  if (intent?.status === "failed") return "failed";
+  return "indeterminate";
 }
 
 export function defaultOutboundSenderType(

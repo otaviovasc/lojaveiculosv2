@@ -10,9 +10,11 @@ import type { CrmConversationApi } from "./crmConversationApi";
 import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
 
 export type CrmCampaignsPageProps = {
+  campaignConnectionKey?: string | number | null;
   canCancel: boolean;
   canCreate: boolean;
   canRead: boolean;
+  canUseImage?: boolean;
   initialCampaigns?: CrmCampaign[];
   onCancelCampaign: (campaignId: string) => Promise<CrmCampaign | null>;
   onCreateCampaign: (
@@ -49,6 +51,9 @@ export function buildCampaignInput(input: {
   firstDate: Date;
   initialTagId: string;
   intervalMinutes: number;
+  mediaBase64?: string | null;
+  mediaFileName?: string | null;
+  mediaType?: string | null;
   replyTagId: string;
   secondaryContent: string;
   secondaryDelayMinutes: number;
@@ -61,6 +66,15 @@ export function buildCampaignInput(input: {
       ? { initialTagId: input.initialTagId }
       : {}),
     intervalMinutes: input.intervalMinutes,
+    ...(input.mediaBase64
+      ? {
+          mediaBase64: input.mediaBase64,
+          ...(input.mediaFileName
+            ? { mediaFileName: input.mediaFileName }
+            : {}),
+          ...(input.mediaType ? { mediaType: input.mediaType } : {}),
+        }
+      : {}),
     name: input.campaignName.trim(),
     recipients: input.validRecipients.map((row) => ({
       cycleId: String(row.cycleId),

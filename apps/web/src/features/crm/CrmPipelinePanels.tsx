@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   CheckCircle2,
   MessageCircle,
   Phone,
@@ -8,6 +9,8 @@ import {
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
+import { CrmDateField } from "./CrmFormControls";
+import { getSaoPauloTodayIsoDate } from "./crmLeadBirthDate";
 import { pipelineStatuses, statusLabels } from "./crmPipelineConfig";
 import type {
   CreateProductCrmLeadInput,
@@ -23,6 +26,7 @@ export function LeadCreatePanel({
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const submit = async () => {
@@ -30,6 +34,7 @@ export function LeadCreatePanel({
     setIsSaving(true);
     try {
       await onCreateLead({
+        ...(birthDate ? { birthDate } : {}),
         buyerEmail: buyerEmail.trim() || null,
         buyerName: buyerName.trim() || null,
         buyerPhone: buyerPhone.trim() || null,
@@ -38,6 +43,7 @@ export function LeadCreatePanel({
       setBuyerName("");
       setBuyerPhone("");
       setBuyerEmail("");
+      setBirthDate("");
     } finally {
       setIsSaving(false);
     }
@@ -74,6 +80,18 @@ export function LeadCreatePanel({
           placeholder="Email"
           value={buyerEmail}
         />
+        <label className="crm-field">
+          <span>
+            <CalendarDays aria-hidden="true" />
+            Data de nascimento
+          </span>
+          <CrmDateField
+            label="Nascimento"
+            max={getSaoPauloTodayIsoDate()}
+            onChange={setBirthDate}
+            value={birthDate}
+          />
+        </label>
         <button
           className="crm-action"
           disabled={isSaving}

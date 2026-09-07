@@ -54,6 +54,7 @@ export function cleanCreateLeadInput(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
@@ -70,6 +71,7 @@ export function cleanUpdateLeadInput(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),

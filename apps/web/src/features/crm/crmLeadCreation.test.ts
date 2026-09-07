@@ -15,6 +15,7 @@ describe("createLeadWithInitialStage", () => {
     const api = createApi({ lead, movedLead });
 
     const result = await createLeadWithInitialStage(api, {
+      birthDate: "1990-05-10",
       buyerName: "Ana",
       initialPipelineStageId: "stage-1",
       metadata: { priority: "Alta" },
@@ -22,6 +23,7 @@ describe("createLeadWithInitialStage", () => {
     });
 
     expect(api.createLead).toHaveBeenCalledWith({
+      birthDate: "1990-05-10",
       buyerName: "Ana",
       metadata: { priority: "Alta" },
       source: "manual",

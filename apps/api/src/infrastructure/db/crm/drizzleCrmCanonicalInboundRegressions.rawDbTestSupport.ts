@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import * as schema from "@lojaveiculosv2/db";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { expect } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";

@@ -19,6 +19,7 @@ export function toLead(
 ): CrmLead {
   return {
     assignedUserId: row.assignedUserId as UserId | null,
+    birthDate: row.birthDate,
     buyerEmail: row.buyerEmail,
     buyerName: row.buyerName,
     buyerPhone: row.buyerPhone,

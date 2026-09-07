@@ -14,6 +14,8 @@ import { DatePickerField } from "../../components/ui/DatePickerField";
 import { TimePickerField } from "../../components/ui/TimePickerField";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
+import { CrmDateField } from "./CrmFormControls";
+import { getSaoPauloTodayIsoDate } from "./crmLeadBirthDate";
 import { sourceLabels, sourceOptions } from "./crmPipelineConfig";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -31,6 +33,7 @@ export function LeadCreatePanel({
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [initialNote, setInitialNote] = useState("");
   const [listingId, setListingId] = useState("");
   const [source, setSource] = useState<CrmLeadSource>("manual");
@@ -68,6 +71,7 @@ export function LeadCreatePanel({
     setIsSaving(true);
     try {
       await onCreateLead({
+        ...(birthDate ? { birthDate } : {}),
         buyerEmail: buyerEmail.trim() || null,
         buyerName: buyerName.trim() || null,
         buyerPhone: buyerPhone.trim() || null,
@@ -80,6 +84,7 @@ export function LeadCreatePanel({
       setBuyerName("");
       setBuyerPhone("");
       setBuyerEmail("");
+      setBirthDate("");
       setInitialNote("");
       setListingId("");
       setTaskDueAt("");
@@ -126,6 +131,14 @@ export function LeadCreatePanel({
             placeholder="cliente@email.com"
             type="email"
             value={buyerEmail}
+          />
+        </CrmField>
+        <CrmField icon={<CalendarClock />} label="Data de nascimento">
+          <CrmDateField
+            label="Nascimento"
+            max={getSaoPauloTodayIsoDate()}
+            onChange={setBirthDate}
+            value={birthDate}
           />
         </CrmField>
         <CrmField icon={<MessageCircle />} label="Origem">

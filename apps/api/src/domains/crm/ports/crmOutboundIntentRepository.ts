@@ -30,6 +30,12 @@ export type ClaimOutboundIntentResult =
   | { kind: "conflict" };
 
 export type CrmOutboundIntentRepository = {
+  /** Read one durable intent without claiming it, for worker recovery. */
+  findByIdempotencyKey(input: {
+    idempotencyKey: string;
+    storeId: string;
+    tenantId: string;
+  }): Promise<OutboundIntent | null>;
   claim(input: {
     connectionId: string;
     fingerprint: string;

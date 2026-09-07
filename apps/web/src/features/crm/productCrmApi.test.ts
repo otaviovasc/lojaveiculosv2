@@ -2,6 +2,32 @@ import { describe, expect, it } from "vitest";
 import { createProductCrmApi } from "./productCrmApi";
 
 describe("createProductCrmApi", () => {
+  it("sends birthDate on create and update, including an explicit null clear", async () => {
+    const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input: String(input) });
+      return new Response(JSON.stringify({ id: "lead-1", birthDate: null }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createProductCrmApi({ baseUrl: "/api/v1", fetch: fakeFetch });
+
+    await api.createLead({
+      birthDate: "1990-05-15",
+      buyerName: "Ana",
+      source: "manual",
+    });
+    await api.updateLead("lead-1", { birthDate: null });
+
+    expect(JSON.parse(String(calls[0]?.init?.body))).toMatchObject({
+      birthDate: "1990-05-15",
+    });
+    expect(JSON.parse(String(calls[1]?.init?.body))).toEqual({
+      birthDate: null,
+    });
+  });
+
   it("serializes server-side lead filters", async () => {
     const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
     const fakeFetch: typeof fetch = async (input, init) => {

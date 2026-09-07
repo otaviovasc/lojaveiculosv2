@@ -72,6 +72,7 @@ export function createMemoryCrmRepository(): CrmRepository {
       const now = new Date();
       const lead: CrmLead = {
         assignedUserId: input.assignedUserId ?? null,
+        birthDate: input.birthDate ?? null,
         buyerEmail: input.buyerEmail ?? null,
         buyerName: input.buyerName ?? null,
         buyerPhone: input.buyerPhone ?? null,

@@ -334,6 +334,110 @@
   outline: 0;
 }
 
+/* --------------------------------------------------------------------------
+   Initial campaign image
+   -------------------------------------------------------------------------- */
+.crm-campaign-image-picker {
+  align-items: stretch;
+  background: var(--color-app);
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.crm-campaign-image-input {
+  display: none;
+}
+
+.crm-campaign-image-empty,
+.crm-campaign-image-file {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  gap: 0.65rem;
+  min-height: 3.75rem;
+}
+
+.crm-campaign-image-empty svg,
+.crm-campaign-image-file svg {
+  color: var(--color-accent);
+  flex: 0 0 auto;
+  height: 1.35rem;
+  width: 1.35rem;
+}
+
+.crm-campaign-image-file {
+  color: var(--color-text);
+}
+
+.crm-campaign-image-file strong,
+.crm-campaign-image-preview-meta strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-campaign-image-file span,
+.crm-campaign-image-preview-meta span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.crm-campaign-image-preview {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.crm-campaign-image-preview img {
+  aspect-ratio: 4 / 3;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  flex: 0 0 5.5rem;
+  object-fit: cover;
+  overflow: hidden;
+  width: 5.5rem;
+}
+
+.crm-campaign-image-preview-meta {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.crm-campaign-image-preview-meta strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.crm-campaign-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crm-campaign-image-action {
+  flex: 1 1 10rem;
+  justify-content: center;
+}
+
+.crm-campaign-image-remove {
+  color: var(--color-danger);
+}
+
+.crm-campaign-image-remove:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
 @media (min-width: 48rem) {
   .crm-campaign-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -374,5 +478,13 @@
 
   .crm-campaign-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .crm-campaign-image-actions {
+    display: grid;
+  }
+
+  .crm-campaign-image-action {
+    width: 100%;
   }
 }
