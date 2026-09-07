@@ -4,12 +4,15 @@ import { createRuntimeAppDependencies } from "../infrastructure/db/runtimeReposi
 import {
   createConsoleServiceLogger,
   createServiceContext,
-  type ServiceContext,
   type ServiceLogger,
   type StoreScopedServiceContext,
 } from "../shared/serviceContext.js";
 import type { CrmServices } from "../features/crm/controllers/crmServices.js";
 import { runCrmScheduledWorkerMaintenance } from "./crmScheduledWorkerMaintenance.js";
+import {
+  createCrmScheduledWorkerContext,
+  createCrmScheduledWorkerMaintenanceContext,
+} from "./crmScheduledWorkerContext.js";
 
 loadLocalEnv();
 
@@ -31,7 +34,7 @@ async function main(): Promise<void> {
     if (!services) {
       throw new Error("CRM services are not available for schedule worker.");
     }
-    const cleanupContext = createWorkerContext({
+    const cleanupContext = createCrmScheduledWorkerMaintenanceContext({
       ...(runtime.appOptions.audit ? { audit: runtime.appOptions.audit } : {}),
       logger,
       requestId: `crm_connection_cleanup_${Date.now()}`,
@@ -73,7 +76,7 @@ async function processDueScheduledMessages(input: {
   scopeLimit: number;
   services: CrmServices;
 }) {
-  const specialDateContext = createWorkerContext({
+  const specialDateContext = createCrmScheduledWorkerContext({
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
     requestId: `crm_special_date_discovery_${Date.now()}`,
@@ -82,7 +85,7 @@ async function processDueScheduledMessages(input: {
     specialDateContext,
     { limit: input.scopeLimit, referenceDate: input.dueAt },
   );
-  const discoveryContext = createWorkerContext({
+  const discoveryContext = createCrmScheduledWorkerContext({
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
     requestId: `crm_schedule_discovery_${Date.now()}`,
@@ -118,26 +121,6 @@ async function processDueScheduledMessages(input: {
     specialDateScheduledMessages: specialDates.scheduledMessages,
     specialDateScopes: specialDates.scopes,
   };
-}
-
-function createWorkerContext(input: {
-  audit?: AuditSink;
-  logger: ServiceLogger;
-  requestId: string;
-}): ServiceContext {
-  return createServiceContext({
-    actor: { id: "crm_schedule_worker", kind: "system" },
-    ...(input.audit ? { audit: input.audit } : {}),
-    logger: input.logger,
-    entitlements: ["crm"],
-    permissions: [
-      "crm.messages.ingest",
-      "crm.scheduled_messages.process",
-      "crm.messages.send",
-    ],
-    request: { requestId: input.requestId },
-    source: { component: "crm-schedule-worker", service: "api" },
-  });
 }
 
 function createWorkerStoreContext(input: {

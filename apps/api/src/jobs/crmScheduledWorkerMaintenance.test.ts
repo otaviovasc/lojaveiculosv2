@@ -1,21 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
-import { createServiceContext } from "../shared/serviceContext.js";
+import { assertPermission } from "../shared/authorization.js";
+import {
+  createNoopServiceLogger,
+  createServiceContext,
+  type ServiceContext,
+} from "../shared/serviceContext.js";
 import { runCrmScheduledWorkerMaintenance } from "./crmScheduledWorkerMaintenance.js";
+import {
+  createCrmScheduledWorkerContext,
+  createCrmScheduledWorkerMaintenanceContext,
+} from "./crmScheduledWorkerContext.js";
 
 describe("CRM scheduled worker maintenance", () => {
   it("runs bounded connection and outbound-recovery cleanup", async () => {
-    const archiveAbandonedZapiConnections = vi.fn(async () => ({
-      archived: 2,
-      cutoff: new Date("2026-08-03T12:00:00.000Z"),
-      recoveryPayloadsPurged: 3,
-    }));
+    const context = createCrmScheduledWorkerMaintenanceContext({
+      logger: createNoopServiceLogger(),
+      requestId: "maintenance-test",
+    });
+    const archiveAbandonedZapiConnections = vi.fn(
+      async (receivedContext: ServiceContext) => {
+        assertPermission(receivedContext, "crm.messaging.connection.setup");
+        return {
+          archived: 2,
+          cutoff: new Date("2026-08-03T12:00:00.000Z"),
+          recoveryPayloadsPurged: 3,
+        };
+      },
+    );
     const recoverOlxWebhookEffects = vi.fn(async () => emptyOlxRecovery());
     const recoverOlxLeadWebhooks = vi.fn(async () => emptyOlxLeadRecovery());
-    const context = createServiceContext({
-      actor: { id: "crm_whatsapp_schedule_worker", kind: "system" },
-      permissions: ["crm.messaging.connection.setup"],
-      request: { requestId: "maintenance-test" },
-    });
 
     const result = await runCrmScheduledWorkerMaintenance(
       {
@@ -42,6 +55,26 @@ describe("CRM scheduled worker maintenance", () => {
       olxLeads: emptyOlxLeadRecovery(),
       recoveryPayloadsPurged: 3,
     });
+  });
+
+  it("keeps setup permission scoped to maintenance context", () => {
+    const input = {
+      logger: createNoopServiceLogger(),
+      requestId: "worker-context-test",
+    };
+    expect(createCrmScheduledWorkerContext(input).permissions).toEqual([
+      "crm.messages.ingest",
+      "crm.scheduled_messages.process",
+      "crm.messages.send",
+    ]);
+    expect(
+      createCrmScheduledWorkerMaintenanceContext(input).permissions,
+    ).toEqual([
+      "crm.messages.ingest",
+      "crm.scheduled_messages.process",
+      "crm.messages.send",
+      "crm.messaging.connection.setup",
+    ]);
   });
 
   it("does not block scheduled customer messages when maintenance fails", async () => {
