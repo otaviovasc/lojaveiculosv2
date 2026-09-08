@@ -19,6 +19,7 @@ import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWe
 import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
 import type { CrmConversationRepository } from "../../../domains/crm/ports/crmConversationRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
 import type { ServiceLogger } from "../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import type { CrmPushRepository } from "../../../domains/crm/ports/crmPushRepository.js";
@@ -55,6 +56,7 @@ export type CreateCrmTestAppOptions = {
   crmMediaStorage?: ObjectStorage;
   crmConversationRepository?: CrmConversationRepository;
   entitlements?: EntitlementKey[];
+  externalBotManager?: ExternalBotManagerPorts;
   logger?: ServiceLogger;
   permissions?: PermissionKey[];
   pushPublicConfig?: CrmPushPublicConfig;

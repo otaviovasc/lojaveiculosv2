@@ -32,6 +32,10 @@ export type FindCrmExternalBotIntegrationBySecretHashInput = {
   webhookSecretHash: string;
 };
 
+export type FindCrmExternalBotIntegrationByApiTokenHashInput = {
+  apiTokenHash: string;
+};
+
 export type UpsertCrmExternalBotIntegrationInput =
   FindCrmExternalBotIntegrationInput & {
     apiTokenHash?: string | null;
@@ -45,6 +49,9 @@ export type UpsertCrmExternalBotIntegrationInput =
 export type CrmExternalBotIntegrationRepository = {
   findExternalBotIntegration: (
     input: FindCrmExternalBotIntegrationInput,
+  ) => Promise<CrmExternalBotIntegration | null>;
+  findExternalBotIntegrationByApiTokenHash: (
+    input: FindCrmExternalBotIntegrationByApiTokenHashInput,
   ) => Promise<CrmExternalBotIntegration | null>;
   findExternalBotIntegrationsBySecretHash: (
     input: FindCrmExternalBotIntegrationBySecretHashInput,

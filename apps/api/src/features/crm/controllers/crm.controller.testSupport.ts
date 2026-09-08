@@ -98,6 +98,9 @@ export function createTestApp(options: CreateCrmTestAppOptions = {}) {
       resolveBotEntitlements:
         options.resolveBotEntitlements ??
         (async () => options.entitlements ?? ["crm"]),
+      ...(options.externalBotManager
+        ? { externalBotManager: options.externalBotManager }
+        : {}),
       ...(options.crmRealtimeBroker
         ? { realtimeBroker: options.crmRealtimeBroker }
         : {}),

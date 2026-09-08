@@ -14,6 +14,12 @@ export function createMemoryCrmExternalBotIntegrationRepository(): CrmExternalBo
   const records: StoredExternalBotIntegration[] = [];
   return {
     findExternalBotIntegration: async (input) => findRecord(records, input),
+    findExternalBotIntegrationByApiTokenHash: async (input) => {
+      const matches = records.filter(
+        (item) => item.enabled && item.apiTokenHash === input.apiTokenHash,
+      );
+      return matches.length === 1 ? withoutSecrets(matches[0]!) : null;
+    },
     findExternalBotIntegrationsBySecretHash: async (input) => {
       const matches = records.filter(
         (item) =>
