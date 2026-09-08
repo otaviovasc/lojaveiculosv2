@@ -215,6 +215,9 @@ async function mirrorPersistedUazapiMedia(
     tenantId: input.connection.tenantId,
   });
   if (!existing) throw backgroundError("PersistedUazapiMessageNotFound");
+  const currentMedia = existing.metadata.media as
+    { mirrorStatus?: string } | undefined;
+  if (currentMedia?.mirrorStatus === "stored") return;
   const updated = await repository.updateMessage({
     messageId: existing.id,
     metadata: mirrored.metadata,
