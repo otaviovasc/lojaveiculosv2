@@ -20,7 +20,6 @@ import {
 } from "../../messaging/crmCampaignTypes.js";
 import {
   campaignScheduledEnd,
-  requireCampaignTags,
   resolveCampaignSessions,
   singleCampaignConnectionId,
 } from "../../messaging/crmCampaignSupport.js";
@@ -30,10 +29,7 @@ import {
   normalizeCampaignInput,
   validateCampaignBeforeUpload,
 } from "../../messaging/crmCampaignInput.js";
-import {
-  createInitialSchedules,
-  tagCampaignSessions,
-} from "../../messaging/crmCampaignScheduling.js";
+import { createInitialSchedules } from "../../messaging/crmCampaignScheduling.js";
 
 export async function listCrmCampaigns(
   context: ServiceContext,
@@ -90,9 +86,9 @@ export async function createCrmCampaign(
         action: "crm.campaign.create",
         category: "data_change",
         metadata: {
-          hasInitialTag: Boolean(normalized.initialTagId),
+          hasInitialStage: Boolean(normalized.initialStageId),
           hasMedia: Boolean(normalized.mediaUrl),
-          hasReplyTag: Boolean(normalized.replyTagId),
+          hasReplyStage: Boolean(normalized.replyStageId),
           recipientCount: normalized.recipients.length,
         },
         permission: campaignManagePermission,
@@ -136,10 +132,6 @@ async function createCampaignRecords(
 ) {
   const scope = requireCrmMessagingScope(context);
   const repository = getCrmConversationRepository(ports);
-  await requireCampaignTags(repository, scope, [
-    input.initialTagId,
-    input.replyTagId,
-  ]);
   const conversationCycles = await resolveCampaignSessions(
     repository,
     scope,
@@ -150,7 +142,7 @@ async function createCampaignRecords(
     content: input.content,
     createdByUserId:
       context.actor.kind === "user" ? (context.actor.id as never) : null,
-    initialTagId: input.initialTagId,
+    initialStageId: input.initialStageId,
     intervalMinutes: input.intervalMinutes,
     mediaType: input.mediaType ?? null,
     mediaUrl: input.mediaUrl ?? null,
@@ -161,7 +153,7 @@ async function createCampaignRecords(
       ...(input.mediaFileName ? { mediaFileName: input.mediaFileName } : {}),
     },
     name: input.name,
-    replyTagId: input.replyTagId,
+    replyStageId: input.replyStageId,
     scheduledCount: conversationCycles.length,
     scheduledEndAt: campaignScheduledEnd(input, conversationCycles.length),
     scheduledStartAt: input.scheduledStartAt,
@@ -180,13 +172,5 @@ async function createCampaignRecords(
     conversationCycles,
     scope,
   );
-  if (input.initialTagId) {
-    await tagCampaignSessions(
-      repository,
-      conversationCycles,
-      input.initialTagId,
-      scope,
-    );
-  }
   return campaign;
 }

@@ -13,12 +13,10 @@ const fixtureIds = {
   canonicalConnection: "25000000-0000-4000-8000-000000000058",
   session: "26000000-0000-4000-8000-000000000058",
   message: "27000000-0000-4000-8000-000000000058",
-  tag: "28000000-0000-4000-8000-000000000058",
   campaign: "29000000-0000-4000-8000-000000000058",
   pipeline: "34000000-0000-4000-8000-000000000058",
   pipelineStage: "35000000-0000-4000-8000-000000000058",
   providerEvent: "2a000000-0000-4000-8000-000000000058",
-  sessionTag: "2b000000-0000-4000-8000-000000000058",
   commandReceipt: "2c000000-0000-4000-8000-000000000058",
   intervention: "2d000000-0000-4000-8000-000000000058",
   webhookEffect: "2e000000-0000-4000-8000-000000000058",
@@ -299,12 +297,10 @@ function buildGuardFixtureSql() {
     canonicalConnection,
     session,
     message,
-    tag,
     campaign,
     pipeline,
     pipelineStage,
     providerEvent,
-    sessionTag,
     commandReceipt,
     intervention,
     webhookEffect,
@@ -344,12 +340,6 @@ function buildGuardFixtureSql() {
       '${session}', 'PENDING', '66666666-6666-4666-8666-666666666666',
       '77777777-7777-4777-8777-777777777777'
     );
-    INSERT INTO crm_tags (id, name, connection_id, store_id, tenant_id)
-    VALUES (
-      '${tag}', '0058 guard fixture', '${canonicalConnection}',
-      '66666666-6666-4666-8666-666666666666',
-      '77777777-7777-4777-8777-777777777777'
-    );
     INSERT INTO crm_whatsapp_campaigns (
       id, content, name, scheduled_start_at, scheduled_end_at,
       selected_connection_id, store_id, tenant_id
@@ -366,12 +356,6 @@ function buildGuardFixtureSql() {
       'zapi', '0058-fixture-event',
       '66666666-6666-4666-8666-666666666666',
       '77777777-7777-4777-8777-777777777777'
-    );
-    INSERT INTO crm_whatsapp_session_tags (
-      id, session_id, store_id, tag_id, tenant_id
-    ) VALUES (
-      '${sessionTag}', '${session}', '66666666-6666-4666-8666-666666666666',
-      '${tag}', '77777777-7777-4777-8777-777777777777'
     );
     INSERT INTO crm_whatsapp_session_command_receipts (
       id, command_id, command_type, request_fingerprint, session_id,

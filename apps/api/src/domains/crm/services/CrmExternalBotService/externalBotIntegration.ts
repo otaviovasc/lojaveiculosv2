@@ -15,7 +15,9 @@ import {
   recordCrmServiceMutation,
 } from "../CrmMessagingService/serviceSupport.js";
 import {
+  hashExternalBotApiToken,
   hashWebhookSecret,
+  normalizeExternalBotApiTokenUpdate,
   normalizeWebhookSecretUpdate,
   normalizeWebhookUrlUpdate,
   ExternalBotIntegrationValidationError,
@@ -32,6 +34,7 @@ const botManagePermissions = [
 ] as const satisfies readonly PermissionKey[];
 
 export type UpdateExternalBotIntegrationInput = {
+  apiToken?: string | null;
   enabled?: boolean;
   webhookSecret?: string | null;
   webhookUrl?: string | null;
@@ -68,6 +71,7 @@ export async function updateExternalBotIntegration(
   const permission = assertAnyPermission(context, botManagePermissions);
   const scope = requireCrmScope(context);
   const repository = getCrmExternalBotIntegrationRepository(ports);
+  const apiTokenUpdate = normalizeExternalBotApiTokenUpdate(input.apiToken);
   const webhookSecretUpdate = normalizeWebhookSecretUpdate(input.webhookSecret);
   const current =
     (await repository.findExternalBotIntegration({
@@ -89,6 +93,7 @@ export async function updateExternalBotIntegration(
   }
 
   logCrmServiceEvent(context, "crm.external_bot.integration.update.start", {
+    apiTokenChanged: apiTokenUpdate !== undefined,
     enabled: nextEnabled,
     secretChanged: webhookSecretUpdate !== undefined,
     webhookConfigured: Boolean(nextWebhookUrl),
@@ -101,6 +106,8 @@ export async function updateExternalBotIntegration(
       category: "data_change",
       entityType: "crm_external_bot_integration",
       metadata: {
+        apiTokenChanged: apiTokenUpdate !== undefined,
+        apiTokenCleared: apiTokenUpdate === null,
         enabled: nextEnabled,
         permission,
         secretChanged: webhookSecretUpdate !== undefined,
@@ -123,6 +130,13 @@ export async function updateExternalBotIntegration(
         enabled: nextEnabled,
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
+        ...(apiTokenUpdate !== undefined
+          ? {
+              apiTokenHash: apiTokenUpdate
+                ? hashExternalBotApiToken(apiTokenUpdate)
+                : null,
+            }
+          : {}),
         ...(webhookSecretUpdate !== undefined
           ? {
               secretUpdatedAt: webhookSecretUpdate ? new Date() : null,
@@ -150,6 +164,7 @@ function defaultExternalBotIntegration(scope: {
   tenantId: string;
 }): CrmExternalBotIntegration {
   return {
+    apiTokenConfigured: false,
     createdAt: null,
     enabled: false,
     id: null,

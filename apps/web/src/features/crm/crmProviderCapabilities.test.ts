@@ -45,7 +45,6 @@ describe("CRM connection capabilities", () => {
       allowImages: true,
       allowLocation: true,
       allowNotes: true,
-      allowTags: true,
       allowVisits: true,
       allowFinancing: true,
       allowQuickMessages: true,
@@ -68,7 +67,6 @@ describe("CRM connection capabilities", () => {
     ).toMatchObject({
       allowCatalog: true,
       allowNotes: true,
-      allowTags: true,
       allowVisits: true,
       allowFinancing: true,
     });
@@ -80,7 +78,6 @@ describe("CRM connection capabilities", () => {
     ).toMatchObject({
       allowCatalog: false,
       allowNotes: false,
-      allowTags: false,
       allowVisits: false,
       allowFinancing: false,
     });

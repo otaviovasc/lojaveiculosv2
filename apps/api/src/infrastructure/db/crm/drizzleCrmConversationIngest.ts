@@ -31,7 +31,7 @@ import {
   requireCanonicalConnection,
   updateConversationCycleIdentity,
 } from "./drizzleCrmConversationCycleIdentity.js";
-import { findCanonicalSessionById } from "./drizzleCrmTagHydration.js";
+import { findCanonicalSessionById } from "./drizzleCrmConversationCycleLookup.js";
 import { restoreSessionLifecycle } from "./drizzleCrmConversationLifecycleRestore.js";
 
 export async function ingestMessageInDatabase(

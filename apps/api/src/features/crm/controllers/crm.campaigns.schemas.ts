@@ -25,7 +25,7 @@ const campaignRecipientSchema = z.object({
 
 export const crmCreateCampaignSchema = z.object({
   content: z.string().trim().min(1).max(4000),
-  initialTagId: z.string().uuid().nullable().optional(),
+  initialStageId: z.string().uuid().nullable().optional(),
   intervalMinutes: z.number().int().min(1).max(1440).optional(),
   // Allow the base64 expansion of a 10 MiB decoded image plus a small data URI
   // prefix, while the route middleware bounds the complete JSON envelope.
@@ -43,7 +43,7 @@ export const crmCreateCampaignSchema = z.object({
   mediaUrl: z.never().optional(),
   name: z.string().trim().min(1).max(191),
   recipients: z.array(campaignRecipientSchema).min(1).max(500),
-  replyTagId: z.string().uuid().nullable().optional(),
+  replyStageId: z.string().uuid().nullable().optional(),
   scheduledStartAt: z.string().datetime(),
   secondaryContent: z.string().trim().max(4000).nullable().optional(),
   secondaryDelayMinutes: z.number().int().min(1).max(43200).optional(),

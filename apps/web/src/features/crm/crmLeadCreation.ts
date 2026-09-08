@@ -6,11 +6,7 @@ export async function createLeadWithInitialStage(
   api: ProductCrmApi,
   input: LeadCreateDraft,
 ) {
-  const lead = await api.createLead(toCreateLeadInput(input));
-  if (!input.initialPipelineStageId) return lead;
-  return api.moveLeadPipelineStage(lead.id, {
-    pipelineStageId: input.initialPipelineStageId,
-  });
+  return api.createLead(toCreateLeadInput(input));
 }
 
 function toCreateLeadInput(input: LeadCreateDraft): CreateProductCrmLeadInput {
@@ -21,6 +17,9 @@ function toCreateLeadInput(input: LeadCreateDraft): CreateProductCrmLeadInput {
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+    ...(input.initialPipelineStageId
+      ? { pipelineStageId: input.initialPipelineStageId }
+      : {}),
     source: input.source,
   };
 }

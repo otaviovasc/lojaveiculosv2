@@ -21,7 +21,6 @@ import {
   canonicalConversationCycleSelection,
   countUnreadMessages,
 } from "./drizzleCrmConversationQueries.js";
-import { hydrateConversationCycle } from "./drizzleCrmTagHydration.js";
 
 export async function updateConversationCycle(
   db: DrizzleCrmClient,
@@ -87,10 +86,7 @@ export async function updateConversationCycle(
     attendance = updated;
   }
   const row = { attendance, cycle, thread: current.thread };
-  return hydrateConversationCycle(
-    db,
-    toConversationCycle(row, await countUnreadMessages(db, row)),
-  );
+  return toConversationCycle(row, await countUnreadMessages(db, row));
 }
 export function updateConversationCycleWithTransaction(
   db: DrizzleCrmClient,

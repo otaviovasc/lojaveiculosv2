@@ -97,6 +97,7 @@ export async function deliverClaimedScheduledMessage(input: {
     });
     if (!sentMessage) return "deferred";
     await finishCampaignBookkeeping(
+      input.context,
       sentMessage,
       { sentAt, sentMessageId: String(message.id) },
       repository,
@@ -146,6 +147,7 @@ export async function deliverClaimedScheduledMessage(input: {
     });
     if (!failedMessage) return "deferred";
     await finishCampaignBookkeeping(
+      input.context,
       failedMessage,
       { errorMessage },
       repository,

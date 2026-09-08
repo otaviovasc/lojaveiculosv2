@@ -1,26 +1,18 @@
-import {
-  CheckSquare,
-  ListChecks,
-  Loader2,
-  Tags,
-  UserRound,
-} from "lucide-react";
+import { CheckSquare, ListChecks, Loader2, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Morphicon } from "../../components/ui/Morphicon";
 import { CrmSelect } from "./CrmFormControls";
 import { selectedCountLabel, type CrmBulkActionDraft } from "./crmQueueState";
-import type { CrmAssignableMember, CrmTag } from "./crmConversationTypes";
+import type { CrmAssignableMember } from "./crmConversationTypes";
 
 const unchangedValue = "__unchanged__";
 const unassignedValue = "__unassigned__";
 
 export function CrmQueueBulkBar({
   assignableMembers,
-  availableTags,
   canAssign,
   canClose,
   canRead,
-  canTag,
   onApply,
   onClear,
   onSelectAll,
@@ -28,11 +20,9 @@ export function CrmQueueBulkBar({
   visible,
 }: {
   assignableMembers: CrmAssignableMember[];
-  availableTags: CrmTag[];
   canAssign: boolean;
   canClose: boolean;
   canRead: boolean;
-  canTag: boolean;
   onApply: (draft: CrmBulkActionDraft) => Promise<boolean>;
   onClear: () => void;
   onSelectAll: () => void;
@@ -43,21 +33,15 @@ export function CrmQueueBulkBar({
   const [close, setClose] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [readState, setReadState] = useState<"read" | "unread" | null>(null);
-  const [tagId, setTagId] = useState(unchangedValue);
   if (!visible && selectedCount === 0) return null;
 
   const hasSelection = selectedCount > 0;
-  const selectedTag = availableTags.find((tag) => tag.id === tagId);
   const hasAction =
-    assignedUserId !== unchangedValue ||
-    Boolean(selectedTag) ||
-    Boolean(readState) ||
-    close;
+    assignedUserId !== unchangedValue || Boolean(readState) || close;
   const resetDraft = () => {
     setAssignedUserId(unchangedValue);
     setClose(false);
     setReadState(null);
-    setTagId(unchangedValue);
   };
   const applyDraft = async () => {
     const draft: CrmBulkActionDraft = {
@@ -69,17 +53,6 @@ export function CrmQueueBulkBar({
         : {}),
       ...(close ? { close: true } : {}),
       ...(readState ? { readState } : {}),
-      ...(selectedTag
-        ? {
-            tag: {
-              ...(selectedTag.color ? { color: selectedTag.color } : {}),
-              ...(selectedTag.emoji !== undefined
-                ? { emoji: selectedTag.emoji }
-                : {}),
-              name: selectedTag.name,
-            },
-          }
-        : {}),
     };
     setIsApplying(true);
     try {
@@ -131,26 +104,6 @@ export function CrmQueueBulkBar({
       </div>
 
       <div className="crm-bulk-fields">
-        {canTag && availableTags.length ? (
-          <label>
-            <span>
-              <Tags aria-hidden="true" /> Etiqueta
-            </span>
-            <CrmSelect
-              ariaLabel="Adicionar etiqueta às conversas selecionadas"
-              disabled={!hasSelection || isApplying}
-              onChange={setTagId}
-              options={[
-                { label: "Não adicionar etiqueta", value: unchangedValue },
-                ...availableTags.map((tag) => ({
-                  label: `${tag.emoji ? `${tag.emoji} ` : ""}${tag.name}`,
-                  value: tag.id,
-                })),
-              ]}
-              value={tagId}
-            />
-          </label>
-        ) : null}
         {canAssign ? (
           <label>
             <span>

@@ -86,18 +86,6 @@ export const crmPermissionDescriptors = [
     risk: "high",
   },
   {
-    description: "Aplicar e remover etiquetas simples nas conversas.",
-    key: "crm.tags.assign",
-    label: "Aplicar etiquetas",
-    risk: "medium",
-  },
-  {
-    description: "Criar, editar, excluir e reordenar etiquetas do CRM.",
-    key: "crm.tags.manage",
-    label: "Gerenciar etiquetas",
-    risk: "medium",
-  },
-  {
     description: "Transferir e direcionar conversas para outros atendentes.",
     key: "crm.conversations.assign",
     label: "Transferir atendimentos",

@@ -22,7 +22,11 @@ import {
   CrmScheduleRecipientStep,
   type ScheduleDestinationMode,
 } from "./CrmScheduleRecipientStep";
-import type { CrmConversationCycle } from "./crmConversationTypes";
+import { readScheduleDateParts } from "./crmScheduleDateTime";
+import type {
+  CrmConversationCycle,
+  CrmProviderConnection,
+} from "./crmConversationTypes";
 import { CRM_SCHEDULE_MESSAGE_TEMPLATES } from "./crmScheduleTemplates";
 
 export const scheduleCreationSteps = [
@@ -38,13 +42,17 @@ const schedulePresets = [
   { dayOffset: 1, h: 15, label: "Amanhã às 15h", m: 0 },
 ] as const;
 
+type ScheduleTextChangeHandler = (value: string) => void;
+
 export function ScheduleCreationStep({
   activeSession,
   content,
   conversationCycles,
   connectionAvailable,
+  connectionId,
   destinationMode,
   isEditing,
+  onConnectionIdChange,
   onContentChange,
   onDestinationModeChange,
   onPhoneChange,
@@ -52,6 +60,7 @@ export function ScheduleCreationStep({
   onTargetCycleIdChange,
   phone,
   scheduledAt,
+  scheduleConnections,
   step,
   targetCycleId,
 }: {
@@ -61,15 +70,18 @@ export function ScheduleCreationStep({
   conversationCycles: CrmConversationCycle[];
   destinationMode: ScheduleDestinationMode;
   isEditing: boolean;
-  onContentChange: (value: string) => void;
+  onContentChange: ScheduleTextChangeHandler;
   onDestinationModeChange: (value: ScheduleDestinationMode) => void;
-  onPhoneChange: (value: string) => void;
-  onScheduledAtChange: (value: string) => void;
-  onTargetCycleIdChange: (value: string) => void;
+  onPhoneChange: ScheduleTextChangeHandler;
+  onScheduledAtChange: ScheduleTextChangeHandler;
+  onTargetCycleIdChange: ScheduleTextChangeHandler;
   phone: string;
   scheduledAt: string;
   step: number;
   targetCycleId: string;
+  connectionId?: string | null;
+  onConnectionIdChange?: ScheduleTextChangeHandler;
+  scheduleConnections?: CrmProviderConnection[];
 }) {
   const targetCycle = conversationCycles.find(
     (c) => String(c.id) === targetCycleId,
@@ -79,13 +91,16 @@ export function ScheduleCreationStep({
     return (
       <CrmScheduleRecipientStep
         connectionAvailable={connectionAvailable}
+        connectionId={connectionId ?? null}
         conversationCycles={conversationCycles}
         destinationMode={destinationMode}
         isEditing={isEditing}
+        onConnectionIdChange={onConnectionIdChange}
         onDestinationModeChange={onDestinationModeChange}
         onPhoneChange={onPhoneChange}
         onTargetCycleIdChange={onTargetCycleIdChange}
         phone={phone}
+        scheduleConnections={scheduleConnections ?? []}
         targetCycle={targetCycle}
         targetCycleId={targetCycleId}
       />
@@ -93,15 +108,10 @@ export function ScheduleCreationStep({
   }
 
   if (step === 1) {
-    const parsedDate =
-      scheduledAt && !Number.isNaN(new Date(scheduledAt).getTime())
-        ? new Date(scheduledAt)
-        : null;
-
-    const timeString =
-      scheduledAt && scheduledAt.includes("T")
-        ? (scheduledAt.split("T")[1]?.slice(0, 5) ?? "10:00")
-        : "10:00";
+    const { parsedDate, timeString } = readScheduleDateParts(
+      scheduledAt,
+      "10:00",
+    );
 
     const handleDateChange = (date: Date) => {
       const year = date.getFullYear();

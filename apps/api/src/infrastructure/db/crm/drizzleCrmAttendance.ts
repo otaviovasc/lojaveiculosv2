@@ -4,7 +4,7 @@ import {
   assertMatchingAttendanceEvent,
   findAttendanceTransitionEvent,
 } from "./drizzleCrmAttendanceEvents.js";
-import { findHydratedSessionById } from "./drizzleCrmTagHydration.js";
+import { findHydratedSessionById } from "./drizzleCrmConversationCycleLookup.js";
 import { updateConversationCycle } from "./drizzleCrmConversationUpdates.js";
 
 export function transitionWhatsappAttendanceWithTransaction(

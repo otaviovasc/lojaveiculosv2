@@ -104,6 +104,51 @@ describe("CrmLeadConversationPanel", () => {
     ).toBeDisabled();
     expect(startConversation).not.toHaveBeenCalled();
   });
+
+  it("lets the operator pick the sending connection when several are eligible", async () => {
+    const user = userEvent.setup();
+    const second = {
+      ...createConnection(),
+      displayName: "ZAPI filial",
+      id: "24000000-0000-4000-8000-000000000102",
+      isDefault: false,
+    };
+    const startConversation = vi.fn(async () => ({
+      lead: baseLead,
+      message: createMessage(),
+      cycle: createConversationCycle({ id: "session_3" }),
+    }));
+    const api = createConversationApi({
+      listConnections: vi.fn(async () => ({
+        allowance: { limit: 2, remaining: 0, used: 2 },
+        availableSetups: [],
+        connections: [createConnection(), second],
+      })),
+      listConversationCycles: vi.fn(async () => []),
+      startConversation,
+    });
+
+    renderPanel(api);
+
+    expect(await screen.findByText("Nenhuma conversa vinculada")).toBeVisible();
+    await user.click(screen.getByLabelText("Conexão de envio"));
+    await user.click(
+      await screen.findByRole("option", { name: /ZAPI filial/ }),
+    );
+    await user.type(
+      screen.getByPlaceholderText("Mensagem inicial"),
+      "Ola, vamos conversar.",
+    );
+    await user.click(screen.getByRole("button", { name: /iniciar conversa/i }));
+
+    await waitFor(() =>
+      expect(startConversation).toHaveBeenCalledWith({
+        connectionId: "24000000-0000-4000-8000-000000000102",
+        leadId: baseLead.id,
+        text: "Ola, vamos conversar.",
+      }),
+    );
+  });
 });
 
 const baseLead: ProductCrmLead = {

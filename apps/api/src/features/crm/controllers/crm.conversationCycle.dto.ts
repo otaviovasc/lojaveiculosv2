@@ -42,13 +42,6 @@ export function toConversationCycleDto(
     profilePhotoUrl: cycle.profilePhotoUrl,
     revision: cycle.revision,
     status: cycle.status,
-    tags: cycle.tags.map((tag) => ({
-      color: tag.color,
-      emoji: tag.emoji,
-      id: tag.id,
-      name: tag.name,
-      sortOrder: tag.sortOrder,
-    })),
     unreadCount: cycle.unreadCount,
   };
 }

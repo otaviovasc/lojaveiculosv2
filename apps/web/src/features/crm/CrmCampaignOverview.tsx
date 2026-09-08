@@ -1,8 +1,11 @@
 import { CrmCampaignDetailPanel } from "./CrmCampaignDetailPanel";
 import { CrmCampaignList } from "./CrmCampaignList";
-import { mutateCampaign } from "./CrmCampaignsPageSupport";
+import {
+  mutateCampaign,
+  type CrmCampaignStageOption,
+} from "./CrmCampaignsPageSupport";
 import type { CrmCampaign, CrmCampaignDetail } from "./crmCampaignTypes";
-import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
+import type { CrmConversationCycle } from "./crmConversationTypes";
 
 export function CrmCampaignOverview({
   campaignDetail,
@@ -20,7 +23,7 @@ export function CrmCampaignOverview({
   onSelectCampaign,
   selectedCampaignId,
   conversationCycles,
-  tags,
+  stageOptions,
 }: {
   campaignDetail: CrmCampaignDetail | null;
   campaignError?: string | null;
@@ -37,7 +40,7 @@ export function CrmCampaignOverview({
   onSelectCampaign: (campaignId: string) => void;
   selectedCampaignId: string | null;
   conversationCycles: CrmConversationCycle[];
-  tags: CrmTag[];
+  stageOptions: CrmCampaignStageOption[];
 }) {
   return (
     <div className="crm-campaign-overview">
@@ -63,7 +66,7 @@ export function CrmCampaignOverview({
         detail={campaignDetail}
         isLoading={isLoadingDetail}
         conversationCycles={conversationCycles}
-        tags={tags}
+        stageOptions={stageOptions}
       />
     </div>
   );

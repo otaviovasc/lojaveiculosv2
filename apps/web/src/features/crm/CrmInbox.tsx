@@ -20,7 +20,6 @@ import {
 import { useCrmInbox } from "./useCrmInbox";
 import { CrmNotice } from "./CrmNotice";
 import { CrmConnectionAdmin } from "./CrmConnectionAdmin";
-import { CrmTagManager } from "./CrmTagManager";
 import {
   findCrmStatusConnection,
   readCrmConnectionStatus,
@@ -241,7 +240,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
             onChange={setActiveScope}
             providerStatus={providerStatus}
             realtimeStatus={realtimeStatus}
-            tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}
           />
           <div className="crm-tab-panel flex-1 flex flex-col min-h-0">
@@ -258,6 +256,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                 ) : (
                   <CrmConversationWorkspace
                     inbox={inbox}
+                    leadApi={leadApi}
                     onCycleChange={setActiveCycle}
                     onScopeChange={setActiveScope}
                     routeCycleId={routeState.cycleId}
@@ -432,22 +431,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                   connections={inbox.connections}
                   specialDateApi={specialDateApi}
                 />
-              </div>
-            ) : null}
-            {visitedScopes.has("tags") ? (
-              <div className={scopePanelClassName("tags")} key="tags">
-                <section className="crm-section">
-                  <CrmTagManager
-                    disabled={!inbox.permissions.canTagManage}
-                    embedded
-                    onClose={() => setActiveScope("conversations")}
-                    onCreate={inbox.createTag}
-                    onDelete={inbox.deleteTag}
-                    onReorder={inbox.reorderTags}
-                    onUpdate={inbox.updateTag}
-                    tags={inbox.availableTags}
-                  />
-                </section>
               </div>
             ) : null}
             {visitedScopes.has("visits") ? (

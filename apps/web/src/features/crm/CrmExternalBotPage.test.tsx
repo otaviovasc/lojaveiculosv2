@@ -22,9 +22,10 @@ describe("CrmExternalBotPage", () => {
     vi.clearAllMocks();
   });
 
-  it("saves the external bot URL and write-only secret", async () => {
+  it("saves the external bot URL, write-only secret and API token", async () => {
     const updateBotIntegration = vi.fn(async () => ({
       configuration: createIntegration({
+        apiTokenConfigured: true,
         enabled: true,
         secretConfigured: true,
         webhookUrl: "https://bot.example.test/webhook",
@@ -43,17 +44,24 @@ describe("CrmExternalBotPage", () => {
     fireEvent.change(screen.getByPlaceholderText("Segredo configurado"), {
       target: { value: "novo-segredo" },
     });
+    fireEvent.change(screen.getByLabelText(/Novo token da API de acoes/i), {
+      target: { value: "novo-token-de-integracao-com-32-chars" },
+    });
     fireEvent.click(screen.getByRole("checkbox", { name: /bot habilitado/i }));
     fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
 
     await waitFor(() =>
       expect(updateBotIntegration).toHaveBeenCalledWith({
+        apiToken: "novo-token-de-integracao-com-32-chars",
         enabled: true,
         webhookSecret: "novo-segredo",
         webhookUrl: "https://bot.example.test/webhook",
       }),
     );
     expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+    expect(
+      screen.queryByDisplayValue("novo-token-de-integracao-com-32-chars"),
+    ).not.toBeInTheDocument();
   });
 
   it("separates reference content and keeps documentation closed", async () => {
@@ -71,17 +79,16 @@ describe("CrmExternalBotPage", () => {
     ).toBeVisible();
 
     await user.click(screen.getByText("Bot Action API"));
-    expect(
-      screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],
-    ).toBeVisible();
+    expect(screen.getAllByText(/CRM_BOT_POLICY_DENIED/)[0]).toBeVisible();
 
     await user.click(screen.getByText("Estados de atendimento humano"));
-    expect(screen.getByText("humanAttendanceState")).toBeVisible();
-    expect(screen.getByText("humanAttendanceChangedAt")).toBeVisible();
-    expect(screen.getByText("humanHandlingStartedAt")).toBeVisible();
-    expect(screen.getByText("humanAttendanceStateVersion")).toBeVisible();
-    expect(screen.getByText("interventionId")).toBeVisible();
-    expect(screen.getByText("Reacao ou falha de envio")).toBeVisible();
+    expect(screen.getByText("payload.humanAttendanceState")).toBeVisible();
+    expect(screen.getByText("payload.humanAttendanceActive")).toBeVisible();
+    expect(
+      screen.getByText("payload.humanAttendanceStateVersion"),
+    ).toBeVisible();
+    expect(screen.getByText("expectedAttendanceRevision")).toBeVisible();
+    expect(screen.getByText("Atendimento concluido no CRM")).toBeVisible();
   });
 
   it("shows a healthy provider state in the events view", async () => {
@@ -233,6 +240,7 @@ function createIntegration(
   overrides: Partial<CrmExternalBotConfiguration> = {},
 ): CrmExternalBotConfiguration {
   return {
+    apiTokenConfigured: false,
     createdAt: "2026-07-06T12:00:00.000Z",
     enabled: false,
     id: "integration_1",

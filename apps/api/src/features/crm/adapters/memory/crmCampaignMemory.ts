@@ -20,7 +20,7 @@ export function createMemoryCampaign(
     createdByUserId: input.createdByUserId ?? null,
     failedCount: 0,
     id: randomUUID(),
-    initialTagId: input.initialTagId ?? null,
+    initialStageId: input.initialStageId ?? null,
     intervalMinutes: input.intervalMinutes,
     mediaFileName:
       typeof metadata.mediaFileName === "string"
@@ -36,7 +36,7 @@ export function createMemoryCampaign(
     name: input.name,
     repliedCount: input.repliedCount ?? 0,
     replyRate: 0,
-    replyTagId: input.replyTagId ?? null,
+    replyStageId: input.replyStageId ?? null,
     scheduledCount: input.scheduledCount,
     scheduledEndAt: input.scheduledEndAt,
     scheduledStartAt: input.scheduledStartAt,

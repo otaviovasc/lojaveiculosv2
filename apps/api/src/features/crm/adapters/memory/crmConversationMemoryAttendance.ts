@@ -5,16 +5,11 @@ import type {
 } from "../../../../domains/crm/ports/crmConversationRepository.js";
 import { updateMemoryCrmConversationCycle } from "./crmConversationMemoryMutations.js";
 import { withUnreadCount } from "./crmConversationMemoryQueries.js";
-import {
-  requireHydratedCycle,
-  type MemoryCrmTagState,
-} from "./crmTagMemory.js";
 
 type MemoryAttendanceState = {
   attendanceLedgerFingerprints: Map<string, string>;
   messages: CrmMessage[];
   cycles: CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 };
 
 export function transitionMemoryWhatsappAttendance(
@@ -42,10 +37,7 @@ export function transitionMemoryWhatsappAttendance(
     );
     return current
       ? {
-          conversationCycle: requireHydratedCycle(
-            withUnreadCount(current, state.messages),
-            state.tagState,
-          ),
+          conversationCycle: withUnreadCount(current, state.messages),
           transitionCreated: false,
         }
       : null;
@@ -58,7 +50,7 @@ export function transitionMemoryWhatsappAttendance(
   if (!updated) return null;
   state.attendanceLedgerFingerprints.set(ledgerKey, input.requestFingerprint);
   return {
-    conversationCycle: requireHydratedCycle(updated, state.tagState),
+    conversationCycle: updated,
     transitionCreated: true,
   };
 }

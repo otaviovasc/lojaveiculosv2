@@ -14,7 +14,6 @@ import {
   ConversationCycleNotFoundError,
   ConversationCycleRevisionConflictError,
   ConversationCycleCommandConflictError,
-  CrmTagNotFoundError,
 } from "../../../domains/crm/messaging/crmMessagingErrors.js";
 import { WhatsappVehicleNotFoundError } from "../../../domains/crm/services/CrmWhatsappService/sendWhatsappVehicle.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
@@ -113,7 +112,6 @@ export async function handleCrmMessaging(
       error instanceof CrmMessageDtoNotFoundError ||
       error instanceof CrmCampaignNotFoundError ||
       error instanceof CrmScheduledMessageNotFoundError ||
-      error instanceof CrmTagNotFoundError ||
       error instanceof CrmConnectionNotFoundError ||
       error instanceof WhatsappVehicleNotFoundError ||
       error instanceof CrmLeadNotFoundError

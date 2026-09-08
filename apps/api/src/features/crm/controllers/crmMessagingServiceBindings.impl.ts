@@ -30,17 +30,6 @@ import {
   updateCrmScheduledMessage,
 } from "../../../domains/crm/services/CrmMessagingService/crmScheduledMessages.js";
 import {
-  addConversationCycleTag,
-  listCrmTags,
-  removeConversationCycleTag,
-} from "../../../domains/crm/services/CrmMessagingService/crmConversationCycleTags.js";
-import {
-  createCrmTag,
-  deleteCrmTag,
-  reorderCrmTags,
-  updateCrmTag,
-} from "../../../domains/crm/services/CrmMessagingService/crmTagManagement.js";
-import {
   assignConversationCycle,
   closeConversationCycle,
 } from "../../../domains/crm/services/CrmMessagingService/updateCrmConversationCycle.js";
@@ -97,17 +86,6 @@ type CycleActionBindings = Pick<
   | "startConversation"
   | "setConversationAttendance"
   | "updateCrmScheduledMessage"
->;
-
-type TagBindings = Pick<
-  CrmMessagingServices,
-  | "addConversationCycleTag"
-  | "createCrmTag"
-  | "deleteCrmTag"
-  | "listCrmTags"
-  | "removeConversationCycleTag"
-  | "reorderCrmTags"
-  | "updateCrmTag"
 >;
 
 type WebhookEventBindings = Pick<
@@ -200,18 +178,6 @@ const buildCycleActionBindings = (
     setConversationAttendance(context, input, ports),
 });
 
-const buildTagBindings = (ports: CrmServicePorts): TagBindings => ({
-  addConversationCycleTag: (context, input) =>
-    addConversationCycleTag(context, input, ports),
-  createCrmTag: (context, input) => createCrmTag(context, input, ports),
-  deleteCrmTag: (context, input) => deleteCrmTag(context, input, ports),
-  listCrmTags: (context, input) => listCrmTags(context, input, ports),
-  removeConversationCycleTag: (context, input) =>
-    removeConversationCycleTag(context, input, ports),
-  reorderCrmTags: (context, input) => reorderCrmTags(context, input, ports),
-  updateCrmTag: (context, input) => updateCrmTag(context, input, ports),
-});
-
 const buildWebhookEventBindings = (
   ports: CrmServicePorts,
 ): WebhookEventBindings => ({
@@ -236,7 +202,6 @@ export function createCrmMessagingServiceBindings(
     ...buildMessageBindings(ports),
     ...createCrmCampaignBindings(ports),
     ...buildCycleActionBindings(ports),
-    ...buildTagBindings(ports),
     ...buildWebhookBindings(ports),
     ...buildWebhookEventBindings(ports),
     resolveCrmQueueVisibility: (context) =>

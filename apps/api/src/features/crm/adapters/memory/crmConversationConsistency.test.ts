@@ -47,27 +47,6 @@ describe("CRM conversation repository consistency", () => {
     });
   });
 
-  it("does not assign a connection tag to a cycle from another connection", async () => {
-    const repository = createMemoryCrmConversationRepository();
-    const seeded = await repository.ingestMessage(inbound("message-tag"));
-    const tag = await repository.createTag({
-      connectionId: "connection-2",
-      name: "Connection two",
-      ...scope,
-    });
-
-    const unchanged = await repository.addConversationCycleTag({
-      cycleId: seeded.conversationCycle.id,
-      tagId: tag.id,
-      ...scope,
-    });
-
-    expect(unchanged).toMatchObject({
-      revision: seeded.conversationCycle.revision,
-      tags: [],
-    });
-  });
-
   it("reconciles a known CRM sender over an earlier provider echo", async () => {
     const repository = createMemoryCrmConversationRepository();
     const providerEcho = {

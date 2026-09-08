@@ -13,31 +13,23 @@ import type {
   CrmScheduledMessage,
   CrmScheduledMessageScope,
   CrmConversationCycle,
-  CrmTag,
   IngestCrmMessageResult,
 } from "./crmConversationRepositoryModels.js";
 import type {
   CountCrmConversationCyclesInput,
   CreateCrmScheduledMessageInput,
-  CreateCrmTagInput,
-  DeleteCrmTagInput,
   FindCrmMessageByExternalIdInput,
   FindCrmMessageByIdInput,
   FindDueCrmScheduledMessageScopesInput,
   FindDueCrmScheduledMessagesInput,
-  FindOrCreateCrmTagInput,
   IngestCrmMessageInput,
   ListCrmMessagesInput,
   ListCrmScheduledMessagesInput,
   ListCrmConversationCyclesInput,
-  ListCrmTagsInput,
-  ReorderCrmTagsInput,
   UpdateCrmMessageInput,
   UpdateCrmScheduledMessageInput,
   UpdateCrmConversationCycleInput,
   TransitionCrmAttendanceInput,
-  UpdateCrmConversationCycleTagInput,
-  UpdateCrmTagInput,
   UpsertCrmConversationCycleContextInput,
 } from "./crmConversationRepositoryInputs.js";
 import type {
@@ -95,39 +87,28 @@ export type {
   CrmScheduledMessageScope,
   CrmScheduledMessageStatus,
   CrmConversationCycle,
-  CrmTag,
   IngestCrmMessageResult,
 } from "./crmConversationRepositoryModels.js";
 export type {
   CountCrmConversationCyclesInput,
   CrmQueueVisibility,
   CreateCrmScheduledMessageInput,
-  CreateCrmTagInput,
-  DeleteCrmTagInput,
   FindCrmMessageByExternalIdInput,
   FindCrmMessageByIdInput,
   FindDueCrmScheduledMessageScopesInput,
   FindDueCrmScheduledMessagesInput,
-  FindOrCreateCrmTagInput,
   IngestCrmMessageInput,
   ListCrmMessagesInput,
   ListCrmScheduledMessagesInput,
   ListCrmConversationCyclesInput,
-  ListCrmTagsInput,
-  ReorderCrmTagsInput,
   UpdateCrmMessageInput,
   UpdateCrmScheduledMessageInput,
   UpdateCrmConversationCycleInput,
   TransitionCrmAttendanceInput,
-  UpdateCrmConversationCycleTagInput,
-  UpdateCrmTagInput,
   UpsertCrmConversationCycleContextInput,
 } from "./crmConversationRepositoryInputs.js";
 
 export type CrmConversationRepository = {
-  addConversationCycleTag: (
-    input: UpdateCrmConversationCycleTagInput,
-  ) => Promise<CrmConversationCycle | null>;
   countConversationCycles: (
     input: CountCrmConversationCyclesInput,
   ) => Promise<number>;
@@ -144,11 +125,9 @@ export type CrmConversationRepository = {
   createCampaignRecipient: (
     input: CreateCrmCampaignRecipientInput,
   ) => Promise<CrmCampaignRecipient>;
-  createTag: (input: CreateCrmTagInput) => Promise<CrmTag>;
   deleteQuickMessage: (
     input: FindCrmQuickMessageInput,
   ) => Promise<CrmQuickMessage | null>;
-  deleteTag: (input: DeleteCrmTagInput) => Promise<CrmTag | null>;
   findDueScheduledMessageScopes: (
     input: FindDueCrmScheduledMessageScopesInput,
   ) => Promise<readonly CrmScheduledMessageScope[]>;
@@ -167,7 +146,6 @@ export type CrmConversationRepository = {
   findCampaignById: (
     input: FindCrmCampaignInput,
   ) => Promise<CrmCampaign | null>;
-  findOrCreateTag: (input: FindOrCreateCrmTagInput) => Promise<CrmTag>;
   findQuickMessageById: (
     input: FindCrmQuickMessageInput,
   ) => Promise<CrmQuickMessage | null>;
@@ -199,11 +177,6 @@ export type CrmConversationRepository = {
   listConversationCycles: (
     input: ListCrmConversationCyclesInput,
   ) => Promise<readonly CrmConversationCycle[]>;
-  listTags: (input: ListCrmTagsInput) => Promise<readonly CrmTag[]>;
-  removeConversationCycleTag: (
-    input: UpdateCrmConversationCycleTagInput,
-  ) => Promise<CrmConversationCycle | null>;
-  reorderTags: (input: ReorderCrmTagsInput) => Promise<readonly CrmTag[]>;
   updateMessage: (input: UpdateCrmMessageInput) => Promise<CrmMessage | null>;
   updateQuickMessage: (
     input: UpdateCrmQuickMessageInput,
@@ -224,7 +197,6 @@ export type CrmConversationRepository = {
     conversationCycle: CrmConversationCycle;
     transitionCreated: boolean;
   } | null>;
-  updateTag: (input: UpdateCrmTagInput) => Promise<CrmTag | null>;
   upsertConversationCycleContext: (
     input: UpsertCrmConversationCycleContextInput,
   ) => Promise<CrmConversationCycle>;

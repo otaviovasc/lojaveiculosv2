@@ -4,10 +4,11 @@ import type {
   CrmConversationRepository,
   CrmConversationCycle,
 } from "../ports/crmConversationRepository.js";
+import { CrmPipelineStageNotFoundError } from "../crmServiceDomainErrors.js";
+import type { CrmPipelineRepository } from "../ports/crmPipelineRepository.js";
 import {
   CrmMessageActionError,
   ConversationCycleNotFoundError,
-  CrmTagNotFoundError,
 } from "./crmMessagingErrors.js";
 import type {
   NormalizedCrmCampaignInput,
@@ -32,22 +33,21 @@ export function normalizePositiveInt(
   return Number.isInteger(value) && value && value > 0 ? value : fallback;
 }
 
-export async function requireCampaignTags(
-  repository: CrmConversationRepository,
+export async function requireCampaignStages(
+  pipelineRepository: CrmPipelineRepository,
   scope: { storeId: string; tenantId: string },
-  tagIds: readonly (string | null)[],
+  stageIds: readonly (string | null)[],
 ) {
-  const wanted = tagIds.filter((tagId): tagId is string => Boolean(tagId));
-  if (!wanted.length) return;
-  const tags = await repository.listTags({
-    limit: 200,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  for (const tagId of wanted) {
-    if (!tags.some((tag) => tag.id === tagId)) {
-      throw new CrmTagNotFoundError(tagId);
-    }
+  const wanted = stageIds.filter((stageId): stageId is string =>
+    Boolean(stageId),
+  );
+  for (const stageId of wanted) {
+    const stage = await pipelineRepository.findStageById({
+      stageId,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (!stage) throw new CrmPipelineStageNotFoundError(stageId);
   }
 }
 

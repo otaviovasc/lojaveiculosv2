@@ -117,16 +117,13 @@ const hookMocks = vi.hoisted(() => {
       },
       refresh: vi.fn(async () => undefined),
     },
-    selectedTagIds: [] as string[],
     sessionActions: {
       actions: {
-        addCycleTag: resolveFalse,
         assignCycle: resolveFalse,
         closeCycle: resolveFalse,
         concludeCycle: resolveFalse,
         markCycleRead: resolveFalse,
         markCycleUnread: resolveFalse,
-        removeCycleTag: resolveFalse,
         toggleIntervention: resolveFalse,
       },
       hasRetryableSessionAction: false,
@@ -192,18 +189,6 @@ vi.mock("./useCrmStartConversation", () => ({
   useCrmStartConversation: () => ({
     isStartingConversation: false,
     startConversation: hookMocks.messages.sendText,
-  }),
-}));
-vi.mock("./useCrmTags", () => ({
-  useCrmTags: () => ({
-    availableTags: [],
-    createTag: hookMocks.messages.sendText,
-    deleteTag: hookMocks.messages.sendText,
-    refreshTags: vi.fn(async () => []),
-    reorderTags: hookMocks.messages.sendText,
-    selectedTagIds: hookMocks.selectedTagIds,
-    toggleTagFilter: vi.fn(),
-    updateTag: hookMocks.messages.sendText,
   }),
 }));
 vi.mock("./useCrmVehicleInventory", () => ({
@@ -924,6 +909,76 @@ describe("useCrmInbox realtime queue integration", () => {
     ).not.toHaveProperty("connectionId");
   });
 
+  it("keeps Nova conversa enabled under the aggregate filter when any connection can start", async () => {
+    hookMocks.connections.connections = [
+      createConnection({
+        capabilities: ["conversation_start", "outbound", "text"],
+        id: "connection-1",
+        isDefault: true,
+      }),
+      createConnection({
+        capabilities: ["conversation_start", "outbound", "templates", "text"],
+        displayName: "Secundária",
+        id: "connection-2",
+        isDefault: false,
+        provider: "meta_cloud",
+      }),
+    ];
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider
+        session={createSessionBootstrapWithSendPermission()}
+      >
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await waitFor(() => expect(result.current.canStartConversation).toBe(true));
+    expect(
+      result.current.startConversationConnections.map(
+        (connection) => connection.id,
+      ),
+    ).toEqual(["connection-1", "connection-2"]);
+    expect(result.current.startConversationUnavailableReason).toBeNull();
+  });
+
+  it("fails closed for Nova conversa when no connection can start", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({
+        displayName: "Secundária",
+        id: "connection-2",
+        isDefault: false,
+      }),
+    ];
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider
+        session={createSessionBootstrapWithSendPermission()}
+      >
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    expect(result.current.canStartConversation).toBe(false);
+    expect(result.current.startConversationConnections).toEqual([]);
+  });
+
   it("scopes queries and the subscription to the selected connection", async () => {
     hookMocks.connections.connections = [
       createConnection({ id: "connection-1", isDefault: true }),
@@ -1134,6 +1189,22 @@ function createCounts(input: {
       mine: input.mine,
     },
     total: input.total,
+  };
+}
+
+function createSessionBootstrapWithSendPermission(): SessionBootstrap {
+  const session = createSessionBootstrap();
+  return {
+    ...session,
+    defaultStore: session.defaultStore
+      ? {
+          ...session.defaultStore,
+          effectivePermissions: [
+            ...(session.defaultStore.effectivePermissions ?? []),
+            "crm.messages.send",
+          ],
+        }
+      : session.defaultStore,
   };
 }
 

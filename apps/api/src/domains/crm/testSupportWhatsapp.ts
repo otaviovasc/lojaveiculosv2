@@ -38,7 +38,6 @@ export function createTestCrmConversationCycle(
     pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
-    tags: [],
     source: null,
     status: "ACTIVE",
     storeId: "store-1" as StoreId,

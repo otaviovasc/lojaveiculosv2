@@ -19,7 +19,8 @@ import type {
   CampaignRecipientReviewRow,
   CampaignRecipientReviewSummary,
 } from "./CrmCampaignRecipientReview";
-import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
+import type { CrmCampaignStageOption } from "./CrmCampaignsPageSupport";
+import type { CrmConversationCycle } from "./crmConversationTypes";
 
 export function CrmCampaignBuilder({
   audienceSource,
@@ -30,9 +31,9 @@ export function CrmCampaignBuilder({
   csvInput,
   effectiveSelectedIds,
   filteredSessions,
-  initialTagId,
   imageError,
   imageFile,
+  initialStageId,
   intervalMinutes,
   isAudienceLoading,
   isSaving,
@@ -45,35 +46,33 @@ export function CrmCampaignBuilder({
   onCancel,
   onCampaignNameChange,
   onCsvInputChange,
-  onInitialTagChange,
   onImageError,
   onImageRemove,
   onImageSelect,
+  onInitialStageChange,
   onIntervalMinutesChange,
   onLeadFiltersChange,
   onLaunch,
   onQueryChange,
-  onReplyTagChange,
+  onReplyStageChange,
   onReviewNameChange,
   onReviewRowToggle,
   onSecondaryContentChange,
   onSecondaryDelayMinutesChange,
   onStartAtChange,
   onSelectVisible,
-  onTagChange,
   onTextChange,
   onToggleSession,
   preview,
   query,
-  replyTagId,
+  replyStageId,
   reviewRows,
   reviewSummary,
   secondaryContent,
   secondaryDelayMinutes,
   selectedCount,
-  selectedTagId,
+  stageOptions,
   startAt,
-  tags,
   text,
   withoutSessionCount,
 }: {
@@ -85,9 +84,9 @@ export function CrmCampaignBuilder({
   csvInput: string;
   effectiveSelectedIds: Set<string>;
   filteredSessions: CrmConversationCycle[];
-  initialTagId: string;
   imageError: string | null;
   imageFile: File | null;
+  initialStageId: string;
   intervalMinutes: number;
   isAudienceLoading: boolean;
   isSaving: boolean;
@@ -100,35 +99,33 @@ export function CrmCampaignBuilder({
   onCancel: () => void;
   onCampaignNameChange: (value: string) => void;
   onCsvInputChange: (value: string) => void;
-  onInitialTagChange: (value: string) => void;
   onImageError: (error: string | null) => void;
   onImageRemove: () => void;
   onImageSelect: (file: File) => void;
+  onInitialStageChange: (value: string) => void;
   onIntervalMinutesChange: (value: number) => void;
   onLeadFiltersChange: (value: CampaignLeadFilters) => void;
   onLaunch: () => void;
   onQueryChange: (value: string) => void;
-  onReplyTagChange: (value: string) => void;
+  onReplyStageChange: (value: string) => void;
   onReviewNameChange: (rowId: string, value: string) => void;
   onReviewRowToggle: (rowId: string) => void;
   onSecondaryContentChange: (value: string) => void;
   onSecondaryDelayMinutesChange: (value: number) => void;
   onStartAtChange: (value: string) => void;
   onSelectVisible: () => void;
-  onTagChange: (value: string) => void;
   onTextChange: (value: string) => void;
   onToggleSession: (cycleId: string) => void;
   preview: string;
   query: string;
-  replyTagId: string;
+  replyStageId: string;
   reviewRows: CampaignRecipientReviewRow[];
   reviewSummary: CampaignRecipientReviewSummary;
   secondaryContent: string;
   secondaryDelayMinutes: number;
   selectedCount: number;
-  selectedTagId: string;
+  stageOptions: CrmCampaignStageOption[];
   startAt: string;
-  tags: CrmTag[];
   text: string;
   withoutSessionCount: number;
 }) {
@@ -170,15 +167,15 @@ export function CrmCampaignBuilder({
               text={text}
             />
             <CampaignAutomationPanel
-              initialTagId={initialTagId}
-              onInitialTagChange={onInitialTagChange}
-              onReplyTagChange={onReplyTagChange}
+              initialStageId={initialStageId}
+              onInitialStageChange={onInitialStageChange}
+              onReplyStageChange={onReplyStageChange}
               onSecondaryContentChange={onSecondaryContentChange}
               onSecondaryDelayMinutesChange={onSecondaryDelayMinutesChange}
-              replyTagId={replyTagId}
+              replyStageId={replyStageId}
               secondaryContent={secondaryContent}
               secondaryDelayMinutes={secondaryDelayMinutes}
-              tags={tags}
+              stageOptions={stageOptions}
             />
           </div>
         ) : null}
@@ -195,11 +192,8 @@ export function CrmCampaignBuilder({
               onLeadFiltersChange={onLeadFiltersChange}
               onQueryChange={onQueryChange}
               onSelectVisible={onSelectVisible}
-              onTagChange={onTagChange}
               onToggleSession={onToggleSession}
               query={query}
-              selectedTagId={selectedTagId}
-              tags={tags}
               withoutSessionCount={withoutSessionCount}
             />
             <CampaignCsvPanel

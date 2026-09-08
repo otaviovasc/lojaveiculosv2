@@ -287,7 +287,6 @@ function createInbox(
   error: Error | null = null,
 ) {
   return {
-    availableTags: [],
     connections: [
       {
         displayName: "Loja",

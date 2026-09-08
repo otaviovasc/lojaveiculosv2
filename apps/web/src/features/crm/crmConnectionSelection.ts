@@ -80,19 +80,63 @@ export function isInboxBrowsableConnection(
   return isConnectedConnection(connection) || connection.state === "sandbox";
 }
 
-export function findDefaultFreeTextStartConnection(
-  connections: CrmProviderConnection[],
+/** Connections the CRM can start a new conversation from, per the
+ * server-owned capability DTO (never inferred from the provider name). */
+export function listConversationStartConnections(
+  connections: readonly CrmProviderConnection[],
 ) {
+  return connections.filter(
+    (connection) => readConversationStartCapability(connection).canStart,
+  );
+}
+
+export function listFreeTextStartConnections(
+  connections: readonly CrmProviderConnection[],
+) {
+  return connections.filter((connection) => {
+    const capability = readConversationStartCapability(connection);
+    return capability.canStart && capability.mode === "text";
+  });
+}
+
+/** Single resolution order for start targets: the preferred (view) connection
+ * when eligible, else the store default, else the first eligible connection. */
+export function resolveConversationStartConnection(input: {
+  connections: readonly CrmProviderConnection[];
+  preferredConnectionId?: string | null;
+}) {
+  return resolveFromEligible(
+    listConversationStartConnections(input.connections),
+    input.preferredConnectionId,
+  );
+}
+
+/** Same resolution order restricted to free-text (non-template) starts. */
+export function resolveFreeTextStartConnection(input: {
+  connections: readonly CrmProviderConnection[];
+  preferredConnectionId?: string | null;
+}) {
+  return resolveFromEligible(
+    listFreeTextStartConnections(input.connections),
+    input.preferredConnectionId,
+  );
+}
+
+function resolveFromEligible(
+  eligible: readonly CrmProviderConnection[],
+  preferredConnectionId?: string | null,
+) {
+  if (eligible.length === 0) return null;
+  const preferred = preferredConnectionId
+    ? eligible.find(
+        (connection) => String(connection.id) === String(preferredConnectionId),
+      )
+    : null;
   return (
-    connections.find(
-      (connection) =>
-        connection.isDefault === true &&
-        connection.state === "active" &&
-        connection.readiness?.ready === true &&
-        Array.isArray(connection.capabilities) &&
-        connection.capabilities.includes("conversation_start") &&
-        !connection.capabilities.includes("templates"),
-    ) ?? null
+    preferred ??
+    eligible.find((connection) => connection.isDefault) ??
+    eligible[0] ??
+    null
   );
 }
 

@@ -14,7 +14,6 @@ const requireFromDbWorkspace = createRequire(
 const { getTableConfig } = requireFromDbWorkspace("drizzle-orm/pg-core");
 
 const expectedCrmScopeForeignKeyNames = [
-  "crm_tags_scoped_connection_fk",
   "provider_events_store_tenant_fk",
   "provider_events_scoped_connection_fk",
   "crm_webhook_effect_outbox_scoped_provider_event_fk",
@@ -120,7 +119,6 @@ describe("product schema push bootstrap", () => {
     vi.stubEnv("DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP", "true");
     vi.resetModules();
 
-    const { crmTags } = await import("../../packages/db/src/schema/crm.ts");
     const { crmChannelConnections } =
       await import("../../packages/db/src/schema/crmCore/authorization.ts");
     const { conversationCycles, conversationThreads } =
@@ -136,7 +134,6 @@ describe("product schema push bootstrap", () => {
     const { crmWebhookEffectOutbox, providerEvents } =
       await import("../../packages/db/src/schema/providerEvents.ts");
     const bootstrapForeignKeys = [
-      ...foreignKeyNames(crmTags),
       ...foreignKeyNames(crmOutboundIntents),
       ...foreignKeyNames(crmScheduledMessages),
       ...foreignKeyNames(crmCampaigns),
@@ -174,7 +171,6 @@ describe("product schema push bootstrap", () => {
     vi.stubEnv("DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP", "false");
     vi.resetModules();
 
-    const { crmTags } = await import("../../packages/db/src/schema/crm.ts");
     const { crmOutboundIntents } =
       await import("../../packages/db/src/schema/crmOutbound.ts");
     const { crmScheduledMessages } =
@@ -184,7 +180,6 @@ describe("product schema push bootstrap", () => {
     const { crmWebhookEffectOutbox, providerEvents } =
       await import("../../packages/db/src/schema/providerEvents.ts");
     const finalForeignKeys = [
-      ...foreignKeyNames(crmTags),
       ...foreignKeyNames(crmOutboundIntents),
       ...foreignKeyNames(crmScheduledMessages),
       ...foreignKeyNames(crmCampaigns),

@@ -9,13 +9,14 @@ import {
   dedupeCampaignRecipients,
   normalizePositiveInt,
   renderCampaignText,
-  requireCampaignTags,
+  requireCampaignStages,
   resolveCampaignSessions,
 } from "./crmCampaignSupport.js";
 import type { IngestCampaignMediaResult } from "./crmCampaignMediaIngestion.js";
 import { resolveCrmConnectionScopedQueueVisibility } from "./crmQueueVisibility.js";
 import {
   getCrmConversationRepository,
+  getCrmPipelineRepository,
   type CrmServicePorts,
 } from "../services/CrmService/serviceSupport.js";
 
@@ -26,9 +27,9 @@ export async function validateCampaignBeforeUpload(
   scope: { storeId: string; tenantId: string },
 ) {
   const repository = getCrmConversationRepository(ports);
-  await requireCampaignTags(repository, scope, [
-    input.initialTagId,
-    input.replyTagId,
+  await requireCampaignStages(getCrmPipelineRepository(ports), scope, [
+    input.initialStageId,
+    input.replyStageId,
   ]);
   const queueVisibility = await resolveCrmConnectionScopedQueueVisibility(
     context,
@@ -77,7 +78,7 @@ export function normalizeCampaignInput(
   }
   return {
     content,
-    initialTagId: input.initialTagId ?? null,
+    initialStageId: input.initialStageId ?? null,
     intervalMinutes: normalizePositiveInt(input.intervalMinutes, 1),
     mediaFileName: mediaResult?.mediaFileName ?? mediaFileName,
     mediaStorageKey: mediaResult?.storageKey ?? null,
@@ -85,7 +86,7 @@ export function normalizeCampaignInput(
     mediaUrl: mediaResult?.mediaUrl ?? null,
     name,
     recipients,
-    replyTagId: input.replyTagId ?? null,
+    replyStageId: input.replyStageId ?? null,
     scheduledStartAt: input.scheduledStartAt,
     secondaryContent: input.secondaryContent?.trim() || null,
     secondaryDelayMinutes: normalizePositiveInt(

@@ -31,7 +31,7 @@ export async function processDueMessages(
   ports: CrmServicePorts,
 ) {
   const repository = getCrmConversationRepository(ports);
-  await reconcilePendingCampaignBookkeeping(input.scope, ports);
+  await reconcilePendingCampaignBookkeeping(context, input.scope, ports);
   const now = new Date();
   const staleBefore = new Date(now.getTime() - CRM_SCHEDULED_MESSAGE_LEASE_MS);
   const specialDateConfigs = await listEnabledSpecialDateConfigSnapshots(

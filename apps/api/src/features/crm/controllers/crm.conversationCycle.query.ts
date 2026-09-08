@@ -26,7 +26,6 @@ export function cleanCrmConversationCyclesQuery(
     ...(input.search ? { search: input.search } : {}),
     ...(input.cycleId ? { cycleId: input.cycleId } : {}),
     ...(input.status ? { status: input.status } : {}),
-    ...(input.tagIds?.length ? { tagIds: input.tagIds } : {}),
     ...(input.unreadOnly !== undefined ? { unreadOnly: input.unreadOnly } : {}),
   };
 }
@@ -44,7 +43,6 @@ export function cleanConversationCycleCountsQuery(
     ...(input.leadId ? { leadId: input.leadId } : {}),
     ...(input.search ? { search: input.search } : {}),
     ...(input.status ? { status: input.status } : {}),
-    ...(input.tagIds?.length ? { tagIds: input.tagIds } : {}),
     ...(input.unreadOnly !== undefined ? { unreadOnly: input.unreadOnly } : {}),
   };
 }

@@ -26,13 +26,6 @@ export class CrmMessageDtoNotFoundError extends Error {
   }
 }
 
-export class CrmTagNotFoundError extends Error {
-  constructor(tagId: string) {
-    super(`CRM tag not found: ${tagId}`);
-    this.name = "CrmTagNotFoundError";
-  }
-}
-
 export class CrmScheduledMessageNotFoundError extends Error {
   constructor(messageId: string) {
     super(`CRM scheduled message not found: ${messageId}`);

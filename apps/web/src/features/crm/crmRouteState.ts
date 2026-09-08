@@ -10,7 +10,6 @@ export type CrmRouteScope =
   | "integrations"
   | "schedules"
   | "statistics"
-  | "tags"
   | "visits";
 
 const crmScopes = new Set<CrmRouteScope>([
@@ -20,7 +19,6 @@ const crmScopes = new Set<CrmRouteScope>([
   "integrations",
   "schedules",
   "statistics",
-  "tags",
   "visits",
 ]);
 

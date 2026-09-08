@@ -1,32 +1,25 @@
-import { and, eq, getTableColumns, gt, isNull, lte, or } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import {
-  integrationAccounts,
-  storeEntitlements,
-  stores,
-  tenants,
-} from "@lojaveiculosv2/db";
-import type * as schema from "@lojaveiculosv2/db";
+import { and, eq } from "drizzle-orm";
+import { integrationAccounts } from "@lojaveiculosv2/db";
 import type {
-  CrmExternalBotIntegration,
   CrmExternalBotIntegrationRepository,
-  FindCrmExternalBotIntegrationBySecretHashInput,
   FindCrmExternalBotIntegrationInput,
   UpsertCrmExternalBotIntegrationInput,
 } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
 import { crmExternalBotIntegrationProvider } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
+import {
+  findExternalBotIntegrationByApiTokenHash,
+  findExternalBotIntegrationsBySecretHash,
+} from "./drizzleCrmExternalBotIntegrationQueries.js";
+import {
+  readBoolean,
+  readConfig,
+  readString,
+  toExternalBotIntegration,
+  type DrizzleCrmExternalBotIntegrationClient,
+  type ExternalBotIntegrationConfig,
+} from "./drizzleCrmExternalBotIntegrationShared.js";
 
-export type DrizzleCrmExternalBotIntegrationClient = PostgresJsDatabase<
-  typeof schema
->;
-
-type ExternalBotIntegrationConfig = {
-  enabled?: unknown;
-  secretUpdatedAt?: unknown;
-  webhookSecretHash?: unknown;
-  webhookSecretSealed?: unknown;
-  webhookUrl?: unknown;
-};
+export type { DrizzleCrmExternalBotIntegrationClient };
 
 export function createDrizzleCrmExternalBotIntegrationRepository(
   db: DrizzleCrmExternalBotIntegrationClient,
@@ -34,6 +27,8 @@ export function createDrizzleCrmExternalBotIntegrationRepository(
   return {
     findExternalBotIntegration: (input) =>
       findExternalBotIntegration(db, input),
+    findExternalBotIntegrationByApiTokenHash: (input) =>
+      findExternalBotIntegrationByApiTokenHash(db, input),
     findExternalBotIntegrationsBySecretHash: (input) =>
       findExternalBotIntegrationsBySecretHash(db, input),
     findExternalBotIntegrationDeliveryConfig: (input) =>
@@ -49,59 +44,6 @@ async function findExternalBotIntegration(
 ) {
   const row = await findRow(db, input);
   return row ? toExternalBotIntegration(row) : null;
-}
-
-async function findExternalBotIntegrationsBySecretHash(
-  db: DrizzleCrmExternalBotIntegrationClient,
-  input: FindCrmExternalBotIntegrationBySecretHashInput,
-) {
-  const now = new Date();
-  const rows = await db
-    .select(getTableColumns(integrationAccounts))
-    .from(integrationAccounts)
-    .innerJoin(
-      stores,
-      and(
-        eq(stores.id, integrationAccounts.storeId),
-        eq(stores.tenantId, integrationAccounts.tenantId),
-        eq(stores.isDeleted, false),
-        isNull(stores.deletedAt),
-      ),
-    )
-    .innerJoin(
-      tenants,
-      and(
-        eq(tenants.id, integrationAccounts.tenantId),
-        eq(tenants.isDeleted, false),
-        isNull(tenants.deletedAt),
-      ),
-    )
-    .innerJoin(
-      storeEntitlements,
-      and(
-        eq(storeEntitlements.storeId, integrationAccounts.storeId),
-        eq(storeEntitlements.tenantId, integrationAccounts.tenantId),
-        eq(storeEntitlements.featureKey, "crm"),
-        eq(storeEntitlements.status, "active"),
-        or(
-          isNull(storeEntitlements.startsAt),
-          lte(storeEntitlements.startsAt, now),
-        ),
-        or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
-      ),
-    )
-    .where(eq(integrationAccounts.provider, crmExternalBotIntegrationProvider));
-  const matches = rows.filter((item) => {
-    const config = readConfig(item.config);
-    return (
-      item.status === "active" &&
-      readString(config.webhookSecretHash) === input.webhookSecretHash &&
-      Boolean(readString(config.webhookSecretSealed))
-    );
-  });
-  return [...new Map(matches.map((row) => [row.id, row])).values()].map(
-    toExternalBotIntegration,
-  );
 }
 
 async function findExternalBotIntegrationDeliveryConfig(
@@ -126,6 +68,10 @@ async function upsertExternalBotIntegration(
 ) {
   const current = await findRow(db, input);
   const currentConfig = readConfig(current?.config);
+  const apiBearerHash =
+    input.apiTokenHash === undefined
+      ? readString(currentConfig.externalBotApiBearerHash)
+      : input.apiTokenHash;
   const secretHash =
     input.webhookSecretHash === undefined
       ? readString(currentConfig.webhookSecretHash)
@@ -136,6 +82,7 @@ async function upsertExternalBotIntegration(
       : input.webhookSecretSealed;
   const config = {
     enabled: input.enabled,
+    externalBotApiBearerHash: apiBearerHash,
     secretUpdatedAt: readSecretUpdatedAt(input, currentConfig),
     webhookSecretHash: secretHash,
     webhookSecretSealed: secretSealed,
@@ -180,25 +127,6 @@ async function findRow(
   return row ?? null;
 }
 
-function toExternalBotIntegration(
-  row: typeof integrationAccounts.$inferSelect,
-): CrmExternalBotIntegration {
-  const config = readConfig(row.config);
-  const secretHash = readString(config.webhookSecretHash);
-  const secretSealed = readString(config.webhookSecretSealed);
-  return {
-    createdAt: row.createdAt,
-    enabled: readBoolean(config.enabled) ?? row.status === "active",
-    id: row.id,
-    secretConfigured: Boolean(secretHash && secretSealed),
-    secretUpdatedAt: readDate(config.secretUpdatedAt),
-    storeId: row.storeId as never,
-    tenantId: row.tenantId as never,
-    updatedAt: row.updatedAt,
-    webhookUrl: readString(config.webhookUrl),
-  };
-}
-
 function readSecretUpdatedAt(
   input: UpsertCrmExternalBotIntegrationInput,
   currentConfig: ExternalBotIntegrationConfig,
@@ -207,23 +135,4 @@ function readSecretUpdatedAt(
     return readString(currentConfig.secretUpdatedAt);
   }
   return input.secretUpdatedAt?.toISOString() ?? null;
-}
-
-function readConfig(value: unknown): ExternalBotIntegrationConfig {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as ExternalBotIntegrationConfig)
-    : {};
-}
-
-function readBoolean(value: unknown) {
-  return typeof value === "boolean" ? value : null;
-}
-
-function readDate(value: unknown) {
-  const text = readString(value);
-  return text ? new Date(text) : null;
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" && value ? value : null;
 }

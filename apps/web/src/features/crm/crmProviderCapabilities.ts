@@ -10,7 +10,6 @@ export type CrmProviderCapabilities = {
   allowImages: boolean;
   allowLocation: boolean;
   allowNotes: boolean;
-  allowTags: boolean;
   allowVisits: boolean;
   allowFinancing: boolean;
   allowQuickMessages: boolean;
@@ -32,7 +31,6 @@ const UNKNOWN_PROVIDER_CAPABILITIES: CrmProviderCapabilities = {
   allowImages: false,
   allowLocation: false,
   allowNotes: false,
-  allowTags: false,
   allowVisits: false,
   allowFinancing: false,
   allowQuickMessages: false,
@@ -85,7 +83,6 @@ export function readCrmConnectionCapabilities(
     allowImages: canonical.has("media"),
     allowLocation: canonical.has("media"),
     allowNotes: canonical.has("text"),
-    allowTags: canonical.has("text"),
     allowVisits: canonical.has("text"),
     allowFinancing: canonical.has("text"),
     allowQuickMessages: canonical.has("text"),

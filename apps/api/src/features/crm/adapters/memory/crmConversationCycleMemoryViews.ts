@@ -10,16 +10,11 @@ import {
   matchesSearch,
   withUnreadCount,
 } from "./crmConversationMemoryQueries.js";
-import {
-  requireHydratedCycle,
-  type MemoryCrmTagState,
-} from "./crmTagMemory.js";
 
 export function countMemoryCycles(input: {
   messages: readonly CrmMessage[];
   query: CountCrmConversationCyclesInput;
   cycles: readonly CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 }) {
   return filterMemoryCycles(input).length;
 }
@@ -28,7 +23,6 @@ export function countMemoryCyclesByAssignee(input: {
   messages: readonly CrmMessage[];
   query: CountCrmConversationCyclesInput;
   cycles: readonly CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 }) {
   const counts = new Map<
     NonNullable<CrmConversationCycle["assignedUserId"]>,
@@ -52,10 +46,8 @@ export function listMemoryCycles(input: {
   messages: readonly CrmMessage[];
   query: ListCrmConversationCyclesInput;
   cycles: readonly CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 }) {
   return filterMemoryCycles(input)
-    .map((cycle) => requireHydratedCycle(cycle, input.tagState))
     .sort(compareCyclesNewestFirst)
     .slice(input.query.offset, input.query.offset + input.query.limit);
 }
@@ -64,7 +56,6 @@ function filterMemoryCycles(input: {
   messages: readonly CrmMessage[];
   query: CountCrmConversationCyclesInput;
   cycles: readonly CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 }) {
   return input.cycles
     .filter((cycle) => cycle.storeId === input.query.storeId)
@@ -95,7 +86,6 @@ function filterMemoryCycles(input: {
         !input.query.humanAttendanceState ||
         cycle.humanAttendanceState === input.query.humanAttendanceState,
     )
-    .filter((cycle) => matchesTagFilter(cycle, input))
     .filter((cycle) => matchesFilter(cycle, input.query))
     .filter((cycle) => matchesSearch(cycle, input.query.search))
     .map((cycle) => withUnreadCount(cycle, input.messages))
@@ -120,20 +110,4 @@ function matchesQueueVisibility(
     case "none":
       return false;
   }
-}
-
-function matchesTagFilter(
-  cycle: CrmConversationCycle,
-  input: {
-    query: CountCrmConversationCyclesInput;
-    tagState: MemoryCrmTagState;
-  },
-) {
-  return (
-    !input.query.tagIds?.length ||
-    input.tagState.cycleTags.some(
-      (item) =>
-        item.cycleId === cycle.id && input.query.tagIds!.includes(item.tagId),
-    )
-  );
 }

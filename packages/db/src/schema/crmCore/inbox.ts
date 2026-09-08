@@ -12,7 +12,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { lifecycleColumns } from "../_shared.js";
-import { crmTags } from "../crm.js";
 import { stores, tenants } from "../identity.js";
 import { conversationCycles, conversationThreads } from "./conversations.js";
 import {
@@ -21,47 +20,6 @@ import {
   conversationCommandResult,
 } from "./enums.js";
 import { scopedStoreForeignKey } from "./scoped.js";
-
-export const conversationThreadTags = pgTable(
-  "crm_conversation_thread_tags",
-  {
-    ...lifecycleColumns,
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tagId: uuid("tag_id")
-      .notNull()
-      .references(() => crmTags.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-    threadId: uuid("thread_id")
-      .notNull()
-      .references(() => conversationThreads.id),
-  },
-  (table) => [
-    scopedStoreForeignKey(table, "conversation_thread_tags_store_tenant_fk"),
-    foreignKey({
-      columns: [table.tenantId, table.storeId, table.threadId],
-      foreignColumns: [
-        conversationThreads.tenantId,
-        conversationThreads.storeId,
-        conversationThreads.id,
-      ],
-      name: "conversation_thread_tags_scoped_thread_fk",
-    }),
-    foreignKey({
-      columns: [table.tenantId, table.storeId, table.tagId],
-      foreignColumns: [crmTags.tenantId, crmTags.storeId, crmTags.id],
-      name: "conversation_thread_tags_scoped_tag_fk",
-    }),
-    uniqueIndex("conversation_thread_tags_unique").on(
-      table.threadId,
-      table.tagId,
-    ),
-    index("conversation_thread_tags_tag_idx").on(table.tagId, table.threadId),
-  ],
-);
 
 export const conversationCommandReceipts = pgTable(
   "crm_conversation_command_receipts",

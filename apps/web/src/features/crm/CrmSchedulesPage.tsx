@@ -25,6 +25,10 @@ import {
   type ScheduleDestinationMode,
 } from "./CrmScheduleRecipientStep";
 import { CrmSchedulesCalendar } from "./CrmSchedulesCalendar";
+import {
+  listFreeTextStartConnections,
+  resolveFreeTextStartConnection,
+} from "./crmConnectionSelection";
 import type {
   CrmListScheduledMessagesInput,
   CrmScheduledMessage,
@@ -38,6 +42,7 @@ export function CrmSchedulesPage({
   canProcess,
   canRead,
   connectionId,
+  connections,
   conversationCycles,
   error,
   initialMessages,
@@ -75,6 +80,29 @@ export function CrmSchedulesPage({
     null,
   );
   const [localError, setLocalError] = useState<string | null>(null);
+  const scheduleConnections = useMemo(
+    () => listFreeTextStartConnections(connections ?? []),
+    [connections],
+  );
+  const [pickedConnectionId, setPickedConnectionId] = useState<string | null>(
+    null,
+  );
+  const defaultScheduleConnectionId =
+    resolveFreeTextStartConnection({
+      connections: connections ?? [],
+      preferredConnectionId: connectionId,
+    })?.id ?? null;
+  const scheduleConnectionId =
+    pickedConnectionId &&
+    scheduleConnections.some(
+      (connection) => String(connection.id) === pickedConnectionId,
+    )
+      ? pickedConnectionId
+      : defaultScheduleConnectionId;
+  // Fail closed when the caller provides the connection inventory and none is
+  // eligible; only legacy callers without an inventory use the raw prop.
+  const effectiveConnectionId =
+    connections === undefined ? connectionId : scheduleConnectionId;
 
   useEffect(() => {
     if (activeSession && mode === "list")
@@ -159,7 +187,7 @@ export function CrmSchedulesPage({
       ? false
       : destinationMode === "conversation"
         ? !targetCycleId
-        : !connectionId || !isSchedulePhoneValid(phone);
+        : !effectiveConnectionId || !isSchedulePhoneValid(phone);
     if (
       !canCreate ||
       invalidRecipient ||
@@ -169,7 +197,7 @@ export function CrmSchedulesPage({
     ) {
       setLocalError(
         scheduleDraftError({
-          connectionId,
+          connectionId: effectiveConnectionId,
           content,
           destinationMode,
           phone,
@@ -197,7 +225,7 @@ export function CrmSchedulesPage({
                   scheduledAt: scheduledAtIso,
                 }
               : {
-                  connectionId: connectionId!,
+                  connectionId: effectiveConnectionId!,
                   content: content.trim(),
                   phone: schedulePhoneDigits(phone),
                   scheduledAt: scheduledAtIso,
@@ -272,7 +300,7 @@ export function CrmSchedulesPage({
     ? true
     : destinationMode === "conversation"
       ? Boolean(targetCycleId)
-      : Boolean(connectionId) && isSchedulePhoneValid(phone);
+      : Boolean(effectiveConnectionId) && isSchedulePhoneValid(phone);
   const nextDisabled =
     !canCreate ||
     (step === 0 && !recipientReady) ||
@@ -322,11 +350,13 @@ export function CrmSchedulesPage({
               ) : null}
               <ScheduleCreationStep
                 activeSession={activeSession}
-                connectionAvailable={Boolean(connectionId)}
+                connectionAvailable={Boolean(effectiveConnectionId)}
+                connectionId={effectiveConnectionId}
                 content={content}
                 conversationCycles={conversationCycles}
                 destinationMode={destinationMode}
                 isEditing={Boolean(editingMessage)}
+                onConnectionIdChange={setPickedConnectionId}
                 onContentChange={setContent}
                 onDestinationModeChange={setDestinationMode}
                 onPhoneChange={setPhone}
@@ -334,6 +364,7 @@ export function CrmSchedulesPage({
                 onTargetCycleIdChange={setTargetCycleId}
                 phone={phone}
                 scheduledAt={scheduledAt}
+                scheduleConnections={scheduleConnections}
                 step={step}
                 targetCycleId={targetCycleId}
               />

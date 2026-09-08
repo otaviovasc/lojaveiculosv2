@@ -63,21 +63,3 @@ export async function createInitialSchedules(
     });
   }
 }
-
-export async function tagCampaignSessions(
-  repository: CrmConversationRepository,
-  conversationCycles: readonly CrmConversationCycle[],
-  tagId: string,
-  scope: { storeId: string; tenantId: string },
-) {
-  await Promise.all(
-    conversationCycles.map((conversationCycle) =>
-      repository.addConversationCycleTag({
-        cycleId: conversationCycle.id,
-        storeId: scope.storeId as never,
-        tagId,
-        tenantId: scope.tenantId as never,
-      }),
-    ),
-  );
-}

@@ -118,7 +118,6 @@ async function validateHydratedProjection(
   },
 ) {
   const userId = randomUUID();
-  const tagId = randomUUID();
   await db.insert(schema.users).values({
     email: `canonical-${userId}@example.test`,
     id: userId,
@@ -150,19 +149,6 @@ async function validateHydratedProjection(
       assignedUserId: userId,
     })
     .where(eq(schema.conversationAttendances.cycleId, input.cycleId));
-  await db.insert(schema.crmTags).values({
-    connectionId: input.connectionId,
-    id: tagId,
-    name: "VIP",
-    storeId: input.scope.storeId,
-    tenantId: input.scope.tenantId,
-  });
-  await db.insert(schema.conversationThreadTags).values({
-    storeId: input.scope.storeId,
-    tagId,
-    tenantId: input.scope.tenantId,
-    threadId: input.threadId,
-  });
   const connection = {
     credentialsRef: {},
     displayName: "Raw Z-API",
@@ -193,7 +179,6 @@ async function validateHydratedProjection(
       assignedUserId: userId,
       messageCount: 2,
       revision: 11,
-      tags: [{ id: tagId, name: "VIP" }],
       unreadCount: 2,
     },
   });

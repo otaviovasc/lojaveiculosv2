@@ -121,6 +121,31 @@ describe("CRM WhatsApp API", () => {
     });
   });
 
+  it("maps the dialog buyerName draft field to customerDisplayName", async () => {
+    const fake = createFakeFetch([{ cycle: { id: "session_1" } }]);
+    const api = createCrmConversationApi({ fetch: fake.fetch });
+
+    await api.startConversation({
+      buyerName: "Ana",
+      connectionId: "connection_1",
+      phone: "(11) 99999-9999",
+      text: "Ola",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      init: {
+        body: JSON.stringify({
+          channel: "whatsapp",
+          connectionId: "connection_1",
+          customerDisplayName: "Ana",
+          recipientAddress: "(11) 99999-9999",
+          text: "Ola",
+        }),
+        method: "POST",
+      },
+    });
+  });
+
   it("starts WhatsApp conversations through V2", async () => {
     const fake = createFakeFetch([{ cycle: { id: "session_1" } }]);
     const api = createCrmConversationApi({ fetch: fake.fetch });
@@ -133,12 +158,13 @@ describe("CRM WhatsApp API", () => {
     });
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/conversation-cycles/start",
+      input: "/api/v1/crm/conversation-cycles",
       init: {
         body: JSON.stringify({
-          customerDisplayName: "Ana",
+          channel: "whatsapp",
           connectionId: "connection_1",
-          phone: "(11) 99999-9999",
+          customerDisplayName: "Ana",
+          recipientAddress: "(11) 99999-9999",
           text: "Ola",
         }),
         method: "POST",

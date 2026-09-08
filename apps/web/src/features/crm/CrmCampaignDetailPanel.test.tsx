@@ -20,7 +20,7 @@ describe("CrmCampaignDetailPanel", () => {
         detail={detail}
         isLoading={false}
         conversationCycles={[]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 

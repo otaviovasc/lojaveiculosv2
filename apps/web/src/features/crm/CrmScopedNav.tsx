@@ -6,7 +6,6 @@ import {
   Megaphone,
   PlugZap,
   Radio,
-  Tag,
 } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { CrmConversationMobileNav } from "./CrmConversationMobileNav";
@@ -18,7 +17,6 @@ export type CrmScope =
   | "integrations"
   | "schedules"
   | "statistics"
-  | "tags"
   | "visits";
 
 export type CrmScopeOption = {
@@ -54,11 +52,6 @@ const scopes: CrmScopeOption[] = [
     label: "Campanhas",
   },
   {
-    icon: Tag,
-    id: "tags",
-    label: "Etiquetas",
-  },
-  {
     icon: PlugZap,
     id: "integrations",
     label: "Integrações",
@@ -75,14 +68,12 @@ export function CrmScopedNav({
   onChange,
   providerStatus,
   realtimeStatus,
-  tagCount,
   unreadCount,
 }: {
   activeScope: CrmScope;
   onChange: (scope: CrmScope) => void;
   providerStatus: CrmConnectionStatus;
   realtimeStatus?: CrmConnectionStatus | undefined;
-  tagCount: number;
   unreadCount: number;
 }) {
   const effectiveStatus = resolveSingleCrmStatus(
@@ -100,11 +91,11 @@ export function CrmScopedNav({
           onChange={onChange}
           optionClassName="crm-scope-tab"
           options={scopes.map((scope) => {
-            const badge = readBadge(scope.id, { tagCount, unreadCount });
+            const badge = readBadge(scope.id, { unreadCount });
             return {
               ariaLabel: badge ? `${scope.label} ${badge}` : scope.label,
               icon: scope.icon,
-              label: createScopeLabel(scope, { tagCount, unreadCount }),
+              label: createScopeLabel(scope, { unreadCount }),
               value: scope.id,
             };
           })}
@@ -128,7 +119,7 @@ export function CrmScopedNav({
       </nav>
       <CrmConversationMobileNav
         activeScope={activeScope}
-        badgeForScope={(scope) => readBadge(scope, { tagCount, unreadCount })}
+        badgeForScope={(scope) => readBadge(scope, { unreadCount })}
         onChange={onChange}
         scopes={scopes}
       />
@@ -157,7 +148,7 @@ function resolveSingleCrmStatus(
 
 function createScopeLabel(
   scope: (typeof scopes)[number],
-  counts: { tagCount: number; unreadCount: number },
+  counts: { unreadCount: number },
 ) {
   const badge = readBadge(scope.id, counts);
   return (
@@ -173,13 +164,9 @@ function createScopeLabel(
   );
 }
 
-function readBadge(
-  scope: CrmScope,
-  input: { tagCount: number; unreadCount: number },
-) {
+function readBadge(scope: CrmScope, input: { unreadCount: number }) {
   if (scope === "conversations" && input.unreadCount > 0) {
     return String(input.unreadCount);
   }
-  if (scope === "tags" && input.tagCount > 0) return String(input.tagCount);
   return null;
 }

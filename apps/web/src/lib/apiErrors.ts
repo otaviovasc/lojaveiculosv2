@@ -200,7 +200,10 @@ function friendlyMessage(input: {
       return "Seu usuario nao tem permissao para realizar esta acao.";
     case "REQUEST_VALIDATION_ERROR":
     case "VEHICLE_VALIDATION_ERROR":
-      return "Revise os campos informados e tente novamente.";
+      return (
+        withFieldDetail(input.details) ??
+        "Revise os campos informados e tente novamente."
+      );
     case "BILLING_CUSTOMER_DATA_INCOMPLETE":
       return "Faltam alguns dados de cobrança da loja. Complete abaixo para continuar.";
     case "CRM_WHATSAPP_VALIDATION_ERROR":
@@ -255,6 +258,10 @@ function friendlyMessage(input: {
       return "O arquivo fiscal oficial ainda não está disponível. Atualize o status da nota e tente novamente.";
     case "INVENTORY_STORAGE_SCOPE_ERROR":
       return "O arquivo não pôde ser vinculado ao veículo. Atualize a tela e tente novamente.";
+    case "CRM_PIPELINE_DUPLICATE_NAME":
+      return "Ja existe uma pipeline com esse nome.";
+    case "CRM_PIPELINE_NO_OPEN_STAGE":
+      return "A pipeline padrao precisa de pelo menos uma etapa aberta.";
     case undefined:
     default:
       if (
@@ -262,7 +269,10 @@ function friendlyMessage(input: {
         code.endsWith("_VALIDATION_ERROR") ||
         code.includes("VALIDATION")
       ) {
-        return "Revise os campos informados e tente novamente.";
+        return (
+          withFieldDetail(input.details) ??
+          "Revise os campos informados e tente novamente."
+        );
       }
       if (
         code.endsWith("_PROVIDER_UNAVAILABLE") ||
@@ -291,4 +301,32 @@ function friendlyMessage(input: {
       }
       return input.message;
   }
+}
+
+const crmFieldLabels: Record<string, string> = {
+  buyerEmail: "E-mail",
+  buyerName: "Nome",
+  buyerPhone: "Telefone",
+  listingId: "Anuncio",
+  name: "Nome",
+  pipelineStageId: "Etapa",
+  stages: "Etapas",
+};
+
+function withFieldDetail(details: unknown) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) {
+    return null;
+  }
+  const fields = (details as { fields?: unknown }).fields;
+  if (!Array.isArray(fields) || !fields.length) return null;
+  const first = fields[0] as { message?: unknown; path?: unknown };
+  const message = readString(first?.message);
+  if (!message) return null;
+  const path = readString(first?.path);
+  const leaf = path
+    ?.split(".")
+    .filter((segment) => !/^\d+$/.test(segment))
+    .pop();
+  const label = (leaf && crmFieldLabels[leaf]) || leaf || "campo";
+  return `Campo "${label}": ${message}`;
 }

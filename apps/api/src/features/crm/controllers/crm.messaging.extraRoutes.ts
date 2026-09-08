@@ -17,7 +17,6 @@ import {
   handleCrmMessaging,
 } from "./crm.messaging.errors.js";
 import { registerCrmQuickMessageRoutes } from "./crm.quickMessages.routes.js";
-import { registerCrmTagRoutes } from "./crm.tags.routes.js";
 import type { CrmServices } from "./crmServices.js";
 import { toCrmMessageDto } from "./crm.message.dto.js";
 
@@ -34,7 +33,6 @@ export function registerCrmMessagingExtraRoutes(
     createContext,
     services,
   });
-  registerCrmTagRoutes(crmFeature, { createContext, services });
 
   crmFeature.get("/whatsapp/catalog/products", async (context) =>
     handleCrmMessaging(context, async () => {

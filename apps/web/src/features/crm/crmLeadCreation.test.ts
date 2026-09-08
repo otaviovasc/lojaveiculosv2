@@ -4,15 +4,13 @@ import type { ProductCrmApi } from "./productCrmApi";
 import type { ProductCrmLead } from "./productCrmTypes";
 
 describe("createLeadWithInitialStage", () => {
-  it("creates the lead without pipeline fields then moves it via the move endpoint", async () => {
-    const lead = buildLead({ id: "lead-1" });
-    const movedLead = buildLead({
+  it("creates the lead with the initial pipeline stage in a single call", async () => {
+    const lead = buildLead({
       id: "lead-1",
       pipelineId: "pipeline-1",
       pipelineStageId: "stage-1",
-      status: "won",
     });
-    const api = createApi({ lead, movedLead });
+    const api = createApi({ lead });
 
     const result = await createLeadWithInitialStage(api, {
       birthDate: "1990-05-10",
@@ -26,19 +24,14 @@ describe("createLeadWithInitialStage", () => {
       birthDate: "1990-05-10",
       buyerName: "Ana",
       metadata: { priority: "Alta" },
+      pipelineStageId: "stage-1",
       source: "manual",
     });
-    expect(api.moveLeadPipelineStage).toHaveBeenCalledWith("lead-1", {
-      pipelineStageId: "stage-1",
-    });
-    expect(result).toEqual(movedLead);
+    expect(result).toEqual(lead);
   });
 });
 
-function createApi(input: {
-  lead: ProductCrmLead;
-  movedLead: ProductCrmLead;
-}): ProductCrmApi {
+function createApi(input: { lead: ProductCrmLead }): ProductCrmApi {
   return {
     createActivity: vi.fn(),
     createFinancialProduct: vi.fn(),
@@ -50,7 +43,7 @@ function createApi(input: {
     listLeadPage: vi.fn(),
     listLeads: vi.fn(),
     listPipelines: vi.fn(),
-    moveLeadPipelineStage: vi.fn(async () => input.movedLead),
+    moveLeadPipelineStage: vi.fn(),
     updateLead: vi.fn(),
     updatePipeline: vi.fn(),
   };

@@ -1,5 +1,4 @@
 import type {
-  CrmAddConversationCycleTagInput,
   CrmConversationCycle,
   CrmConversationCycleCounts,
   CrmConversationCycleFilter,
@@ -9,7 +8,6 @@ export type CrmBulkActionDraft = {
   assignedUserId?: string | null;
   close?: boolean;
   readState?: "read" | "unread";
-  tag?: CrmAddConversationCycleTagInput;
 };
 
 export const defaultConversationCycleCounts: CrmConversationCycleCounts = {

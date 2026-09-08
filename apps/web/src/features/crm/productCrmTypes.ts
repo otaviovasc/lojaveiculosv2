@@ -71,6 +71,7 @@ export type CreateProductCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineStageId?: string;
   source: CrmLeadSource;
 };
 

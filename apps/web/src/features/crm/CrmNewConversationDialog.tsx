@@ -1,25 +1,38 @@
 import { MessageSquarePlus, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatBrazilianPhone } from "../../lib/masks";
 import { ActionDialog } from "./CrmActionDialogFrame";
+import {
+  CrmConnectionSelect,
+  readConnectionPhone,
+} from "./CrmConnectionSelect";
 import {
   CrmFieldError,
   CrmFormError,
   formatCrmSubmitError,
 } from "./CrmFormFeedback";
 import { isValidCrmPhone } from "./crmFormValidation";
+import {
+  listConversationStartConnections,
+  readConversationStartCapability,
+  resolveConversationStartConnection,
+} from "./crmConnectionSelection";
+import type { CrmProviderConnection } from "./crmConversationTypes";
+import { readCrmProviderLabel } from "./crmConnectionStatus";
 import type { CrmProvider } from "@lojaveiculosv2/shared";
 
+type StartConversationDraftBase = {
+  buyerName?: string;
+  connectionId?: string;
+  phone: string;
+};
+
 export type StartConversationDraft =
-  | {
-      buyerName?: string;
-      phone: string;
+  | (StartConversationDraftBase & {
       template?: never;
       text: string;
-    }
-  | {
-      buyerName?: string;
-      phone: string;
+    })
+  | (StartConversationDraftBase & {
       template: {
         components?: Array<{
           parameters: Array<{ text: string; type: "text" }>;
@@ -29,9 +42,11 @@ export type StartConversationDraft =
         name: string;
       };
       text?: never;
-    };
+    });
 
 export function CrmNewConversationDialog({
+  connections,
+  defaultConnectionId = null,
   disabled,
   initialBuyerName = "",
   initialPhone = "",
@@ -39,6 +54,8 @@ export function CrmNewConversationDialog({
   onStart,
   provider = "zapi",
 }: {
+  connections?: readonly CrmProviderConnection[];
+  defaultConnectionId?: string | null;
   disabled?: boolean;
   initialBuyerName?: string;
   initialPhone?: string;
@@ -46,6 +63,30 @@ export function CrmNewConversationDialog({
   onStart: (input: StartConversationDraft) => Promise<boolean>;
   provider?: Extract<CrmProvider, "meta_cloud" | "zapi">;
 }) {
+  const startConnections = useMemo(
+    () => listConversationStartConnections(connections ?? []),
+    [connections],
+  );
+  const fallbackConnection = useMemo(
+    () =>
+      resolveConversationStartConnection({
+        connections: connections ?? [],
+        preferredConnectionId: defaultConnectionId,
+      }),
+    [connections, defaultConnectionId],
+  );
+  const [pickedConnectionId, setPickedConnectionId] = useState<string | null>(
+    null,
+  );
+  const selectedConnection =
+    startConnections.length > 1
+      ? (startConnections.find(
+          (connection) => String(connection.id) === pickedConnectionId,
+        ) ?? fallbackConnection)
+      : (startConnections[0] ?? null);
+  const selectedCapability = selectedConnection
+    ? readConversationStartCapability(selectedConnection)
+    : null;
   const [buyerName, setBuyerName] = useState(initialBuyerName);
   const [phone, setPhone] = useState(() => formatBrazilianPhone(initialPhone));
   const [text, setText] = useState("");
@@ -56,7 +97,9 @@ export function CrmNewConversationDialog({
   const [textTouched, setTextTouched] = useState(false);
   const [templateTouched, setTemplateTouched] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const usesTemplate = provider === "meta_cloud";
+  const usesTemplate = selectedCapability
+    ? selectedCapability.mode === "template"
+    : provider === "meta_cloud";
   const phoneIsValid = isValidCrmPhone(phone);
   const messageIsValid = text.trim().length > 0;
   const templateIsValid =
@@ -77,6 +120,9 @@ export function CrmNewConversationDialog({
         try {
           const common = {
             ...(buyerName.trim() ? { buyerName: buyerName.trim() } : {}),
+            ...(selectedConnection
+              ? { connectionId: String(selectedConnection.id) }
+              : {}),
             phone: phone.trim(),
           };
           const accepted = await onStart(
@@ -144,9 +190,33 @@ export function CrmNewConversationDialog({
           <span data-variant="channel">
             <i /> {usesTemplate ? "WhatsApp Oficial" : "WhatsApp"}
           </span>
-          <span data-variant="hint">Conexão ativa · envio imediato</span>
+          <span data-variant="hint">
+            {selectedConnection
+              ? `${readCrmProviderLabel(selectedConnection.provider)} · ${
+                  readConnectionPhone(selectedConnection) ??
+                  selectedConnection.displayName
+                } · envio imediato`
+              : "Conexão ativa · envio imediato"}
+          </span>
         </div>
       </div>
+      {startConnections.length > 1 && selectedConnection ? (
+        <CrmConnectionSelect
+          connections={startConnections}
+          disabled={disabled || isSaving}
+          label="Conexão de envio"
+          onChange={(connectionId) => {
+            setPickedConnectionId(connectionId);
+            setText("");
+            setTextTouched(false);
+            setTemplateName("");
+            setTemplateParameters([]);
+            setTemplateTouched(false);
+            setSubmitError(null);
+          }}
+          value={String(selectedConnection.id)}
+        />
+      ) : null}
       <div className="crm-action-grid">
         <label>
           Nome

@@ -48,7 +48,6 @@ export type CrmConversationCycle = {
   pinnedAt: Date | null;
   profilePhotoUrl: string | null;
   revision: number;
-  tags: CrmTag[];
   threadId?: string;
   source: string | null;
   status: CrmConversationCycleStatus;
@@ -56,17 +55,6 @@ export type CrmConversationCycle = {
   tenantId: TenantId;
   unreadCount: number;
   updatedAt: Date;
-};
-
-export type CrmTag = {
-  color: string;
-  connectionId: string | null;
-  emoji: string | null;
-  id: string;
-  name: string;
-  sortOrder: number;
-  storeId: StoreId;
-  tenantId: TenantId;
 };
 
 export type CrmMessage = {
@@ -114,7 +102,7 @@ export type CrmCampaign = {
   createdByUserId: UserId | null;
   failedCount: number;
   id: string;
-  initialTagId: string | null;
+  initialStageId: string | null;
   intervalMinutes: number;
   mediaFileName: string | null;
   mediaStorageKey: string | null;
@@ -124,7 +112,7 @@ export type CrmCampaign = {
   name: string;
   repliedCount: number;
   replyRate: number;
-  replyTagId: string | null;
+  replyStageId: string | null;
   scheduledCount: number;
   scheduledEndAt: Date;
   scheduledStartAt: Date;

@@ -53,19 +53,6 @@ import {
   listMemoryCampaignRecipients,
   updateMemoryCampaignRecipient,
 } from "./crmCampaignRecipientMemory.js";
-import {
-  addMemoryCycleTag,
-  createMemoryTag,
-  deleteMemoryTag,
-  findOrCreateMemoryTag,
-  hydrateCycleTags,
-  listMemoryTags,
-  reorderMemoryTags,
-  removeMemoryCycleTag,
-  requireHydratedCycle,
-  updateMemoryTag,
-  type MemoryCrmTagState,
-} from "./crmTagMemory.js";
 import { transitionMemoryWhatsappAttendance } from "./crmConversationMemoryAttendance.js";
 import { recordMemoryCampaignDelivery } from "./crmCampaignDeliveryMemory.js";
 import { claimMemoryCampaignReply } from "./crmCampaignReplyMemory.js";
@@ -82,7 +69,6 @@ export function createMemoryCrmConversationRepository(
   const quickMessages = [...initialQuickMessages];
   const scheduledMessages: CrmScheduledMessage[] = [];
   const attendanceLedgerFingerprints = new Map<string, string>();
-  const tagState: MemoryCrmTagState = { cycleTags: [], tags: [] };
 
   return {
     claimCampaignReply: async (input) =>
@@ -92,9 +78,6 @@ export function createMemoryCrmConversationRepository(
         scheduledMessages,
         input,
       ),
-    async addConversationCycleTag(input) {
-      return addMemoryCycleTag(tagState, cycles, messages, input);
-    },
     async findMessageByExternalId(input) {
       return findMemoryCrmMessageByExternalId(messages, input);
     },
@@ -104,9 +87,6 @@ export function createMemoryCrmConversationRepository(
     async findConversationCycleByIdentity(input) {
       return findMemoryCycle(cycles, input) ?? null;
     },
-    async findOrCreateTag(input) {
-      return findOrCreateMemoryTag(tagState, input);
-    },
     async findDueScheduledMessageScopes(input) {
       return findDueMemoryScheduledMessageScopes(
         scheduledMessages,
@@ -114,13 +94,6 @@ export function createMemoryCrmConversationRepository(
         input,
       );
     },
-    async createTag(input) {
-      return createMemoryTag(tagState, input);
-    },
-    updateTag: async (input) => updateMemoryTag(tagState, input),
-    deleteTag: async (input) => deleteMemoryTag(tagState, input),
-    reorderTags: async (input) => reorderMemoryTags(tagState, input),
-    listTags: async (input) => listMemoryTags(tagState, input),
     async createQuickMessage(input) {
       return createMemoryQuickMessage(quickMessages, input);
     },
@@ -135,7 +108,6 @@ export function createMemoryCrmConversationRepository(
         messages,
         query: input,
         cycles,
-        tagState,
       });
     },
     async countConversationCyclesByAssignee(input) {
@@ -143,7 +115,6 @@ export function createMemoryCrmConversationRepository(
         messages,
         query: input,
         cycles,
-        tagState,
       });
     },
     async findQuickMessageById(input) {
@@ -157,7 +128,6 @@ export function createMemoryCrmConversationRepository(
         message: input,
         messages,
         cycles,
-        tagState,
       }),
     incrementCampaignCounts: (input) =>
       Promise.resolve(incrementMemoryCampaignCounts(campaigns, input)),
@@ -189,7 +159,6 @@ export function createMemoryCrmConversationRepository(
         messages,
         query: input,
         cycles,
-        tagState,
       });
     },
     async createScheduledMessage(input) {
@@ -212,22 +181,16 @@ export function createMemoryCrmConversationRepository(
       return deleteMemoryQuickMessage(quickMessages, input);
     },
     async updateConversationCycle(input) {
-      return hydrateCycleTags(
-        updateMemoryCrmConversationCycle(cycles, messages, input),
-        tagState,
-      );
+      return updateMemoryCrmConversationCycle(cycles, messages, input);
     },
     async transitionAttendance(input) {
       return transitionMemoryWhatsappAttendance(
-        { attendanceLedgerFingerprints, messages, cycles, tagState },
+        { attendanceLedgerFingerprints, messages, cycles },
         input,
       );
     },
     async upsertConversationCycleContext(input) {
-      return requireHydratedCycle(
-        withUnreadCount(upsertMemoryCycleContext(cycles, input), messages),
-        tagState,
-      );
+      return withUnreadCount(upsertMemoryCycleContext(cycles, input), messages);
     },
     async updateQuickMessage(input) {
       return updateMemoryQuickMessage(quickMessages, input);
@@ -240,9 +203,6 @@ export function createMemoryCrmConversationRepository(
     },
     async updateMessage(input) {
       return updateMemoryCrmMessage(messages, input);
-    },
-    async removeConversationCycleTag(input) {
-      return removeMemoryCycleTag(tagState, cycles, messages, input);
     },
   };
 }

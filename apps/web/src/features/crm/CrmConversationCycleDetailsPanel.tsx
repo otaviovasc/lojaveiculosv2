@@ -62,7 +62,6 @@ export function CrmConversationCycleDetailsPanel({
     null,
   );
   const [muted, setMuted] = useState(false);
-  const [tagEditorOpen, setTagEditorOpen] = useState(false);
 
   const agentName =
     cycle.assignedMember?.name ??
@@ -81,7 +80,6 @@ export function CrmConversationCycleDetailsPanel({
   const attendanceTitleId = useId();
   const opportunityTitleId = useId();
   const routeTitleId = useId();
-  const tagsTitleId = useId();
 
   const handleCopyPhone = () => {
     if (formattedPhone) {
@@ -283,72 +281,7 @@ export function CrmConversationCycleDetailsPanel({
             />
             <small>Pesquisar</small>
           </button>
-          <button
-            aria-expanded={tagEditorOpen}
-            aria-pressed={tagEditorOpen}
-            className={`crm-details-wa-action crm-details-wa-action--interactive${tagEditorOpen ? " is-active" : ""}`}
-            onClick={() => setTagEditorOpen((v) => !v)}
-            type="button"
-          >
-            <Tag className="size-4" />
-            <small>Etiquetar</small>
-          </button>
         </div>
-        {tagEditorOpen ? (
-          <div className="crm-details-wa-tag-editor">
-            <p className="crm-details-muted text-xs">
-              Gerencie marcadores em{" "}
-              <span className="font-semibold text-[var(--color-text)]">
-                Fila → filtros
-              </span>{" "}
-              ou selecione abaixo para alternar nesta conversa.
-            </p>
-            <div className="crm-details-tags-wrap">
-              {cycle.tags?.length ? (
-                cycle.tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    className="crm-cycle-tag-chip crm-cycle-tag-chip--interactive"
-                    onClick={() =>
-                      window.dispatchEvent(
-                        new CustomEvent("crm:toggle-tag", {
-                          detail: { cycleId: cycle.id, tagId: tag.id },
-                        }),
-                      )
-                    }
-                    style={{
-                      backgroundColor: tag.color
-                        ? `color-mix(in srgb, ${tag.color} 14%, var(--color-panel))`
-                        : undefined,
-                      color: "var(--color-text)",
-                      borderColor: tag.color
-                        ? `color-mix(in srgb, ${tag.color} 28%, var(--color-line))`
-                        : undefined,
-                    }}
-                    type="button"
-                  >
-                    {tag.emoji ? (
-                      <span className="text-xs mr-0.5">{tag.emoji}</span>
-                    ) : (
-                      <i
-                        aria-hidden="true"
-                        style={{
-                          backgroundColor: tag.color ?? "var(--color-muted)",
-                        }}
-                      />
-                    )}
-                    {tag.name}
-                    <X className="size-3 ml-1 opacity-60" />
-                  </button>
-                ))
-              ) : (
-                <span className="crm-details-muted text-xs">
-                  Nenhum marcador nesta conversa.
-                </span>
-              )}
-            </div>
-          </div>
-        ) : null}
       </header>
 
       <div className="crm-details-wa-body">
@@ -477,47 +410,6 @@ export function CrmConversationCycleDetailsPanel({
         </section>
 
         <CrmWhatsappAdAttribution metadata={cycle.metadata} />
-
-        {/* Marcadores / Tags */}
-        {cycle.tags?.length ? (
-          <section
-            aria-labelledby={tagsTitleId}
-            className="crm-details-section"
-          >
-            <h2 id={tagsTitleId} className="crm-details-section-title">
-              Marcadores
-            </h2>
-            <div className="crm-details-tags-wrap">
-              {cycle.tags.map((tag) => (
-                <span
-                  className="crm-cycle-tag-chip"
-                  key={tag.id}
-                  style={{
-                    backgroundColor: tag.color
-                      ? `color-mix(in srgb, ${tag.color} 14%, var(--color-panel))`
-                      : undefined,
-                    color: "var(--color-text)",
-                    borderColor: tag.color
-                      ? `color-mix(in srgb, ${tag.color} 28%, var(--color-line))`
-                      : undefined,
-                  }}
-                >
-                  {tag.emoji ? (
-                    <span className="text-xs mr-0.5">{tag.emoji}</span>
-                  ) : (
-                    <i
-                      aria-hidden="true"
-                      style={{
-                        backgroundColor: tag.color ?? "var(--color-muted)",
-                      }}
-                    />
-                  )}
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         {/* WhatsApp extra: Midia / Links / Docs — real counts + drill-down */}
         <section className="crm-details-section">

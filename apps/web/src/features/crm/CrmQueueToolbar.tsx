@@ -5,15 +5,11 @@ import {
   Headset,
   Hourglass,
   Plus,
-  Tags,
   Wrench,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Morphicon } from "../../components/ui/Morphicon";
-import {
-  QueueQuickFilterRow,
-  QueueTagFilterMenu,
-} from "./CrmQueueToolbarParts";
+import { QueueQuickFilterRow } from "./CrmQueueToolbarParts";
 import { useDragToScroll } from "../../lib/useDragToScroll";
 import { CrmConnectionFilter } from "./CrmConnectionFilter";
 import type {
@@ -23,17 +19,14 @@ import type {
   CrmConversationCycleCounts,
   CrmConversationCycleFilter,
   CrmConversationCycleStatus,
-  CrmTag,
 } from "./crmConversationTypes";
 
 export function CrmQueueToolbar({
   archivedOnly = false,
   assignableMembers,
-  availableTags,
   children,
   canAssign,
   canManageConnections,
-  canManageTags,
   canReadUnassigned = false,
   connectionId,
   connectionFilterId,
@@ -43,20 +36,17 @@ export function CrmQueueToolbar({
   onConnectionFilterChange,
   onHumanAttendanceFilterChange,
   onManageConnections,
-  onManageTags,
   onOtherAssigneeChange,
   onQuickFilterChange,
   onSearch,
   onSelectionModeChange,
   onStartConversation,
   onStatusFilterChange,
-  onTagFilterToggle,
   onUnreadOnlyChange,
   otherAssigneeId,
   humanAttendanceFilter,
   quickFilter,
   search,
-  selectedTagIds,
   selectedCount,
   selectionMode,
   conversationCycleCounts,
@@ -68,11 +58,9 @@ export function CrmQueueToolbar({
 }: {
   archivedOnly?: boolean;
   assignableMembers: CrmAssignableMember[];
-  availableTags: CrmTag[];
   children?: ReactNode;
   canAssign: boolean;
   canManageConnections: boolean;
-  canManageTags: boolean;
   canReadUnassigned?: boolean;
   canStartConversation: boolean;
   connectionId: string | number | null;
@@ -83,20 +71,17 @@ export function CrmQueueToolbar({
   onConnectionFilterChange: (connectionId: string | null) => void;
   onHumanAttendanceFilterChange: (state: CrmHumanAttendanceState | "") => void;
   onManageConnections: () => void;
-  onManageTags: () => void;
   onOtherAssigneeChange: (assigneeId: string | null) => void;
   onQuickFilterChange: (filter: CrmConversationCycleFilter) => void;
   onSearch: (value: string) => void;
   onSelectionModeChange: (enabled: boolean) => void;
   onStartConversation: () => void;
   onStatusFilterChange: (status: CrmConversationCycleStatus | "") => void;
-  onTagFilterToggle: (tagId: string) => void;
   onUnreadOnlyChange: (unreadOnly: boolean) => void;
   otherAssigneeId: string | null;
   humanAttendanceFilter: CrmHumanAttendanceState | "";
   quickFilter: CrmConversationCycleFilter;
   search: string;
-  selectedTagIds: string[];
   selectedCount: number;
   selectionMode: boolean;
   conversationCycleCounts: CrmConversationCycleCounts;
@@ -125,16 +110,6 @@ export function CrmQueueToolbar({
             onChange={onConnectionFilterChange}
             onSetup={onManageConnections}
           />
-          <button
-            aria-label="Gerenciar etiquetas"
-            className="crm-icon-action"
-            disabled={!canManageTags}
-            onClick={onManageTags}
-            title="Gerenciar etiquetas"
-            type="button"
-          >
-            <Tags aria-hidden="true" />
-          </button>
           <button
             aria-label="Gerenciar conexões de mensagens"
             className="crm-icon-action"
@@ -302,11 +277,6 @@ export function CrmQueueToolbar({
             <span>{conversationCycleCounts.inHumanService}</span>
           ) : null}
         </button>
-        <QueueTagFilterMenu
-          availableTags={availableTags}
-          onTagFilterToggle={onTagFilterToggle}
-          selectedTagIds={selectedTagIds}
-        />
         <button
           aria-pressed={statusFilter === "COMPLETED"}
           className={

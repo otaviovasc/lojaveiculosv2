@@ -33,7 +33,7 @@ export function CrmCampaignsPage({
   onPauseCampaign,
   onResumeCampaign,
   conversationCycles,
-  tags,
+  stageOptions,
 }: CrmCampaignsPageProps) {
   const [csvInput, setCsvInput] = useState("");
   const [campaigns, setCampaigns] = useState<CrmCampaign[]>(
@@ -56,8 +56,8 @@ export function CrmCampaignsPage({
   const [campaignName, setCampaignName] = useState("Nova campanha");
   const [startAt, setStartAt] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState(2);
-  const [initialTagId, setInitialTagId] = useState("none");
-  const [replyTagId, setReplyTagId] = useState("none");
+  const [initialStageId, setInitialStageId] = useState("none");
+  const [replyStageId, setReplyStageId] = useState("none");
   const [secondaryContent, setSecondaryContent] = useState("");
   const [secondaryDelayMinutes, setSecondaryDelayMinutes] = useState(60);
   const [text, setText] = useState("Ola {nome}, tudo bem?");
@@ -197,7 +197,7 @@ export function CrmCampaignsPage({
         buildCampaignInput({
           campaignName,
           firstDate,
-          initialTagId,
+          initialStageId,
           intervalMinutes,
           ...(mediaBase64
             ? {
@@ -208,7 +208,7 @@ export function CrmCampaignsPage({
                   : null,
               }
             : {}),
-          replyTagId,
+          replyStageId,
           secondaryContent,
           secondaryDelayMinutes,
           text,
@@ -231,9 +231,9 @@ export function CrmCampaignsPage({
       setLastResult(`${campaign.totalRecipients} destinatario(s) agendado(s).`);
       setCampaignName("Nova campanha");
       setCsvInput("");
-      setInitialTagId("none");
+      setInitialStageId("none");
       setIntervalMinutes(2);
-      setReplyTagId("none");
+      setReplyStageId("none");
       review.resetReview();
       setSecondaryContent("");
       setSecondaryDelayMinutes(60);
@@ -288,7 +288,7 @@ export function CrmCampaignsPage({
               onSelectCampaign={setSelectedCampaignId}
               selectedCampaignId={selectedCampaignId}
               conversationCycles={audience.conversationCycles}
-              tags={tags}
+              stageOptions={stageOptions}
             />
           </>
         ) : (
@@ -301,7 +301,7 @@ export function CrmCampaignsPage({
             csvInput={csvInput}
             effectiveSelectedIds={review.effectiveSelectedIds}
             filteredSessions={audience.filteredSessions}
-            initialTagId={initialTagId}
+            initialStageId={initialStageId}
             intervalMinutes={intervalMinutes}
             isAudienceLoading={audience.isLoading}
             isSaving={isSaving}
@@ -316,7 +316,6 @@ export function CrmCampaignsPage({
             onCancel={() => setMode("overview")}
             onCampaignNameChange={setCampaignName}
             onCsvInputChange={setCsvInput}
-            onInitialTagChange={setInitialTagId}
             onImageError={setImageError}
             onImageRemove={() => {
               campaignRequestTokenRef.current += 1;
@@ -328,31 +327,30 @@ export function CrmCampaignsPage({
               setImageFile(file);
               setImageError(null);
             }}
+            onInitialStageChange={setInitialStageId}
             onIntervalMinutesChange={setIntervalMinutes}
             onLeadFiltersChange={audience.setLeadFilters}
             onLaunch={() => void launch()}
             onQueryChange={audience.setQuery}
-            onReplyTagChange={setReplyTagId}
+            onReplyStageChange={setReplyStageId}
             onReviewNameChange={review.updateReviewRowName}
             onReviewRowToggle={review.toggleReviewRow}
             onSecondaryContentChange={setSecondaryContent}
             onSecondaryDelayMinutesChange={setSecondaryDelayMinutes}
             onSelectVisible={review.selectVisibleSessions}
             onStartAtChange={setStartAt}
-            onTagChange={audience.setSelectedTagId}
             onTextChange={setText}
             onToggleSession={review.toggleSession}
             preview={review.preview}
             query={audience.query}
-            replyTagId={replyTagId}
+            replyStageId={replyStageId}
             reviewRows={review.reviewRows}
             reviewSummary={review.reviewSummary}
             secondaryContent={secondaryContent}
             secondaryDelayMinutes={secondaryDelayMinutes}
             selectedCount={review.validRecipients.length}
-            selectedTagId={audience.selectedTagId}
+            stageOptions={stageOptions}
             startAt={startAt}
-            tags={tags}
             text={text}
             withoutSessionCount={audience.withoutSessionCount}
           />

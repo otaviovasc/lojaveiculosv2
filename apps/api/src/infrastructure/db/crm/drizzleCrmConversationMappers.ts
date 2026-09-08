@@ -86,7 +86,6 @@ export function toConversationCycle(
     profilePhotoUrl: thread.profilePhotoUrl,
     pinnedAt: cycle.pinnedAt,
     revision: cycle.revision,
-    tags: [],
     threadId: thread.id,
     source: thread.source,
     status: fromCanonicalConversationCycleStatus(row),

@@ -21,15 +21,14 @@ export type {
   CrmUazapiInstanceSummary,
 };
 
-/** Parsed server cycle plus UI enrichments used by provider setup and tag
- * management surfaces. The API boundary still validates the shared DTO. */
+/** Parsed server cycle plus UI enrichments used by provider setup surfaces.
+ * The API boundary still validates the shared DTO. */
 export type CrmConversationCycle = Omit<
   CrmConversationCycleDto,
-  "connection" | "revision" | "tags"
+  "connection" | "revision"
 > & {
   connection?: CrmProviderConnection | null | undefined;
   revision?: number | undefined;
-  tags?: CrmTag[] | undefined;
 };
 
 /** Canonical messages plus the local optimistic state used before the server
@@ -314,14 +313,6 @@ export type CrmComposioCompleteResult = {
   senders: CrmComposioSender[];
 };
 
-export type CrmTag = {
-  color?: string | undefined;
-  emoji?: string | null | undefined;
-  id: string;
-  name: string;
-  sortOrder?: number | undefined;
-};
-
 export type CrmConversationCycleQuery = {
   archived?: boolean;
   assigneeId?: string;
@@ -334,7 +325,6 @@ export type CrmConversationCycleQuery = {
   search?: string;
   cycleId?: CrmConversationCycleId;
   status?: CrmConversationCycleStatus;
-  tagIds?: string[];
   unreadOnly?: boolean;
 };
 

@@ -2,11 +2,8 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
+import { moveLeadToPipelineStage } from "../../pipeline/moveLeadToPipelineStage.js";
 import {
-  CrmLeadNotFoundError,
-  CrmPipelineStageNotFoundError,
-  getCrmPipelineRepository,
-  getCrmRepository,
   requireCrmScope,
   runCrmTransaction,
   type CrmServicePorts,
@@ -36,59 +33,25 @@ export async function moveCrmLeadPipelineStage(
   );
 
   return runCrmTransaction(ports, async (transactionPorts) => {
-    const repository = getCrmRepository(transactionPorts);
-    const pipelineRepository = getCrmPipelineRepository(transactionPorts);
-    const lead = await repository.findLeadById({
-      leadId: input.leadId,
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
-    if (!lead) throw new CrmLeadNotFoundError(input.leadId);
-
-    const stage = await pipelineRepository.findStageById({
-      stageId: input.pipelineStageId,
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
-    if (!stage) throw new CrmPipelineStageNotFoundError(input.pipelineStageId);
-
-    const updated = await repository.updateLead({
-      leadId: lead.id,
-      pipelineId: stage.pipelineId,
-      pipelineStageId: stage.id,
-      status: stage.leadStatus,
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
-
-    await repository.createActivity({
-      activityType: "status_change",
-      content: `Alterou a etapa para "${stage.name}"`,
-      createdByUserId:
-        context.actor.kind === "user" ? (context.actor.id as never) : null,
-      leadId: lead.id,
-      metadata: {
-        nextPipelineId: stage.pipelineId,
-        nextStageId: stage.id,
-        previousPipelineId: lead.pipelineId,
-        previousStageId: lead.pipelineStageId,
-      },
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
+    const { previous, updated } = await moveLeadToPipelineStage(
+      context,
+      transactionPorts,
+      scope,
+      input,
+    );
 
     await context.audit.record({
       action: "crm.pipeline.lead_move",
       actor: context.actor,
       category: "data_change",
-      entityId: lead.id,
+      entityId: updated.id,
       entityType: "lead",
       metadata: {
-        nextPipelineId: stage.pipelineId,
-        nextStageId: stage.id,
+        nextPipelineId: updated.pipelineId,
+        nextStageId: updated.pipelineStageId,
         permission,
-        previousPipelineId: lead.pipelineId,
-        previousStageId: lead.pipelineStageId,
+        previousPipelineId: previous.pipelineId,
+        previousStageId: previous.pipelineStageId,
       },
       outcome: "succeeded",
       requestId: context.requestId,

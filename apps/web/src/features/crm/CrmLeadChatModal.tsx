@@ -4,8 +4,15 @@ import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
 import type { CrmConversationApi } from "./crmConversationApi";
-import { createRuntimeCrmConversationApi } from "./runtimeApi";
-import { findDefaultFreeTextStartConnection } from "./crmConnectionSelection";
+import {
+  createRuntimeCrmConversationApi,
+  createRuntimeProductCrmApi,
+} from "./runtimeApi";
+import {
+  listFreeTextStartConnections,
+  resolveFreeTextStartConnection,
+} from "./crmConnectionSelection";
+import { CrmConnectionSelect } from "./CrmConnectionSelect";
 import { readCrmCapabilities } from "./crmPermissions";
 import { formatLeadName } from "./crmPipelineModels";
 import { formatCrmPhone } from "./crmPhoneFormat";
@@ -52,10 +59,20 @@ export function CrmLeadChatModal({
   const [isLoading, setIsLoading] = useState(true);
   const [isStartingConversation, setIsStartingConversation] = useState(false);
 
-  const startConnection = useMemo(
-    () => findDefaultFreeTextStartConnection(connections),
+  const freeTextConnections = useMemo(
+    () => listFreeTextStartConnections(connections),
     [connections],
   );
+  const [pickedConnectionId, setPickedConnectionId] = useState<string | null>(
+    null,
+  );
+  const defaultStartConnection = resolveFreeTextStartConnection({
+    connections,
+  });
+  const startConnection =
+    freeTextConnections.find(
+      (connection) => String(connection.id) === pickedConnectionId,
+    ) ?? defaultStartConnection;
 
   useEffect(() => {
     if (!permissions.canList) {
@@ -156,7 +173,7 @@ export function CrmLeadChatModal({
     Boolean(draft.trim()) &&
     !isStartingConversation &&
     permissions.canSend &&
-    startConnection !== undefined;
+    startConnection !== null;
 
   return (
     <FeatureDialog
@@ -295,6 +312,18 @@ export function CrmLeadChatModal({
 
           {permissions.canList && !isLoading ? (
             <div className="crm-lead-chat-composer-wrap">
+              {freeTextConnections.length > 1 && startConnection ? (
+                <CrmConnectionSelect
+                  connections={freeTextConnections}
+                  disabled={isStartingConversation || !permissions.canSend}
+                  label="Conexão de envio"
+                  onChange={(connectionId) => {
+                    setPickedConnectionId(connectionId);
+                    setDraft("");
+                  }}
+                  value={String(startConnection.id)}
+                />
+              ) : null}
               <form
                 className="crm-lead-chat-composer"
                 onSubmit={(event) => {
@@ -364,12 +393,14 @@ function CrmLeadPairedWorkspace({
   onStartSale?: (() => void) | undefined;
 }) {
   const inbox = useCrmInbox(api, cycleId);
+  const leadApi = useMemo(() => createRuntimeProductCrmApi(), []);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full w-full">
       <CrmConversationWorkspace
         hideQueue
         inbox={inbox}
+        leadApi={leadApi}
         onCycleChange={() => {}}
         onScopeChange={() => {}}
         onStartSale={onStartSale ? () => onStartSale() : undefined}

@@ -17,6 +17,8 @@ import {
 } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { CrmDateTimeShortcuts } from "./CrmDateTimeShortcuts";
+import { readScheduleDateParts } from "./crmScheduleDateTime";
+import { CrmVisitQuickTags } from "./CrmVisitQuickTags";
 import { formatCrmPhone } from "./crmPhoneFormat";
 import { formatCycleName } from "./crmConversationModel";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
@@ -84,15 +86,10 @@ export function CrmVisitSessionDialog({
     };
   }, [listVehicles]);
 
-  const parsedDate =
-    scheduledAt && !Number.isNaN(new Date(scheduledAt).getTime())
-      ? new Date(scheduledAt)
-      : null;
-
-  const timeString =
-    scheduledAt && scheduledAt.includes("T")
-      ? (scheduledAt.split("T")[1]?.slice(0, 5) ?? "14:00")
-      : "14:00";
+  const { parsedDate, timeString } = readScheduleDateParts(
+    scheduledAt,
+    "14:00",
+  );
 
   const handleDateChange = (date: Date) => {
     const year = date.getFullYear();
@@ -315,36 +312,7 @@ export function CrmVisitSessionDialog({
             <span className="crm-visit-quick-group-label">
               <Tag className="size-3 mr-1 inline" /> Finalidade rápida:
             </span>
-            <div className="crm-visit-quick-tags">
-              <button
-                className="crm-visit-tag-btn"
-                onClick={() => addQuickTag("Test drive agendado")}
-                type="button"
-              >
-                🚗 Test Drive
-              </button>
-              <button
-                className="crm-visit-tag-btn"
-                onClick={() => addQuickTag("Avaliação na troca")}
-                type="button"
-              >
-                🔄 Avaliação na Troca
-              </button>
-              <button
-                className="crm-visit-tag-btn"
-                onClick={() => addQuickTag("Simulação de financiamento")}
-                type="button"
-              >
-                📋 Financiamento
-              </button>
-              <button
-                className="crm-visit-tag-btn"
-                onClick={() => addQuickTag("Apresentação de proposta")}
-                type="button"
-              >
-                🤝 Proposta Comercial
-              </button>
-            </div>
+            <CrmVisitQuickTags onAddTag={addQuickTag} />
           </div>
 
           <FeatureField

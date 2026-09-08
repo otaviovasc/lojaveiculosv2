@@ -24,7 +24,6 @@ describe("CRM cycle queue authorization", () => {
       "crm.conversations.manage",
       "crm.conversations.read",
       "crm.messages.send",
-      "crm.tags.assign",
       "crm.conversations.manage",
     ]);
 
@@ -73,13 +72,6 @@ describe("CRM cycle queue authorization", () => {
         fixture.app.request(
           `/api/v1/crm/conversation-cycles/${fixture.unassigned.conversationCycle.id}/actions/close`,
           jsonPost({ commandId: "41000000-0000-4000-8000-000000000003" }),
-        ),
-      ),
-      blockedRequest(
-        "foreign tag",
-        fixture.app.request(
-          `/api/v1/crm/conversation-cycles/${fixture.other.conversationCycle.id}/tags`,
-          jsonPost({ name: "Blocked" }),
         ),
       ),
       blockedRequest(

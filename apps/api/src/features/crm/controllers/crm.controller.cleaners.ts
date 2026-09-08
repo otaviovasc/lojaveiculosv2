@@ -60,6 +60,9 @@ export function cleanCreateLeadInput(
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.pipelineStageId !== undefined
+      ? { pipelineStageId: input.pipelineStageId }
+      : {}),
     source: input.source,
   };
 }

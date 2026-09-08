@@ -17,7 +17,7 @@ describe("CrmQueueBulkBar", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("stages assignment, label, read state, and close before confirming", async () => {
+  it("stages assignment, read state, and close before confirming", async () => {
     const user = userEvent.setup();
     const callbacks = createCallbacks();
     renderBulkBar({ selectedCount: 2, ...callbacks });
@@ -27,10 +27,6 @@ describe("CrmQueueBulkBar", () => {
       screen.getByLabelText("Alterar atendente das conversas selecionadas"),
     );
     await user.click(screen.getByRole("option", { name: "Bruno" }));
-    await user.click(
-      screen.getByLabelText("Adicionar etiqueta às conversas selecionadas"),
-    );
-    await user.click(screen.getByRole("option", { name: "Quente" }));
     await user.click(screen.getByRole("button", { name: "Não lidas" }));
     await user.click(screen.getByRole("button", { name: "Concluir" }));
     await user.click(
@@ -41,7 +37,6 @@ describe("CrmQueueBulkBar", () => {
       assignedUserId: "2",
       close: true,
       readState: "unread",
-      tag: { color: "var(--color-accent)", name: "Quente" },
     });
 
     await user.click(screen.getByRole("button", { name: "Selecionar página" }));
@@ -77,13 +72,9 @@ function renderBulkBar(
   return render(
     <CrmQueueBulkBar
       assignableMembers={createAssignableMembers()}
-      availableTags={[
-        { color: "var(--color-accent)", id: "tag-hot", name: "Quente" },
-      ]}
       canAssign={true}
       canClose={true}
       canRead={true}
-      canTag={true}
       selectedCount={2}
       {...createCallbacks()}
       {...overrides}

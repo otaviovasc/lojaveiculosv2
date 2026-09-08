@@ -8,7 +8,7 @@ export type CrmCampaign = {
   createdAt: string;
   failedCount: number;
   id: string;
-  initialTagId: string | null;
+  initialStageId: string | null;
   intervalMinutes: number;
   mediaFileName?: string | null;
   mediaType: string | null;
@@ -16,7 +16,7 @@ export type CrmCampaign = {
   name: string;
   repliedCount: number;
   replyRate: number;
-  replyTagId: string | null;
+  replyStageId: string | null;
   scheduledCount: number;
   scheduledEndAt: string;
   scheduledStartAt: string;
@@ -68,7 +68,7 @@ export type CrmCampaignDetail = {
 
 export type CrmCreateCampaignInput = {
   content: string;
-  initialTagId?: string | null;
+  initialStageId?: string | null;
   intervalMinutes?: number;
   mediaBase64?: string | null;
   mediaFileName?: string | null;
@@ -78,7 +78,7 @@ export type CrmCreateCampaignInput = {
     cycleId: string;
     variables?: Record<string, string>;
   }>;
-  replyTagId?: string | null;
+  replyStageId?: string | null;
   scheduledStartAt: string;
   secondaryContent?: string | null;
   secondaryDelayMinutes?: number;

@@ -19,16 +19,13 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead={false}
         canScheduleMessages={false}
-        canTagSessions={false}
         canToggleIntervention={false}
         contactPresence="typing"
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -56,16 +53,13 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead={false}
         canScheduleMessages={false}
-        canTagSessions={false}
         canToggleIntervention={false}
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onBack={onBack}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -85,55 +79,34 @@ describe("CrmConversationHeader", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the header tag selector and assigns an available tag", async () => {
-    const user = userEvent.setup();
-    const onAddTag = vi.fn(async () => true);
+  it("renders the pipeline stage chip next to the conversation identity", () => {
     render(
       <ChatHeader
         assignableMembers={[]}
-        availableTags={[
-          {
-            color: "var(--color-blue-start)",
-            id: "tag-replied",
-            name: "Respondeu",
-          },
-        ]}
         canAssignSession={false}
         canCloseSession={false}
         canMarkRead={false}
         canScheduleMessages={false}
-        canTagSessions
         canToggleIntervention={false}
-        onAddTag={onAddTag}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
+        stageChip={<span data-testid="stage-chip">Em negociação</span>}
         cycle={{
           customerDisplayName: "Ana Premium",
           customerPhone: "5511999999999",
           channel: "whatsapp",
           id: "cycle-1",
-          tags: [],
           status: "ACTIVE",
         }}
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Adicionar etiqueta" }),
-    );
-    expect(await screen.findByPlaceholderText("Buscar etiqueta")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Respondeu" }));
-
-    expect(onAddTag).toHaveBeenCalledWith({
-      color: "var(--color-blue-start)",
-      name: "Respondeu",
-    });
+    expect(screen.getByTestId("stage-chip")).toHaveTextContent("Em negociação");
   });
 
   it("does not show human attendance badges in the chat header", () => {
@@ -144,15 +117,12 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead={false}
         canScheduleMessages={false}
-        canTagSessions={false}
         canToggleIntervention={false}
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -177,16 +147,13 @@ describe("CrmConversationHeader", () => {
         canCloseSession
         canMarkRead
         canScheduleMessages
-        canTagSessions
         canToggleIntervention
         currentUserId="user-1"
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -227,15 +194,12 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead
         canScheduleMessages
-        canTagSessions
         canToggleIntervention={false}
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={onMarkUnread}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={onScheduleMessage}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -262,9 +226,6 @@ describe("CrmConversationHeader", () => {
     expect(menu).toContainElement(
       screen.getByRole("menuitem", { name: "Abrir lead vinculado" }),
     );
-    expect(menu).toContainElement(
-      screen.getByRole("menuitem", { name: "Adicionar etiqueta" }),
-    );
 
     await user.click(
       screen.getByRole("menuitem", { name: "Agendar mensagem WhatsApp" }),
@@ -283,15 +244,12 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead
         canScheduleMessages={false}
-        canTagSessions={false}
         canToggleIntervention={false}
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{
@@ -332,15 +290,12 @@ describe("CrmConversationHeader", () => {
         canCloseSession={false}
         canMarkRead
         canScheduleMessages={false}
-        canTagSessions={false}
         canToggleIntervention={false}
-        onAddTag={vi.fn(async () => false)}
         onAssign={vi.fn()}
         onClose={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
-        onRemoveTag={vi.fn(async () => false)}
         onScheduleMessage={vi.fn()}
         onToggleIntervention={vi.fn()}
         cycle={{

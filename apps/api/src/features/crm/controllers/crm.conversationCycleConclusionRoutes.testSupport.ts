@@ -113,7 +113,6 @@ function createCycle(id: string, leadId: string): CrmConversationCycle {
     pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
-    tags: [],
     source: "manual",
     status: "ACTIVE",
     storeId,

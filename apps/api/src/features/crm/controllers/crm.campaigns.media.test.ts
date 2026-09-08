@@ -20,7 +20,7 @@ describe("CRM campaigns with media", () => {
     });
 
     const app = createCampaignTestApp(conversationRepository, undefined, {
-      putObject,
+      crmMediaStorage: { putObject },
     });
 
     // Valid PNG header base64
@@ -75,7 +75,7 @@ describe("CRM campaigns with media", () => {
     const app = createCampaignTestApp(
       createMemoryCrmConversationRepository(),
       undefined,
-      { putObject },
+      { crmMediaStorage: { putObject } },
     );
     const pngHeader = Buffer.from([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -99,7 +99,9 @@ describe("CRM campaigns with media", () => {
     const repository = createMemoryCrmConversationRepository();
     const cycle = await seedCycle(repository, "5511999999902");
     const putObject = vi.fn();
-    const app = createCampaignTestApp(repository, undefined, { putObject });
+    const app = createCampaignTestApp(repository, undefined, {
+      crmMediaStorage: { putObject },
+    });
     const pngHeader = Buffer.from([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]).toString("base64");
@@ -123,7 +125,9 @@ describe("CRM campaigns with media", () => {
     const repository = createMemoryCrmConversationRepository();
     const cycle = await seedCycle(repository, "5511999999903");
     const putObject = vi.fn();
-    const app = createCampaignTestApp(repository, undefined, { putObject });
+    const app = createCampaignTestApp(repository, undefined, {
+      crmMediaStorage: { putObject },
+    });
 
     const response = await app.request(
       "/api/v1/crm/campaigns",
@@ -156,13 +160,11 @@ describe("CRM campaigns with media", () => {
         }
       }),
     };
-    const app = createCampaignTestApp(
-      repository,
-      undefined,
-      { deleteObject, putObject },
+    const app = createCampaignTestApp(repository, undefined, {
       audit,
-      "required",
-    );
+      auditFailureTier: "required",
+      crmMediaStorage: { deleteObject, putObject },
+    });
     const pngHeader = Buffer.from([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]).toString("base64");

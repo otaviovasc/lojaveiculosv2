@@ -3,6 +3,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 export const crmExternalBotIntegrationProvider = "crm_external_bot";
 
 export type CrmExternalBotIntegration = {
+  apiTokenConfigured: boolean;
   createdAt: Date | null;
   enabled: boolean;
   id: string | null;
@@ -31,8 +32,13 @@ export type FindCrmExternalBotIntegrationBySecretHashInput = {
   webhookSecretHash: string;
 };
 
+export type FindCrmExternalBotIntegrationByApiTokenHashInput = {
+  apiTokenHash: string;
+};
+
 export type UpsertCrmExternalBotIntegrationInput =
   FindCrmExternalBotIntegrationInput & {
+    apiTokenHash?: string | null;
     enabled: boolean;
     secretUpdatedAt?: Date | null;
     webhookSecretHash?: string | null;
@@ -43,6 +49,9 @@ export type UpsertCrmExternalBotIntegrationInput =
 export type CrmExternalBotIntegrationRepository = {
   findExternalBotIntegration: (
     input: FindCrmExternalBotIntegrationInput,
+  ) => Promise<CrmExternalBotIntegration | null>;
+  findExternalBotIntegrationByApiTokenHash: (
+    input: FindCrmExternalBotIntegrationByApiTokenHashInput,
   ) => Promise<CrmExternalBotIntegration | null>;
   findExternalBotIntegrationsBySecretHash: (
     input: FindCrmExternalBotIntegrationBySecretHashInput,

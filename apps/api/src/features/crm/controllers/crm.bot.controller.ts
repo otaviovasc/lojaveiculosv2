@@ -60,6 +60,7 @@ export function registerExternalBotRoutes(
       const serviceContext = await options.createContext(context);
       assertExternalBotManage(serviceContext);
       const update: UpdateExternalBotIntegrationInput = {};
+      if (input.apiToken !== undefined) update.apiToken = input.apiToken;
       if (input.enabled !== undefined) update.enabled = input.enabled;
       if (input.webhookSecret !== undefined) {
         update.webhookSecret = input.webhookSecret;

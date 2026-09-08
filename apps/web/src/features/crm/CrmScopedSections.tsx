@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { CrmConversationApi } from "./crmConversationApi";
 import type { ProductCrmApi } from "./productCrmApi";
 import { CrmCampaignsPage } from "./CrmCampaignsPage";
@@ -19,6 +19,10 @@ import {
 } from "./crmScopedCache";
 import type { useCrmInbox } from "./useCrmInbox";
 import { readCrmConnectionCapabilities } from "./crmProviderCapabilities";
+import { useOptionalAccountSession } from "../account/accountSession";
+import { readSessionActiveStore } from "../account/sessionPermissions";
+import { useCrmPipelines } from "./useCrmPipelines";
+import type { CrmCampaignStageOption } from "./CrmCampaignsPageSupport";
 
 type InboxState = ReturnType<typeof useCrmInbox>;
 
@@ -43,6 +47,23 @@ export function CrmCampaignsSection({
   const campaignConnection = inbox.activeConnection;
   const campaignCapabilities =
     readCrmConnectionCapabilities(campaignConnection);
+  const accountSession = useOptionalAccountSession();
+  const storeId = readSessionActiveStore(accountSession)?.storeId ?? "";
+  const { pipelines } = useCrmPipelines(storeId, leadApi);
+  const stageOptions = useMemo<CrmCampaignStageOption[]>(
+    () =>
+      pipelines.flatMap((pipeline) =>
+        pipeline.stages.map((stage) => ({
+          color: stage.color,
+          label:
+            pipelines.length > 1
+              ? `${pipeline.name} · ${stage.name}`
+              : stage.name,
+          value: stage.id,
+        })),
+      ),
+    [pipelines],
+  );
   return (
     <CrmCampaignsPage
       campaignConnectionKey={inbox.connectionId}
@@ -60,7 +81,7 @@ export function CrmCampaignsSection({
       onPauseCampaign={api.pauseCampaign}
       onResumeCampaign={api.resumeCampaign}
       conversationCycles={inbox.conversationCycles}
-      tags={inbox.availableTags}
+      stageOptions={stageOptions}
     />
   );
 }
@@ -127,6 +148,7 @@ export function CrmSchedulesSection({
       canProcess={inbox.permissions.canScheduleProcess}
       canRead={inbox.permissions.canScheduleRead}
       connectionId={inbox.connectionId}
+      connections={inbox.connections}
       error={inbox.scheduledMessagesError}
       {...(initialMessages ? { initialMessages } : {})}
       onCancel={inbox.cancelScheduledMessage}

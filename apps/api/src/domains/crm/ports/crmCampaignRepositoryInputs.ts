@@ -7,14 +7,14 @@ import type {
 export type CreateCrmCampaignInput = {
   content: string;
   createdByUserId?: UserId | null;
-  initialTagId?: string | null;
+  initialStageId?: string | null;
   intervalMinutes: number;
   mediaType?: string | null;
   mediaUrl?: string | null;
   metadata?: Record<string, unknown>;
   name: string;
   repliedCount?: number;
-  replyTagId?: string | null;
+  replyStageId?: string | null;
   scheduledCount: number;
   scheduledEndAt: Date;
   scheduledStartAt: Date;

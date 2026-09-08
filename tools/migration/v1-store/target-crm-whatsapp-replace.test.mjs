@@ -17,7 +17,6 @@ test("deletes canonical conversation dependents before core rows", () => {
     "crm_scheduled_messages",
     "crm_campaign_recipients",
     "crm_campaigns",
-    "crm_conversation_thread_tags",
     "crm_conversation_command_receipts",
     "crm_conversation_attendance_events",
     "crm_messages",

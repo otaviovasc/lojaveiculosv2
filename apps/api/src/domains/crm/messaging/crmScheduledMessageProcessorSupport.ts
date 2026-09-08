@@ -1,3 +1,4 @@
+import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type {
   CrmConversationRepository,
   CrmScheduledMessage,
@@ -11,6 +12,7 @@ import {
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
 
 export async function finishCampaignBookkeeping(
+  context: ServiceContext,
   scheduled: CrmScheduledMessage,
   input: { errorMessage?: string; sentAt?: Date; sentMessageId?: string },
   repository: CrmConversationRepository,
@@ -20,6 +22,7 @@ export async function finishCampaignBookkeeping(
   const ownerToken = readScheduledClaimToken(scheduled.metadata);
   try {
     const campaign = await recordCampaignScheduledSendResult(
+      context,
       scheduled,
       input,
       ports,

@@ -3,6 +3,7 @@ import { ChatHeader, MessageComposer } from "./CrmConversationParts";
 import { MessageList } from "./CrmMessageParts";
 import { CrmQueueToolbar } from "./CrmQueueToolbar";
 import { CrmQueueBulkBar } from "./CrmQueueBulkBar";
+import { CrmConversationStageChip } from "./CrmConversationStageChip";
 import { CrmReadOnlyComposer } from "./CrmReadOnlyComposer";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
 import {
@@ -11,6 +12,7 @@ import {
   CrmWorkspaceOverlays,
   useCrmWorkspaceShellEvents,
 } from "./CrmConversationWorkspaceParts";
+import type { ProductCrmApi } from "./productCrmApi";
 import type { useCrmInbox } from "./useCrmInbox";
 import type {
   CrmConversationCycle,
@@ -26,6 +28,7 @@ import { isUiDemoConnection } from "./crmConnectionSelection";
 export function CrmConversationWorkspace({
   hideQueue,
   inbox,
+  leadApi,
   onCycleChange,
   onScopeChange,
   onStartSale,
@@ -33,6 +36,7 @@ export function CrmConversationWorkspace({
 }: {
   hideQueue?: boolean;
   inbox: ReturnType<typeof useCrmInbox>;
+  leadApi: ProductCrmApi;
   onCycleChange: (cycleId: CrmConversationCycleId | null) => void;
   onScopeChange: (scope: CrmScope) => void;
   onStartSale?: ((cycle: CrmConversationCycle) => void) | undefined;
@@ -198,14 +202,12 @@ export function CrmConversationWorkspace({
           <CrmQueueToolbar
             archivedOnly={inbox.archivedOnly}
             assignableMembers={inbox.assignableMembers}
-            availableTags={inbox.availableTags}
             canAssign={inbox.permissions.canAssign}
             canReadUnassigned={inbox.permissions.canReadUnassigned}
             canManageConnections={
               inbox.permissions.canConnectionSetup ||
               inbox.permissions.canConnectionPair
             }
-            canManageTags={inbox.permissions.canTagManage}
             canStartConversation={inbox.canStartConversation}
             connectionId={inbox.connectionId}
             connectionFilterId={inbox.connectionFilterId}
@@ -215,7 +217,6 @@ export function CrmConversationWorkspace({
             onArchivedOnlyChange={inbox.setArchivedOnly}
             onHumanAttendanceFilterChange={inbox.setHumanAttendanceFilter}
             onManageConnections={() => onScopeChange("connection")}
-            onManageTags={() => onScopeChange("tags")}
             onOtherAssigneeChange={inbox.setOtherAssigneeId}
             onQuickFilterChange={inbox.setQuickFilter}
             onSearch={inbox.setSearch}
@@ -230,13 +231,11 @@ export function CrmConversationWorkspace({
                 inbox.setQuickFilter("all");
               }
             }}
-            onTagFilterToggle={inbox.toggleTagFilter}
             onUnreadOnlyChange={inbox.setUnreadOnly}
             otherAssigneeId={inbox.otherAssigneeId}
             humanAttendanceFilter={inbox.humanAttendanceFilter}
             quickFilter={inbox.quickFilter}
             search={inbox.search}
-            selectedTagIds={inbox.selectedTagIds}
             selectedCount={selectedCount}
             selectionMode={showSelectionMode}
             conversationCycleCounts={inbox.conversationCycleCounts}
@@ -249,15 +248,13 @@ export function CrmConversationWorkspace({
           >
             <CrmQueueBulkBar
               assignableMembers={inbox.assignableMembers}
-              availableTags={inbox.availableTags}
               canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
               canClose={inbox.permissions.canClose}
               canRead={inbox.permissions.canRead}
-              canTag={inbox.permissions.canTagAssign}
               onApply={inbox.actions.bulkApplySessions}
               onClear={inbox.clearSelectedSessions}
               onSelectAll={inbox.selectAllVisibleSessions}
-              selectedCount={inbox.selectedSessions.length}
+              selectedCount={selectedCount}
               visible={showSelectionMode}
             />
           </CrmQueueToolbar>
@@ -298,10 +295,8 @@ export function CrmConversationWorkspace({
                   activeSession.id,
                   activeSession.unreadCount ? "read" : "unread",
                 ),
-                tag: inbox.isSessionActionPending(activeSession.id, "tag"),
               }}
               assignableMembers={inbox.assignableMembers}
-              availableTags={inbox.availableTags}
               messages={inbox.messages}
               onInsertPrompt={(text) => composerRef.current?.insertPrompt(text)}
               canAssignSession={
@@ -314,7 +309,6 @@ export function CrmConversationWorkspace({
                 (inbox.permissions.canScheduleCreate ||
                   inbox.permissions.canScheduleRead)
               }
-              canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
               contactPresence={inbox.activeContactPresence}
@@ -326,14 +320,6 @@ export function CrmConversationWorkspace({
                       focusPane("list");
                     }
               }
-              onAddTag={async (input) => {
-                const accepted = await inbox.actions.addCycleTag(
-                  activeSession.id,
-                  input,
-                );
-                if (accepted) void inbox.refreshTags();
-                return accepted;
-              }}
               onAssign={(assignedUserId) => {
                 void inbox.actions.assignCycle(
                   activeSession.id,
@@ -351,9 +337,6 @@ export function CrmConversationWorkspace({
                 setDetailsOpen(true);
                 focusPane("context");
               }}
-              onRemoveTag={(tagId) =>
-                inbox.actions.removeCycleTag(activeSession.id, tagId)
-              }
               onScheduleMessage={() => setScheduleMessageOpen(true)}
               onScheduleVisit={() => setScheduleVisitOpen(true)}
               onToggleIntervention={() => {
@@ -362,6 +345,13 @@ export function CrmConversationWorkspace({
                   activeSession.status !== "HUMAN_TAKEOVER",
                 );
               }}
+              stageChip={
+                <CrmConversationStageChip
+                  api={leadApi}
+                  disabled={inbox.isBlockingMutation || inbox.isMutatingSession}
+                  leadId={activeSession.leadId ?? null}
+                />
+              }
               cycle={activeSession}
             />
             <MessageList
@@ -415,20 +405,11 @@ export function CrmConversationWorkspace({
                   key={`${String(activeSession.id)}:${inbox.connectionFilterId ?? activeSessionConnection?.id ?? "default"}`}
                   capabilities={providerCapabilities}
                   ref={composerRef}
-                  availableTags={inbox.availableTags}
                   canScheduleCreate={inbox.permissions.canScheduleCreate}
                   catalogUrl={inbox.catalogUrl}
                   cycle={activeSession}
                   defaultLocationName={inbox.storeLocationName}
                   disabled={inbox.isSending}
-                  onAddCycleTag={async (input) => {
-                    const accepted = await inbox.actions.addCycleTag(
-                      activeSession.id,
-                      input,
-                    );
-                    if (accepted) void inbox.refreshTags();
-                    return accepted;
-                  }}
                   onCancelReply={() => setReplyToMessage(null)}
                   onCancelScheduledMessage={(scheduledMessageId) =>
                     inbox.cancelScheduledMessage(scheduledMessageId)
@@ -438,9 +419,6 @@ export function CrmConversationWorkspace({
                   }
                   onProcessDueScheduledMessages={() =>
                     inbox.processDueScheduledMessages()
-                  }
-                  onRemoveCycleTag={(tagId) =>
-                    inbox.actions.removeCycleTag(activeSession.id, tagId)
                   }
                   onScheduleMessage={(input) =>
                     inbox.createScheduledMessage({

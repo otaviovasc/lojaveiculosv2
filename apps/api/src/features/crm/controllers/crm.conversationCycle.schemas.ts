@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  queryBooleanSchema,
-  queryUuidListSchema,
-} from "./crm.controller.querySchemas.js";
+import { queryBooleanSchema } from "./crm.controller.querySchemas.js";
 
 export const crmConversationCycleStateSchema = z.enum([
   "ACTIVE",
@@ -37,7 +34,6 @@ export const conversationCyclesQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
   cycleId: z.string().uuid().optional(),
   status: crmConversationCycleStateSchema.optional(),
-  tagIds: queryUuidListSchema,
   unreadOnly: queryBooleanSchema.optional(),
 });
 

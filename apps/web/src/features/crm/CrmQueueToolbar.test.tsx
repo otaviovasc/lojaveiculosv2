@@ -9,7 +9,6 @@ import type {
   CrmAssignableMember,
   CrmProviderConnection,
   CrmConversationCycleCounts,
-  CrmTag,
 } from "./crmConversationTypes";
 
 describe("CrmQueueToolbar", () => {
@@ -28,29 +27,24 @@ describe("CrmQueueToolbar", () => {
       onSelectionModeChange: vi.fn(),
       onStartConversation: vi.fn(),
       onStatusFilterChange: vi.fn(),
-      onTagFilterToggle: vi.fn(),
       onUnreadOnlyChange: vi.fn(),
     };
 
     render(
       <CrmQueueToolbar
-        availableTags={createTags()}
         canAssign
         canManageConnections
-        canManageTags
         canStartConversation
         connectionFilterId={null}
         connectionId="connection_1"
         connections={createConnections()}
         onManageConnections={vi.fn()}
-        onManageTags={vi.fn()}
         assignableMembers={createAssignableMembers()}
         currentUserId="user_current"
         humanAttendanceFilter=""
         otherAssigneeId={null}
         quickFilter="fresh"
         search=""
-        selectedTagIds={["tag_hot"]}
         selectedCount={0}
         selectionMode={false}
         sessionCount={3}
@@ -117,34 +111,6 @@ describe("CrmQueueToolbar", () => {
       "connection_2",
     );
 
-    const tagsTrigger = screen.getByRole("button", { name: /Etiquetas/ });
-    await user.click(tagsTrigger);
-    const tagsMenu = screen.getByRole("menu", {
-      name: "Filtrar por etiquetas",
-    });
-    expect(tagsTrigger).toHaveAttribute("aria-controls", tagsMenu.id);
-    expect(
-      within(tagsMenu).getByRole("group", { name: "Etiquetas disponíveis" }),
-    ).toBeInTheDocument();
-    const hotTag = within(tagsMenu).getByRole("menuitemcheckbox", {
-      name: "Quente",
-    });
-    expect(hotTag).toHaveFocus();
-    await user.click(hotTag);
-    expect(callbacks.onTagFilterToggle).toHaveBeenCalledWith("tag_hot");
-    expect(hotTag).toHaveAttribute("aria-checked", "true");
-    await user.keyboard("{ArrowDown}");
-    expect(
-      within(tagsMenu).getByRole("menuitemcheckbox", {
-        name: "Financiamento",
-      }),
-    ).toHaveFocus();
-    await user.keyboard("{Escape}");
-    expect(
-      screen.queryByRole("menu", { name: "Filtrar por etiquetas" }),
-    ).toBeNull();
-    expect(tagsTrigger).toHaveFocus();
-
     const othersTrigger = screen.getByRole("button", { name: /Outros/ });
     await user.click(othersTrigger);
     const assignees = screen.getByRole("listbox", {
@@ -177,10 +143,8 @@ describe("CrmQueueToolbar", () => {
     render(
       <CrmQueueToolbar
         assignableMembers={createAssignableMembers()}
-        availableTags={[]}
         canAssign={false}
         canManageConnections={false}
-        canManageTags={false}
         canStartConversation={false}
         connectionFilterId={null}
         connectionId="connection_1"
@@ -190,20 +154,17 @@ describe("CrmQueueToolbar", () => {
         onConnectionFilterChange={vi.fn()}
         onHumanAttendanceFilterChange={vi.fn()}
         onManageConnections={vi.fn()}
-        onManageTags={vi.fn()}
         onOtherAssigneeChange={vi.fn()}
         onQuickFilterChange={vi.fn()}
         onSearch={vi.fn()}
         onSelectionModeChange={vi.fn()}
         onStartConversation={vi.fn()}
         onStatusFilterChange={vi.fn()}
-        onTagFilterToggle={vi.fn()}
         onUnreadOnlyChange={vi.fn()}
         otherAssigneeId={null}
         quickFilter="mine"
         search=""
         selectedCount={0}
-        selectedTagIds={[]}
         selectionMode={false}
         sessionCount={2}
         conversationCycleCounts={createCounts()}
@@ -227,10 +188,8 @@ describe("CrmQueueToolbar", () => {
       <CrmQueueToolbar
         archivedOnly
         assignableMembers={[]}
-        availableTags={[]}
         canAssign={false}
         canManageConnections={false}
-        canManageTags={false}
         canStartConversation={false}
         connectionFilterId={null}
         connectionId="connection_1"
@@ -241,20 +200,17 @@ describe("CrmQueueToolbar", () => {
         onConnectionFilterChange={vi.fn()}
         onHumanAttendanceFilterChange={vi.fn()}
         onManageConnections={vi.fn()}
-        onManageTags={vi.fn()}
         onOtherAssigneeChange={vi.fn()}
         onQuickFilterChange={vi.fn()}
         onSearch={vi.fn()}
         onSelectionModeChange={vi.fn()}
         onStartConversation={vi.fn()}
         onStatusFilterChange={vi.fn()}
-        onTagFilterToggle={vi.fn()}
         onUnreadOnlyChange={vi.fn()}
         otherAssigneeId={null}
         quickFilter="mine"
         search=""
         selectedCount={0}
-        selectedTagIds={[]}
         selectionMode={false}
         sessionCount={2}
         conversationCycleCounts={createCounts()}
@@ -271,10 +227,8 @@ describe("CrmQueueToolbar", () => {
       <CrmQueueToolbar
         archivedOnly={false}
         assignableMembers={[]}
-        availableTags={[]}
         canAssign={false}
         canManageConnections={false}
-        canManageTags={false}
         canStartConversation={false}
         connectionFilterId={null}
         connectionId="connection_1"
@@ -285,20 +239,17 @@ describe("CrmQueueToolbar", () => {
         onConnectionFilterChange={vi.fn()}
         onHumanAttendanceFilterChange={vi.fn()}
         onManageConnections={vi.fn()}
-        onManageTags={vi.fn()}
         onOtherAssigneeChange={vi.fn()}
         onQuickFilterChange={vi.fn()}
         onSearch={vi.fn()}
         onSelectionModeChange={vi.fn()}
         onStartConversation={vi.fn()}
         onStatusFilterChange={vi.fn()}
-        onTagFilterToggle={vi.fn()}
         onUnreadOnlyChange={vi.fn()}
         otherAssigneeId={null}
         quickFilter="mine"
         search=""
         selectedCount={0}
-        selectedTagIds={[]}
         selectionMode={false}
         sessionCount={2}
         conversationCycleCounts={createCounts()}
@@ -316,10 +267,8 @@ describe("CrmQueueToolbar", () => {
     render(
       <CrmQueueToolbar
         assignableMembers={createAssignableMembers()}
-        availableTags={[]}
         canAssign={false}
         canManageConnections={false}
-        canManageTags={false}
         canReadUnassigned
         canStartConversation={false}
         connectionFilterId={null}
@@ -330,20 +279,17 @@ describe("CrmQueueToolbar", () => {
         onConnectionFilterChange={vi.fn()}
         onHumanAttendanceFilterChange={vi.fn()}
         onManageConnections={vi.fn()}
-        onManageTags={vi.fn()}
         onOtherAssigneeChange={vi.fn()}
         onQuickFilterChange={vi.fn()}
         onSearch={vi.fn()}
         onSelectionModeChange={vi.fn()}
         onStartConversation={vi.fn()}
         onStatusFilterChange={vi.fn()}
-        onTagFilterToggle={vi.fn()}
         onUnreadOnlyChange={vi.fn()}
         otherAssigneeId={null}
         quickFilter="fresh"
         search=""
         selectedCount={0}
-        selectedTagIds={[]}
         selectionMode={false}
         sessionCount={2}
         conversationCycleCounts={createCounts()}
@@ -437,17 +383,6 @@ function createConnection(
     isDefault: id === "connection_1",
     webhookUrl: null,
   };
-}
-
-function createTags(): CrmTag[] {
-  return [
-    { color: "var(--color-danger)", id: "tag_hot", name: "Quente" },
-    {
-      color: "var(--color-accent)",
-      id: "tag_financing",
-      name: "Financiamento",
-    },
-  ];
 }
 
 function createAssignableMembers(): CrmAssignableMember[] {

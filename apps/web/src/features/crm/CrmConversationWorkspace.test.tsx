@@ -88,6 +88,9 @@ vi.mock("./CrmMessageParts", () => ({
     );
   },
 }));
+vi.mock("./CrmConversationStageChip", () => ({
+  CrmConversationStageChip: () => null,
+}));
 vi.mock("./CrmQueueToolbar", () => ({
   CrmQueueToolbar: ({ children }: { children?: ReactNode }) => <>{children}</>,
 }));
@@ -98,7 +101,6 @@ vi.mock("./CrmConversationCycleList", () => ({
     </button>
   ),
 }));
-vi.mock("./CrmQueueBulkBar", () => ({ CrmQueueBulkBar: () => null }));
 vi.mock("./CrmReadOnlyComposer", () => ({
   CrmReadOnlyComposer: ({
     actionLabel,
@@ -133,6 +135,7 @@ vi.mock("./CrmConversationCycleDetailsPanel", () => ({
 }));
 
 describe("CrmConversationWorkspace conclusion", () => {
+  const leadApi = createLeadApi();
   beforeEach(() => {
     vi.stubGlobal("crypto", { randomUUID: vi.fn(() => "command-workspace") });
   });
@@ -148,6 +151,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     const closeCycle = vi.fn(async () => true);
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={createInbox({ closeCycle, concludeCycle })}
         onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
@@ -172,6 +176,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     const user = userEvent.setup();
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={createInbox({
           closeCycle: vi.fn(async () => true),
           concludeCycle: vi.fn(async () => true),
@@ -222,6 +227,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     } as unknown as ReturnType<typeof useCrmInbox>;
     const rendered = render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={firstInbox}
         onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
@@ -240,6 +246,7 @@ describe("CrmConversationWorkspace conclusion", () => {
 
     rendered.rerender(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={{
           ...firstInbox,
           connectionFilterId: "connection-2",
@@ -261,6 +268,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     const onCycleChange = vi.fn();
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={createInbox({
           closeCycle: vi.fn(async () => true),
           concludeCycle: vi.fn(async () => true),
@@ -295,6 +303,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     } as unknown as ReturnType<typeof useCrmInbox>;
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={inbox}
         onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
@@ -323,6 +332,7 @@ describe("CrmConversationWorkspace conclusion", () => {
   it("passes verified active-contact presence to the conversation header", () => {
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={
           {
             ...createInbox({
@@ -355,6 +365,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     } as unknown as ReturnType<typeof useCrmInbox>;
     const rendered = render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={editableInbox}
         onCycleChange={vi.fn()}
         onScopeChange={vi.fn()}
@@ -369,6 +380,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     search.focus();
     rendered.rerender(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={{
           ...editableInbox,
           activeSession: { ...editableInbox.activeSession!, id: "cycle-2" },
@@ -385,6 +397,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     prompt.focus();
     rendered.rerender(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={{
           ...editableInbox,
           activeSession: { ...editableInbox.activeSession!, id: "cycle-3" },
@@ -406,6 +419,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     });
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={
           {
             ...baseInbox,
@@ -451,6 +465,7 @@ describe("CrmConversationWorkspace conclusion", () => {
 
     render(
       <CrmConversationWorkspace
+        leadApi={leadApi}
         inbox={
           {
             ...inbox,
@@ -526,14 +541,12 @@ function createInbox({
 }) {
   return {
     actions: {
-      addCycleTag: vi.fn(async () => false),
       assignCycle: vi.fn(async () => false),
       bulkApplySessions: vi.fn(async () => false),
       closeCycle,
       concludeCycle,
       markCycleRead: vi.fn(async () => false),
       markCycleUnread: vi.fn(async () => false),
-      removeCycleTag: vi.fn(async () => false),
       toggleIntervention: vi.fn(async () => false),
     },
     activeSession: {
@@ -552,7 +565,6 @@ function createInbox({
     },
     activeCycleId: "cycle-1",
     assignableMembers: [],
-    availableTags: [],
     canAssignSessions: true,
     canSendText: false,
     canStartConversation: false,
@@ -580,15 +592,12 @@ function createInbox({
       canScheduleCreate: false,
       canScheduleRead: false,
       canSend: false,
-      canTagAssign: false,
-      canTagManage: false,
       canToggleIntervention: false,
     },
     quickFilter: "all",
     search: "",
     selectedCycleIds: new Set(),
     selectedSessions: [],
-    selectedTagIds: [],
     conversationCycleCounts: null,
     conversationCycles: [],
     setActiveCycleId: vi.fn(),
@@ -601,7 +610,16 @@ function createInbox({
     setUnreadOnly: vi.fn(),
     statusFilter: "ACTIVE",
     toggleSelectedSession: vi.fn(),
-    toggleTagFilter: vi.fn(),
     unreadOnly: false,
   } as unknown as ReturnType<typeof useCrmInbox>;
+}
+
+function createLeadApi() {
+  return {
+    getLead: vi.fn(async () => {
+      throw new Error("not found");
+    }),
+    listPipelines: vi.fn(async () => []),
+    moveLeadPipelineStage: vi.fn(),
+  } as unknown as ComponentProps<typeof CrmConversationWorkspace>["leadApi"];
 }

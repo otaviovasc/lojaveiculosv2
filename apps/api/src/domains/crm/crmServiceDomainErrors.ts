@@ -39,3 +39,10 @@ export class CrmVisitVehicleNotFoundError extends Error {
     this.name = "CrmVisitVehicleNotFoundError";
   }
 }
+
+export class CrmPipelineNoOpenStageError extends Error {
+  constructor() {
+    super("Default CRM pipeline must contain an open stage.");
+    this.name = "CrmPipelineNoOpenStageError";
+  }
+}

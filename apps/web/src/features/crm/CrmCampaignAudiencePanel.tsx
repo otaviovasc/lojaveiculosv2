@@ -6,7 +6,7 @@ import type {
 } from "./crmCampaignSources";
 import { formatCycleName } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
-import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
+import type { CrmConversationCycle } from "./crmConversationTypes";
 
 export function CampaignAudiencePanel({
   audienceSource,
@@ -19,11 +19,8 @@ export function CampaignAudiencePanel({
   onLeadFiltersChange,
   onQueryChange,
   onSelectVisible,
-  onTagChange,
   onToggleSession,
   query,
-  selectedTagId,
-  tags,
   withoutSessionCount,
 }: {
   audienceSource: CampaignAudienceSource;
@@ -36,11 +33,8 @@ export function CampaignAudiencePanel({
   onLeadFiltersChange: (value: CampaignLeadFilters) => void;
   onQueryChange: (value: string) => void;
   onSelectVisible: () => void;
-  onTagChange: (value: string) => void;
   onToggleSession: (cycleId: string) => void;
   query: string;
-  selectedTagId: string;
-  tags: CrmTag[];
   withoutSessionCount: number;
 }) {
   return (
@@ -64,10 +58,7 @@ export function CampaignAudiencePanel({
         onAudienceSourceChange={onAudienceSourceChange}
         onLeadFiltersChange={onLeadFiltersChange}
         onQueryChange={onQueryChange}
-        onTagChange={onTagChange}
         query={query}
-        selectedTagId={selectedTagId}
-        tags={tags}
       />
       {audienceSource === "leads" ? (
         <p className="crm-campaign-audience-summary">

@@ -27,6 +27,7 @@ export const leadSourceSchema = z.enum([
   "public_site",
   "crm",
   "external_api",
+  "instagram",
   "manual",
   "olx",
   "whatsapp",
@@ -107,6 +108,7 @@ export const createLeadSchema = z.object({
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   listingId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  pipelineStageId: z.string().uuid().optional(),
   source: leadSourceSchema.default("manual"),
 });
 

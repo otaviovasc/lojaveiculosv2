@@ -12,7 +12,6 @@ import {
   conversationCommandResult,
   conversationCycles,
   conversationThreads,
-  conversationThreadTags,
   crmLeadOutcomes,
   crmWebhookEffectOutbox,
   crmCampaignRecipients,
@@ -107,19 +106,7 @@ describe("canonical CRM operational schema", () => {
     expect(crmMessageOrigin.enumValues).toContain("human_channel");
   });
 
-  it("provides scoped thread tags and idempotent cycle command receipts", () => {
-    expect(getTableConfig(conversationThreadTags).name).toBe(
-      "crm_conversation_thread_tags",
-    );
-    expect(columnNames(conversationThreadTags)).toEqual(
-      expect.arrayContaining([
-        "id",
-        "tenant_id",
-        "store_id",
-        "thread_id",
-        "tag_id",
-      ]),
-    );
+  it("provides idempotent cycle command receipts", () => {
     expect(getTableConfig(conversationCommandReceipts).name).toBe(
       "crm_conversation_command_receipts",
     );
@@ -344,7 +331,8 @@ describe("canonical CRM operational schema", () => {
     expect(crmSeed).toContain("INSERT INTO crm_conversation_cycles");
     expect(crmSeed).toContain("INSERT INTO crm_conversation_attendances");
     expect(crmSeed).toContain("INSERT INTO crm_messages");
-    expect(crmSeed).toContain("INSERT INTO crm_conversation_thread_tags");
+    expect(crmSeed).not.toContain("crm_conversation_thread_tags");
+    expect(crmSeed).not.toContain("crm_tags");
     expect(crmSeed).not.toMatch(
       /crm_whatsapp_(?:sessions|messages|session_tags)/u,
     );

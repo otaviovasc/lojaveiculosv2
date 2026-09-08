@@ -27,7 +27,6 @@ export type ListConversationCyclesInput = {
   search?: string;
   cycleId?: string;
   status?: CrmConversationCycleStatus;
-  tagIds?: string[];
   unreadOnly?: boolean;
 };
 

@@ -9,10 +9,7 @@ control dashboards remain useful context:
 - `v2-plan.html`
 - `docs/migration.md`
 
-When they conflict, this file wins for CRM migration work. Known stale HTML
-detail: `v2-backend-doc.html` still mentions a CRM tag column flag in one
-schema note. V2 tags are conversation labels; there is no `isColumn` pipeline
-meaning in the active contract.
+When they conflict, this file wins for CRM migration work.
 
 ## Canonical Runtime Model
 
@@ -33,7 +30,7 @@ bot integration; bot policy and actions remain separate from provider routing.
 
 - V2 owns the migrated messaging runtime: contacts, conversation threads,
   conversation cycles, attendances, messages, sends, ZAPI and
-  signed Meta webhooks, ticketed SSE, tags, quick messages, catalog sends,
+  signed Meta webhooks, ticketed SSE, quick messages, catalog sends,
   vehicle sends, assignment, read/unread state, intervention state, scheduled
   one-off messages, and failed provider-event retry.
 - Repasses repos are behavior references and future import sources only. Do not
@@ -154,7 +151,7 @@ attendances, and messages.
 - `DELETE /crm/whatsapp/messages/:messageId/reaction`
 - `DELETE /crm/whatsapp/messages/:messageId`
   `GET /crm/conversation-cycles` supports store-scoped filters for connection,
-  lead, status, assignment, tags, search, unread-only, human attendance state,
+  lead, status, assignment, search, unread-only, human attendance state,
   limit, and offset. Lead detail screens resolve existing conversations through
   `leadId` before creating a new conversation.
 
@@ -194,7 +191,7 @@ State transitions are server-owned:
 `GET /crm/conversation-cycles` accepts `humanAttendanceState` as a composable
 filter. `GET /crm/conversation-cycles/counts` returns counts for both attendance
 states; counts apply the same tenant/store scope and all other active filters
-(connection, lead, status, assignment, tags, search, and unread state). The
+(connection, lead, status, assignment, search, and unread state). The
 attendance filters are mutually exclusive in the UI, but are not allowed to
 drop the other filters.
 
@@ -243,18 +240,6 @@ ZAPI automatic webhook configuration derives its callback origin only from the
 server-owned `API_BASE_URL`; request `Host` and forwarded-host values cannot
 redirect the shared webhook token. Non-local environments require a valid
 public HTTPS API base URL.
-
-### Tags
-
-- `GET /crm/tags`
-- `POST /crm/tags`
-- `PATCH /crm/tags/reorder`
-- `PATCH /crm/tags/:tagId`
-- `DELETE /crm/tags/:tagId`
-- `POST /crm/conversation-cycles/:cycleId/tags`
-- `DELETE /crm/conversation-cycles/:cycleId/tags/:tagId`
-
-Tags are plain WhatsApp labels. They are not pipeline columns.
 
 ### Pipeline
 
@@ -386,8 +371,6 @@ Use these canonical permissions for new CRM work:
 - `crm.conversations.manage`
 - `crm.messages.ingest`
 - `crm.messages.send`
-- `crm.tags.manage`
-- `crm.tags.assign`
 - `crm.scheduled_messages.read`
 - `crm.scheduled_messages.create`
 - `crm.scheduled_messages.cancel`
@@ -405,7 +388,7 @@ Use these canonical permissions for new CRM work:
 - `crm.visits.manage`
 
 Phase 1 normalized the permission catalog, bootstrap capability reader, test
-contexts, scheduled-message worker, and current tag/schedule/connection service
+contexts, scheduled-message worker, and current schedule/connection service
 checks to these names. Feature workers must not invent alternate spellings.
 
 The provider-specific `crm.whatsapp.*` permission vocabulary is historical
@@ -435,7 +418,6 @@ Current canonical tables:
 - `crm_conversation_cycles`
 - `crm_conversation_attendances`
 - `crm_messages`
-- `crm_tags` and the canonical thread/tag join
 - `crm_quick_messages`
 - `crm_outbound_intents`
 - `crm_scheduled_messages`
@@ -467,7 +449,6 @@ WhatsApp scoped nav:
 - Visitas
 - Campanhas
 - Integracoes
-- Tags
 
 The scoped nav must be compact, without tab subtitles. Badges are only for
 useful counts. Connection state is a small indicator, not descriptive tab copy.
