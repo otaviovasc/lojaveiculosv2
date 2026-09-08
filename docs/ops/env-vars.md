@@ -507,3 +507,26 @@ closed rather than falling back to the legacy webhook dispatcher.
 Inbound bearer hashes are stored per scoped integration account in
 `externalBotApiBearerHash`; plaintext bearer values and global tenant/store
 bindings are not runtime variables.
+
+### External bot document delivery
+
+`crm:bot:events:process` also requires `AUDIT_DATABASE_URL` and the API's R2
+configuration to recover document media and issue audited download links. Uazapi
+recovery uses the same server-owned connection credentials and gateway runtime
+configuration as the API. No new provider credentials are accepted from events.
+
+Document delivery uses the existing durable event outbox. Failed recovery is
+released for another attempt after five seconds, while the original grant is
+valid. Grant expiry remains terminal; the worker never renews or extends a grant
+implicitly. Historical delivered events are not replayed. This worker still
+requires explicit deployment; this change does not provision a Railway service.
+
+The signed event envelope may include a server-generated `document` object with
+`messageRef`, `downloadUrl`, `expiresAt`, and `contentType`. The bot should fetch
+`document.downloadUrl` before `document.expiresAt`. This URL is generated for each
+delivery attempt and is not persisted in the event payload. The free-form
+`payload` continues to reject URLs and unapproved fields. Media must be stored
+successfully before the worker issues the link; provider URLs are not delivered
+as fallback. Access issuance is audited without logging the URL or document
+contents, and rechecks integration enablement, store/thread scope, human
+attendance, and kill switches after media recovery.

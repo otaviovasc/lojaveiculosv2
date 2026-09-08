@@ -77,6 +77,7 @@ export async function mirrorZapiWhatsappMedia(
     const body = remoteMedia.body;
 
     const stored = await input.storage.putObject({
+      idempotencyKey: input.externalId,
       body,
       contentType,
       fileName: readMediaFileName(input, contentType),
