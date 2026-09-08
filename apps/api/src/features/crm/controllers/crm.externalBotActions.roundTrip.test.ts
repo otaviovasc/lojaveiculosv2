@@ -106,10 +106,12 @@ describe("CRM external bot actions round trip", () => {
     const response = await postAction(app, request, apiToken);
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      actionId: expect.any(String),
-      status: "completed",
-    });
+    const body = (await response.json()) as {
+      actionId: string;
+      status: string;
+    };
+    expect(body.actionId).toBeTruthy();
+    expect(body.status).toBe("completed");
   });
 
   it("rejects a wrong Bearer token with 401 before touching the grant", async () => {
