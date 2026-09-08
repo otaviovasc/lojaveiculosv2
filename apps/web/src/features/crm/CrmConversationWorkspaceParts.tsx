@@ -18,6 +18,7 @@ import type {
   CrmConversationCycle,
   CrmConversationCycleId,
 } from "./crmConversationTypes";
+import { formatCycleName } from "./crmConversationModel";
 
 const CrmScheduleMessageDialog = lazy(() =>
   import("./CrmScheduleMessageDialog").then((module) => ({
@@ -27,6 +28,11 @@ const CrmScheduleMessageDialog = lazy(() =>
 const CrmVisitSessionDialog = lazy(() =>
   import("./CrmVisitSessionDialog").then((module) => ({
     default: module.CrmVisitSessionDialog,
+  })),
+);
+const LeadFinancingSimulationModal = lazy(() =>
+  import("./LeadFinancingSimulationModal").then((module) => ({
+    default: module.LeadFinancingSimulationModal,
   })),
 );
 
@@ -236,11 +242,13 @@ export function CrmWorkspaceOverlays({
   activeSession,
   conclusionOpen,
   deleteCycleId,
+  financingSimulationOpen,
   inbox,
   newConversationDraft,
   newConversationOpen,
   onCloseConclusion,
   onCloseDelete,
+  onCloseFinancingSimulation,
   onCloseNewConversation,
   onCloseScheduleMessage,
   onCloseScheduleVisit,
@@ -252,11 +260,13 @@ export function CrmWorkspaceOverlays({
   activeSession: CrmConversationCycle | null;
   conclusionOpen: boolean;
   deleteCycleId: CrmConversationCycleId | null;
+  financingSimulationOpen?: boolean | undefined;
   inbox: CrmInbox;
   newConversationDraft: { buyerName?: string; phone?: string } | null;
   newConversationOpen: boolean;
   onCloseConclusion: () => void;
   onCloseDelete: () => void;
+  onCloseFinancingSimulation?: (() => void) | undefined;
   onCloseNewConversation: () => void;
   onCloseScheduleMessage: () => void;
   onCloseScheduleVisit: () => void;
@@ -334,6 +344,36 @@ export function CrmWorkspaceOverlays({
             cycle={activeSession}
             listVehicles={inbox.listVehicles}
             onClose={onCloseScheduleVisit}
+          />
+        </Suspense>
+      ) : null}
+      {activeSession &&
+      financingSimulationOpen &&
+      onCloseFinancingSimulation ? (
+        <Suspense fallback={null}>
+          <LeadFinancingSimulationModal
+            onClose={onCloseFinancingSimulation}
+            prefill={{
+              ...(formatCycleName(activeSession)
+                ? { applicantName: formatCycleName(activeSession) }
+                : {}),
+              ...(activeSession.customerPhone
+                ? { phone: activeSession.customerPhone }
+                : {}),
+              ...(typeof activeSession.metadata?.cpf === "string"
+                ? { cpfCnpj: activeSession.metadata.cpf }
+                : {}),
+              ...(typeof activeSession.metadata?.email === "string"
+                ? { email: activeSession.metadata.email }
+                : {}),
+              ...(activeSession.vehicle?.title
+                ? { vehicleTitle: activeSession.vehicle.title }
+                : {}),
+              ...(activeSession.vehicle?.id
+                ? { listingId: String(activeSession.vehicle.id) }
+                : {}),
+              ...(activeSession.leadId ? { leadId: activeSession.leadId } : {}),
+            }}
           />
         </Suspense>
       ) : null}

@@ -8,8 +8,10 @@ import {
   ChevronUp,
   EllipsisVertical,
   ExternalLink,
+  Landmark,
   MailCheck,
   MailOpen,
+  Megaphone,
   Search,
   Sparkles,
   Tag,
@@ -18,6 +20,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { SiWhatsapp } from "@icons-pack/react-simple-icons";
 import {
   useEffect,
   useLayoutEffect,
@@ -34,6 +37,7 @@ import {
   formatCycleName,
 } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
+import { cleanPhoneForWhatsapp } from "./crmLeadCardBadges";
 import type {
   CrmAssignableMember,
   CrmContactPresence,
@@ -59,6 +63,7 @@ export function ChatHeader({
   onMarkRead,
   onMarkUnread,
   onOpenDetails,
+  onOpenFinancingSimulation,
   onScheduleMessage,
   onScheduleVisit,
   onToggleIntervention,
@@ -84,6 +89,7 @@ export function ChatHeader({
   onMarkRead: () => void;
   onMarkUnread: () => void;
   onOpenDetails: () => void;
+  onOpenFinancingSimulation?: (() => void) | undefined;
   onScheduleMessage: () => void;
   onScheduleVisit?: () => void;
   onToggleIntervention: () => void;
@@ -101,6 +107,8 @@ export function ChatHeader({
   const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
   const [headerQuery, setHeaderQuery] = useState("");
   const [headerIdx, setHeaderIdx] = useState(0);
+  const cleanPhone = cleanPhoneForWhatsapp(cycle.customerPhone);
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
 
   const headerResults = useMemo(() => {
     const q = headerQuery.trim().toLowerCase();
@@ -198,7 +206,22 @@ export function ChatHeader({
               )}
             </span>
             <span className="min-w-0">
-              <h3>{formatCycleName(cycle)}</h3>
+              <span className="flex items-center gap-1.5 min-w-0">
+                <h3 className="truncate">{formatCycleName(cycle)}</h3>
+                {cycle.metadata?.isAdInitiated ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 shrink-0"
+                    title={
+                      typeof cycle.metadata?.adTitle === "string"
+                        ? `Anúncio: ${cycle.metadata.adTitle}`
+                        : "Conversa iniciada por anúncio"
+                    }
+                  >
+                    <Megaphone className="size-2.5 text-indigo-500" />
+                    Ad
+                  </span>
+                ) : null}
+              </span>
               {contactPresence ? (
                 <p aria-atomic="true" role="status">
                   {contactPresence === "typing" ? "digitando…" : "online"}
@@ -258,6 +281,21 @@ export function ChatHeader({
             />
           </button>
         </div>
+        {/* Direct WhatsApp Web launcher */}
+        {whatsappUrl ? (
+          <div className="crm-header-action-group">
+            <a
+              aria-label="Abrir no WhatsApp Web"
+              className="crm-icon-action hover:text-emerald-500"
+              href={whatsappUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+              title="Abrir no WhatsApp Web"
+            >
+              <SiWhatsapp className="size-[17px] text-emerald-500" title="" />
+            </a>
+          </div>
+        ) : null}
         {canMarkRead ? (
           <div
             aria-label="Ações da conversa"
@@ -361,6 +399,36 @@ export function ChatHeader({
                 >
                   <CalendarCheck />
                   Agendar visita & test drive
+                </button>
+              ) : null}
+              {whatsappUrl ? (
+                <a
+                  className="crm-header-more-item flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] rounded-md transition-colors"
+                  href={whatsappUrl}
+                  onClick={() => setMoreActionsOpen(false)}
+                  rel="noopener noreferrer"
+                  role="menuitem"
+                  target="_blank"
+                >
+                  <SiWhatsapp
+                    className="size-3.5 text-emerald-500 shrink-0"
+                    title=""
+                  />
+                  Abrir no WhatsApp Web
+                </a>
+              ) : null}
+              {onOpenFinancingSimulation ? (
+                <button
+                  disabled={disabled}
+                  onClick={() => {
+                    setMoreActionsOpen(false);
+                    onOpenFinancingSimulation();
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <Landmark />
+                  Simulação Credere
                 </button>
               ) : null}
               {cycle.leadId ? (

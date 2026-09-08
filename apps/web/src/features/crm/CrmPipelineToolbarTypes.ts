@@ -4,6 +4,7 @@ export type CustomFilters = {
   responsavel: string[];
   semInteracao: string;
   fonte: string[];
+  veiculoId?: string | undefined;
 };
 
 export type FilterConfig = {
