@@ -32,8 +32,6 @@ export const defaultWhatsappPermissions = [
   "crm.bot.read",
   "crm.bot.manage",
   "crm.bot.proposals.decide",
-  "crm.tags.assign",
-  "crm.tags.manage",
   "crm.conversations.manage",
   "crm.pipeline.manage",
   "crm.pipeline.move",

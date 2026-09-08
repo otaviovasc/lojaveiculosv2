@@ -59,33 +59,9 @@ export function useCrmWorkspaceShellEvents(
         scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
       }
     };
-    const onToggleTag = (event: Event) => {
-      const { tagId, cycleId } = (
-        event as CustomEvent<{ tagId: string; cycleId: string }>
-      ).detail;
-      if (!tagId || !cycleId) return;
-      const target = inbox.conversationCycles.find(
-        (c) => String(c.id) === String(cycleId),
-      );
-      const hasTag = target?.tags?.some((t) => String(t.id) === String(tagId));
-      if (hasTag)
-        void inbox.actions.removeCycleTag(
-          cycleId as CrmConversationCycleId,
-          tagId,
-        );
-      else
-        void inbox.actions.addCycleTag(
-          cycleId as CrmConversationCycleId,
-          { tagId } as unknown as Parameters<
-            typeof inbox.actions.addCycleTag
-          >[1],
-        );
-    };
     window.addEventListener("crm:jump-to-message", onJump);
-    window.addEventListener("crm:toggle-tag", onToggleTag);
     return () => {
       window.removeEventListener("crm:jump-to-message", onJump);
-      window.removeEventListener("crm:toggle-tag", onToggleTag);
     };
   }, [inbox, shellRef]);
 }
@@ -293,6 +269,10 @@ export function CrmWorkspaceOverlays({
     <>
       {newConversationOpen ? (
         <CrmNewConversationDialog
+          connections={inbox.startConversationConnections}
+          defaultConnectionId={
+            inbox.connectionId === null ? null : String(inbox.connectionId)
+          }
           disabled={inbox.isStartingConversation || !inbox.canStartConversation}
           initialBuyerName={newConversationDraft?.buyerName ?? ""}
           initialPhone={newConversationDraft?.phone ?? ""}

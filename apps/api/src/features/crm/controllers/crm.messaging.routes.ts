@@ -140,6 +140,7 @@ export function registerCrmMessagingApiRoutes(
       const result = await services.startConversation(serviceContext, {
         action: input.template ? "message.send_template" : "message.send_text",
         channel: input.channel,
+        ...(input.connectionId ? { connectionId: input.connectionId } : {}),
         ...(input.customerDisplayName
           ? { customerDisplayName: input.customerDisplayName }
           : {}),

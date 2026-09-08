@@ -37,15 +37,12 @@ import type {
   CrmListCampaignsInput,
 } from "./crmCampaignTypes";
 import type {
-  CrmAddConversationCycleTagInput,
   CrmAssignConversationCycleInput,
   CrmWhatsappCatalogProductsPage,
   CrmCreateQuickMessageInput,
   CrmCreateScheduledMessageInput,
-  CrmCreateTagInput,
   CrmWhatsappListCatalogProductsInput,
   CrmListScheduledMessagesInput,
-  CrmListTagsInput,
   CrmConnectionId,
   CrmConnectionMember,
   CrmConnectionMemberRevokeResult,
@@ -63,7 +60,6 @@ import type {
   CrmProcessDueScheduledMessagesResult,
   CrmRealtimeEvent,
   CrmRealtimeStatus,
-  CrmReorderTagsInput,
   CrmRetryProviderEventResponse,
   CrmWhatsappSendLocationInput,
   CrmSendMediaInput,
@@ -83,8 +79,6 @@ import type {
   CrmScheduledMessage,
   CrmStartConversationInput,
   CrmStartConversationResult,
-  CrmTag,
-  CrmUpdateTagInput,
   CrmUpdateQuickMessageInput,
   CrmUpdateScheduledMessageInput,
   CrmWhatsappZapiPairingCode,
@@ -256,10 +250,6 @@ export type CrmConversationApi = {
 } & CrmConversationExtrasApi;
 
 export type CrmConversationExtrasApi = {
-  addCycleTag: (
-    cycleId: CrmConversationCycleId,
-    input: CrmAddConversationCycleTagInput,
-  ) => Promise<CrmConversationCycle | null>;
   cancelScheduledMessage: (
     scheduledMessageId: string,
   ) => Promise<CrmScheduledMessage | null>;
@@ -270,11 +260,9 @@ export type CrmConversationExtrasApi = {
     input: CrmCreateScheduledMessageInput,
   ) => Promise<CrmScheduledMessage>;
   createCampaign: (input: CrmCreateCampaignInput) => Promise<CrmCampaign>;
-  createTag: (input: CrmCreateTagInput) => Promise<CrmTag>;
   deleteQuickMessage: (
     quickMessageId: string,
   ) => Promise<CrmQuickMessage | null>;
-  deleteTag: (tagId: string) => Promise<CrmTag | null>;
   listCatalogProducts: (
     input: CrmWhatsappListCatalogProductsInput,
   ) => Promise<CrmWhatsappCatalogProductsPage>;
@@ -285,7 +273,6 @@ export type CrmConversationExtrasApi = {
   ) => Promise<CrmScheduledMessage[]>;
   listCampaigns: (input?: CrmListCampaignsInput) => Promise<CrmCampaign[]>;
   getCampaign: (campaignId: string) => Promise<CrmCampaignDetail>;
-  listTags: (input?: CrmListTagsInput) => Promise<CrmTag[]>;
   processDueScheduledMessages: (
     input?: CrmProcessDueScheduledMessagesInput,
   ) => Promise<CrmProcessDueScheduledMessagesResult>;
@@ -295,11 +282,6 @@ export type CrmConversationExtrasApi = {
   ) => Promise<CrmScheduledMessage>;
   cancelCampaign: (campaignId: string) => Promise<CrmCampaign>;
   pauseCampaign: (campaignId: string) => Promise<CrmCampaign>;
-  removeCycleTag: (
-    cycleId: CrmConversationCycleId,
-    tagId: string,
-  ) => Promise<CrmConversationCycle | null>;
-  reorderTags: (input: CrmReorderTagsInput) => Promise<CrmTag[]>;
   retryProviderEvent: (
     eventId: string,
   ) => Promise<CrmRetryProviderEventResponse>;
@@ -315,7 +297,6 @@ export type CrmConversationExtrasApi = {
     quickMessageId: string,
     input: CrmUpdateQuickMessageInput,
   ) => Promise<CrmQuickMessage>;
-  updateTag: (tagId: string, input: CrmUpdateTagInput) => Promise<CrmTag>;
 };
 
 export type CreateCrmConversationApiOptions = {

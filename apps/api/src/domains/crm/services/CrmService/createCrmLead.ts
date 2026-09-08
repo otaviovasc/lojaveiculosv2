@@ -10,6 +10,8 @@ import {
   type CrmServicePorts,
 } from "./serviceSupport.js";
 import { ensureLeadPipeline } from "../../pipeline/ensureLeadPipeline.js";
+import { CrmPipelineStageNotFoundError } from "../../crmServiceDomainErrors.js";
+import { getCrmPipelineRepository } from "./serviceSupport.js";
 
 const permission = "lead.create";
 
@@ -20,6 +22,7 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineStageId?: string;
   source: LeadSource;
 };
 
@@ -40,10 +43,6 @@ export async function createCrmLead(
   );
 
   const result = await runCrmTransaction(ports, async (transactionPorts) => {
-    const placement = await ensureLeadPipeline(transactionPorts, {
-      storeId: scope.storeId as never,
-      tenantId: scope.tenantId as never,
-    });
     const repository = getCrmRepository(transactionPorts);
     const existing = input.buyerPhone
       ? await repository.findLeadByPhone({
@@ -53,44 +52,74 @@ export async function createCrmLead(
         })
       : null;
     if (existing) {
+      // Reuse never relocates an existing lead: stage placement is a
+      // create-time intent, and moving stages requires the pipeline-move
+      // flow (permission, activity record, lead_move audit).
+      const needsPlacement = !existing.pipelineId || !existing.pipelineStageId;
+      const placement = needsPlacement
+        ? await ensureLeadPipeline(transactionPorts, {
+            storeId: scope.storeId as never,
+            tenantId: scope.tenantId as never,
+          })
+        : null;
+      const reused = await repository.updateLead({
+        ...(!existing.assignedUserId && input.assignedUserId
+          ? { assignedUserId: input.assignedUserId as UserId }
+          : {}),
+        ...(!existing.buyerEmail && input.buyerEmail
+          ? { buyerEmail: input.buyerEmail }
+          : {}),
+        ...(!existing.buyerName && input.buyerName
+          ? { buyerName: input.buyerName }
+          : {}),
+        leadId: existing.id,
+        ...(placement
+          ? {
+              pipelineId: placement.pipelineId,
+              pipelineStageId: placement.pipelineStageId,
+              status: placement.leadStatus,
+            }
+          : {}),
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      return { created: false, lead: reused };
+    }
+    const placement = input.pipelineStageId
+      ? await resolveRequestedStagePlacement(transactionPorts, scope, {
+          pipelineStageId: input.pipelineStageId,
+        })
+      : await ensureLeadPipeline(transactionPorts, {
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        });
+    const created = await repository.createLead({
+      ...(input.assignedUserId
+        ? { assignedUserId: input.assignedUserId as UserId }
+        : {}),
+      buyerEmail: input.buyerEmail ?? null,
+      buyerName: input.buyerName ?? null,
+      buyerPhone: input.buyerPhone ?? null,
+      listingId: input.listingId ?? null,
+      metadata: input.metadata ?? {},
+      pipelineId: placement.pipelineId,
+      pipelineStageId: placement.pipelineStageId,
+      source: input.source,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (input.pipelineStageId && created.status !== placement.leadStatus) {
       return {
-        created: false,
+        created: true,
         lead: await repository.updateLead({
-          ...(!existing.assignedUserId && input.assignedUserId
-            ? { assignedUserId: input.assignedUserId as UserId }
-            : {}),
-          ...(!existing.buyerEmail && input.buyerEmail
-            ? { buyerEmail: input.buyerEmail }
-            : {}),
-          ...(!existing.buyerName && input.buyerName
-            ? { buyerName: input.buyerName }
-            : {}),
-          leadId: existing.id,
-          ...(!existing.pipelineId || !existing.pipelineStageId
-            ? placement
-            : {}),
+          leadId: created.id,
+          status: placement.leadStatus,
           storeId: scope.storeId as never,
           tenantId: scope.tenantId as never,
         }),
       };
     }
-    return {
-      created: true,
-      lead: await repository.createLead({
-        ...(input.assignedUserId
-          ? { assignedUserId: input.assignedUserId as UserId }
-          : {}),
-        buyerEmail: input.buyerEmail ?? null,
-        buyerName: input.buyerName ?? null,
-        buyerPhone: input.buyerPhone ?? null,
-        listingId: input.listingId ?? null,
-        metadata: input.metadata ?? {},
-        ...placement,
-        source: input.source,
-        storeId: scope.storeId as never,
-        tenantId: scope.tenantId as never,
-      }),
-    };
+    return { created: true, lead: created };
   });
   const { lead } = result;
 
@@ -117,4 +146,22 @@ export async function createCrmLead(
   });
 
   return lead;
+}
+
+async function resolveRequestedStagePlacement(
+  ports: CrmServicePorts,
+  scope: { storeId: string; tenantId: string },
+  input: { pipelineStageId: string },
+) {
+  const stage = await getCrmPipelineRepository(ports).findStageById({
+    stageId: input.pipelineStageId,
+    storeId: scope.storeId as never,
+    tenantId: scope.tenantId as never,
+  });
+  if (!stage) throw new CrmPipelineStageNotFoundError(input.pipelineStageId);
+  return {
+    leadStatus: stage.leadStatus,
+    pipelineId: stage.pipelineId,
+    pipelineStageId: stage.id,
+  };
 }

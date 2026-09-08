@@ -23,7 +23,6 @@ import {
   createCrmScheduledMessagesQuery,
   createCrmConversationCycleCountsQuery,
   createCrmConversationCyclesQuery,
-  createCrmTagsQuery,
   crmConversationRoutes,
   withQuery,
 } from "./crmConversationApiRoutes";
@@ -104,8 +103,6 @@ export function createCrmConversationApi({
           ...(options?.signal ? { signal: options.signal } : {}),
         },
       ).then(readJson<CrmStatisticsResponse>),
-    addCycleTag: (cycleId, input) =>
-      postMaybeJson(crmConversationRoutes.cycleTags(cycleId, baseUrl), input),
     assignCycle: (cycleId, input) =>
       postJson(crmConversationRoutes.assignCycle(cycleId, baseUrl), input),
     archiveCycle: (cycleId, input) =>
@@ -192,15 +189,12 @@ export function createCrmConversationApi({
       ).then(parseConnectionMemberRevokeResult),
     createScheduledMessage: (input) =>
       postJson(crmConversationRoutes.scheduledMessages(baseUrl), input),
-    createTag: (input) => postJson(crmConversationRoutes.tags(baseUrl), input),
     deleteMessage: (messageId) =>
       deleteMaybeJson(crmConversationRoutes.message(messageId, baseUrl)),
     deleteQuickMessage: (quickMessageId) =>
       deleteMaybeJson(
         crmConversationRoutes.quickMessage(quickMessageId, baseUrl),
       ),
-    deleteTag: (tagId) =>
-      deleteMaybeJson(crmConversationRoutes.tag(tagId, baseUrl)),
     updateCycleAttendance: (cycleId, input) =>
       postJson(
         crmConversationRoutes.updateCycleAttendance(cycleId, baseUrl),
@@ -265,12 +259,6 @@ export function createCrmConversationApi({
       ).then((payload) =>
         crmConversationCycleListResponseSchema.parse(payload),
       ),
-    listTags: (input) =>
-      getJson(
-        withQuery(crmConversationRoutes.tags(baseUrl), [
-          createCrmTagsQuery(input),
-        ]),
-      ),
     markCycleRead: (cycleId, input) =>
       postJson(crmConversationRoutes.markCycleRead(cycleId, baseUrl), input),
     markCycleUnread: (cycleId, input) =>
@@ -315,10 +303,6 @@ export function createCrmConversationApi({
       patchJson(crmConversationRoutes.connection(connectionId, baseUrl), {
         status: paused ? "paused" : "active",
       }),
-    removeCycleTag: (cycleId, tagId) =>
-      deleteMaybeJson(crmConversationRoutes.cycleTag(cycleId, tagId, baseUrl)),
-    reorderTags: (input) =>
-      patchJson(crmConversationRoutes.tagsReorder(baseUrl), input),
     retryProviderEvent: (eventId) =>
       postJson(crmConversationRoutes.retryProviderEvent(eventId, baseUrl)),
     resumeCampaign: (campaignId) =>
@@ -375,7 +359,19 @@ export function createCrmConversationApi({
         idempotencyHeaders(idempotencyKey),
       ),
     startConversation: (input) =>
-      postJson(crmConversationRoutes.conversationsStart(baseUrl), input),
+      postJson(crmConversationRoutes.conversationsStart(baseUrl), {
+        channel: "whatsapp",
+        connectionId: input.connectionId,
+        ...((input.customerDisplayName ?? input.buyerName)
+          ? {
+              customerDisplayName: input.customerDisplayName ?? input.buyerName,
+            }
+          : {}),
+        ...(input.leadId ? { leadId: input.leadId } : {}),
+        ...(input.phone ? { recipientAddress: input.phone } : {}),
+        ...(input.template ? { template: input.template } : {}),
+        ...(input.text ? { text: input.text } : {}),
+      }),
     subscribeEvents: (input) =>
       subscribeCrmEvents({
         connectionId: input.connectionId,
@@ -403,8 +399,6 @@ export function createCrmConversationApi({
         crmConversationRoutes.quickMessage(quickMessageId, baseUrl),
         input,
       ),
-    updateTag: (tagId, input) =>
-      patchJson(crmConversationRoutes.tag(tagId, baseUrl), input),
   };
 }
 

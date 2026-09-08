@@ -168,7 +168,12 @@ export async function parseJson<Schema extends z.ZodType>(
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    throw new CrmRequestValidationError("Request body is invalid.");
+    throw new CrmRequestValidationError("Request body is invalid.", {
+      fields: parsed.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
   }
 
   return parsed.data;

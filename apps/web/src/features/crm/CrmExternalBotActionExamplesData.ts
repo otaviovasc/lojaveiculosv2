@@ -1,168 +1,109 @@
+const exampleScope = `"tenantId": "11000000-0000-4000-8000-000000000001",
+  "storeId": "22000000-0000-4000-8000-000000000002",
+  "integrationId": "33000000-0000-4000-8000-000000000003",
+  "connectionId": "24000000-0000-4000-8000-000000000101",
+  "threadId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+  "channel": "whatsapp",
+  "provider": "zapi",
+  "modelVersion": "2026-09-08"`;
+
+const exampleAuthorization = `"capabilityGrant": "GRANT_RECEBIDO_NO_EVENTO",
+  "expectedRevision": 14,
+  "expectedAttendanceRevision": 2,
+  "idempotencyKey": "msg-recv-5f9c1c62-send-text",
+  "requestDigest": "DIGEST_SHA256_HEX_64_CARACTERES"`;
+
 export const botActionExamples = [
   {
     code: `{
-  "action": "send_text",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "text": "Ola! Posso ajudar com esse veiculo?" }
-}`,
-    description: "Envia texto em uma conversa existente.",
-    title: "send_text por sessao",
-  },
-  {
-    code: `{
-  "action": "send_text",
-  "connectionId": "24000000-0000-4000-8000-000000000101",
-  "payload": { "phone": "5511888887777", "buyerName": "Ana", "text": "Ola!" }
-}`,
-    description: "Cria ou reutiliza uma conversa por telefone.",
-    title: "send_text por telefone",
-  },
-  {
-    code: `{
-  "action": "send_image",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "imageUrl": "https://cdn.exemplo.com/civic.jpg", "caption": "Foto do veiculo" }
-}`,
-    description: "Imagem usa imageUrl remoto. Base64 nao e aceito aqui.",
-    title: "send_image",
-  },
-  {
-    code: `{
-  "action": "send_audio",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "audioUrl": "https://cdn.exemplo.com/audio.mp3" }
-}`,
-    description:
-      "Audio usa audioUrl e e enviado ao ZAPI com processamento async.",
-    title: "send_audio",
-  },
-  {
-    code: `{
-  "action": "send_document",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "documentUrl": "https://cdn.exemplo.com/proposta.pdf", "fileName": "proposta.pdf" }
-}`,
-    description: "Documento usa documentUrl, fileName e mimeType opcionais.",
-    title: "send_document",
-  },
-  {
-    code: `{
-  "action": "add_note",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "content": "Cliente quer troca com Corolla 2020." }
-}`,
-    description: "Registra nota no lead V2 ligado a conversa.",
-    title: "add_note",
-  },
-  {
-    code: `{
-  "action": "schedule_message",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "text": "Confirmando sua visita.", "scheduledAt": "2026-07-07T13:00:00.000Z" }
-}`,
-    description: "Cria um agendamento V2 auditado para a sessao.",
-    title: "schedule_message",
-  },
-  {
-    code: `{
-  "action": "create_tag",
-  "connectionId": "24000000-0000-4000-8000-000000000101",
-  "payload": { "name": "Oferta enviada", "color": "green" }
-}`,
-    description:
-      "Cria etiqueta simples de WhatsApp, sem semantica de pipeline.",
-    title: "create_tag",
-  },
-  {
-    code: `{
-  "action": "assign_tag",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "tagId": "7d42160d-2174-48c9-bd34-4c506d2f5f1d" }
-}`,
-    description: "Atribui etiqueta existente ou resolve por name/tagName.",
-    title: "assign_tag",
-  },
-  {
-    code: `{
-  "action": "remove_tag",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "tagId": "7d42160d-2174-48c9-bd34-4c506d2f5f1d" }
-}`,
-    description: "Remove uma etiqueta da conversa.",
-    title: "remove_tag",
-  },
-  {
-    code: `{
-  "action": "list_tags",
-  "connectionId": "24000000-0000-4000-8000-000000000101",
-  "payload": { "limit": 100 }
-}`,
-    description: "Lista etiquetas de WhatsApp disponiveis para a loja.",
-    title: "list_tags",
-  },
-  {
-    code: `{
-  "action": "set_intervention",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "enabled": true, "source": "ai_request", "reason": "Cliente pediu atendimento humano" }
-}`,
-    description:
-      "A IA pausa a conversa em WAITING_HUMAN. reason e opcional e aceita uma descricao operacional curta.",
-    title: "set_intervention",
-  },
-  {
-    code: `{
-  "action": "update_session",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "assignedUserId": "02020202-0202-4202-8202-020202020202" }
-}`,
-    description: "Atualiza campos operacionais permitidos da sessao.",
-    title: "update_session",
-  },
-  {
-    code: `{
-  "action": "get_session",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61"
-}`,
-    description: "Busca a sessao com leadId, status, tags e contadores.",
-    title: "get_session",
-  },
-  {
-    code: `{
-  "action": "close_session",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61"
-}`,
-    description: "Conclui a conversa no CRM.",
-    title: "close_session",
-  },
-  {
-    code: `{
-  "action": "set_visita",
-  "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": {
-    "scheduledAt": "2026-07-08T18:00:00.000Z",
-    "listingId": "44000000-0000-4000-8000-000000000001",
-    "notes": "Avaliacao presencial."
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "message.send_text",
+    "payload": { "text": "Ola! Posso ajudar com esse veiculo?" }
   }
 }`,
     description:
-      "Cria visita ligada ao lead V2 da conversa. listingId e opcional para visitas gerais a loja.",
-    title: "set_visita",
+      "Envia texto na conversa autorizada. capabilityGrant, revisoes e requestDigest vem do evento recebido no webhook.",
+    title: "message.send_text",
   },
   {
     code: `{
-  "action": "remove_visita",
-  "payload": { "visitId": "3d80218e-f7be-4d8d-bc31-14b78203d7f5" }
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "message.send_media",
+    "payload": {
+      "mediaType": "image/jpeg",
+      "mediaUrl": "https://cdn.exemplo.com/civic.jpg",
+      "caption": "Foto do veiculo"
+    }
+  }
 }`,
-    description: "Cancela uma visita existente.",
-    title: "remove_visita",
+    description:
+      "Envia midia por URL publica. caption e opcional; base64 nao e aceito.",
+    title: "message.send_media",
   },
   {
     code: `{
-  "action": "check_connection",
-  "connectionId": "24000000-0000-4000-8000-000000000101"
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "message.send_template",
+    "payload": {
+      "templateName": "confirmacao_visita",
+      "language": "pt_BR",
+      "variables": { "nome": "Ana", "horario": "15h" }
+    }
+  }
 }`,
-    description: "Retorna configuração e status conhecido da conexão ZAPI.",
-    title: "check_connection",
+    description:
+      "Envia template aprovado do WhatsApp. language e sempre pt_BR e variables e um mapa de strings.",
+    title: "message.send_template",
+  },
+  {
+    code: `{
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "appointment.create",
+    "payload": {
+      "startsAt": "2026-09-09T18:00:00.000Z",
+      "summary": "Visita para avaliar o Civic."
+    }
+  }
+}`,
+    description:
+      "Cria um agendamento para a conversa. startsAt usa ISO 8601 com offset; summary e opcional.",
+    title: "appointment.create",
+  },
+  {
+    code: `{
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "fact.record",
+    "payload": {
+      "classification": "troca",
+      "summary": "Cliente quer dar um Corolla 2020 na troca."
+    }
+  }
+}`,
+    description:
+      "Registra um fato classificado sobre a conversa para o time comercial.",
+    title: "fact.record",
+  },
+  {
+    code: `{
+  ${exampleScope},
+  ${exampleAuthorization},
+  "command": {
+    "action": "handoff.request",
+    "payload": { "reason": "Cliente pediu atendimento humano." }
+  }
+}`,
+    description:
+      "Solicita transferencia para atendimento humano. Durante o atendimento, novas acoes sao negadas com CRM_BOT_POLICY_DENIED.",
+    title: "handoff.request",
   },
 ] as const;

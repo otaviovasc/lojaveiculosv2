@@ -224,7 +224,6 @@ function conversationCycle(): CrmConversationCycle {
     source: null,
     status: "ACTIVE",
     storeId: storeId as never,
-    tags: [],
     tenantId: tenantId as never,
     unreadCount: 1,
     updatedAt: now,

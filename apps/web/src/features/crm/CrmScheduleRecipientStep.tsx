@@ -9,7 +9,11 @@ import { formatBrazilianPhone } from "../../lib/masks";
 import { formatCycleName } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
 import { CrmWorkflowPanel } from "./CrmWorkflow";
-import type { CrmConversationCycle } from "./crmConversationTypes";
+import { CrmConnectionSelect } from "./CrmConnectionSelect";
+import type {
+  CrmConversationCycle,
+  CrmProviderConnection,
+} from "./crmConversationTypes";
 
 export type ScheduleDestinationMode = "conversation" | "phone";
 
@@ -24,24 +28,30 @@ export function isSchedulePhoneValid(value: string) {
 
 export function CrmScheduleRecipientStep({
   connectionAvailable,
+  connectionId,
   conversationCycles,
   destinationMode,
   isEditing,
+  onConnectionIdChange,
   onDestinationModeChange,
   onPhoneChange,
   onTargetCycleIdChange,
   phone,
+  scheduleConnections,
   targetCycle,
   targetCycleId,
 }: {
   connectionAvailable: boolean;
+  connectionId?: string | null;
   conversationCycles: CrmConversationCycle[];
   destinationMode: ScheduleDestinationMode;
   isEditing: boolean;
+  onConnectionIdChange?: ((value: string) => void) | undefined;
   onDestinationModeChange: (value: ScheduleDestinationMode) => void;
   onPhoneChange: (value: string) => void;
   onTargetCycleIdChange: (value: string) => void;
   phone: string;
+  scheduleConnections?: CrmProviderConnection[];
   targetCycle: CrmConversationCycle | undefined;
   targetCycleId: string;
 }) {
@@ -114,27 +124,40 @@ export function CrmScheduleRecipientStep({
               />
             </FeatureField>
           ) : (
-            <FeatureField
-              hint={
-                connectionAvailable
-                  ? "Informe DDD e número. O código do Brasil é aplicado automaticamente."
-                  : "Conecte um WhatsApp antes de agendar para um novo número."
-              }
-              label="Telefone"
-            >
-              <FeatureInput
-                aria-label="Telefone"
-                autoComplete="tel"
-                disabled={isEditing || !connectionAvailable}
-                inputMode="tel"
-                onChange={(event) =>
-                  onPhoneChange(formatBrazilianPhone(event.target.value))
+            <>
+              <FeatureField
+                hint={
+                  connectionAvailable
+                    ? "Informe DDD e número. O código do Brasil é aplicado automaticamente."
+                    : "Conecte um WhatsApp antes de agendar para um novo número."
                 }
-                placeholder="(11) 99999-9999"
-                type="tel"
-                value={phone}
-              />
-            </FeatureField>
+                label="Telefone"
+              >
+                <FeatureInput
+                  aria-label="Telefone"
+                  autoComplete="tel"
+                  disabled={isEditing || !connectionAvailable}
+                  inputMode="tel"
+                  onChange={(event) =>
+                    onPhoneChange(formatBrazilianPhone(event.target.value))
+                  }
+                  placeholder="(11) 99999-9999"
+                  type="tel"
+                  value={phone}
+                />
+              </FeatureField>
+              {(scheduleConnections ?? []).length > 1 &&
+              connectionId &&
+              onConnectionIdChange ? (
+                <CrmConnectionSelect
+                  connections={scheduleConnections ?? []}
+                  disabled={isEditing}
+                  label="Conexão de envio"
+                  onChange={onConnectionIdChange}
+                  value={connectionId}
+                />
+              ) : null}
+            </>
           )}
         </div>
 

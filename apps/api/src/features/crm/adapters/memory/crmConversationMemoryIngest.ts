@@ -6,10 +6,6 @@ import type {
 } from "../../../../domains/crm/ports/crmConversationRepository.js";
 import { shouldBackfillCrmMessagingPhone } from "../../../../domains/crm/messaging/contactIdentity.js";
 import { withUnreadCount } from "./crmConversationMemoryQueries.js";
-import {
-  requireHydratedCycle,
-  type MemoryCrmTagState,
-} from "./crmTagMemory.js";
 import { updateMemoryCyclePreview } from "./crmConversationCycleMemoryPreview.js";
 import { memoryProfilePhotoMetadata } from "./crmConversationMemoryProfilePhoto.js";
 import { reconciledOutboundEchoSender } from "../../../../domains/crm/whatsapp/reconcileWhatsappOutboundEcho.js";
@@ -112,7 +108,6 @@ export async function ingestMemoryCrmMessage(input: {
   message: IngestCrmMessageInput;
   messages: CrmMessage[];
   cycles: CrmConversationCycle[];
-  tagState: MemoryCrmTagState;
 }) {
   const now = new Date();
   let createdConversationCycle = false;
@@ -149,7 +144,7 @@ export async function ingestMemoryCrmMessage(input: {
       createdMessage: false,
       createdConversationCycle,
       message: existing,
-      conversationCycle: hydrate(cycle, input.messages, input.tagState),
+      conversationCycle: withUnreadCount(cycle, input.messages),
     };
   }
 
@@ -160,14 +155,6 @@ export async function ingestMemoryCrmMessage(input: {
     createdMessage: true,
     createdConversationCycle,
     message,
-    conversationCycle: hydrate(cycle, input.messages, input.tagState),
+    conversationCycle: withUnreadCount(cycle, input.messages),
   };
-}
-
-function hydrate(
-  cycle: CrmConversationCycle,
-  messages: CrmMessage[],
-  tagState: MemoryCrmTagState,
-) {
-  return requireHydratedCycle(withUnreadCount(cycle, messages), tagState);
 }

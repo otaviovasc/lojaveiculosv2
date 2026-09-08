@@ -13,7 +13,11 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { createRuntimeCrmConversationApi } from "./runtimeApi";
-import { findDefaultFreeTextStartConnection } from "./crmConnectionSelection";
+import {
+  listFreeTextStartConnections,
+  resolveFreeTextStartConnection,
+} from "./crmConnectionSelection";
+import { CrmConnectionSelect } from "./CrmConnectionSelect";
 import { readCrmCapabilities } from "./crmPermissions";
 import { crmConversationCycleHash } from "./crmRouteState";
 import { formatCrmPhone } from "./crmPhoneFormat";
@@ -51,10 +55,21 @@ export function CrmLeadConversationPanel({
     [],
   );
 
-  const connection = useMemo(
-    () => findDefaultFreeTextStartConnection(connections),
+  const freeTextConnections = useMemo(
+    () => listFreeTextStartConnections(connections),
     [connections],
   );
+  const [pickedConnectionId, setPickedConnectionId] = useState<string | null>(
+    null,
+  );
+  const defaultConnection = useMemo(
+    () => resolveFreeTextStartConnection({ connections }),
+    [connections],
+  );
+  const connection =
+    freeTextConnections.find(
+      (item) => String(item.id) === pickedConnectionId,
+    ) ?? defaultConnection;
   const hasOfficialConnection = connections.some(
     (item) =>
       item.provider === "meta_cloud" &&
@@ -249,6 +264,19 @@ export function CrmLeadConversationPanel({
           placeholder="Mensagem inicial"
           value={draft}
         />
+
+        {freeTextConnections.length > 1 && connection ? (
+          <CrmConnectionSelect
+            connections={freeTextConnections}
+            disabled={isStarting}
+            label="Conexão de envio"
+            onChange={(connectionId) => {
+              setPickedConnectionId(connectionId);
+              setDraft("");
+            }}
+            value={String(connection.id)}
+          />
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button

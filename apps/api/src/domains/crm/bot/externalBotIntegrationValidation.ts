@@ -23,6 +23,23 @@ export function normalizeWebhookSecretUpdate(value: string | null | undefined) {
   return normalized;
 }
 
+export function hashExternalBotApiToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function normalizeExternalBotApiTokenUpdate(
+  value: string | null | undefined,
+) {
+  if (value === undefined || value === null) return value;
+  const normalized = value.trim();
+  if (!isStrongWebhookSecret(normalized)) {
+    throw new ExternalBotIntegrationValidationError(
+      "API token must contain at least 32 characters.",
+    );
+  }
+  return normalized;
+}
+
 export function normalizeWebhookUrlUpdate(
   value: string | null | undefined,
   current: string | null,

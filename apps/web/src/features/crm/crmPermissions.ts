@@ -12,6 +12,7 @@ const permissions = {
   botManage: "crm.bot.manage",
   botRead: "crm.bot.read",
   list: "crm.conversations.read",
+  pipelineMove: "crm.pipeline.move",
   read: "crm.conversations.read",
   readUnassigned: "crm.conversations.read_unassigned",
   routingDefaultManage: "crm.routing.default.manage",
@@ -20,8 +21,6 @@ const permissions = {
   scheduleProcess: "crm.scheduled_messages.process",
   scheduleRead: "crm.scheduled_messages.read",
   send: "crm.messages.send",
-  tagAssign: "crm.tags.assign",
-  tagManage: "crm.tags.manage",
   toggleIntervention: "crm.attendances.manage",
   visitsManage: "crm.visits.manage",
   visitsRead: "crm.visits.read",
@@ -45,8 +44,6 @@ export type CrmCapabilities = {
   canScheduleProcess: boolean;
   canScheduleRead: boolean;
   canSend: boolean;
-  canTagAssign: boolean;
-  canTagManage: boolean;
   canToggleIntervention: boolean;
   canVisitsManage: boolean;
   canVisitsRead: boolean;
@@ -80,8 +77,6 @@ export function readCrmCapabilities(
     canScheduleProcess: hasCrmPermission(cycle, permissions.scheduleProcess),
     canScheduleRead: hasCrmPermission(cycle, permissions.scheduleRead),
     canSend: hasCrmPermission(cycle, permissions.send),
-    canTagAssign: hasCrmPermission(cycle, permissions.tagAssign),
-    canTagManage: hasCrmPermission(cycle, permissions.tagManage),
     canToggleIntervention: hasCrmPermission(
       cycle,
       permissions.toggleIntervention,

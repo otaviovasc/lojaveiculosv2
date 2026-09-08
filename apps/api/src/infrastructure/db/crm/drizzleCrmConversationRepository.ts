@@ -53,19 +53,6 @@ import {
 } from "./drizzleCrmConversationIngest.js";
 import { updateConversationCycleWithTransaction } from "./drizzleCrmConversationUpdates.js";
 import { transitionWhatsappAttendanceWithTransaction } from "./drizzleCrmAttendance.js";
-import {
-  createWhatsappTag,
-  deleteWhatsappTag,
-  findOrCreateWhatsappTag,
-  hydrateConversationCycle,
-  listCrmTags,
-  reorderWhatsappTags,
-  updateWhatsappTag,
-} from "./drizzleCrmTags.js";
-import {
-  findSessionIdsByTags,
-  mutateConversationCycleTagWithTransaction,
-} from "./drizzleCrmConversationCycleTags.js";
 import { createSessionIdentityFinder } from "./drizzleCrmConversationCycleIdentity.js";
 
 export function createDrizzleCrmConversationRepository(
@@ -73,13 +60,6 @@ export function createDrizzleCrmConversationRepository(
   options: { disableTransactions?: boolean } = {},
 ): CrmConversationRepository {
   return {
-    addConversationCycleTag: (input) =>
-      mutateConversationCycleTagWithTransaction(
-        db,
-        input,
-        "add",
-        !!options.disableTransactions,
-      ),
     async findMessageByExternalId(input) {
       return findCrmMessageDtoByExternalId(db, input);
     },
@@ -87,26 +67,8 @@ export function createDrizzleCrmConversationRepository(
       return findCrmMessageDtoById(db, input);
     },
     findConversationCycleByIdentity: createSessionIdentityFinder(db),
-    async findOrCreateTag(input) {
-      return findOrCreateWhatsappTag(db, input);
-    },
     async findDueScheduledMessageScopes(input) {
       return findDueCrmScheduledMessageScopes(db, input);
-    },
-    async createTag(input) {
-      return createWhatsappTag(db, input);
-    },
-    async updateTag(input) {
-      return updateWhatsappTag(db, input);
-    },
-    async deleteTag(input) {
-      return deleteWhatsappTag(db, input);
-    },
-    async reorderTags(input) {
-      return reorderWhatsappTags(db, input);
-    },
-    async listTags(input) {
-      return listCrmTags(db, input);
     },
     async createQuickMessage(input) {
       return createCrmQuickMessage(db, input);
@@ -118,16 +80,10 @@ export function createDrizzleCrmConversationRepository(
       return createCrmCampaignRecipient(db, input);
     },
     async countConversationCycles(input) {
-      const tagSessionIds = await findSessionIdsByTags(db, input);
-      if (tagSessionIds && tagSessionIds.length === 0) return 0;
-      return countCanonicalConversationCycles(db, input, tagSessionIds);
+      return countCanonicalConversationCycles(db, input);
     },
     async countConversationCyclesByAssignee(input) {
-      const tagSessionIds = await findSessionIdsByTags(db, input);
-      if (tagSessionIds && tagSessionIds.length === 0) return [];
       const filters = conversationCycleFilters({ ...input, filter: "all" });
-      if (tagSessionIds)
-        filters.push(inArray(conversationThreads.id, tagSessionIds));
       if (input.unreadOnly) filters.push(crmUnreadConversationCyclePredicate());
       return countConversationCyclesByAssignee(db, filters);
     },
@@ -153,12 +109,7 @@ export function createDrizzleCrmConversationRepository(
       return listCrmQuickMessages(db, input);
     },
     async listConversationCycles(input) {
-      const tagSessionIds = await findSessionIdsByTags(db, input);
-      if (tagSessionIds && tagSessionIds.length === 0) return [];
       const filters = conversationCycleFilters(input);
-      if (tagSessionIds) {
-        filters.push(inArray(conversationThreads.id, tagSessionIds));
-      }
       if (input.unreadOnly) filters.push(crmUnreadConversationCyclePredicate());
       const rows = await db
         .select(canonicalConversationCycleSelection())
@@ -182,10 +133,7 @@ export function createDrizzleCrmConversationRepository(
         .limit(input.limit);
       return Promise.all(
         rows.map(async (row) =>
-          hydrateConversationCycle(
-            db,
-            toConversationCycle(row, await countUnreadMessages(db, row)),
-          ),
+          toConversationCycle(row, await countUnreadMessages(db, row)),
         ),
       );
     },
@@ -234,12 +182,5 @@ export function createDrizzleCrmConversationRepository(
     async updateCampaignRecipient(input) {
       return updateCrmCampaignRecipient(db, input);
     },
-    removeConversationCycleTag: (input) =>
-      mutateConversationCycleTagWithTransaction(
-        db,
-        input,
-        "remove",
-        !!options.disableTransactions,
-      ),
   };
 }

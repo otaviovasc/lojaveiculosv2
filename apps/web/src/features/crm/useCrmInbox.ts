@@ -7,6 +7,7 @@ import type { CrmConversationApi } from "./crmConversationApi";
 import {
   buildStorefrontUrl,
   isInboxBrowsableConnection,
+  listConversationStartConnections,
   readConversationStartCapability,
   resolveCrmInboxConnectionSelection,
 } from "./crmConnectionSelection";
@@ -32,7 +33,6 @@ import { useCrmBulkSelection } from "./useCrmBulkSelection";
 import { useCrmConversationCycleCounts } from "./useCrmConversationCycleCounts";
 import { useCrmStartConversation } from "./useCrmStartConversation";
 import { useCrmScheduledMessages } from "./useCrmScheduledMessages";
-import { useCrmTags } from "./useCrmTags";
 import { useCrmVehicleInventory } from "./useCrmVehicleInventory";
 import { useCrmInboxLifecycle } from "./useCrmInboxLifecycle";
 import { useCrmRoutingPolicy } from "./useCrmRoutingPolicy";
@@ -266,6 +266,13 @@ export function useCrmInbox(
     () => readConversationStartCapability(activeConnection),
     [activeConnection],
   );
+  const conversationStartConnections = useMemo(
+    () => listConversationStartConnections(connections.connections),
+    [connections.connections],
+  );
+  const canStartAnyConversation =
+    conversationStartCapability.canStart ||
+    conversationStartConnections.length > 0;
   const sendReadiness = useMemo(
     () => readCrmSendReadiness(activeSessionConnection ?? activeConnection),
     [activeConnection, activeSessionConnection],
@@ -285,14 +292,6 @@ export function useCrmInbox(
   );
   const searchRef = useRef(remoteSearch ?? "");
   searchRef.current = remoteSearch ?? "";
-  const tagState = useCrmTags({
-    api,
-    canRead: permissions.canRead,
-    connectionId,
-    connectionsError: connections.error,
-    setError,
-  });
-  const { selectedTagIds } = tagState;
   const canAccessSessionSnapshot = useCallback(
     (cycle: CrmConversationCycle) =>
       permissions.canAssign ||
@@ -391,7 +390,6 @@ export function useCrmInbox(
       humanAttendanceFilter,
       quickFilter,
       searchRef,
-      selectedTagIds,
       statusFilter,
       storeWide: aggregateConnectionFilter,
       unreadOnly,
@@ -411,7 +409,6 @@ export function useCrmInbox(
       limit: CRM_SESSION_PAGE_SIZE,
       offset,
       ...(searchRef.current ? { search: searchRef.current } : {}),
-      ...(selectedTagIds.length ? { tagIds: selectedTagIds } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(unreadOnly ? { unreadOnly } : {}),
     }),
@@ -420,7 +417,6 @@ export function useCrmInbox(
       humanAttendanceFilter,
       otherAssigneeId,
       quickFilter,
-      selectedTagIds,
       sessionListConnectionId,
       statusFilter,
       unreadOnly,
@@ -502,7 +498,6 @@ export function useCrmInbox(
         const hasNarrowingFilter = Boolean(
           humanAttendanceFilter ||
           searchRef.current ||
-          selectedTagIds.length ||
           statusFilter ||
           unreadOnly,
         );
@@ -588,7 +583,6 @@ export function useCrmInbox(
       quickFilter,
       refreshSessionCounts,
       removeSession,
-      selectedTagIds,
       statusFilter,
       unreadOnly,
     ],
@@ -684,7 +678,7 @@ export function useCrmInbox(
   }, []);
   const conversationState = useCrmStartConversation({
     api,
-    canSend: canSendMessages && conversationStartCapability.canStart,
+    canSend: canSendMessages && canStartAnyConversation,
     connectionId,
     mergeCycles,
     setActiveCycleId: selectSession,
@@ -750,12 +744,10 @@ export function useCrmInbox(
     activeCycleId: hasCurrentScopeAccess ? activeCycleId : null,
     archivedOnly,
     assignableMembers: assignmentState.assignableMembers,
-    availableTags: tagState.availableTags,
     availableConnectionSetups: connections.availableSetups,
     isCrmEntitled: activeStore?.entitlements?.includes("crm") === true,
     canAssignSessions: assignmentState.canAssignSessions,
-    canStartConversation:
-      canSendMessages && conversationStartCapability.canStart,
+    canStartConversation: canSendMessages && canStartAnyConversation,
     canSendText: canSendMessages,
     activeConnection,
     activeSessionConnection,
@@ -793,13 +785,11 @@ export function useCrmInbox(
     refreshUazapiConnectionStatus: connections.refreshUazapiConnectionStatus,
     selectComposioConnectionSender: connections.selectComposioSender,
     setConnectionPaused: connections.setConnectionPaused,
-    createTag: tagState.createTag,
     createQuickMessage: quickMessageState.createQuickMessage,
     createScheduledMessage: scheduledMessages.createScheduledMessage,
     currentUserId,
     deleteMessage: messageState.deleteMessage,
     deleteQuickMessage: quickMessageState.deleteQuickMessage,
-    deleteTag: tagState.deleteTag,
     error: displayedError,
     errorId,
     hasConnection: Boolean(connectionId),
@@ -838,14 +828,11 @@ export function useCrmInbox(
     retryLastSessionAction: sessionActions.retryLastSessionAction,
     retryMessage: messageState.retryMessage,
     refreshSessions,
-    refreshTags: tagState.refreshTags,
-    reorderTags: tagState.reorderTags,
     removeReaction: messageState.removeReaction,
     search,
     selectAllVisibleSessions: bulkSelection.selectAllVisibleSessions,
     selectedCycleIds: bulkSelection.selectedCycleIds,
     selectedSessions: bulkSelection.selectedSessions,
-    selectedTagIds,
     scheduledMessagesError: scheduledMessages.error,
     sendCatalog: messageState.sendCatalog,
     sendCatalogProduct: messageState.sendCatalogProduct,
@@ -869,15 +856,15 @@ export function useCrmInbox(
     statusFilter,
     storeLocationName: activeStore?.storeName ?? "Loja",
     startConversation: conversationState.startConversation,
+    startConversationConnections: conversationStartConnections,
     startConversationProvider: conversationStartCapability.provider,
-    startConversationUnavailableReason:
-      conversationStartCapability.unavailableReason ?? sendReadiness.reason,
+    startConversationUnavailableReason: canStartAnyConversation
+      ? null
+      : (conversationStartCapability.unavailableReason ?? sendReadiness.reason),
     sendUnavailableReason: sendReadiness.reason,
     toggleSelectedSession: bulkSelection.toggleSelectedSession,
-    toggleTagFilter: tagState.toggleTagFilter,
     unreadOnly,
     updateQuickMessage: quickMessageState.updateQuickMessage,
-    updateTag: tagState.updateTag,
     actions: {
       ...sessionActions.actions,
       ...bulkSelection.actions,

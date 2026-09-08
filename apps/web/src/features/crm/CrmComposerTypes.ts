@@ -9,14 +9,12 @@ import type {
   VehicleDialogSend,
 } from "./CrmWhatsappVehicleDialog";
 import type {
-  CrmAddConversationCycleTagInput,
   CrmConversationCycle,
   CrmCreateQuickMessageInput,
   CrmMessage,
   CrmQuickMessage,
   CrmScheduledMessage,
   CrmSendMediaType,
-  CrmTag,
 } from "./crmConversationTypes";
 import type { CrmProviderCapabilities } from "./crmProviderCapabilities";
 
@@ -27,24 +25,20 @@ export type ComposerDialog =
   | "note"
   | "quick"
   | "schedule"
-  | "tags"
   | "vehicle"
   | "visit";
 
 export type MessageComposerProps = {
-  availableTags?: CrmTag[];
   capabilities?: CrmProviderCapabilities;
   canScheduleCreate?: boolean;
   catalogUrl?: string | null | undefined;
   cycle?: CrmConversationCycle | null;
   defaultLocationName?: string;
   disabled?: boolean;
-  onAddCycleTag?: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
   onCancelReply?: () => void;
   onCancelScheduledMessage?: (scheduledMessageId: string) => Promise<boolean>;
   onListScheduledMessages?: () => Promise<CrmScheduledMessage[]>;
   onProcessDueScheduledMessages?: () => Promise<boolean>;
-  onRemoveCycleTag?: (tagId: string) => Promise<boolean>;
   onScheduleMessage?: (input: {
     content: string;
     scheduledAt: string;

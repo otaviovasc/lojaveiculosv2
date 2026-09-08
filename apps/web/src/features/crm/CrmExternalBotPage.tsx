@@ -47,6 +47,7 @@ export function CrmExternalBotPage({
   const [isLoading, setIsLoading] = useState(initialIntegration === undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [secretDraft, setSecretDraft] = useState("");
+  const [apiTokenDraft, setApiTokenDraft] = useState("");
   const [webhookUrl, setWebhookUrl] = useState(
     initialIntegration?.webhookUrl ?? "",
   );
@@ -104,10 +105,12 @@ export function CrmExternalBotPage({
       const response = await api.updateBotIntegration({
         enabled,
         ...(secretDraft.trim() ? { webhookSecret: secretDraft.trim() } : {}),
+        ...(apiTokenDraft.trim() ? { apiToken: apiTokenDraft.trim() } : {}),
         webhookUrl: webhookUrl.trim() || null,
       });
       applyIntegration(response.configuration);
       setSecretDraft("");
+      setApiTokenDraft("");
     } catch (caught) {
       setError(formatApiErrorDisplay(caught, "Nao foi possivel salvar bot."));
     } finally {
@@ -130,6 +133,27 @@ export function CrmExternalBotPage({
     } catch (caught) {
       setError(
         formatApiErrorDisplay(caught, "Nao foi possivel remover segredo."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const clearApiToken = async () => {
+    if (!canManage || isSaving) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const response = await api.updateBotIntegration({
+        apiToken: null,
+        enabled,
+        webhookUrl: webhookUrl.trim() || null,
+      });
+      applyIntegration(response.configuration);
+      setApiTokenDraft("");
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(caught, "Nao foi possivel remover o token."),
       );
     } finally {
       setIsSaving(false);
@@ -163,9 +187,12 @@ export function CrmExternalBotPage({
               </div>
             ) : canManage ? (
               <BotIntegrationForm
+                apiTokenDraft={apiTokenDraft}
                 enabled={enabled}
                 integration={integration}
                 isSaving={isSaving}
+                onApiTokenChange={setApiTokenDraft}
+                onClearApiToken={() => void clearApiToken()}
                 onClearSecret={() => void clearSecret()}
                 onEnabledChange={setEnabled}
                 onSave={() => void save()}

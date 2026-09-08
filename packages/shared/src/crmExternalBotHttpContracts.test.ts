@@ -10,6 +10,7 @@ describe("CRM external-bot HTTP contracts", () => {
   it("parses the secret-safe configuration read model", () => {
     const input = {
       configuration: {
+        apiTokenConfigured: true,
         createdAt: "2026-08-18T12:00:00.000Z",
         enabled: true,
         id: "bot_1",

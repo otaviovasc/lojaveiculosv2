@@ -8,6 +8,7 @@ import type {
 import { CrmMessageActionError } from "../../messaging/crmMessagingErrors.js";
 import {
   getCrmConversationRepository,
+  getCrmPipelineRepository,
   requireCrmMessagingScope,
   runCrmTransaction,
   type CrmServicePorts,
@@ -30,7 +31,7 @@ import {
   dedupeCampaignRecipients,
   normalizePositiveInt,
   renderCampaignText,
-  requireCampaignTags,
+  requireCampaignStages,
   resolveCampaignSessions,
   singleCampaignConnectionId,
 } from "../../messaging/crmCampaignSupport.js";
@@ -67,8 +68,8 @@ export async function createCrmCampaign(
       action: "crm.campaign.create",
       category: "data_change",
       metadata: {
-        hasInitialTag: Boolean(normalized.initialTagId),
-        hasReplyTag: Boolean(normalized.replyTagId),
+        hasInitialStage: Boolean(normalized.initialStageId),
+        hasReplyStage: Boolean(normalized.replyStageId),
         recipientCount: normalized.recipients.length,
       },
       permission: campaignManagePermission,
@@ -98,11 +99,11 @@ function normalizeCampaignInput(
   }
   return {
     content,
-    initialTagId: input.initialTagId ?? null,
+    initialStageId: input.initialStageId ?? null,
     intervalMinutes: normalizePositiveInt(input.intervalMinutes, 1),
     name,
     recipients,
-    replyTagId: input.replyTagId ?? null,
+    replyStageId: input.replyStageId ?? null,
     scheduledStartAt: input.scheduledStartAt,
     secondaryContent: input.secondaryContent?.trim() || null,
     secondaryDelayMinutes: normalizePositiveInt(
@@ -119,9 +120,9 @@ async function createCampaignRecords(
 ) {
   const scope = requireCrmMessagingScope(context);
   const repository = getCrmConversationRepository(ports);
-  await requireCampaignTags(repository, scope, [
-    input.initialTagId,
-    input.replyTagId,
+  await requireCampaignStages(getCrmPipelineRepository(ports), scope, [
+    input.initialStageId,
+    input.replyStageId,
   ]);
   const conversationCycles = await resolveCampaignSessions(
     repository,
@@ -133,11 +134,11 @@ async function createCampaignRecords(
     content: input.content,
     createdByUserId:
       context.actor.kind === "user" ? (context.actor.id as never) : null,
-    initialTagId: input.initialTagId,
+    initialStageId: input.initialStageId,
     intervalMinutes: input.intervalMinutes,
     metadata: {},
     name: input.name,
-    replyTagId: input.replyTagId,
+    replyStageId: input.replyStageId,
     scheduledCount: conversationCycles.length,
     scheduledEndAt: campaignScheduledEnd(input, conversationCycles.length),
     scheduledStartAt: input.scheduledStartAt,
@@ -156,14 +157,6 @@ async function createCampaignRecords(
     conversationCycles,
     scope,
   );
-  if (input.initialTagId) {
-    await tagCampaignSessions(
-      repository,
-      conversationCycles,
-      input.initialTagId,
-      scope,
-    );
-  }
   return campaign;
 }
 
@@ -204,22 +197,4 @@ async function createInitialSchedules(
       variables,
     });
   }
-}
-
-async function tagCampaignSessions(
-  repository: CrmConversationRepository,
-  conversationCycles: readonly CrmConversationCycle[],
-  tagId: string,
-  scope: { storeId: string; tenantId: string },
-) {
-  await Promise.all(
-    conversationCycles.map((conversationCycle) =>
-      repository.addConversationCycleTag({
-        cycleId: conversationCycle.id,
-        storeId: scope.storeId as never,
-        tagId,
-        tenantId: scope.tenantId as never,
-      }),
-    ),
-  );
 }

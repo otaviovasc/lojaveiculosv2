@@ -232,7 +232,6 @@ function cycle(): CrmConversationCycle {
     lastMessageAt: "2026-07-03T12:00:00.000Z",
     leadId: "lead_1",
     metadata: { broker: "direct" },
-    tags: [{ id: "tag_1", name: "Quente" }],
     status: "ACTIVE",
     vehicle: { title: "Honda Civic Touring 2024" },
   };

@@ -153,6 +153,7 @@ async function processDueMessages(
         tenantId: input.scope.tenantId as never,
       });
       await recordCampaignScheduledSendResult(
+        context,
         scheduled,
         {
           sentAt: new Date(),
@@ -172,6 +173,7 @@ async function processDueMessages(
         tenantId: input.scope.tenantId as never,
       });
       await recordCampaignScheduledSendResult(
+        context,
         scheduled,
         { errorMessage },
         ports,

@@ -39,14 +39,6 @@ export function assertMessageSend(context: ServiceContext) {
   return assertCrmMessagingPermission(context, "crm.messages.send");
 }
 
-export function assertTagAssign(context: ServiceContext) {
-  return assertCrmMessagingPermission(context, "crm.tags.assign");
-}
-
-export function assertTagManage(context: ServiceContext) {
-  return assertCrmMessagingPermission(context, "crm.tags.manage");
-}
-
 export function assertConversationAssign(context: ServiceContext) {
   return assertCrmMessagingPermission(context, "crm.conversations.assign");
 }

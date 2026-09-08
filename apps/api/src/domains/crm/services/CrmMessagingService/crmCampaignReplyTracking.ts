@@ -20,6 +20,7 @@ import {
   renderCampaignText,
   truncateCampaignPreview,
 } from "../../messaging/crmCampaignSupport.js";
+import { tryCampaignStageTransition } from "../../messaging/crmCampaignStageTransitions.js";
 import { updateCampaignCounts } from "../../messaging/crmCampaignDeliveryMetrics.js";
 
 export async function trackCrmCampaignReply(
@@ -63,7 +64,15 @@ export async function trackCrmCampaignReply(
       summary: "Tracked CRM WhatsApp campaign reply",
       tenantId: campaign.tenantId,
     },
-    () => applyCampaignReply(repository, campaign, recipient, input),
+    () =>
+      applyCampaignReply(
+        context,
+        repository,
+        campaign,
+        recipient,
+        input,
+        ports,
+      ),
   );
 }
 
@@ -104,10 +113,12 @@ async function findUnrepliedRecipient(
 }
 
 async function applyCampaignReply(
+  context: ServiceContext,
   repository: CrmConversationRepository,
   campaign: CrmCampaign,
   recipient: CrmCampaignRecipient,
   input: { message: CrmMessage; conversationCycle: CrmConversationCycle },
+  ports: CrmServicePorts,
 ) {
   const repliedAt = input.message.providerTimestamp ?? input.message.createdAt;
   const preview = truncateCampaignPreview(input.message.content);
@@ -139,11 +150,13 @@ async function applyCampaignReply(
     repliedDelta: 1,
     scheduledDelta: secondary ? 1 : 0,
   });
-  await applyReplyTagTransition(
-    repository,
+  await tryCampaignStageTransition(
+    context,
+    ports,
     campaign,
-    input.conversationCycle,
-    recipient.cycleId,
+    recipient,
+    campaign.replyStageId,
+    "reply",
   );
 }
 
@@ -174,28 +187,4 @@ async function createSecondarySchedule(
       recipient.variables,
     ),
   });
-}
-
-async function applyReplyTagTransition(
-  repository: CrmConversationRepository,
-  campaign: CrmCampaign,
-  conversationCycle: CrmConversationCycle,
-  recipientSessionId: string,
-) {
-  if (campaign.initialTagId) {
-    await repository.removeConversationCycleTag({
-      cycleId: recipientSessionId,
-      storeId: conversationCycle.storeId,
-      tagId: campaign.initialTagId,
-      tenantId: conversationCycle.tenantId,
-    });
-  }
-  if (campaign.replyTagId) {
-    await repository.addConversationCycleTag({
-      cycleId: recipientSessionId,
-      storeId: conversationCycle.storeId,
-      tagId: campaign.replyTagId,
-      tenantId: conversationCycle.tenantId,
-    });
-  }
 }

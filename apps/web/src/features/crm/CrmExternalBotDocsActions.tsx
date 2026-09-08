@@ -55,8 +55,15 @@ export function CrmExternalBotDocsActions() {
   function parseActionName(jsonCode: string): string {
     try {
       const parsed: unknown = JSON.parse(jsonCode);
-      if (typeof parsed === "object" && parsed !== null && "action" in parsed) {
-        return String((parsed as Record<string, unknown>).action ?? "");
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "command" in parsed
+      ) {
+        const command = (parsed as Record<string, unknown>).command;
+        if (typeof command === "object" && command !== null) {
+          return String((command as Record<string, unknown>).action ?? "");
+        }
       }
       return "";
     } catch {
@@ -75,7 +82,7 @@ export function CrmExternalBotDocsActions() {
     if (activeLang === "curl") {
       return `curl -X POST https://sua-loja.lojaveiculos.com/api/v1/crm/bot/actions \\
   -H "Content-Type: application/json" \\
-  -H "X-Webhook-Secret: SEU_SEGREDO" \\
+  -H "Authorization: Bearer SEU_TOKEN_DE_INTEGRACAO" \\
   -d '${rawJson.replace(/'/g, "'\\''")}'`;
     }
 
@@ -89,7 +96,7 @@ async function executeBotAction() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Webhook-Secret": process.env.CRM_WEBHOOK_SECRET || "SEU_SEGREDO",
+      "Authorization": "Bearer SEU_TOKEN_DE_INTEGRACAO",
     },
     body: JSON.stringify(payload),
   });
@@ -108,14 +115,13 @@ executeBotAction();`;
     }
 
     if (activeLang === "python") {
-      return `import os
-import requests
+      return `import requests
 
 payload = ${rawJson}
 
 headers = {
     "Content-Type": "application/json",
-    "X-Webhook-Secret": os.getenv("CRM_WEBHOOK_SECRET", "SEU_SEGREDO"),
+    "Authorization": "Bearer SEU_TOKEN_DE_INTEGRACAO",
 }
 
 response = requests.post(
@@ -125,8 +131,8 @@ response = requests.post(
     timeout=10,
 )
 
-if response.status_code == 200:
-    print("Action successful:", response.json())
+if response.status_code in (200, 202):
+    print("Action accepted:", response.json())
 else:
     print(f"Error {response.status_code}:", response.json())`;
     }
@@ -141,24 +147,15 @@ else:
   };
 
   const sampleSuccessResponse = `{
-  "success": true,
-  "action": "${parseActionName(selectedAction.code)}",
-  "result": {
-    "messageId": "msg_9f2a71b4-2193-41ec-b09e",
-    "status": "queued",
-    "enqueuedAt": "2026-07-07T12:00:01.000Z"
-  }
+  "actionId": "9f2a71b4-2193-41ec-b09e-7a1f0c2d8e55",
+  "requestId": "req_8df283bc9a10",
+  "status": "completed"
 }`;
 
   const sampleBlockedResponse = `{
-  "success": false,
-  "code": "CRM_WHATSAPP_BOT_ACTION_BLOCKED",
-  "message": "Ações automáticas estão bloqueadas enquanto a conversa está sob atendimento humano.",
-  "requestId": "req_8df283bc9a10",
-  "details": {
-    "humanAttendanceState": "IN_HUMAN_SERVICE",
-    "reason": "HUMAN_TAKEOVER_ACTIVE"
-  }
+  "code": "CRM_BOT_POLICY_DENIED",
+  "message": "External bot policy denied command acceptance: human_attendance_active.",
+  "requestId": "req_8df283bc9a10"
 }`;
 
   return (
@@ -205,7 +202,7 @@ else:
                 setSearchQuery(e.target.value);
                 setSelectedActionIndex(0);
               }}
-              placeholder="Buscar ação (ex: send_text, note...)"
+              placeholder="Buscar ação (ex: message.send_text, handoff...)"
               type="search"
               value={searchQuery}
             />

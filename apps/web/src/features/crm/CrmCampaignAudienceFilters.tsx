@@ -4,7 +4,6 @@ import type {
   CampaignAudienceSource,
   CampaignLeadFilters,
 } from "./crmCampaignSources";
-import type { CrmTag } from "./crmConversationTypes";
 
 export function CampaignAudienceFilters({
   audienceSource,
@@ -12,20 +11,14 @@ export function CampaignAudienceFilters({
   onAudienceSourceChange,
   onLeadFiltersChange,
   onQueryChange,
-  onTagChange,
   query,
-  selectedTagId,
-  tags,
 }: {
   audienceSource: CampaignAudienceSource;
   leadFilters: CampaignLeadFilters;
   onAudienceSourceChange: (value: CampaignAudienceSource) => void;
   onLeadFiltersChange: (value: CampaignLeadFilters) => void;
   onQueryChange: (value: string) => void;
-  onTagChange: (value: string) => void;
   query: string;
-  selectedTagId: string;
-  tags: CrmTag[];
 }) {
   return (
     <>
@@ -48,13 +41,7 @@ export function CampaignAudienceFilters({
       {audienceSource === "leads" ? (
         <LeadFilters filters={leadFilters} onChange={onLeadFiltersChange} />
       ) : (
-        <ConversationFilters
-          onQueryChange={onQueryChange}
-          onTagChange={onTagChange}
-          query={query}
-          selectedTagId={selectedTagId}
-          tags={tags}
-        />
+        <ConversationFilters onQueryChange={onQueryChange} query={query} />
       )}
     </>
   );
@@ -78,34 +65,17 @@ function SourceTab({
 
 function ConversationFilters({
   onQueryChange,
-  onTagChange,
   query,
-  selectedTagId,
-  tags,
 }: {
   onQueryChange: (value: string) => void;
-  onTagChange: (value: string) => void;
   query: string;
-  selectedTagId: string;
-  tags: CrmTag[];
 }) {
   return (
-    <>
-      <SearchField
-        onChange={onQueryChange}
-        placeholder="Buscar conversa ou telefone"
-        value={query}
-      />
-      <CrmSelect
-        ariaLabel="Filtrar por tag"
-        onChange={onTagChange}
-        options={[
-          { label: "Todas as tags", value: "all" },
-          ...tags.map((tag) => ({ label: tag.name, value: tag.id })),
-        ]}
-        value={selectedTagId}
-      />
-    </>
+    <SearchField
+      onChange={onQueryChange}
+      placeholder="Buscar conversa ou telefone"
+      value={query}
+    />
   );
 }
 

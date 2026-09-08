@@ -32,7 +32,7 @@ describe("CrmCampaignsPage", () => {
         onPauseCampaign={vi.fn(async () => createCampaign())}
         onResumeCampaign={vi.fn(async () => createCampaign())}
         conversationCycles={[createSession({ customerDisplayName: "Ana" })]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 
@@ -86,7 +86,7 @@ describe("CrmCampaignsPage", () => {
         onPauseCampaign={vi.fn(async () => createCampaign())}
         onResumeCampaign={vi.fn(async () => createCampaign())}
         conversationCycles={[]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 
@@ -118,7 +118,7 @@ describe("CrmCampaignsPage", () => {
         onPauseCampaign={vi.fn(async () => createCampaign())}
         onResumeCampaign={vi.fn(async () => createCampaign())}
         conversationCycles={[createSession({ customerDisplayName: "Ana" })]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 
@@ -176,7 +176,7 @@ describe("CrmCampaignsPage", () => {
         onPauseCampaign={vi.fn(async () => createCampaign())}
         onResumeCampaign={vi.fn(async () => createCampaign())}
         conversationCycles={[]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 
@@ -207,7 +207,7 @@ describe("CrmCampaignsPage", () => {
         onPauseCampaign={vi.fn(async () => createCampaign())}
         onResumeCampaign={vi.fn(async () => createCampaign())}
         conversationCycles={[createSession()]}
-        tags={[]}
+        stageOptions={[]}
       />,
     );
 

@@ -1,8 +1,10 @@
+import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type {
   CrmCampaign,
   CrmConversationRepository,
   CrmScheduledMessage,
 } from "../ports/crmConversationRepository.js";
+import { tryCampaignStageTransition } from "./crmCampaignStageTransitions.js";
 import {
   getCrmConversationRepository,
   type CrmServicePorts,
@@ -24,6 +26,7 @@ export async function findProcessableCampaignForSchedule(
 }
 
 export async function recordCampaignScheduledSendResult(
+  context: ServiceContext,
   scheduled: CrmScheduledMessage,
   input: {
     errorMessage?: string;
@@ -79,6 +82,14 @@ export async function recordCampaignScheduledSendResult(
     tenantId: scheduled.tenantId,
   });
   await updateCampaignCounts(repository, campaign, { sentDelta: 1 });
+  await tryCampaignStageTransition(
+    context,
+    ports,
+    campaign,
+    recipient,
+    campaign.initialStageId,
+    "initial_send",
+  );
 }
 
 export async function updateCampaignCounts(

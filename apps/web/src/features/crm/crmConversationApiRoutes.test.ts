@@ -14,7 +14,7 @@ describe("CRM conversation API routes", () => {
       "/api/v1/crm/channel-connections/connection-1",
     );
     expect(crmConversationRoutes.conversationsStart()).toBe(
-      "/api/v1/crm/conversation-cycles/start",
+      "/api/v1/crm/conversation-cycles",
     );
     expect(crmConversationRoutes.conversationCycles()).toBe(
       "/api/v1/crm/conversation-cycles",
@@ -115,12 +115,6 @@ describe("CRM conversation API routes", () => {
     expect(crmConversationRoutes.retryProviderEvent("event_1")).toBe(
       "/api/v1/crm/provider-events/event_1/retry",
     );
-    expect(crmConversationRoutes.cycleTags("cycle-uuid")).toBe(
-      "/api/v1/crm/conversation-cycles/cycle-uuid/tags",
-    );
-    expect(crmConversationRoutes.cycleTag("cycle-uuid", "tag-uuid")).toBe(
-      "/api/v1/crm/conversation-cycles/cycle-uuid/tags/tag-uuid",
-    );
     expect(crmConversationRoutes.sendCatalog()).toBe(
       "/api/v1/crm/whatsapp/send/catalog",
     );
@@ -153,14 +147,10 @@ describe("CRM conversation API routes", () => {
         search: "maria",
         cycleId: "session_1",
         status: "ACTIVE",
-        tagIds: [
-          "550e8400-e29b-41d4-a716-446655440000",
-          "550e8400-e29b-41d4-a716-446655440001",
-        ],
         unreadOnly: true,
       }).toString(),
     ).toBe(
-      "assigneeId=03030303-0303-4303-8303-030303030303&connectionId=connection_1&filter=fresh&humanAttendanceState=WAITING_HUMAN&limit=40&offset=80&search=maria&cycleId=session_1&status=ACTIVE&tagIds=550e8400-e29b-41d4-a716-446655440000%2C550e8400-e29b-41d4-a716-446655440001&unreadOnly=true",
+      "assigneeId=03030303-0303-4303-8303-030303030303&connectionId=connection_1&filter=fresh&humanAttendanceState=WAITING_HUMAN&limit=40&offset=80&search=maria&cycleId=session_1&status=ACTIVE&unreadOnly=true",
     );
   });
 
@@ -171,12 +161,11 @@ describe("CRM conversation API routes", () => {
       humanAttendanceState: "IN_HUMAN_SERVICE",
       search: "maria",
       status: "HUMAN_TAKEOVER",
-      tagIds: ["tag-1", "tag-2"],
       unreadOnly: true,
     }).toString();
 
     expect(query).toBe(
-      "connectionId=connection_1&filter=mine&humanAttendanceState=IN_HUMAN_SERVICE&search=maria&status=HUMAN_TAKEOVER&tagIds=tag-1%2Ctag-2&unreadOnly=true",
+      "connectionId=connection_1&filter=mine&humanAttendanceState=IN_HUMAN_SERVICE&search=maria&status=HUMAN_TAKEOVER&unreadOnly=true",
     );
     expect(query).not.toContain("attendanceState=");
   });

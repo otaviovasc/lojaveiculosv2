@@ -6,6 +6,7 @@ const nullableTimestamp = z.string().datetime({ offset: true }).nullable();
 
 export const crmExternalBotConfigurationSchema = z
   .object({
+    apiTokenConfigured: z.boolean(),
     createdAt: nullableTimestamp,
     enabled: z.boolean(),
     id: nonEmptyString.nullable(),
@@ -28,6 +29,7 @@ export type CrmExternalBotConfigurationRead = z.infer<
 
 export const crmExternalBotConfigurationPatchSchema = z
   .object({
+    apiToken: z.string().trim().min(32).max(256).nullable().optional(),
     enabled: z.boolean().optional(),
     webhookSecret: z.string().trim().min(32).max(256).nullable().optional(),
     webhookUrl: z.string().trim().url().max(500).nullable().optional(),

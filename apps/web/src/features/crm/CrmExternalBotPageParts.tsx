@@ -11,9 +11,12 @@ export type CrmExternalBotPageProps = {
 };
 
 export type BotIntegrationFormProps = {
+  apiTokenDraft: string;
   enabled: boolean;
   integration: CrmExternalBotConfiguration | null;
   isSaving: boolean;
+  onApiTokenChange: (value: string) => void;
+  onClearApiToken: () => void;
   onClearSecret: () => void;
   onEnabledChange: (enabled: boolean) => void;
   onSave: () => void;
@@ -25,6 +28,7 @@ export type BotIntegrationFormProps = {
 
 export function BotIntegrationForm(props: BotIntegrationFormProps) {
   const secretConfigured = Boolean(props.integration?.secretConfigured);
+  const apiTokenConfigured = Boolean(props.integration?.apiTokenConfigured);
   return (
     <div className="crm-bot-form">
       <span aria-hidden="true" className="crm-bot-card-watermark">
@@ -49,7 +53,8 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
         >
           <ShieldCheck aria-hidden="true" className="size-4" />
           {props.enabled ? "Ativo" : "Inativo"} ·{" "}
-          {secretConfigured ? "Segredo configurado" : "Sem segredo"}
+          {secretConfigured ? "Segredo configurado" : "Sem segredo"} ·{" "}
+          {apiTokenConfigured ? "Token configurado" : "Sem token"}
         </FeatureStatusBadge>
       </div>
 
@@ -78,7 +83,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
 
           <div className="crm-bot-form-field">
             <label className="crm-bot-field-label" htmlFor="crm-bot-secret">
-              Novo segredo (Header X-Webhook-Secret)
+              Novo segredo (assinatura HMAC dos eventos entregues no webhook)
             </label>
             <span className="crm-bot-input-wrap">
               <KeyRound aria-hidden="true" />
@@ -94,6 +99,33 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
                 value={props.secretDraft}
               />
             </span>
+          </div>
+        </div>
+
+        <div className="crm-bot-inputs-row">
+          <div className="crm-bot-form-field">
+            <label className="crm-bot-field-label" htmlFor="crm-bot-api-token">
+              Novo token da API de acoes (Bearer de POST /crm/bot/actions)
+            </label>
+            <span className="crm-bot-input-wrap">
+              <KeyRound aria-hidden="true" />
+              <input
+                id="crm-bot-api-token"
+                onChange={(event) => props.onApiTokenChange(event.target.value)}
+                placeholder={
+                  apiTokenConfigured
+                    ? "Token configurado"
+                    : "Mínimo 32 caracteres"
+                }
+                type="password"
+                value={props.apiTokenDraft}
+              />
+            </span>
+            <p>
+              Token write-only usado pelo bot para chamar a Bot Action API com{" "}
+              <code>Authorization: Bearer</code>. Nao e o mesmo que o segredo do
+              webhook.
+            </p>
           </div>
         </div>
 
@@ -142,6 +174,17 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
             >
               <KeyRound aria-hidden="true" className="size-4" />
               Remover segredo
+            </button>
+          ) : null}
+          {apiTokenConfigured ? (
+            <button
+              className="crm-action crm-action-secondary"
+              disabled={props.isSaving}
+              onClick={props.onClearApiToken}
+              type="button"
+            >
+              <KeyRound aria-hidden="true" className="size-4" />
+              Remover token
             </button>
           ) : null}
         </div>

@@ -77,11 +77,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).getStatistics(input, options),
-    addCycleTag: async (cycleId, input) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).addCycleTag(
-        cycleId,
-        input,
-      ),
     assignCycle: async (cycleId, input) =>
       createCrmConversationApi(await createProductCrmApiOptions()).assignCycle(
         cycleId,
@@ -179,18 +174,10 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateScheduledMessage(scheduledMessageId, input),
-    createTag: async (input) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).createTag(
-        input,
-      ),
     deleteQuickMessage: async (quickMessageId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).deleteQuickMessage(quickMessageId),
-    deleteTag: async (tagId) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).deleteTag(
-        tagId,
-      ),
     deleteMessage: async (messageId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -244,10 +231,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listScheduledMessages(input),
-    listTags: async (input) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).listTags(
-        input,
-      ),
     listProviderEventIssues: async () =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -272,10 +255,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listConversationCycleCounts(query),
-    removeCycleTag: async (cycleId, tagId) =>
-      createCrmConversationApi(
-        await createProductCrmApiOptions(),
-      ).removeCycleTag(cycleId, tagId),
     cancelScheduledMessage: async (scheduledMessageId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -288,10 +267,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).pauseCampaign(campaignId),
-    reorderTags: async (input) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).reorderTags(
-        input,
-      ),
     removeReaction: async (messageId) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -381,11 +356,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateQuickMessage(quickMessageId, input),
-    updateTag: async (tagId, input) =>
-      createCrmConversationApi(await createProductCrmApiOptions()).updateTag(
-        tagId,
-        input,
-      ),
     subscribeEvents: (input) => {
       let unsubscribe: (() => void) | null = null;
       let closed = false;

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Tags, UsersRound } from "lucide-react";
+import { Check, ChevronDown, UsersRound } from "lucide-react";
 import {
   useId,
   useRef,
@@ -12,7 +12,6 @@ import type {
   CrmAssignableMember,
   CrmConversationCycleCounts,
   CrmConversationCycleFilter,
-  CrmTag,
 } from "./crmConversationTypes";
 
 const quickFilterOptions: Array<{
@@ -180,96 +179,6 @@ export function QueueQuickFilterRow({
         label="Todos"
         onClick={() => onQuickFilterChange("all")}
       />
-    </div>
-  );
-}
-
-export function QueueTagFilterMenu({
-  availableTags,
-  onTagFilterToggle,
-  selectedTagIds,
-}: {
-  availableTags: CrmTag[];
-  onTagFilterToggle: (tagId: string) => void;
-  selectedTagIds: string[];
-}) {
-  const anchorRef = useRef<HTMLButtonElement>(null);
-  const buttonId = useId();
-  const menuId = useId();
-  const initialFocusRef = useRef<"first" | "last">("first");
-  const [open, setOpen] = useState(false);
-  if (availableTags.length === 0) return null;
-
-  return (
-    <div className="crm-filter-anchor">
-      <button
-        aria-controls={menuId}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className={
-          selectedTagIds.length
-            ? "crm-queue-dropdown crm-queue-dropdown-active"
-            : "crm-queue-dropdown"
-        }
-        id={buttonId}
-        onClick={() => {
-          initialFocusRef.current = "first";
-          setOpen((current) => !current);
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-          event.preventDefault();
-          initialFocusRef.current = event.key === "ArrowUp" ? "last" : "first";
-          setOpen(true);
-        }}
-        ref={anchorRef}
-        type="button"
-      >
-        <Tags aria-hidden="true" />
-        <span>Etiquetas</span>
-        {selectedTagIds.length ? (
-          <strong>{selectedTagIds.length}</strong>
-        ) : null}
-        <ChevronDown aria-hidden="true" />
-      </button>
-      <FeatureAnchoredPopover
-        anchorRef={anchorRef}
-        ariaLabel="Filtrar por etiquetas"
-        className="crm-filter-menu"
-        id={menuId}
-        initialFocus={initialFocusRef.current}
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        onKeyDown={handlePopupNavigation}
-      >
-        <div aria-label="Etiquetas disponíveis" role="group">
-          {availableTags.map((tag) => {
-            const selected = selectedTagIds.includes(tag.id);
-            return (
-              <button
-                aria-checked={selected}
-                className="crm-filter-menu-option"
-                key={tag.id}
-                onClick={() => onTagFilterToggle(tag.id)}
-                role="menuitemcheckbox"
-                type="button"
-              >
-                <span className="crm-filter-menu-check">
-                  {selected ? <Check aria-hidden="true" /> : null}
-                </span>
-                <i
-                  aria-hidden="true"
-                  style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
-                />
-                <span>
-                  {tag.emoji ? `${tag.emoji} ` : ""}
-                  {tag.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </FeatureAnchoredPopover>
     </div>
   );
 }

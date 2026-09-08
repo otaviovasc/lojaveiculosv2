@@ -1,6 +1,7 @@
 import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { expect, vi } from "vitest";
 import type { CrmConversationRepository } from "../../../domains/crm/ports/crmConversationRepository.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRoutingRepositories } from "../adapters/memory/crmRoutingRepository.js";
 import {
@@ -8,6 +9,7 @@ import {
   withTestZapiWebhookToken,
 } from "./crm.channelConnections.testSupport.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
+import type { CreateCrmTestAppOptions } from "./crm.controller.testSupport.types.js";
 
 export const campaignConnectionId = "24000000-0000-4000-8000-000000000101";
 export const campaignStoreId = "store_1" as StoreId;
@@ -16,6 +18,7 @@ export const campaignTenantId = "tenant_1" as TenantId;
 export function createCampaignTestApp(
   conversationRepository: CrmConversationRepository,
   permissions?: PermissionKey[],
+  extraOptions: Record<string, unknown> = {},
 ) {
   const connections = createMemoryCrmConnectionRepository([
     createZapiConnection(),
@@ -40,6 +43,7 @@ export function createCampaignTestApp(
     crmMessagingGateway: { sendText: createSendTextSpy() },
     crmConversationRepository: conversationRepository,
     ...(permissions ? { permissions } : {}),
+    ...(extraOptions as CreateCrmTestAppOptions),
   });
 }
 
@@ -133,13 +137,34 @@ export function seedCycle(
   });
 }
 
-export function createTag(repository: CrmConversationRepository, name: string) {
-  return repository.createTag({
-    color: "#64748b",
-    name,
+export async function createCampaignStages(
+  pipelineRepository: CrmPipelineRepository,
+) {
+  const pipeline = await pipelineRepository.createPipeline({
+    isDefault: true,
+    name: "Pipeline campanhas",
+    stages: [
+      {
+        color: "#3b82f6",
+        leadStatus: "contacted",
+        name: "Oferta enviada",
+        status: "open",
+      },
+      {
+        color: "#16a34a",
+        leadStatus: "qualified",
+        name: "Respondeu campanha",
+        status: "open",
+      },
+    ],
     storeId: campaignStoreId,
     tenantId: campaignTenantId,
   });
+  const [initialStage, replyStage] = pipeline.stages;
+  if (!initialStage || !replyStage) {
+    throw new Error("Campaign test pipeline stages are missing.");
+  }
+  return { initialStage, replyStage };
 }
 
 export function postZapiReply(

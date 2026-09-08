@@ -9,8 +9,6 @@ import {
   createCampaignRoutingPolicy,
   createCampaignSessionCounts,
   createCampaignSessions,
-  repliedTagId,
-  warmTagId,
 } from "./crm-whatsapp-campaigns-fixtures";
 
 export async function installNoopCampaignEventSource(page: Page) {
@@ -52,12 +50,6 @@ export async function installCampaignApiMocks(page: Page) {
   );
   await page.route("**/api/v1/crm/quick-messages", (route) =>
     fulfillJson(route, []),
-  );
-  await page.route("**/api/v1/crm/tags**", (route) =>
-    fulfillJson(route, [
-      { color: "green", emoji: null, id: warmTagId, name: "Oferta enviada" },
-      { color: "blue", emoji: null, id: repliedTagId, name: "Respondeu" },
-    ]),
   );
   await page.route("**/api/v1/crm/conversation-cycles/counts**", (route) =>
     fulfillJson(route, createCampaignSessionCounts()),

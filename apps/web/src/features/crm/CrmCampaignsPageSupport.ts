@@ -7,7 +7,7 @@ import type {
 } from "./crmCampaignTypes";
 import type { ProductCrmApi } from "./productCrmApi";
 import type { CrmConversationApi } from "./crmConversationApi";
-import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
+import type { CrmConversationCycle } from "./crmConversationTypes";
 
 export type CrmCampaignsPageProps = {
   canCancel: boolean;
@@ -25,31 +25,33 @@ export type CrmCampaignsPageProps = {
   onPauseCampaign: (campaignId: string) => Promise<CrmCampaign | null>;
   onResumeCampaign: (campaignId: string) => Promise<CrmCampaign | null>;
   conversationCycles: CrmConversationCycle[];
-  tags: CrmTag[];
+  stageOptions: CrmCampaignStageOption[];
+};
+
+export type CrmCampaignStageOption = {
+  color?: string;
+  label: string;
+  value: string;
 };
 
 export function matchesCampaignFilters(
   cycle: CrmConversationCycle,
   query: string,
-  selectedTagId: string,
 ) {
   const normalizedQuery = query.trim().toLowerCase();
-  const matchesQuery =
+  return (
     !normalizedQuery ||
     formatCycleName(cycle).toLowerCase().includes(normalizedQuery) ||
-    (cycle.customerPhone ?? "").includes(normalizedQuery);
-  const matchesTag =
-    selectedTagId === "all" ||
-    cycle.tags?.some((tag) => tag.id === selectedTagId);
-  return matchesQuery && matchesTag;
+    (cycle.customerPhone ?? "").includes(normalizedQuery)
+  );
 }
 
 export function buildCampaignInput(input: {
   campaignName: string;
   firstDate: Date;
-  initialTagId: string;
+  initialStageId: string;
   intervalMinutes: number;
-  replyTagId: string;
+  replyStageId: string;
   secondaryContent: string;
   secondaryDelayMinutes: number;
   text: string;
@@ -57,8 +59,8 @@ export function buildCampaignInput(input: {
 }): CrmCreateCampaignInput {
   return {
     content: input.text,
-    ...(input.initialTagId !== "none"
-      ? { initialTagId: input.initialTagId }
+    ...(input.initialStageId !== "none"
+      ? { initialStageId: input.initialStageId }
       : {}),
     intervalMinutes: input.intervalMinutes,
     name: input.campaignName.trim(),
@@ -66,7 +68,9 @@ export function buildCampaignInput(input: {
       cycleId: String(row.cycleId),
       variables: { nome: row.name.trim() || "cliente" },
     })),
-    ...(input.replyTagId !== "none" ? { replyTagId: input.replyTagId } : {}),
+    ...(input.replyStageId !== "none"
+      ? { replyStageId: input.replyStageId }
+      : {}),
     scheduledStartAt: input.firstDate.toISOString(),
     ...(input.secondaryContent.trim()
       ? {

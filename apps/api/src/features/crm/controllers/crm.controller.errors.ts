@@ -17,6 +17,7 @@ import {
   CrmVisitSessionMismatchError,
   CrmVisitVehicleNotFoundError,
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { CrmPipelineNoOpenStageError } from "../../../domains/crm/crmServiceDomainErrors.js";
 import { CrmLeadLinkedSessionError } from "../../../domains/crm/services/CrmService/setCrmLeadArchived.js";
 
 export async function handleCrm(
@@ -28,7 +29,13 @@ export async function handleCrm(
 
 function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   if (error instanceof CrmRequestValidationError) {
-    return apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400);
+    return {
+      ...apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400),
+      ...(error.details ? { details: error.details } : {}),
+    };
+  }
+  if (error instanceof CrmPipelineNoOpenStageError) {
+    return apiErrorInput(error, "CRM_PIPELINE_NO_OPEN_STAGE", 409);
   }
   if (error instanceof FinanceAutoEntryEvaluationError) {
     return apiErrorInput(error, "CRM_FINANCIAL_PRODUCT_VALIDATION_ERROR", 400);
@@ -70,8 +77,15 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
 }
 
 export class CrmRequestValidationError extends Error {
-  constructor(message: string) {
+  readonly details?:
+    { fields: { path: string; message: string }[] } | undefined;
+
+  constructor(
+    message: string,
+    details?: { fields: { path: string; message: string }[] },
+  ) {
     super(message);
     this.name = "CrmRequestValidationError";
+    this.details = details;
   }
 }

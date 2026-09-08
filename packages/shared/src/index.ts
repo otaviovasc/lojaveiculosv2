@@ -57,8 +57,6 @@ export type PermissionKey =
   | "crm.scheduled_messages.create"
   | "crm.scheduled_messages.process"
   | "crm.scheduled_messages.read"
-  | "crm.tags.assign"
-  | "crm.tags.manage"
   | "crm.attendances.manage"
   | "documents.read"
   | "documents.download"

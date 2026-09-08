@@ -187,17 +187,6 @@ export type CrmMessageSenderOrigin = z.infer<
   typeof crmMessageSenderOriginSchema
 >;
 
-export const crmTagDtoSchema = z
-  .object({
-    color: z.string(),
-    emoji: optionalNullableString,
-    id: nonEmptyString,
-    name: nonEmptyString,
-    sortOrder: nonNegativeInteger.optional(),
-  })
-  .strict();
-export type CrmTagDto = z.infer<typeof crmTagDtoSchema>;
-
 export const crmConversationCycleSchema = z
   .object({
     assignedMember: z
@@ -236,7 +225,6 @@ export const crmConversationCycleSchema = z
     profilePhotoUrl: optionalNullableString,
     revision: nonNegativeInteger,
     status: z.enum(crmConversationCycleStatuses),
-    tags: z.array(crmTagDtoSchema).optional(),
     unreadCount: nonNegativeInteger.optional(),
     vehicle: z
       .object({

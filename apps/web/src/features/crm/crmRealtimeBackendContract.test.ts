@@ -94,15 +94,6 @@ function backendCycleDto() {
     profilePhotoUrl: "https://cdn.local/ana.jpg",
     revision: 7,
     status: "HUMAN_TAKEOVER",
-    tags: [
-      {
-        color: "slate",
-        emoji: "⭐",
-        id: "tag-1",
-        name: "VIP",
-        sortOrder: 0,
-      },
-    ],
     unreadCount: 1,
   };
 }

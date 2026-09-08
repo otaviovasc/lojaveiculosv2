@@ -13,7 +13,6 @@ describe("CrmScopedNav", () => {
       activeScope: "conversations" as const,
       onChange: vi.fn(),
       providerStatus: { label: "Z-API: online", tone: "online" as const },
-      tagCount: 0,
       unreadCount: 0,
     };
     const rendered = render(
@@ -62,7 +61,6 @@ describe("CrmScopedNav", () => {
           label: "Tempo real: sincronizado",
           tone: "online",
         }}
-        tagCount={0}
         unreadCount={0}
       />,
     );
@@ -84,7 +82,6 @@ describe("CrmScopedNav", () => {
           label: "Tempo real: sincronizado",
           tone: "online",
         }}
-        tagCount={2}
         unreadCount={3}
       />,
     );
@@ -109,7 +106,6 @@ describe("CrmScopedNav", () => {
           label: "Tempo real: sincronizado",
           tone: "online",
         }}
-        tagCount={2}
         unreadCount={3}
       />,
     );

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { CrmProvider } from "@lojaveiculosv2/shared";
 import {
   isConnectedConnection,
-  findDefaultFreeTextStartConnection,
+  resolveFreeTextStartConnection,
+  listConversationStartConnections,
+  listFreeTextStartConnections,
   readConversationStartCapability,
+  resolveConversationStartConnection,
   resolveCrmInboxConnectionSelection,
 } from "./crmConnectionSelection";
 import type { CrmRoutingPolicy } from "./crmRoutingTypes";
@@ -175,8 +178,12 @@ describe("CRM messaging connection selection", () => {
     const official = createConnection("meta_cloud", "official");
     const zapi = createConnection("zapi", "zapi");
 
-    expect(findDefaultFreeTextStartConnection([official, zapi])).toBe(zapi);
-    expect(findDefaultFreeTextStartConnection([official])).toBeNull();
+    expect(
+      resolveFreeTextStartConnection({ connections: [official, zapi] }),
+    ).toBe(zapi);
+    expect(
+      resolveFreeTextStartConnection({ connections: [official] }),
+    ).toBeNull();
   });
 
   it("prefers an active official connection over a connected but paused Z-API", () => {
@@ -188,7 +195,9 @@ describe("CRM messaging connection selection", () => {
 
     expect(isConnectedConnection(pausedZapi)).toBe(false);
     expect(isConnectedConnection(official)).toBe(true);
-    expect(findDefaultFreeTextStartConnection([pausedZapi])).toBeNull();
+    expect(
+      resolveFreeTextStartConnection({ connections: [pausedZapi] }),
+    ).toBeNull();
     expect(readConversationStartCapability(pausedZapi)).toMatchObject({
       canStart: false,
       mode: null,
@@ -218,14 +227,16 @@ describe("CRM messaging connection selection", () => {
     expect(isConnectedConnection(disconnected)).toBe(false);
     expect(isConnectedConnection(errored)).toBe(false);
     expect(
-      findDefaultFreeTextStartConnection([disconnected, errored]),
+      resolveFreeTextStartConnection({
+        connections: [disconnected, errored],
+      }),
     ).toBeNull();
   });
 
   it("does not offer OLX Chat as a new-conversation channel", () => {
     const olx = createConnection("olx", "olx");
 
-    expect(findDefaultFreeTextStartConnection([olx])).toBeNull();
+    expect(resolveFreeTextStartConnection({ connections: [olx] })).toBeNull();
     expect(readConversationStartCapability(olx)).toMatchObject({
       canStart: false,
       mode: null,
@@ -269,6 +280,52 @@ describe("CRM messaging connection selection", () => {
       mode: "text",
       provider: "uazapi",
     });
+  });
+
+  it("lists every start-capable connection and resolves the preferred default", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const official = createConnection("meta_cloud", "official");
+    const olx = createConnection("olx", "olx");
+    const paused = {
+      ...createConnection("zapi", "paused"),
+      state: "paused" as const,
+    };
+
+    expect(
+      listConversationStartConnections([zapi, official, olx, paused]).map(
+        (connection) => connection.id,
+      ),
+    ).toEqual(["zapi", "official"]);
+    expect(listFreeTextStartConnections([zapi, official])).toEqual([zapi]);
+    expect(
+      resolveConversationStartConnection({
+        connections: [zapi, official],
+        preferredConnectionId: "official",
+      })?.id,
+    ).toBe("official");
+    expect(
+      resolveConversationStartConnection({
+        connections: [zapi, official],
+        preferredConnectionId: "missing",
+      })?.id,
+    ).toBe("zapi");
+    expect(
+      resolveConversationStartConnection({ connections: [olx, paused] }),
+    ).toBeNull();
+
+    const zapiSecond = createConnection("zapi", "zapi-second");
+    expect(
+      resolveFreeTextStartConnection({
+        connections: [zapi, zapiSecond, official],
+        preferredConnectionId: "zapi-second",
+      })?.id,
+    ).toBe("zapi-second");
+    expect(
+      resolveFreeTextStartConnection({
+        connections: [zapi, zapiSecond, official],
+        preferredConnectionId: "official",
+      })?.id,
+    ).toBe("zapi");
   });
 });
 

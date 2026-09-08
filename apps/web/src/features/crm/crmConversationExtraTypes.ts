@@ -104,6 +104,7 @@ export type CrmProcessDueScheduledMessagesResult = {
 };
 
 type CrmStartConversationBase = {
+  buyerName?: string | undefined;
   customerDisplayName?: string | undefined;
   connectionId: CrmConnectionId;
   leadId?: string | undefined;
@@ -181,29 +182,6 @@ export type CrmWhatsappListCatalogProductsInput = {
   cycleId: string;
 };
 
-export type CrmListTagsInput = {
-  connectionId?: CrmConnectionId | null;
-  search?: string;
-};
-
-export type CrmCreateTagInput = {
-  color?: string;
-  connectionId?: CrmConnectionId | null;
-  emoji?: string | null;
-  name: string;
-};
-
-export type CrmUpdateTagInput = {
-  color?: string;
-  emoji?: string | null;
-  name?: string;
-  sortOrder?: number;
-};
-
-export type CrmReorderTagsInput = {
-  tagIds: string[];
-};
-
 export type CrmWhatsappSendCatalogProductInput = {
   catalogPhone?: string;
   idempotencyKey?: string;
@@ -244,12 +222,6 @@ export type CrmVehicleOption = {
 
 export type CrmVehicleQuery = {
   search?: string;
-};
-
-export type CrmAddConversationCycleTagInput = {
-  color?: string;
-  emoji?: string | null;
-  name: string;
 };
 
 export type CrmProviderEvent = {

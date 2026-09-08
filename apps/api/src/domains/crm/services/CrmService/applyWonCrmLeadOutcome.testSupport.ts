@@ -200,7 +200,6 @@ function conversationCycle(leadId: string): CrmConversationCycle {
     source: "whatsapp",
     status: "ACTIVE",
     storeId: storeId as never,
-    tags: [],
     tenantId: tenantId as never,
     unreadCount: 0,
     updatedAt: now,

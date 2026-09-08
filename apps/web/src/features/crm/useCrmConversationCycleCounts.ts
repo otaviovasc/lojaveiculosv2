@@ -16,7 +16,6 @@ export function useCrmConversationCycleCounts({
   humanAttendanceFilter,
   quickFilter,
   searchRef,
-  selectedTagIds,
   statusFilter,
   storeWide = false,
   unreadOnly,
@@ -28,7 +27,6 @@ export function useCrmConversationCycleCounts({
   humanAttendanceFilter: CrmHumanAttendanceState | "";
   quickFilter: CrmConversationCycleFilter;
   searchRef: MutableRefObject<string>;
-  selectedTagIds: string[];
   statusFilter: CrmConversationCycleStatus | "";
   /** Store-wide counts (aggregate connection filter): omit connectionId. */
   storeWide?: boolean;
@@ -52,7 +50,6 @@ export function useCrmConversationCycleCounts({
         ? { humanAttendanceState: humanAttendanceFilter }
         : {}),
       ...(searchRef.current ? { search: searchRef.current } : {}),
-      ...(selectedTagIds.length ? { tagIds: selectedTagIds } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(unreadOnly ? { unreadOnly } : {}),
     });
@@ -66,7 +63,6 @@ export function useCrmConversationCycleCounts({
     humanAttendanceFilter,
     quickFilter,
     searchRef,
-    selectedTagIds,
     statusFilter,
     storeWide,
     unreadOnly,

@@ -3,6 +3,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 export const crmExternalBotIntegrationProvider = "crm_external_bot";
 
 export type CrmExternalBotIntegration = {
+  apiTokenConfigured: boolean;
   createdAt: Date | null;
   enabled: boolean;
   id: string | null;
@@ -33,6 +34,7 @@ export type FindCrmExternalBotIntegrationBySecretHashInput = {
 
 export type UpsertCrmExternalBotIntegrationInput =
   FindCrmExternalBotIntegrationInput & {
+    apiTokenHash?: string | null;
     enabled: boolean;
     secretUpdatedAt?: Date | null;
     webhookSecretHash?: string | null;

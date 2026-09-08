@@ -120,8 +120,9 @@ export const crmSendTextMessageSchema = z.object({
 
 export const crmStartConversationSchema = z
   .object({
-    customerDisplayName: z.string().trim().min(1).max(191).optional(),
     channel: z.enum(["instagram", "olx_chat", "whatsapp"]),
+    connectionId: z.string().uuid().optional(),
+    customerDisplayName: z.string().trim().min(1).max(191).optional(),
     leadId: z.string().uuid().optional(),
     recipientAddress: z.string().trim().min(3).max(191).optional(),
     template: z

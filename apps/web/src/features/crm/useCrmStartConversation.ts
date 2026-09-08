@@ -15,6 +15,11 @@ type StartConversationInputWithoutConnection =
       : never
     : never;
 
+export type StartConversationCallInput =
+  StartConversationInputWithoutConnection & {
+    connectionId?: CrmConnectionId;
+  };
+
 export function useCrmStartConversation({
   api,
   canSend,
@@ -35,19 +40,20 @@ export function useCrmStartConversation({
 }) {
   const [isStartingConversation, setIsStartingConversation] = useState(false);
   const startConversation = useCallback(
-    async (input: StartConversationInputWithoutConnection) => {
-      if (!connectionId || !canSend) return false;
+    async (input: StartConversationCallInput) => {
+      const targetConnectionId = input.connectionId ?? connectionId;
+      if (!targetConnectionId || !canSend) return false;
       setIsStartingConversation(true);
       try {
         const result = input.template
           ? await api.startConversation({
               ...input,
-              connectionId,
+              connectionId: targetConnectionId,
               template: input.template,
             })
           : await api.startConversation({
               ...input,
-              connectionId,
+              connectionId: targetConnectionId,
               text: input.text,
             });
         mergeCycles([result.cycle], { preserveLocalOnly: true });

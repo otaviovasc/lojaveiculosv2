@@ -144,6 +144,48 @@ describe("CRM pipeline routes", () => {
     );
   });
 
+  it("does not move an existing lead when create is reused by phone", async () => {
+    const { audit, record } = createAuditSpy();
+    const app = createTestApp({ audit, permissions });
+    const stageId = await createWonStage(app);
+    const firstResponse = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({
+        buyerName: "Ana",
+        buyerPhone: "11999990000",
+        source: "manual",
+      }),
+      method: "POST",
+    });
+    const first = (await firstResponse.json()) as {
+      id: string;
+      pipelineStageId: string;
+      status: string;
+    };
+
+    const reusedResponse = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({
+        buyerName: "Ana",
+        buyerPhone: "11999990000",
+        pipelineStageId: stageId,
+        source: "manual",
+      }),
+      method: "POST",
+    });
+
+    expect(reusedResponse.status).toBe(201);
+    await expect(reusedResponse.json()).resolves.toMatchObject({
+      id: first.id,
+      pipelineStageId: first.pipelineStageId,
+      status: first.status,
+    });
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.lead.reuse" }),
+    );
+    expect(record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.pipeline.lead_move" }),
+    );
+  });
+
   it("returns stable errors when moving without permission", async () => {
     const app = createTestApp({
       permissions: permissions.filter((item) => item !== "crm.pipeline.move"),

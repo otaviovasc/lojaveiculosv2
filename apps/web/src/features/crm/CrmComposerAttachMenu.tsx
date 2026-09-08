@@ -11,7 +11,6 @@ import {
   Music,
   Paperclip,
   StickyNote,
-  Tags,
 } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
@@ -32,7 +31,6 @@ export function CrmComposerAttachMenu({
   onOpenNote,
   onOpenQuickMessages,
   onOpenSchedule,
-  onOpenTags,
   onOpenVehicle,
   onOpenVisit,
   onToggle,
@@ -50,7 +48,6 @@ export function CrmComposerAttachMenu({
   onOpenNote?: () => void;
   onOpenQuickMessages: () => void;
   onOpenSchedule?: () => void;
-  onOpenTags?: () => void;
   onOpenVehicle: () => void;
   onOpenVisit?: () => void;
   onToggle: () => void;
@@ -183,15 +180,6 @@ export function CrmComposerAttachMenu({
               title={hasLead ? undefined : NO_LEAD_TOOLTIP}
             >
               Nota interna
-            </AttachMenuButton>
-          ) : null}
-          {capabilities.allowTags && onOpenTags ? (
-            <AttachMenuButton
-              colorClass="crm-attach-color-catalog"
-              icon={<Tags />}
-              onClick={onOpenTags}
-            >
-              Adicionar etiqueta
             </AttachMenuButton>
           ) : null}
           {capabilities.allowVisits && onOpenVisit ? (

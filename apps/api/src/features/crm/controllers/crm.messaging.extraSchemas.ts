@@ -46,42 +46,6 @@ export const whatsappCatalogProductsQuerySchema = z.object({
   cycleId: z.string().uuid(),
 });
 
-export const crmTagsQuerySchema = z.object({
-  connectionId: z.string().uuid().nullable().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(100),
-  search: z.string().trim().max(80).optional(),
-});
-
-const crmTagColorSchema = z
-  .string()
-  .trim()
-  .regex(/^#[0-9a-fA-F]{6}$/);
-
-export const crmCreateTagSchema = z
-  .object({
-    color: crmTagColorSchema.optional(),
-    connectionId: z.string().uuid().nullable().optional(),
-    emoji: z.string().trim().max(16).nullable().optional(),
-    name: z.string().trim().min(1).max(40),
-  })
-  .strict();
-
-export const crmUpdateTagSchema = z
-  .object({
-    color: crmTagColorSchema.optional(),
-    emoji: z.string().trim().max(16).nullable().optional(),
-    name: z.string().trim().min(1).max(40).optional(),
-    sortOrder: z.number().int().min(0).optional(),
-  })
-  .strict()
-  .refine((input) => Object.keys(input).length > 0, {
-    message: "At least one tag field is required.",
-  });
-
-export const crmReorderTagsSchema = z
-  .object({ tagIds: z.array(z.string().uuid()).min(1) })
-  .strict();
-
 export const whatsappSendCatalogProductSchema = z.object({
   catalogPhone: z.string().trim().min(8).max(32).optional(),
   productId: z.string().trim().min(1).max(191),
@@ -106,14 +70,6 @@ export const whatsappSendVehicleSchema = z
   .refine((input) => input.title || input.listingId || input.unitId, {
     message: "title, listingId, or unitId is required.",
   });
-
-export const crmAddConversationCycleTagSchema = z
-  .object({
-    color: crmTagColorSchema.optional(),
-    emoji: z.string().trim().max(16).nullable().optional(),
-    name: z.string().trim().min(1).max(40),
-  })
-  .strict();
 
 const crmCommandIdSchema = z.string().uuid();
 

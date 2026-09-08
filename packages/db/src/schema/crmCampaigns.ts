@@ -11,10 +11,10 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { crmTags } from "./crm.js";
 import { crmChannelConnections } from "./crmCore/authorization.js";
 import { conversationThreads } from "./crmCore/conversations.js";
 import { crmMessages } from "./crmCore/messages.js";
+import { crmPipelineStages } from "./crmPipeline.js";
 import { stores, tenants, users } from "./identity.js";
 import { leads } from "./leads.js";
 import { lifecycleColumns } from "./_shared.js";
@@ -50,14 +50,16 @@ export const crmCampaigns = pgTable(
     content: text("content").notNull(),
     createdByUserId: uuid("created_by_user_id").references(() => users.id),
     failedCount: integer("failed_count").notNull().default(0),
-    initialTagId: uuid("initial_tag_id").references(() => crmTags.id),
+    initialStageId: uuid("initial_stage_id").references(
+      () => crmPipelineStages.id,
+    ),
     intervalMinutes: integer("interval_minutes").notNull().default(1),
     mediaType: varchar("media_type", { length: 120 }),
     mediaUrl: text("media_url"),
     metadata: jsonb("metadata").notNull().default({}),
     name: varchar("name", { length: 191 }).notNull(),
     repliedCount: integer("replied_count").notNull().default(0),
-    replyTagId: uuid("reply_tag_id").references(() => crmTags.id),
+    replyStageId: uuid("reply_stage_id").references(() => crmPipelineStages.id),
     scheduledCount: integer("scheduled_count").notNull().default(0),
     scheduledEndAt: timestamp("scheduled_end_at", {
       withTimezone: true,

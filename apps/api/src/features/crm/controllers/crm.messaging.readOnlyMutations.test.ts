@@ -108,18 +108,6 @@ function readOnlyRoutes(cycleId: string, messageId: string) {
       permission: "crm.messages.send",
     },
     {
-      init: jsonPost({ name: "Quente" }),
-      name: "add tag",
-      path: `/api/v1/crm/conversation-cycles/${cycleId}/tags`,
-      permission: "crm.tags.assign",
-    },
-    {
-      init: { method: "DELETE" },
-      name: "remove tag",
-      path: `/api/v1/crm/conversation-cycles/${cycleId}/tags/tag_1`,
-      permission: "crm.tags.assign",
-    },
-    {
       init: jsonPost({ content: "Ola", shortcut: "/ola", title: "Ola" }),
       name: "create quick message",
       path: "/api/v1/crm/quick-messages",

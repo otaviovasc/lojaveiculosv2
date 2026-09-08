@@ -18,6 +18,7 @@ import { crmConversationCycleHash } from "./crmRouteState";
 import { formatCrmPhone } from "./crmPhoneFormat";
 import { CrmWorkflowPanel } from "./CrmWorkflow";
 import { CrmDateTimeShortcuts } from "./CrmDateTimeShortcuts";
+import { CrmVisitQuickTags } from "./CrmVisitQuickTags";
 import type { CrmConversationCycle } from "./crmConversationTypes";
 import type { CrmVehicleOption } from "./crmConversationExtraTypes";
 
@@ -271,36 +272,7 @@ export function VisitCreationStep({
               <span className="crm-visit-quick-group-label">
                 Finalidade / Motivo:
               </span>
-              <div className="crm-visit-quick-tags">
-                <button
-                  className="crm-visit-tag-btn"
-                  onClick={() => addQuickTag("Test drive agendado")}
-                  type="button"
-                >
-                  🚗 Test Drive
-                </button>
-                <button
-                  className="crm-visit-tag-btn"
-                  onClick={() => addQuickTag("Avaliação na troca")}
-                  type="button"
-                >
-                  🔄 Avaliação na Troca
-                </button>
-                <button
-                  className="crm-visit-tag-btn"
-                  onClick={() => addQuickTag("Simulação de financiamento")}
-                  type="button"
-                >
-                  📋 Financiamento
-                </button>
-                <button
-                  className="crm-visit-tag-btn"
-                  onClick={() => addQuickTag("Apresentação de proposta")}
-                  type="button"
-                >
-                  🤝 Proposta Comercial
-                </button>
-              </div>
+              <CrmVisitQuickTags onAddTag={addQuickTag} />
             </div>
 
             <FeatureField

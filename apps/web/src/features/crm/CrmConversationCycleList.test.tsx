@@ -226,7 +226,6 @@ function createSession(): CrmConversationCycle {
     lastMessageAt: "2026-07-07T12:00:00.000Z",
     lastMessageContent: "Tenho interesse no Civic.",
     metadata: { adTitle: "Civic em destaque", isAdInitiated: true },
-    tags: [{ color: "var(--color-accent)", id: "tag_1", name: "Lead" }],
     status: "ACTIVE",
     unreadCount: 2,
     vehicle: { id: 12, title: "Civic Touring" },

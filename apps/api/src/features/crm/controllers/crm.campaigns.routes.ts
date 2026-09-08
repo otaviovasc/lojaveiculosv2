@@ -55,7 +55,7 @@ export function registerCrmCampaignRoutes(
       const serviceContext = await createContext(context);
       const campaign = await services.createCrmCampaign(serviceContext, {
         content: input.content,
-        initialTagId: input.initialTagId ?? null,
+        initialStageId: input.initialStageId ?? null,
         ...(input.intervalMinutes
           ? { intervalMinutes: input.intervalMinutes }
           : {}),
@@ -64,7 +64,7 @@ export function registerCrmCampaignRoutes(
           cycleId: recipient.cycleId,
           ...(recipient.variables ? { variables: recipient.variables } : {}),
         })),
-        replyTagId: input.replyTagId ?? null,
+        replyStageId: input.replyStageId ?? null,
         scheduledStartAt: new Date(input.scheduledStartAt),
         secondaryContent: input.secondaryContent ?? null,
         ...(input.secondaryDelayMinutes

@@ -6,7 +6,6 @@ import type {
   CrmQueueVisibility,
   CrmScheduledMessage,
   CrmScheduledMessageScope,
-  CrmTag,
 } from "../../../domains/crm/ports/crmConversationRepository.js";
 import type { ListMessagesInput } from "../../../domains/crm/services/CrmMessagingService/listMessages.js";
 import type {
@@ -40,15 +39,6 @@ import type {
   ProcessDueCrmScheduledMessagesResult,
   UpdateCrmScheduledMessageInput,
 } from "../../../domains/crm/services/CrmMessagingService/crmScheduledMessages.js";
-import type {
-  AddConversationCycleTagInput,
-  CreateCrmTagInput,
-  DeleteCrmTagInput,
-  ListCrmTagsInput,
-  ReorderCrmTagsInput,
-  RemoveConversationCycleTagInput,
-  UpdateCrmTagInput,
-} from "../../../domains/crm/services/CrmMessagingService/crmConversationCycleTags.js";
 import type { AssignConversationCycleInput } from "../../../domains/crm/services/CrmMessagingService/updateCrmConversationCycle.js";
 import type { CloseConversationCycleInput } from "../../../domains/crm/services/CrmMessagingService/closeConversationCycle.js";
 import type { SetConversationAttendanceInput } from "../../../domains/crm/services/CrmMessagingService/setConversationAttendance.js";
@@ -92,10 +82,6 @@ export type CrmMessagingServices = CrmQuickMessageServices &
   CrmCampaignServices &
   CrmWhatsappWebhookServices &
   CrmChannelConnectionServices & {
-    addConversationCycleTag: CrmContextService<
-      AddConversationCycleTagInput,
-      CrmConversationCycle
-    >;
     archiveConversationCycle: CrmContextService<
       ConversationCycleLifecycleInput,
       ConversationCycleCommandResponse
@@ -120,8 +106,6 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       CreateCrmScheduledMessageInput,
       CrmScheduledMessage
     >;
-    createCrmTag: CrmContextService<CreateCrmTagInput, CrmTag>;
-    deleteCrmTag: CrmContextService<DeleteCrmTagInput, CrmTag>;
     deleteConversationCycle: CrmContextService<
       ConversationCycleLifecycleInput,
       ConversationCycleCommandResponse
@@ -144,7 +128,6 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       ListDueCrmScheduledMessageScopesInput,
       readonly CrmScheduledMessageScope[]
     >;
-    listCrmTags: CrmContextService<ListCrmTagsInput, readonly CrmTag[]>;
     markConversationCycleReadState: CrmContextService<
       MarkConversationCycleReadInput,
       ConversationCycleCommandResponse
@@ -173,11 +156,6 @@ export type CrmMessagingServices = CrmQuickMessageServices &
     resolveCrmQueueVisibility: (
       context: ServiceContext,
     ) => Promise<CrmQueueVisibility>;
-    removeConversationCycleTag: CrmContextService<
-      RemoveConversationCycleTagInput,
-      CrmConversationCycle
-    >;
-    reorderCrmTags: CrmContextService<ReorderCrmTagsInput, readonly CrmTag[]>;
     sendWhatsappCatalog: CrmContextService<
       SendWhatsappCatalogInput,
       CrmMessage
@@ -205,5 +183,4 @@ export type CrmMessagingServices = CrmQuickMessageServices &
       SetConversationAttendanceInput,
       ConversationCycleCommandResponse
     >;
-    updateCrmTag: CrmContextService<UpdateCrmTagInput, CrmTag>;
   } & CrmPushServices;

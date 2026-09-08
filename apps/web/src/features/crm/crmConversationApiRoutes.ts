@@ -1,7 +1,6 @@
 import { createCrmEndpoint } from "./apiClient";
 import type {
   CrmConnectionId,
-  CrmListTagsInput,
   CrmWhatsappListCatalogProductsInput,
   CrmMessageQuery,
   CrmConversationCycleCountsQuery,
@@ -184,7 +183,7 @@ export const crmConversationRoutes = {
       baseUrl,
     ),
   conversationsStart: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/conversation-cycles/start", baseUrl),
+    createCrmEndpoint("/crm/conversation-cycles", baseUrl),
   events: (baseUrl?: string) => createCrmEndpoint("/crm/events", baseUrl),
   eventsTicket: (baseUrl?: string) =>
     createCrmEndpoint("/crm/events/ticket", baseUrl),
@@ -230,25 +229,6 @@ export const crmConversationRoutes = {
     createCrmEndpoint("/crm/conversation-cycles", baseUrl),
   conversationCycleCounts: (baseUrl?: string) =>
     createCrmEndpoint("/crm/conversation-cycles/counts", baseUrl),
-  cycleTag: (
-    cycleId: CrmConversationCycleId,
-    tagId: string,
-    baseUrl?: string,
-  ) =>
-    createCrmEndpoint(
-      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/tags/${encodeURIComponent(tagId)}`,
-      baseUrl,
-    ),
-  cycleTags: (cycleId: CrmConversationCycleId, baseUrl?: string) =>
-    createCrmEndpoint(
-      `/crm/conversation-cycles/${encodeURIComponent(String(cycleId))}/tags`,
-      baseUrl,
-    ),
-  tag: (tagId: string, baseUrl?: string) =>
-    createCrmEndpoint(`/crm/tags/${encodeURIComponent(tagId)}`, baseUrl),
-  tagsReorder: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/tags/reorder", baseUrl),
-  tags: (baseUrl?: string) => createCrmEndpoint("/crm/tags", baseUrl),
   sendCatalog: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/send/catalog", baseUrl),
   sendCatalogProduct: (baseUrl?: string) =>
@@ -297,7 +277,6 @@ export function createCrmConversationCyclesQuery(
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "cycleId", query.cycleId);
   addOptionalParam(params, "status", query.status);
-  addOptionalParam(params, "tagIds", query.tagIds?.join(","));
   addOptionalParam(params, "unreadOnly", query.unreadOnly);
   return params;
 }
@@ -313,7 +292,6 @@ export function createCrmConversationCycleCountsQuery(
   addOptionalParam(params, "leadId", query.leadId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "status", query.status);
-  addOptionalParam(params, "tagIds", query.tagIds?.join(","));
   addOptionalParam(params, "unreadOnly", query.unreadOnly);
   return params;
 }
@@ -333,13 +311,6 @@ export function createCrmWhatsappCatalogProductsQuery(
   addOptionalParam(params, "catalogPhone", input.catalogPhone);
   addOptionalParam(params, "nextCursor", input.nextCursor);
   addOptionalParam(params, "cycleId", input.cycleId);
-  return params;
-}
-
-export function createCrmTagsQuery(input: CrmListTagsInput = {}) {
-  const params = new URLSearchParams();
-  addOptionalParam(params, "connectionId", input.connectionId ?? undefined);
-  addOptionalParam(params, "search", input.search);
   return params;
 }
 

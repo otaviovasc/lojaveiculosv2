@@ -58,7 +58,6 @@ export function createMemoryCycleContext(
     pinnedAt: null,
     profilePhotoUrl: input.profilePhotoUrl ?? null,
     revision: 0,
-    tags: [],
     source: null,
     status: "ACTIVE",
     storeId: input.storeId,

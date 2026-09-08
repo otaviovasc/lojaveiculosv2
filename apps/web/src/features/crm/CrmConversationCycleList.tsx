@@ -231,41 +231,6 @@ export function SessionList({
                   ) : cycle.status !== "HUMAN_TAKEOVER" ? (
                     <SessionStatusBadge status={cycle.status} />
                   ) : null}
-                  {cycle.tags?.length
-                    ? cycle.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="crm-cycle-tag-chip"
-                          style={{
-                            backgroundColor: tag.color
-                              ? `color-mix(in srgb, ${tag.color} 14%, var(--color-panel))`
-                              : undefined,
-                            color: "var(--color-text)",
-                            borderColor: tag.color
-                              ? `color-mix(in srgb, ${tag.color} 28%, var(--color-line))`
-                              : undefined,
-                          }}
-                        >
-                          {tag.emoji ? (
-                            <span className="text-xs mr-0.5">{tag.emoji}</span>
-                          ) : (
-                            <i
-                              aria-hidden="true"
-                              style={{
-                                backgroundColor:
-                                  tag.color ?? "var(--color-muted)",
-                              }}
-                            />
-                          )}
-                          {tag.name}
-                        </span>
-                      ))
-                    : null}
-                  {(cycle.tags?.length ?? 0) > 2 ? (
-                    <span className="crm-cycle-tag-chip">
-                      +{(cycle.tags?.length ?? 0) - 2}
-                    </span>
-                  ) : null}
                   <ChannelBadge
                     channel={cycle.channel}
                     {...(typeof cycle.metadata?.broker === "string"

@@ -7,25 +7,26 @@ import {
   MessageCircle,
   MessageSquare,
   Reply,
+  KanbanSquare,
   Send,
   Sparkles,
-  Tag,
   TrendingUp,
 } from "lucide-react";
 import { CampaignRecipientPreview } from "./CrmCampaignRecipientPreview";
+import type { CrmCampaignStageOption } from "./CrmCampaignsPageSupport";
 import type { CrmCampaign, CrmCampaignDetail } from "./crmCampaignTypes";
-import type { CrmConversationCycle, CrmTag } from "./crmConversationTypes";
+import type { CrmConversationCycle } from "./crmConversationTypes";
 
 export function CrmCampaignDetailPanel({
   detail,
   isLoading,
   conversationCycles,
-  tags,
+  stageOptions,
 }: {
   detail: CrmCampaignDetail | null;
   isLoading: boolean;
   conversationCycles: CrmConversationCycle[];
-  tags: CrmTag[];
+  stageOptions: CrmCampaignStageOption[];
 }) {
   if (isLoading) {
     return (
@@ -121,7 +122,7 @@ export function CrmCampaignDetailPanel({
           title="Follow-up"
           value={campaign.secondaryContent ?? "Sem follow-up configurado."}
         />
-        <AutomationPreview campaign={campaign} tags={tags} />
+        <AutomationPreview campaign={campaign} stageOptions={stageOptions} />
       </div>
 
       {/* Recipient Preview */}
@@ -157,35 +158,35 @@ function MessagePreview({
 
 function AutomationPreview({
   campaign,
-  tags,
+  stageOptions,
 }: {
   campaign: CrmCampaign;
-  tags: CrmTag[];
+  stageOptions: CrmCampaignStageOption[];
 }) {
-  const initialTag = findTag(tags, campaign.initialTagId);
-  const replyTag = findTag(tags, campaign.replyTagId);
+  const initialStage = findStage(stageOptions, campaign.initialStageId);
+  const replyStage = findStage(stageOptions, campaign.replyStageId);
 
   return (
     <article className="crm-campaign-automation-card">
       <div className="crm-campaign-message-preview-header">
-        <Tag aria-hidden="true" className="size-3.5 text-muted" />
-        <h4>Etiquetas</h4>
+        <KanbanSquare aria-hidden="true" className="size-3.5 text-muted" />
+        <h4>Etapas</h4>
       </div>
       <dl className="crm-campaign-automation-list">
         <div className="crm-campaign-automation-row">
           <dt>Inicial</dt>
           <dd>
-            {initialTag ? (
-              <span className="crm-tag-admin-pill">
+            {initialStage ? (
+              <span className="crm-stage-pill">
                 <span
                   aria-hidden="true"
-                  className="crm-tag-dot"
+                  className="crm-stage-dot"
                   style={{
-                    backgroundColor: initialTag.color || "var(--color-primary)",
+                    backgroundColor:
+                      initialStage.color || "var(--color-primary)",
                   }}
                 />
-                {initialTag.emoji ? `${initialTag.emoji} ` : ""}
-                {initialTag.name}
+                {initialStage.label}
               </span>
             ) : (
               <span className="text-muted">Nenhuma</span>
@@ -195,17 +196,16 @@ function AutomationPreview({
         <div className="crm-campaign-automation-row">
           <dt>Resposta</dt>
           <dd>
-            {replyTag ? (
-              <span className="crm-tag-admin-pill">
+            {replyStage ? (
+              <span className="crm-stage-pill">
                 <span
                   aria-hidden="true"
-                  className="crm-tag-dot"
+                  className="crm-stage-dot"
                   style={{
-                    backgroundColor: replyTag.color || "var(--color-success)",
+                    backgroundColor: replyStage.color || "var(--color-success)",
                   }}
                 />
-                {replyTag.emoji ? `${replyTag.emoji} ` : ""}
-                {replyTag.name}
+                {replyStage.label}
               </span>
             ) : (
               <span className="text-muted">Nenhuma</span>
@@ -263,9 +263,12 @@ function formatWindow(campaign: CrmCampaign) {
   return `${start} até ${end}`;
 }
 
-function findTag(tags: readonly CrmTag[], tagId: string | null) {
-  if (!tagId) return null;
-  return tags.find((tag) => tag.id === tagId) ?? null;
+function findStage(
+  stageOptions: readonly CrmCampaignStageOption[],
+  stageId: string | null,
+) {
+  if (!stageId) return null;
+  return stageOptions.find((option) => option.value === stageId) ?? null;
 }
 
 function campaignStatusLabel(status: CrmCampaign["status"]) {

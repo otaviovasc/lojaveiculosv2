@@ -3,7 +3,6 @@ import { getApiErrorRecovery } from "../../lib/apiErrors";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { asError } from "./crmConversationHookSupport";
 import type {
-  CrmAddConversationCycleTagInput,
   CrmConclusionInput,
   CrmConversationCycle,
   CrmConversationCycleId,
@@ -156,11 +155,7 @@ export function useCrmConversationCycleActions({
       const prefix = `${cycleId}:`;
       return [...pendingSessionActions].some((key) => {
         if (!key.startsWith(prefix)) return false;
-        const pendingAction = key.slice(prefix.length);
-        return actionName === "tag"
-          ? pendingAction === "add-tag" ||
-              pendingAction.startsWith("remove-tag:")
-          : pendingAction === actionName;
+        return key.slice(prefix.length) === actionName;
       });
     },
     [pendingSessionActions],
@@ -353,59 +348,6 @@ export function useCrmConversationCycleActions({
     ],
   );
 
-  const addCycleTag = useCallback(
-    async (
-      cycleId: CrmConversationCycleId,
-      input: CrmAddConversationCycleTagInput,
-    ) => {
-      const cycle = conversationCycles.find((item) => item.id === cycleId);
-      if (!cycle) return false;
-      const name = input.name.trim();
-      if (!name) return false;
-      return runSessionAction(
-        cycleId,
-        "add-tag",
-        async () => ({
-          result: "applied",
-          cycle: (await api.addCycleTag(cycleId, input)) ?? cycle,
-        }),
-        {
-          ...cycle,
-          tags: [
-            ...(cycle.tags ?? []),
-            {
-              color: input.color ?? "var(--color-muted)",
-              emoji: input.emoji ?? null,
-              id: `local-${name.toLocaleLowerCase("pt-BR")}`,
-              name,
-            },
-          ],
-        },
-      );
-    },
-    [api, runSessionAction, conversationCycles],
-  );
-
-  const removeCycleTag = useCallback(
-    async (cycleId: CrmConversationCycleId, tagId: string) => {
-      const cycle = conversationCycles.find((item) => item.id === cycleId);
-      if (!cycle) return false;
-      return runSessionAction(
-        cycleId,
-        `remove-tag:${tagId}`,
-        async () => ({
-          result: "applied",
-          cycle: (await api.removeCycleTag(cycleId, tagId)) ?? cycle,
-        }),
-        {
-          ...cycle,
-          tags: (cycle.tags ?? []).filter((tag) => tag.id !== tagId),
-        },
-      );
-    },
-    [api, runSessionAction, conversationCycles],
-  );
-
   const bulkAssignSessions = useCallback(
     (cycleIds: CrmConversationCycleId[], assignedUserId: string | null) =>
       runBulkSessionAction(() =>
@@ -485,7 +427,6 @@ export function useCrmConversationCycleActions({
                   commandId: createCommandId(),
                 });
               }
-              if (draft.tag) await api.addCycleTag(cycle.id, draft.tag);
               if (draft.readState === "read") {
                 await api.markCycleRead(cycle.id, {
                   commandId: createCommandId(),
@@ -509,7 +450,6 @@ export function useCrmConversationCycleActions({
 
   return {
     actions: {
-      addCycleTag,
       archiveCycle,
       assignCycle,
       bulkAssignSessions,
@@ -523,7 +463,6 @@ export function useCrmConversationCycleActions({
       markCycleRead,
       markCycleUnread,
       pinCycle,
-      removeCycleTag,
       toggleIntervention,
     },
     hasRetryableSessionAction,

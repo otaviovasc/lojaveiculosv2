@@ -1,6 +1,7 @@
 import type {
   CrmCreateScheduledMessageInput,
   CrmListScheduledMessagesInput,
+  CrmProviderConnection,
   CrmScheduledMessage,
   CrmConversationCycle,
 } from "./crmConversationTypes";
@@ -12,6 +13,7 @@ export type CrmSchedulesPageProps = {
   canProcess: boolean;
   canRead: boolean;
   connectionId: string | null;
+  connections?: CrmProviderConnection[];
   error: Error | null;
   initialMessages?: CrmScheduledMessage[];
   onCancel: (scheduledMessageId: string) => Promise<boolean>;

@@ -1,4 +1,5 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import { CrmPipelineNoOpenStageError } from "../crmServiceDomainErrors.js";
 import type { CrmServicePorts } from "../services/CrmService/types.js";
 import { getCrmPipelineRepository } from "../services/CrmService/serviceSupport.js";
 
@@ -12,7 +13,11 @@ export async function ensureLeadPipeline(
     (stage) => stage.status === "open",
   );
   if (!firstOpenStage) {
-    throw new Error("Default CRM pipeline must contain an open stage.");
+    throw new CrmPipelineNoOpenStageError();
   }
-  return { pipelineId: pipeline.id, pipelineStageId: firstOpenStage.id };
+  return {
+    leadStatus: firstOpenStage.leadStatus,
+    pipelineId: pipeline.id,
+    pipelineStageId: firstOpenStage.id,
+  };
 }

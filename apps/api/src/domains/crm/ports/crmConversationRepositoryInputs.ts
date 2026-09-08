@@ -52,7 +52,6 @@ export type CountCrmConversationCyclesInput = {
   selectedAssigneeId?: UserId;
   cycleId?: string;
   status?: CrmConversationCycleStatus;
-  tagIds?: string[];
   storeId: StoreId;
   tenantId: TenantId;
   unreadOnly?: boolean;
@@ -178,54 +177,5 @@ export type UpdateCrmMessageInput = {
   providerTimestamp?: Date | null;
   status?: CrmMessageStatus;
   storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type FindOrCreateCrmTagInput = {
-  color?: string;
-  connectionId?: string | null;
-  emoji?: string | null;
-  name: string;
-  sortOrder?: number;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type CreateCrmTagInput = FindOrCreateCrmTagInput;
-
-export type UpdateCrmTagInput = {
-  color?: string;
-  emoji?: string | null;
-  id: string;
-  name?: string;
-  sortOrder?: number;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type DeleteCrmTagInput = {
-  id: string;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type ReorderCrmTagsInput = {
-  storeId: StoreId;
-  tagIds: readonly string[];
-  tenantId: TenantId;
-};
-
-export type ListCrmTagsInput = {
-  connectionId?: string | null;
-  limit: number;
-  search?: string;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
-export type UpdateCrmConversationCycleTagInput = {
-  cycleId: string;
-  storeId: StoreId;
-  tagId: string;
   tenantId: TenantId;
 };

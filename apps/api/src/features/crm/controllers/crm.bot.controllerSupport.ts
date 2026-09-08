@@ -48,6 +48,7 @@ export function toExternalBotConfigurationRead(
 ): CrmExternalBotConfigurationRead {
   return crmExternalBotConfigurationReadSchema.parse({
     configuration: {
+      apiTokenConfigured: integration.apiTokenConfigured,
       createdAt: integration.createdAt?.toISOString() ?? null,
       enabled: integration.enabled,
       id: integration.id,

@@ -220,7 +220,6 @@ function createCrmConversationCycle(
     pinnedAt: null,
     profilePhotoUrl: null,
     revision: 0,
-    tags: [],
     source: null,
     status: "ACTIVE",
     storeId,

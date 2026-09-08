@@ -31,7 +31,7 @@ truthful routing and store scope; it does not authorize production enablement.
 ## Conversations and messages
 
 - Verify conversation threads remain bound to the receiving channel connection.
-- Verify reads, assignment, close/reopen, attendance, tags, messages, and media
+- Verify reads, assignment, close/reopen, attendance, messages, and media
   mutations are tenant/store scoped and audited.
 - Verify human attendance blocks automatic bot effects immediately before send.
 - Verify the persisted conversation projection remains authoritative when the
@@ -42,7 +42,7 @@ truthful routing and store scope; it does not authorize production enablement.
 ## Permission contract
 
 - Verify current checks use `crm.conversations.*`, `crm.messages.*`,
-  `crm.tags.*`, `crm.scheduled_messages.*`, `crm.campaigns.*`, `crm.bot.*`,
+  `crm.scheduled_messages.*`, `crm.campaigns.*`, `crm.bot.*`,
   `crm.attendances.manage`, `crm.messaging.connection.*`, and the pipeline/
   visit keys documented in the integration contract.
 - Verify the retired provider-specific permission keys are not in the active

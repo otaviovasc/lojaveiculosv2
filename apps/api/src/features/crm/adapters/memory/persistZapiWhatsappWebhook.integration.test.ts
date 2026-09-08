@@ -53,18 +53,6 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
             leadId: persistedLead?.id ?? null,
             messageCount: canonical.snapshot().messages.length,
             revision: 7,
-            tags: [
-              {
-                color: "#64748b",
-                connectionId: null,
-                emoji: null,
-                id: "tag-1",
-                name: "VIP",
-                sortOrder: 0,
-                storeId: connection().storeId,
-                tenantId: connection().tenantId,
-              },
-            ],
             unreadCount: canonical.snapshot().messages.length,
           }),
         );
@@ -115,7 +103,6 @@ describe("persistZapiWhatsappWebhook canonical inbound", () => {
         assignedUserId: "assigned-user",
         messageCount: 1,
         revision: 7,
-        tags: [{ name: "VIP" }],
         unreadCount: 1,
       },
     });

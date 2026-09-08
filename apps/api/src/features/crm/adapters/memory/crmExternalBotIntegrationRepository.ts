@@ -5,6 +5,7 @@ import type {
 } from "../../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
 
 type StoredExternalBotIntegration = CrmExternalBotIntegration & {
+  apiTokenHash: string | null;
   webhookSecretHash: string | null;
   webhookSecretSealed: string | null;
 };
@@ -37,6 +38,10 @@ export function createMemoryCrmExternalBotIntegrationRepository(): CrmExternalBo
     upsertExternalBotIntegration: async (input) => {
       const now = new Date();
       const current = findStoredRecord(records, input);
+      const apiTokenHash =
+        input.apiTokenHash === undefined
+          ? (current?.apiTokenHash ?? null)
+          : input.apiTokenHash;
       const secretHash =
         input.webhookSecretHash === undefined
           ? (current?.webhookSecretHash ?? null)
@@ -46,6 +51,8 @@ export function createMemoryCrmExternalBotIntegrationRepository(): CrmExternalBo
           ? (current?.webhookSecretSealed ?? null)
           : input.webhookSecretSealed;
       const record: StoredExternalBotIntegration = {
+        apiTokenConfigured: Boolean(apiTokenHash),
+        apiTokenHash,
         createdAt: current?.createdAt ?? now,
         enabled: input.enabled,
         id: current?.id ?? `crm_external_bot_integration_${records.length + 1}`,
@@ -93,6 +100,7 @@ function withoutSecrets(
   record: StoredExternalBotIntegration,
 ): CrmExternalBotIntegration {
   const {
+    apiTokenHash: _apiTokenHash,
     webhookSecretHash: _webhookSecretHash,
     webhookSecretSealed: _webhookSecretSealed,
     ...safe

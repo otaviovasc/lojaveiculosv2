@@ -9,6 +9,7 @@ import type {
   LeadCreateFullState,
 } from "./CrmLeadCreateTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
+import { validateQuickLeadInput } from "./crmFormValidation";
 
 export function CrmLeadCreateFullPage({
   onCancel,
@@ -60,12 +61,29 @@ export function CrmLeadCreateFullPage({
 
   const handleUpdateState = (updates: Partial<LeadCreateFullState>) => {
     setState((current) => ({ ...current, ...updates }));
-    if (updates.buyerName !== undefined) setValidationMessage(null);
+    if (
+      updates.buyerName !== undefined ||
+      updates.buyerEmail !== undefined ||
+      updates.buyerPhone !== undefined ||
+      updates.whatsapp !== undefined ||
+      updates.telefoneFixo !== undefined
+    ) {
+      setValidationMessage(null);
+    }
   };
 
   const handleCreate = async () => {
     if (!state.buyerName.trim()) {
       setValidationMessage("Nome completo e obrigatorio.");
+      return;
+    }
+    const quickError = validateQuickLeadInput({
+      email: state.buyerEmail,
+      name: state.buyerName,
+      phone: state.buyerPhone || state.whatsapp || state.telefoneFixo,
+    });
+    if (quickError) {
+      setValidationMessage(quickError);
       return;
     }
 

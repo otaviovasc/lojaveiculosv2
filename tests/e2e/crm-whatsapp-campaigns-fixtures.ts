@@ -1,7 +1,7 @@
 export const campaignConnectionId = "24000000-0000-4000-8000-000000000101";
 export const campaignId = "c3b4e6c1-a0fb-43f4-b6dc-fc0807400c15";
-export const repliedTagId = "9d42160d-2174-48c9-bd34-4c506d2f5f1d";
-export const warmTagId = "7d42160d-2174-48c9-bd34-4c506d2f5f1d";
+export const repliedStageId = "9d42160d-2174-48c9-bd34-4c506d2f5f1d";
+export const warmStageId = "7d42160d-2174-48c9-bd34-4c506d2f5f1d";
 
 export function createCampaignBootstrap() {
   const effectivePermissions = [
@@ -21,8 +21,6 @@ export function createCampaignBootstrap() {
     "crm.scheduled_messages.process",
     "crm.scheduled_messages.read",
     "crm.messages.send",
-    "crm.tags.assign",
-    "crm.tags.manage",
     "crm.attendances.manage",
     "crm.visits.manage",
     "crm.visits.read",
@@ -197,12 +195,12 @@ export function createCampaign() {
     createdAt: "2026-07-07T12:00:00.000Z",
     failedCount: 1,
     id: campaignId,
-    initialTagId: warmTagId,
+    initialStageId: warmStageId,
     intervalMinutes: 3,
     name: "Black Friday Premium",
     repliedCount: 1,
     replyRate: 0.5,
-    replyTagId: repliedTagId,
+    replyStageId: repliedStageId,
     scheduledCount: 2,
     scheduledEndAt: "2026-07-07T12:03:00.000Z",
     scheduledStartAt: "2026-07-07T12:00:00.000Z",
@@ -282,14 +280,6 @@ function createSession(input: {
     leadId: input.leadId ?? "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     revision: 1,
     status: "ACTIVE",
-    tags: [
-      {
-        color: "green",
-        emoji: null,
-        id: warmTagId,
-        name: "Oferta enviada",
-      },
-    ],
     unreadCount: 0,
     uuid: input.id,
   };

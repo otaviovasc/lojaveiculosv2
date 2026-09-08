@@ -144,8 +144,6 @@ CRM group:
 - `crm.messages.send`: create conversations and send outbound messages.
 - `crm.messages.ingest`: persist authenticated provider inbound messages.
 - `crm.attendances.manage`: transition bot and human handling state.
-- `crm.tags.assign`: attach and remove existing tags on conversation threads.
-- `crm.tags.manage`: create, edit, delete, and reorder tags.
 - `crm.scheduled_messages.read`: list scheduled channel messages.
 - `crm.scheduled_messages.create`: schedule a supported channel message.
 - `crm.scheduled_messages.cancel`: cancel a pending scheduled message.

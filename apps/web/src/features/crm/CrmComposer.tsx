@@ -12,7 +12,6 @@ import { CrmComposerAudioRecorderButton } from "./CrmComposerAudioRecorderButton
 import { LocationDialog } from "./CrmComposerActionDialogs";
 import { CrmComposerFinancingDialog } from "./CrmComposerFinancingDialog";
 import { CrmComposerNoteDialog } from "./CrmComposerNoteDialog";
-import { CrmComposerTagsDialog } from "./CrmComposerTagsDialog";
 import { CrmMediaPreviewDialog } from "./CrmMediaPreviewDialog";
 import { CrmQuickMessagePicker } from "./CrmQuickMessagePicker";
 import { addFiles, formatReplyDraft } from "./crmComposerSupport";
@@ -58,18 +57,15 @@ export const MessageComposer = forwardRef<
   MessageComposerProps
 >(function MessageComposer(
   {
-    availableTags = [],
     capabilities = readCrmConnectionCapabilities(undefined),
     canScheduleCreate = true,
     catalogUrl,
     cycle = null,
     defaultLocationName,
     disabled = false,
-    onAddCycleTag,
     onCancelScheduledMessage,
     onListScheduledMessages,
     onProcessDueScheduledMessages,
-    onRemoveCycleTag,
     onScheduleMessage,
     onSend,
     onSendCatalog,
@@ -295,19 +291,6 @@ export const MessageComposer = forwardRef<
             onClose={() => setDialog(null)}
           />
         ) : null}
-        {dialog === "tags" &&
-        capabilities.allowTags &&
-        onAddCycleTag &&
-        onRemoveCycleTag ? (
-          <CrmComposerTagsDialog
-            activeTags={cycle?.tags ?? []}
-            availableTags={availableTags}
-            disabled={effectiveDisabled}
-            onAddTag={onAddCycleTag}
-            onClose={() => setDialog(null)}
-            onRemoveTag={onRemoveCycleTag}
-          />
-        ) : null}
         {dialog === "visit" && capabilities.allowVisits && cycle?.leadId ? (
           <CrmVisitSessionDialog
             cycle={cycle}
@@ -374,7 +357,6 @@ export const MessageComposer = forwardRef<
             openDialog("quick");
           }}
           onOpenSchedule={() => openDialog("schedule")}
-          onOpenTags={() => openDialog("tags")}
           onOpenVehicle={() => openDialog("vehicle")}
           onOpenVisit={() => openDialog("visit")}
           onToggle={() => setMenuOpen((open) => !open)}

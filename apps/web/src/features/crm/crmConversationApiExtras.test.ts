@@ -190,66 +190,6 @@ describe("CRM WhatsApp extras API", () => {
     });
   });
 
-  it("adds and removes real WhatsApp cycle tags through V2", async () => {
-    const tagId = "550e8400-e29b-41d4-a716-446655440000";
-    const fake = createFakeFetch([
-      {
-        id: "session_1",
-        tags: [{ id: tagId, name: "Quente" }],
-      },
-      { id: "session_1", tags: [] },
-    ]);
-    const api = createCrmConversationApi({ fetch: fake.fetch });
-
-    await expect(
-      api.addCycleTag("session_1", {
-        emoji: null,
-        name: "Quente",
-      }),
-    ).resolves.toMatchObject({
-      tags: [{ id: tagId, name: "Quente" }],
-    });
-    await expect(api.removeCycleTag("session_1", tagId)).resolves.toMatchObject(
-      {
-        tags: [],
-      },
-    );
-
-    expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/conversation-cycles/session_1/tags",
-      init: {
-        body: JSON.stringify({
-          emoji: null,
-          name: "Quente",
-        }),
-        method: "POST",
-      },
-    });
-    expect(fake.calls[1]).toMatchObject({
-      input:
-        "/api/v1/crm/conversation-cycles/session_1/tags/550e8400-e29b-41d4-a716-446655440000",
-      init: { method: "DELETE" },
-    });
-  });
-
-  it("lists reusable CRM WhatsApp tags through V2", async () => {
-    const fake = createFakeFetch([[{ id: "tag_1", name: "Visita agendada" }]]);
-    const api = createCrmConversationApi({ fetch: fake.fetch });
-
-    await expect(
-      api.listTags({
-        connectionId: "24000000-0000-4000-8000-000000000101",
-        search: "visita",
-      }),
-    ).resolves.toEqual([{ id: "tag_1", name: "Visita agendada" }]);
-
-    expect(fake.calls[0]).toMatchObject({
-      input:
-        "/api/v1/crm/tags?connectionId=24000000-0000-4000-8000-000000000101&search=visita",
-      init: { method: "GET" },
-    });
-  });
-
   it("lists store-wide scheduled messages through V2 filters", async () => {
     const fake = createFakeFetch([[{ id: "schedule_1", status: "pending" }]]);
     const api = createCrmConversationApi({ fetch: fake.fetch });
@@ -399,11 +339,13 @@ describe("CRM WhatsApp extras API", () => {
 
 function externalBotConfiguration(
   overrides: Partial<{
+    apiTokenConfigured: boolean;
     enabled: boolean;
     secretConfigured: boolean;
   }> = {},
 ) {
   return {
+    apiTokenConfigured: false,
     createdAt: "2026-08-18T12:00:00.000Z",
     enabled: false,
     id: "external-bot-1",

@@ -22,6 +22,7 @@ export type DrizzleCrmExternalBotIntegrationClient = PostgresJsDatabase<
 
 type ExternalBotIntegrationConfig = {
   enabled?: unknown;
+  externalBotApiBearerHash?: unknown;
   secretUpdatedAt?: unknown;
   webhookSecretHash?: unknown;
   webhookSecretSealed?: unknown;
@@ -126,6 +127,10 @@ async function upsertExternalBotIntegration(
 ) {
   const current = await findRow(db, input);
   const currentConfig = readConfig(current?.config);
+  const apiBearerHash =
+    input.apiTokenHash === undefined
+      ? readString(currentConfig.externalBotApiBearerHash)
+      : input.apiTokenHash;
   const secretHash =
     input.webhookSecretHash === undefined
       ? readString(currentConfig.webhookSecretHash)
@@ -136,6 +141,7 @@ async function upsertExternalBotIntegration(
       : input.webhookSecretSealed;
   const config = {
     enabled: input.enabled,
+    externalBotApiBearerHash: apiBearerHash,
     secretUpdatedAt: readSecretUpdatedAt(input, currentConfig),
     webhookSecretHash: secretHash,
     webhookSecretSealed: secretSealed,
@@ -187,6 +193,7 @@ function toExternalBotIntegration(
   const secretHash = readString(config.webhookSecretHash);
   const secretSealed = readString(config.webhookSecretSealed);
   return {
+    apiTokenConfigured: Boolean(readString(config.externalBotApiBearerHash)),
     createdAt: row.createdAt,
     enabled: readBoolean(config.enabled) ?? row.status === "active",
     id: row.id,

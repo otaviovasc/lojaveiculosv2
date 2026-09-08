@@ -1,45 +1,45 @@
 import { CrmSelect } from "./CrmFormControls";
-import type { CrmTag } from "./crmConversationTypes";
+import type { CrmCampaignStageOption } from "./CrmCampaignsPageSupport";
 
 export function CampaignAutomationPanel({
-  initialTagId,
-  onInitialTagChange,
-  onReplyTagChange,
+  initialStageId,
+  onInitialStageChange,
+  onReplyStageChange,
   onSecondaryContentChange,
   onSecondaryDelayMinutesChange,
-  replyTagId,
+  replyStageId,
   secondaryContent,
   secondaryDelayMinutes,
-  tags,
+  stageOptions,
 }: {
-  initialTagId: string;
-  onInitialTagChange: (value: string) => void;
-  onReplyTagChange: (value: string) => void;
+  initialStageId: string;
+  onInitialStageChange: (value: string) => void;
+  onReplyStageChange: (value: string) => void;
   onSecondaryContentChange: (value: string) => void;
   onSecondaryDelayMinutesChange: (value: number) => void;
-  replyTagId: string;
+  replyStageId: string;
   secondaryContent: string;
   secondaryDelayMinutes: number;
-  tags: CrmTag[];
+  stageOptions: CrmCampaignStageOption[];
 }) {
   return (
     <section className="crm-campaign-panel">
       <h3>Automacao</h3>
       <div className="crm-campaign-fields">
         <label>
-          Tag inicial
+          Etapa inicial
           <CrmSelect
-            onChange={onInitialTagChange}
-            options={tagOptions(tags)}
-            value={initialTagId}
+            onChange={onInitialStageChange}
+            options={stageSelectOptions(stageOptions)}
+            value={initialStageId}
           />
         </label>
         <label>
-          Tag na resposta
+          Etapa na resposta
           <CrmSelect
-            onChange={onReplyTagChange}
-            options={tagOptions(tags)}
-            value={replyTagId}
+            onChange={onReplyStageChange}
+            options={stageSelectOptions(stageOptions)}
+            value={replyStageId}
           />
         </label>
       </div>
@@ -70,9 +70,6 @@ export function CampaignAutomationPanel({
   );
 }
 
-function tagOptions(tags: CrmTag[]) {
-  return [
-    { label: "Sem tag", value: "none" },
-    ...tags.map((tag) => ({ label: tag.name, value: tag.id })),
-  ];
+function stageSelectOptions(stageOptions: CrmCampaignStageOption[]) {
+  return [{ label: "Sem etapa", value: "none" }, ...stageOptions];
 }

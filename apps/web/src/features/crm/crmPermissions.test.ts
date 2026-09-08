@@ -35,8 +35,6 @@ describe("CRM WhatsApp permissions", () => {
       canScheduleProcess: false,
       canScheduleRead: false,
       canSend: false,
-      canTagAssign: false,
-      canTagManage: false,
       canToggleIntervention: false,
       canVisitsManage: false,
       canVisitsRead: false,
@@ -55,7 +53,6 @@ describe("CRM WhatsApp permissions", () => {
           "crm.scheduled_messages.create",
           "crm.scheduled_messages.read",
           "crm.messages.send",
-          "crm.tags.assign",
           "crm.attendances.manage",
         ]),
       ),
@@ -66,7 +63,6 @@ describe("CRM WhatsApp permissions", () => {
       canScheduleCreate: true,
       canScheduleRead: true,
       canSend: true,
-      canTagAssign: true,
       canToggleIntervention: true,
     });
   });

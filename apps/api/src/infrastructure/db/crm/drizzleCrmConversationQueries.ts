@@ -93,10 +93,8 @@ export async function countConversationCyclesByAssignee(
 export async function countCanonicalConversationCycles(
   db: DrizzleCrmClient,
   input: CountCrmConversationCyclesInput,
-  tagThreadIds: readonly string[] | null,
 ) {
   const filters = conversationCycleFilters(input);
-  if (tagThreadIds) filters.push(inArray(conversationThreads.id, tagThreadIds));
   if (input.unreadOnly) filters.push(crmUnreadConversationCyclePredicate());
   const [row] = await db
     .select({ cycleCount: count() })

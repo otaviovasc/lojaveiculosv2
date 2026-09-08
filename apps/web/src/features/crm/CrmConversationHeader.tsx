@@ -18,33 +18,34 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { Morphicon } from "../../components/ui/Morphicon";
 import { ChatAssignmentSelect } from "./CrmConversationHeaderAssignment";
-import { SessionTagRow } from "./CrmConversationHeaderTags";
 import {
   formatCycleAvatarInitials,
   formatCycleName,
 } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
-import { TagMenu } from "./CrmTagMenu";
 import type {
-  CrmAddConversationCycleTagInput,
   CrmAssignableMember,
   CrmContactPresence,
   CrmConversationCycle,
-  CrmTag,
 } from "./crmConversationTypes";
 
 export function ChatHeader({
   actionsDisabled,
   assignableMembers,
-  availableTags,
   canAssignSession,
   canCloseSession,
   canMarkRead,
-  canTagSessions,
   canScheduleMessages,
   canScheduleVisits = true,
   canToggleIntervention,
@@ -54,32 +55,28 @@ export function ChatHeader({
   onAssign,
   onBack,
   onClose,
-  onAddTag,
   onInsertPrompt,
   onMarkRead,
   onMarkUnread,
   onOpenDetails,
-  onRemoveTag,
   onScheduleMessage,
   onScheduleVisit,
   onToggleIntervention,
   pendingActions,
+  stageChip,
   cycle,
 }: {
   actionsDisabled?: boolean;
   assignableMembers: CrmAssignableMember[];
-  availableTags?: CrmTag[];
   canAssignSession: boolean;
   canCloseSession: boolean;
   canMarkRead: boolean;
-  canTagSessions: boolean;
   canScheduleMessages: boolean;
   canScheduleVisits?: boolean;
   canToggleIntervention: boolean;
   currentUserId?: string | null;
   contactPresence?: CrmContactPresence | null;
   messages?: { id: string; content: string }[];
-  onAddTag: (input: CrmAddConversationCycleTagInput) => Promise<boolean>;
   onAssign: (agentId: string | null) => void;
   onBack?: (() => void) | undefined;
   onClose: () => void;
@@ -87,13 +84,11 @@ export function ChatHeader({
   onMarkRead: () => void;
   onMarkUnread: () => void;
   onOpenDetails: () => void;
-  onRemoveTag: (tagId: string) => Promise<boolean>;
   onScheduleMessage: () => void;
   onScheduleVisit?: () => void;
   onToggleIntervention: () => void;
-  pendingActions?: Partial<
-    Record<"assign" | "intervention" | "read" | "tag", boolean>
-  >;
+  pendingActions?: Partial<Record<"assign" | "intervention" | "read", boolean>>;
+  stageChip?: ReactNode;
   cycle: CrmConversationCycle;
 }) {
   const identityButtonRef = useRef<HTMLButtonElement>(null);
@@ -101,17 +96,11 @@ export function ChatHeader({
   const promptButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const restoreStableFocusRef = useRef(false);
-  const tagButtonRef = useRef<HTMLButtonElement>(null);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
   const [headerQuery, setHeaderQuery] = useState("");
   const [headerIdx, setHeaderIdx] = useState(0);
-  const [tagMenuSource, setTagMenuSource] = useState<"desktop" | "mobile">(
-    "desktop",
-  );
-  const [tagMenuOpen, setTagMenuOpen] = useState(false);
-  void onRemoveTag;
 
   const headerResults = useMemo(() => {
     const q = headerQuery.trim().toLowerCase();
@@ -138,29 +127,22 @@ export function ChatHeader({
   const assignedToCurrentUser =
     Boolean(currentUserId) && cycle.assignedUserId === currentUserId;
   const hasSecondaryActions = Boolean(
-    canMarkRead ||
-    canTagSessions ||
-    canScheduleMessages ||
-    canScheduleVisits ||
-    cycle.leadId,
+    canMarkRead || canScheduleMessages || canScheduleVisits || cycle.leadId,
   );
-  const tagAnchorRef =
-    tagMenuSource === "mobile" ? moreActionsButtonRef : tagButtonRef;
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     const breakpoint = window.matchMedia("(max-width: 860px)");
     const closeResponsivePopovers = () => {
-      if (!moreActionsOpen && !tagMenuOpen) return;
+      if (!moreActionsOpen) return;
       restoreStableFocusRef.current = true;
       setMoreActionsOpen(false);
-      setTagMenuOpen(false);
     };
     breakpoint.addEventListener("change", closeResponsivePopovers);
     return () => {
       breakpoint.removeEventListener("change", closeResponsivePopovers);
     };
-  }, [moreActionsOpen, tagMenuOpen]);
+  }, [moreActionsOpen]);
 
   useEffect(() => {
     const open = () => {
@@ -179,12 +161,12 @@ export function ChatHeader({
   }, []);
 
   useLayoutEffect(() => {
-    if (moreActionsOpen || tagMenuOpen || !restoreStableFocusRef.current) {
+    if (moreActionsOpen || !restoreStableFocusRef.current) {
       return;
     }
     restoreStableFocusRef.current = false;
     identityButtonRef.current?.focus();
-  }, [moreActionsOpen, tagMenuOpen]);
+  }, [moreActionsOpen]);
 
   return (
     <header className="crm-chat-header">
@@ -234,13 +216,7 @@ export function ChatHeader({
               )}
             </span>
           </button>
-          {cycle.tags && cycle.tags.length > 0 ? (
-            <SessionTagRow
-              disabled={disabled || Boolean(pendingActions?.tag)}
-              onRemoveTag={onRemoveTag}
-              tags={cycle.tags}
-            />
-          ) : null}
+          {stageChip ?? null}
         </div>
       </div>
       <div className="crm-header-actions">
@@ -282,7 +258,7 @@ export function ChatHeader({
             />
           </button>
         </div>
-        {canMarkRead || canTagSessions ? (
+        {canMarkRead ? (
           <div
             aria-label="Ações da conversa"
             className="crm-header-action-group crm-header-action-group-secondary"
@@ -313,26 +289,6 @@ export function ChatHeader({
                 />
               </button>
             ) : null}
-            {canTagSessions ? (
-              <div className="crm-tag-menu-anchor crm-header-action-secondary-anchor">
-                <button
-                  aria-label="Adicionar etiqueta"
-                  aria-expanded={tagMenuOpen && tagMenuSource === "desktop"}
-                  aria-haspopup="dialog"
-                  className="crm-icon-action crm-header-action-secondary"
-                  disabled={disabled || pendingActions?.tag}
-                  onClick={() => {
-                    setTagMenuSource("desktop");
-                    setTagMenuOpen((open) => !open);
-                  }}
-                  ref={tagButtonRef}
-                  title="Adicionar etiqueta"
-                  type="button"
-                >
-                  <Tag />
-                </button>
-              </div>
-            ) : null}
           </div>
         ) : null}
         {hasSecondaryActions ? (
@@ -344,7 +300,6 @@ export function ChatHeader({
               className="crm-icon-action"
               disabled={disabled}
               onClick={() => {
-                setTagMenuOpen(false);
                 setMoreActionsOpen((open) => !open);
               }}
               ref={moreActionsButtonRef}
@@ -417,21 +372,6 @@ export function ChatHeader({
                   <ExternalLink />
                   Abrir lead vinculado
                 </a>
-              ) : null}
-              {canTagSessions ? (
-                <button
-                  disabled={disabled || pendingActions?.tag}
-                  onClick={() => {
-                    setMoreActionsOpen(false);
-                    setTagMenuSource("mobile");
-                    setTagMenuOpen(true);
-                  }}
-                  role="menuitem"
-                  type="button"
-                >
-                  <Tag />
-                  Adicionar etiqueta
-                </button>
               ) : null}
             </FeatureAnchoredPopover>
           </div>
@@ -703,28 +643,6 @@ export function ChatHeader({
             <Sparkles className="size-4" /> Follow-up descontraído
           </button>
         </div>
-      </FeatureAnchoredPopover>
-      <FeatureAnchoredPopover
-        align="end"
-        anchorRef={tagAnchorRef}
-        ariaLabel="Adicionar etiqueta"
-        className="crm-tag-popover"
-        initialFocus="first"
-        isOpen={tagMenuOpen}
-        onClose={() => setTagMenuOpen(false)}
-        role="dialog"
-      >
-        <TagMenu
-          activeTags={cycle.tags ?? []}
-          availableTags={availableTags ?? []}
-          disabled={disabled || Boolean(pendingActions?.tag)}
-          onAdd={async (input) => {
-            const accepted = await onAddTag(input);
-            if (accepted) setTagMenuOpen(false);
-            return accepted;
-          }}
-          onRemove={onRemoveTag}
-        />
       </FeatureAnchoredPopover>
     </header>
   );

@@ -30,7 +30,6 @@ export function useCrmCampaignAudience(input: {
     useState<CampaignLeadFilters>(initialLeadFilters);
   const [leads, setLeads] = useState<ProductCrmLead[]>([]);
   const [query, setQuery] = useState("");
-  const [selectedTagId, setSelectedTagId] = useState("all");
   const [conversationCycles, setSessions] = useState(input.initialSessions);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,9 +76,9 @@ export function useCrmCampaignAudience(input: {
   const conversationSessions = useMemo(
     () =>
       conversationCycles.filter((cycle) =>
-        matchesCampaignFilters(cycle, query, selectedTagId),
+        matchesCampaignFilters(cycle, query),
       ),
-    [query, selectedTagId, conversationCycles],
+    [query, conversationCycles],
   );
 
   return {
@@ -93,12 +92,10 @@ export function useCrmCampaignAudience(input: {
     leadFilters,
     matchedLeadCount: leadAudience.matchedLeadCount,
     query,
-    selectedTagId,
     conversationCycles,
     setAudienceSource,
     setLeadFilters,
     setQuery,
-    setSelectedTagId,
     withoutSessionCount: leadAudience.withoutSessionCount,
   };
 }

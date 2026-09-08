@@ -15,11 +15,11 @@ export type CrmCampaignRecipientInput = {
 
 export type CreateCrmCampaignInput = {
   content: string;
-  initialTagId?: string | null;
+  initialStageId?: string | null;
   intervalMinutes?: number;
   name: string;
   recipients: readonly CrmCampaignRecipientInput[];
-  replyTagId?: string | null;
+  replyStageId?: string | null;
   scheduledStartAt: Date;
   secondaryContent?: string | null;
   secondaryDelayMinutes?: number;
@@ -43,11 +43,11 @@ export type CrmCampaignResult = Promise<CrmCampaign>;
 
 export type NormalizedCrmCampaignInput = {
   content: string;
-  initialTagId: string | null;
+  initialStageId: string | null;
   intervalMinutes: number;
   name: string;
   recipients: readonly CrmCampaignRecipientInput[];
-  replyTagId: string | null;
+  replyStageId: string | null;
   scheduledStartAt: Date;
   secondaryContent: string | null;
   secondaryDelayMinutes: number;

@@ -22,13 +22,25 @@ export function CrmExternalBotDocsOverview() {
 
   const sampleCurl = `curl -X POST https://sua-loja.lojaveiculos.com/api/v1/crm/bot/actions \\
   -H "Content-Type: application/json" \\
-  -H "X-Webhook-Secret: SEU_SEGREDO_CONFIGURADO" \\
+  -H "Authorization: Bearer SEU_TOKEN_DE_INTEGRACAO" \\
   -d '{
-    "action": "send_text",
-    "cycleId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-    "payload": {
-      "text": "Olá! Sou o assistente virtual da loja. Como posso ajudar?"
-    }
+    "tenantId": "11000000-0000-4000-8000-000000000001",
+    "storeId": "22000000-0000-4000-8000-000000000002",
+    "integrationId": "33000000-0000-4000-8000-000000000003",
+    "connectionId": "24000000-0000-4000-8000-000000000101",
+    "threadId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+    "channel": "whatsapp",
+    "provider": "zapi",
+    "modelVersion": "2026-09-08",
+    "capabilityGrant": "GRANT_RECEBIDO_NO_EVENTO",
+    "command": {
+      "action": "message.send_text",
+      "payload": { "text": "Olá! Sou o assistente virtual da loja. Como posso ajudar?" }
+    },
+    "expectedRevision": 14,
+    "expectedAttendanceRevision": 2,
+    "idempotencyKey": "msg-recv-5f9c1c62-send-text",
+    "requestDigest": "DIGEST_SHA256_HEX_64_CARACTERES"
   }'`;
 
   return (
@@ -66,9 +78,11 @@ export function CrmExternalBotDocsOverview() {
             <div>
               <h3>Exemplo de Chamada Rápida (cURL)</h3>
               <p>
-                Todas as requisições autenticam com o header{" "}
-                <code>X-Webhook-Secret</code> e retornam respostas JSON
-                estruturadas.
+                Todas as requisições autenticam com{" "}
+                <code>Authorization: Bearer &lt;token&gt;</code> e retornam
+                respostas JSON estruturadas. O <code>capabilityGrant</code>, as
+                revisões e o <code>requestDigest</code> vêm do evento recebido
+                no webhook.
               </p>
             </div>
           </div>
@@ -120,12 +134,17 @@ export function CrmExternalBotDocsOverview() {
             <tbody>
               <tr>
                 <td>
-                  <span className="crm-bot-http-badge http-200">200 OK</span>
+                  <span className="crm-bot-http-badge http-200">
+                    200 OK / 202 Accepted
+                  </span>
                 </td>
                 <td>
-                  <code>SUCCESS</code>
+                  <code>completed | accepted</code>
                 </td>
-                <td>Ação executada com sucesso e enfileirada no canal.</td>
+                <td>
+                  Ação aceita. O campo <code>status</code> informa o estado; 200
+                  quando já está <code>completed</code>, 202 nos demais casos.
+                </td>
               </tr>
               <tr>
                 <td>
@@ -134,11 +153,11 @@ export function CrmExternalBotDocsOverview() {
                   </span>
                 </td>
                 <td>
-                  <code>CRM_INVALID_BOT_SECRET</code>
+                  <code>CRM_BOT_UNAUTHORIZED</code>
                 </td>
                 <td>
-                  O segredo passado no header <code>X-Webhook-Secret</code> é
-                  inválido ou ausente.
+                  Token Bearer ausente ou inválido. O header{" "}
+                  <code>X-Webhook-Secret</code> não é aceito nesta rota.
                 </td>
               </tr>
               <tr>
@@ -148,39 +167,56 @@ export function CrmExternalBotDocsOverview() {
                   </span>
                 </td>
                 <td>
-                  <code>CRM_WHATSAPP_BOT_ACTION_BLOCKED</code>
+                  <code>CRM_BOT_POLICY_DENIED | CRM_BOT_GRANT_INVALID</code>
                 </td>
                 <td>
-                  A sessão está sob <strong>atendimento humano</strong>. Envios
-                  são bloqueados até a devolução à IA.
+                  Política do bot negou o comando (inclui{" "}
+                  <strong>atendimento humano ativo</strong>) ou o grant é
+                  inválido/expirado.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span className="crm-bot-http-badge http-403">
+                    409 Conflict
+                  </span>
+                </td>
+                <td>
+                  <code>
+                    CRM_BOT_IDEMPOTENCY_CONFLICT | CRM_BOT_GRANT_REUSED
+                  </code>
+                </td>
+                <td>
+                  Idempotency-Key reutilizada com payload diferente ou grant já
+                  consumido. Grants são de uso único.
                 </td>
               </tr>
               <tr>
                 <td>
                   <span className="crm-bot-http-badge http-422">
-                    422 Unprocessable
+                    400 Bad Request
                   </span>
                 </td>
                 <td>
-                  <code>CRM_VALIDATION_ERROR</code>
+                  <code>VALIDATION_ERROR</code>
                 </td>
                 <td>
-                  Payload malformado, URL de mídia inválida ou campos
-                  obrigatórios ausentes.
+                  Envelope malformado, campos obrigatórios ausentes ou payload
+                  fora do contrato estrito da ação.
                 </td>
               </tr>
               <tr>
                 <td>
                   <span className="crm-bot-http-badge http-404">
-                    404 Not Found
+                    503 Unavailable
                   </span>
                 </td>
                 <td>
-                  <code>CRM_CONNECTION_NOT_FOUND</code>
+                  <code>CRM_BOT_UNAVAILABLE</code>
                 </td>
                 <td>
-                  O <code>connectionId</code> ou <code>cycleId</code> informado
-                  não existe para a loja.
+                  Gerenciador de bots indisponível no momento; repita a chamada
+                  mais tarde.
                 </td>
               </tr>
             </tbody>

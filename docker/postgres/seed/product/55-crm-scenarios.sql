@@ -182,24 +182,6 @@ ON CONFLICT (id) DO UPDATE SET
   unit_id = EXCLUDED.unit_id,
   updated_at = now();
 
-INSERT INTO crm_tags (
-  id, color, connection_id, emoji, name, sort_order, store_id, tenant_id
-)
-VALUES
-  ('25200000-0000-4000-8000-000000000001', '#2563eb', '24000000-0000-4000-8000-000000000101', '💬', 'Atendimento ativo', 10, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('25200000-0000-4000-8000-000000000002', '#7c3aed', '24000000-0000-4000-8000-000000000101', '🚗', 'Visita agendada', 20, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('25200000-0000-4000-8000-000000000003', '#ea580c', '24000000-0000-4000-8000-000000000101', '📝', 'Reserva ativa', 30, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('25200000-0000-4000-8000-000000000004', '#16a34a', '24000000-0000-4000-8000-000000000101', '🤝', 'Cliente da loja', 40, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO UPDATE SET
-  color = EXCLUDED.color,
-  connection_id = EXCLUDED.connection_id,
-  emoji = EXCLUDED.emoji,
-  name = EXCLUDED.name,
-  sort_order = EXCLUDED.sort_order,
-  store_id = EXCLUDED.store_id,
-  tenant_id = EXCLUDED.tenant_id,
-  updated_at = now();
-
 INSERT INTO contacts (
   id, display_name, primary_phone, metadata, store_id, tenant_id
 )
@@ -343,39 +325,25 @@ ON CONFLICT (id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO crm_conversation_thread_tags (
-  id, thread_id, store_id, tag_id, tenant_id
-)
-VALUES
-  ('26200000-0000-4000-8000-000000000001', '26000000-0000-4000-8000-000000000001', '66666666-6666-4666-8666-666666666666', '25200000-0000-4000-8000-000000000001', '77777777-7777-4777-8777-777777777777'),
-  ('26200000-0000-4000-8000-000000000002', '26000000-0000-4000-8000-000000000001', '66666666-6666-4666-8666-666666666666', '25200000-0000-4000-8000-000000000002', '77777777-7777-4777-8777-777777777777'),
-  ('26200000-0000-4000-8000-000000000003', '26000000-0000-4000-8000-000000000002', '66666666-6666-4666-8666-666666666666', '25200000-0000-4000-8000-000000000001', '77777777-7777-4777-8777-777777777777'),
-  ('26200000-0000-4000-8000-000000000004', '26000000-0000-4000-8000-000000000002', '66666666-6666-4666-8666-666666666666', '25200000-0000-4000-8000-000000000003', '77777777-7777-4777-8777-777777777777'),
-  ('26200000-0000-4000-8000-000000000005', '26000000-0000-4000-8000-000000000003', '66666666-6666-4666-8666-666666666666', '25200000-0000-4000-8000-000000000004', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (thread_id, tag_id) DO UPDATE SET
-  store_id = EXCLUDED.store_id,
-  tenant_id = EXCLUDED.tenant_id,
-  updated_at = now();
-
 INSERT INTO crm_campaigns (
-  id, content, created_by_user_id, initial_tag_id, interval_minutes,
-  metadata, name, reply_tag_id, scheduled_end_at, scheduled_start_at,
+  id, content, created_by_user_id, initial_stage_id, interval_minutes,
+  metadata, name, reply_stage_id, scheduled_end_at, scheduled_start_at,
   secondary_content, secondary_delay_minutes, selected_connection_id,
   status, store_id, tenant_id, total_recipients
 )
 VALUES
-  ('26300000-0000-4000-8000-000000000001', 'Ola {{firstName}}, se quiser podemos revisar sua proposta na loja.', '04040404-0404-4404-8404-040404040404', '25200000-0000-4000-8000-000000000001', 5, '{"fixture": true, "source": "local_seed", "officialOperation": false, "dispatchEnabled": false}'::jsonb, 'Rascunho de retorno de propostas', '25200000-0000-4000-8000-000000000002', now() + interval '11 days', now() + interval '10 days', 'Este e apenas um lembrete em rascunho.', 1440, '24000000-0000-4000-8000-000000000101', 'draft', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 2),
-  ('26300000-0000-4000-8000-000000000002', 'Convite local cancelado antes de qualquer envio.', '03030303-0303-4303-8303-030303030303', '25200000-0000-4000-8000-000000000004', 10, '{"fixture": true, "source": "local_seed", "officialOperation": false, "dispatchEnabled": false, "cancelReason": "fixture_review"}'::jsonb, 'Campanha cancelada de pos-venda', null, now() + interval '8 days', now() + interval '7 days', null, 60, '24000000-0000-4000-8000-000000000101', 'cancelled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1)
+  ('26300000-0000-4000-8000-000000000001', 'Ola {{firstName}}, se quiser podemos revisar sua proposta na loja.', '04040404-0404-4404-8404-040404040404', '25100000-0000-4000-8000-000000000002', 5, '{"fixture": true, "source": "local_seed", "officialOperation": false, "dispatchEnabled": false}'::jsonb, 'Rascunho de retorno de propostas', '25100000-0000-4000-8000-000000000003', now() + interval '11 days', now() + interval '10 days', 'Este e apenas um lembrete em rascunho.', 1440, '24000000-0000-4000-8000-000000000101', 'draft', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 2),
+  ('26300000-0000-4000-8000-000000000002', 'Convite local cancelado antes de qualquer envio.', '03030303-0303-4303-8303-030303030303', '25100000-0000-4000-8000-000000000004', 10, '{"fixture": true, "source": "local_seed", "officialOperation": false, "dispatchEnabled": false, "cancelReason": "fixture_review"}'::jsonb, 'Campanha cancelada de pos-venda', null, now() + interval '8 days', now() + interval '7 days', null, 60, '24000000-0000-4000-8000-000000000101', 'cancelled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1)
 ON CONFLICT (id) DO UPDATE SET
   content = EXCLUDED.content,
   created_by_user_id = EXCLUDED.created_by_user_id,
   failed_count = 0,
-  initial_tag_id = EXCLUDED.initial_tag_id,
+  initial_stage_id = EXCLUDED.initial_stage_id,
   interval_minutes = EXCLUDED.interval_minutes,
   metadata = EXCLUDED.metadata,
   name = EXCLUDED.name,
   replied_count = 0,
-  reply_tag_id = EXCLUDED.reply_tag_id,
+  reply_stage_id = EXCLUDED.reply_stage_id,
   scheduled_count = 0,
   scheduled_end_at = EXCLUDED.scheduled_end_at,
   scheduled_start_at = EXCLUDED.scheduled_start_at,

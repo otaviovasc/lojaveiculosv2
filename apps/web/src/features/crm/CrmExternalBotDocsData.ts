@@ -4,21 +4,21 @@ export const botDocCards = [
   {
     code: botEndpoint,
     description:
-      "Todas as chamadas usam UUIDs V2 e retornam code, message e requestId em erros estaveis.",
+      "Uma chamada executa um unico comando. Respostas trazem actionId, requestId e status; erros trazem code, message e requestId estaveis.",
     icon: "code",
     title: "Endpoint",
   },
   {
-    code: "X-Webhook-Secret: seu-segredo",
+    code: "Authorization: Bearer <token>",
     description:
-      "O segredo e write-only: pode ser atualizado aqui, mas nunca e renderizado pela API.",
+      "Gere o token nesta tela (campo Token da API de acoes). Ele autentica POST /crm/bot/actions, e write-only e nunca e renderizado depois de salvo. X-Webhook-Secret nao e aceito nesta rota; o segredo do webhook apenas assina os eventos entregues.",
     icon: "key",
     title: "Autenticacao",
   },
   {
-    code: "CRM_WHATSAPP_BOT_ACTION_BLOCKED",
+    code: "CRM_BOT_POLICY_DENIED",
     description:
-      "Durante atendimento humano, envios do bot sao bloqueados ate a sessao voltar ao automatico.",
+      "Durante atendimento humano (WAITING_HUMAN ou IN_HUMAN_SERVICE), os efeitos do bot sao bloqueados no servidor ate o atendimento ser concluido pelo CRM.",
     icon: "shield",
     title: "Takeover",
   },
@@ -26,87 +26,85 @@ export const botDocCards = [
 
 export const actionGroups = [
   {
-    actions: "send_text, send_image, send_audio, send_document",
+    actions: "message.send_text, message.send_media, message.send_template",
     label: "Envio",
   },
   {
-    actions: "add_note, schedule_message, set_visita, remove_visita",
+    actions: "fact.record, vehicle_interest.record, conversation.summarize",
+    label: "Registro",
+  },
+  {
+    actions: "appointment.create, opportunity.open, task.create",
     label: "Operacao",
   },
   {
-    actions: "create_tag, assign_tag, remove_tag, list_tags",
-    label: "Tags",
-  },
-  {
-    actions: "set_intervention, update_session, close_session, get_session",
-    label: "Sessao",
-  },
-  {
-    actions: "check_connection",
-    label: "Diagnostico",
+    actions: "handoff.request",
+    label: "Atendimento",
   },
 ] as const;
 
 export const importantFieldNotes = [
   {
     description:
-      "true quando a mensagem saiu da loja; false quando veio do cliente.",
-    title: "message.fromMe",
+      "Tipo do evento entregue ao webhook: message_received, thread_state_changed, connection_state_changed ou human_attendance_changed.",
+    title: "type",
   },
   {
     description:
-      "true para envio por CRM, scheduled message ou Bot Action API.",
-    title: "message.wasSentByApi",
-  },
-  {
-    description: "customer, external_bot, human_crm, human_channel ou system.",
-    title: "message.senderOrigin",
+      "Grant de capacidade de uso unico, valido por 90 segundos, que autoriza a acao de resposta junto com grantExpiresAt e authorizedRequestDigest.",
+    title: "grant / grantExpiresAt",
   },
   {
     description:
-      "false em HUMAN_TAKEOVER; o bot deve pausar respostas automaticas.",
-    title: "cycle.isBotActive",
+      "Campos do escopo obrigatorio de toda chamada de acao: identificam o tenant, a loja, a integracao, a conexao e a conversa autorizados pelo evento recebido.",
+    title: "tenantId / storeId / integrationId / connectionId / threadId",
   },
   {
     description:
-      "WAITING_HUMAN quando a IA pediu ajuda; IN_HUMAN_SERVICE depois do primeiro envio humano confirmado; null fora do atendimento humano.",
-    title: "cycle.humanAttendanceState",
+      "Comando a executar: action e o nome da acao e payload segue o contrato estrito da acao escolhida.",
+    title: "command { action, payload }",
   },
   {
     description:
-      "bot, auto ou ai_request na Bot Action API. O webhook tambem informa source e triggeredBy na intervencao.",
-    title: "intervention.source",
+      "Revisoes esperadas da conversa e do atendimento, recebidas no evento. Se mudarem, a chamada e rejeitada.",
+    title: "expectedRevision / expectedAttendanceRevision",
   },
   {
     description:
-      "Etiquetas V2 do WhatsApp. Nao representam etapas de pipeline.",
-    title: "cycle.tags",
+      "Sha256 em hex (64 caracteres) do JSON canonico da requisicao, com chaves ordenadas e sem capabilityGrant. Deve bater com authorizedRequestDigest do evento.",
+    title: "requestDigest",
   },
   {
-    description: "URL e metodo de autenticacao para chamar a Bot Action API.",
-    title: "actionsApi",
+    description:
+      "Chave de idempotencia por requisicao. Reuso com payload diferente retorna CRM_BOT_IDEMPOTENCY_CONFLICT.",
+    title: "idempotencyKey",
+  },
+  {
+    description:
+      "Em eventos human_attendance_changed: WAITING_HUMAN, IN_HUMAN_SERVICE ou null. Enquanto houver atendimento humano ativo, os efeitos do bot sao bloqueados.",
+    title: "payload.humanAttendanceState",
   },
 ] as const;
 
 export const interventionFlowNotes = [
   {
     description:
-      "Quando a IA pausa e pede ajuda, V2 grava WAITING_HUMAN, dispara intervention_started e para de encaminhar eventos message regulares.",
+      "Quando o atendimento humano comeca, V2 emite human_attendance_changed com payload.humanAttendanceState WAITING_HUMAN ou IN_HUMAN_SERVICE.",
     title: "Aguardando humano",
   },
   {
     description:
-      "Depois que texto, audio, imagem, video, documento, localizacao, contato, catalogo ou veiculo humano for aceito pelo provedor, V2 muda para IN_HUMAN_SERVICE. Reacoes nao mudam o estado.",
+      "O bot acompanha o estado pelos eventos human_attendance_changed; nao existe acao para consultar ou alterar a intervencao.",
     title: "Atendimento iniciado",
   },
   {
     description:
-      "Durante takeover, send_text/send_image/send_audio/send_document retornam CRM_WHATSAPP_BOT_ACTION_BLOCKED.",
+      "Durante o atendimento humano, chamadas de acao sao negadas com CRM_BOT_POLICY_DENIED (403).",
     title: "Bloqueio",
   },
   {
     description:
-      "intervention_ended inclui summary quando ha mensagens suficientes para o bot retomar com contexto.",
+      "Quando o atendimento e concluido no CRM, V2 emite human_attendance_changed com payload.humanAttendanceState null e o bot pode voltar a agir com um novo grant.",
     title: "Handback",
   },
 ] as const;
@@ -114,90 +112,86 @@ export const interventionFlowNotes = [
 export const interventionNotes = [
   {
     description:
-      "Enquanto a sessao esta em HUMAN_TAKEOVER, eventos message nao sao enviados ao bot.",
-    title: "Pausa total de mensagens",
+      "Todo estado de atendimento chega por eventos human_attendance_changed; o bot nao precisa (e nao pode) consultar a sessao.",
+    title: "Estado por eventos",
   },
   {
     description:
-      "Se o bot tentar enviar durante takeover, recebe erro estavel CRM_WHATSAPP_BOT_ACTION_BLOCKED.",
+      "Se o bot tentar agir durante o atendimento humano, recebe erro estavel CRM_BOT_POLICY_DENIED.",
     title: "Bloqueio previsivel",
   },
   {
     description:
-      "Use set_intervention com enabled false para devolver a sessao ao fluxo automatico.",
-    title: "Retomada pelo bot",
+      "A devolucao ao fluxo automatico acontece quando o atendimento e concluido pelo CRM; o bot nao pode forcar intervencao nem handback.",
+    title: "Retomada pelo CRM",
   },
   {
     description:
-      "Nao use summary para substituir historico; ele e contexto curto para continuidade.",
-    title: "Resumo de handback",
+      "Use conversation.summarize para registrar um resumo curto de continuidade; ele nao substitui o historico.",
+    title: "Resumo de contexto",
   },
 ] as const;
 
 export const attendanceFieldRows = [
   {
-    field: "humanAttendanceState",
+    field: "payload.humanAttendanceState",
     meaning:
-      "WAITING_HUMAN, IN_HUMAN_SERVICE ou null. E a fonte canonica para badges e filtros.",
+      "WAITING_HUMAN, IN_HUMAN_SERVICE ou null. E a fonte canonica para saber se o bot pode agir.",
     type: "string | null",
   },
   {
-    field: "humanAttendanceChangedAt",
-    meaning: "Instante ISO 8601 da ultima mudanca do estado de atendimento.",
-    type: "string | null",
+    field: "payload.humanAttendanceActive",
+    meaning:
+      "true enquanto houver atendimento humano ativo; os efeitos do bot ficam bloqueados no servidor.",
+    type: "boolean",
   },
   {
-    field: "humanHandlingStartedAt",
+    field: "payload.humanAttendanceStateVersion",
     meaning:
-      "Instante ISO 8601 do primeiro envio humano aceito pelo provedor; null enquanto aguarda.",
-    type: "string | null",
-  },
-  {
-    field: "humanAttendanceStateVersion",
-    meaning:
-      "Versao monotona. Ignore eventos com versao menor que a ultima processada para a sessao.",
+      "Versao monotona do estado. Ignore eventos com versao menor que a ultima processada para a conversa.",
     type: "number | null",
   },
   {
-    field: "interventionId",
+    field: "payload.summary",
     meaning:
-      "UUID que correlaciona a pausa, o inicio do atendimento e a devolucao da mesma intervencao.",
-    type: "string | null",
+      "Resumo operacional curto enviado junto ao evento, quando disponivel.",
+    type: "string",
+  },
+  {
+    field: "expectedAttendanceRevision",
+    meaning:
+      "Revisao de atendimento que deve ser devolvida na chamada de acao; se mudou, a chamada e rejeitada.",
+    type: "number",
   },
 ] as const;
 
 export const attendanceTransitionRows = [
   {
-    event: "IA pausa e solicita ajuda humana",
+    event: "Atendimento humano solicitado ou iniciado pelo CRM",
     from: "null",
     to: "WAITING_HUMAN",
   },
   {
-    event: "Primeiro envio humano aceito pelo provedor",
-    from: "WAITING_HUMAN",
+    event: "Atendente humano assume a conversa no CRM",
+    from: "WAITING_HUMAN | null",
     to: "IN_HUMAN_SERVICE",
   },
   {
-    event: "Humano assume manualmente",
-    from: "null",
-    to: "IN_HUMAN_SERVICE",
-  },
-  {
-    event: "Intervencao encerrada, sessao concluida ou devolvida a IA",
+    event: "Atendimento concluido no CRM",
     from: "WAITING_HUMAN | IN_HUMAN_SERVICE",
     to: "null",
   },
   {
-    event: "Reacao ou falha de envio",
+    event: "Chamada de acao do bot durante atendimento humano",
     from: "qualquer estado",
-    to: "sem mudanca",
+    to: "sem mudanca (CRM_BOT_POLICY_DENIED)",
   },
 ] as const;
 
 export const attendanceDegradedNotes = [
   {
     description:
-      "Responda 2xx somente depois de persistir o evento. Em timeout ou 5xx, use event id e interventionId para deduplicar a repeticao.",
+      "Responda 2xx somente depois de persistir o evento. Em timeout ou 5xx, V2 reentrega; use o id do evento para deduplicar.",
     title: "Entrega do webhook",
   },
   {
@@ -207,7 +201,7 @@ export const attendanceDegradedNotes = [
   },
   {
     description:
-      "Uma falha do provedor nao inicia atendimento humano. Aguarde um envio aceito ou uma sessao atualizada pelo V2.",
-    title: "Falha no envio humano",
+      "Grants expiram em 90 segundos e servem para uma unica acao. Se expirar, aguarde o proximo evento com um novo grant.",
+    title: "Grant expirado",
   },
 ] as const;

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
+import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
+import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import {
   campaignStoreId,
   campaignTenantId,
   createCampaign,
   createCampaignBody,
+  createCampaignStages,
   createCampaignTestApp,
-  createTag,
   expectCampaign,
   expectScheduledCount,
   jsonPost,
@@ -94,27 +96,45 @@ describe("CRM campaigns", () => {
     });
   });
 
-  it("tracks replies, moves tags, and schedules secondary messages", async () => {
+  it("tracks replies, moves the lead pipeline stage, and schedules secondary messages", async () => {
     const conversationRepository = createMemoryCrmConversationRepository();
+    const pipelineRepository = createMemoryCrmPipelineRepository();
+    const crmRepository = createMemoryCrmRepository();
+    const { initialStage, replyStage } =
+      await createCampaignStages(pipelineRepository);
+    const lead = await crmRepository.createLead({
+      buyerName: "Ana",
+      buyerPhone: "5511999999904",
+      source: "manual",
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
     const seeded = await seedCycle(conversationRepository, "5511999999904");
-    const initialTag = await createTag(
-      conversationRepository,
-      "Oferta enviada",
-    );
-    const replyTag = await createTag(
-      conversationRepository,
-      "Respondeu campanha",
-    );
-    const app = createCampaignTestApp(conversationRepository);
+    await conversationRepository.updateConversationCycle({
+      cycleId: seeded.conversationCycle.id,
+      leadId: lead.id,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    const app = createCampaignTestApp(conversationRepository, undefined, {
+      crmPipelineRepository: pipelineRepository,
+      crmRepository,
+    });
     const campaign = await createCampaign(app, {
-      initialTagId: initialTag.id,
+      initialStageId: initialStage.id,
       recipients: [seeded.conversationCycle.id],
-      replyTagId: replyTag.id,
+      replyStageId: replyStage.id,
       secondaryContent: "Obrigado pela resposta, {nome}.",
     });
 
     await processDue(app);
     await expectCampaign(conversationRepository, campaign.id, { sentCount: 1 });
+    const afterSend = await crmRepository.findLeadById({
+      leadId: lead.id,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    expect(afterSend?.pipelineStageId).toBe(initialStage.id);
 
     const reply = await postZapiReply(app, "5511999999904");
 
@@ -139,13 +159,66 @@ describe("CRM campaigns", () => {
       "pending",
       1,
     );
-    const [cycle] = await conversationRepository.listConversationCycles({
-      limit: 1,
-      offset: 0,
-      cycleId: seeded.conversationCycle.id,
+    const afterReply = await crmRepository.findLeadById({
+      leadId: lead.id,
       storeId: campaignStoreId,
       tenantId: campaignTenantId,
     });
-    expect(cycle?.tags.map((tag) => tag.id)).toEqual([replyTag.id]);
+    expect(afterReply?.pipelineStageId).toBe(replyStage.id);
+    expect(afterReply?.pipelineId).toBe(replyStage.pipelineId);
+  });
+
+  it("keeps the send recorded when the configured stage no longer exists", async () => {
+    const conversationRepository = createMemoryCrmConversationRepository();
+    const pipelineRepository = createMemoryCrmPipelineRepository();
+    const crmRepository = createMemoryCrmRepository();
+    const { initialStage } = await createCampaignStages(pipelineRepository);
+    const lead = await crmRepository.createLead({
+      buyerName: "Ana",
+      buyerPhone: "5511999999905",
+      source: "manual",
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    const seeded = await seedCycle(conversationRepository, "5511999999905");
+    await conversationRepository.updateConversationCycle({
+      cycleId: seeded.conversationCycle.id,
+      leadId: lead.id,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    const app = createCampaignTestApp(conversationRepository, undefined, {
+      crmPipelineRepository: pipelineRepository,
+      crmRepository,
+    });
+    const campaign = await createCampaign(app, {
+      initialStageId: initialStage.id,
+      recipients: [seeded.conversationCycle.id],
+    });
+    await pipelineRepository.deletePipeline({
+      pipelineId: initialStage.pipelineId,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+
+    await processDue(app);
+
+    await expectCampaign(conversationRepository, campaign.id, {
+      failedCount: 0,
+      sentCount: 1,
+    });
+    const [recipient] = await conversationRepository.listCampaignRecipients({
+      campaignId: campaign.id,
+      limit: 1,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    expect(recipient?.status).toBe("sent");
+    const afterSend = await crmRepository.findLeadById({
+      leadId: lead.id,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    expect(afterSend?.pipelineStageId).toBeNull();
   });
 });

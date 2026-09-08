@@ -6,7 +6,6 @@ export * from "./schema/vehicleCatalog.js";
 export * from "./schema/inventoryOperations.js";
 export * from "./schema/documents.js";
 export * from "./schema/leads.js";
-export * from "./schema/crm.js";
 export * from "./schema/crmRouting.js";
 export * from "./schema/crmCore.js";
 export * from "./schema/crmCore/push.js";

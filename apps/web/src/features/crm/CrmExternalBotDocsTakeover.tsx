@@ -43,9 +43,9 @@ export function CrmExternalBotDocsTakeover() {
               <Bot aria-hidden="true" className="size-5 text-emerald-600" />
             </div>
             <h4>Bot Ativo</h4>
-            <code>cycle.isBotActive: true</code>
+            <code>humanAttendanceState: null</code>
             <p>
-              O bot recebe eventos de mensagem e responde livremente via Bot
+              O bot recebe eventos message_received com grant e responde via Bot
               Action API.
             </p>
           </div>
@@ -82,8 +82,8 @@ export function CrmExternalBotDocsTakeover() {
             <h4>Em Atendimento</h4>
             <code>IN_HUMAN_SERVICE</code>
             <p>
-              Humano enviou mensagem. Envios do bot são bloqueados com código{" "}
-              <code>403</code>.
+              Humano atende pelo CRM. Chamadas do bot são negadas com{" "}
+              <code>CRM_BOT_POLICY_DENIED</code> (403).
             </p>
           </div>
 
@@ -100,10 +100,10 @@ export function CrmExternalBotDocsTakeover() {
               />
             </div>
             <h4>Retomada da IA</h4>
-            <code>null / isBotActive: true</code>
+            <code>humanAttendanceState: null</code>
             <p>
-              Atendimento concluído ou devolvido via CRM ou{" "}
-              <code>set_intervention</code>.
+              Atendimento concluído pelo CRM; um novo evento{" "}
+              <code>human_attendance_changed</code> libera o bot.
             </p>
           </div>
         </div>
@@ -150,8 +150,9 @@ export function CrmExternalBotDocsTakeover() {
         <div className="crm-bot-contracts-header">
           <h3>Campos Canônicos de Atendimento</h3>
           <p>
-            Propriedades presentes nos objetos <code>cycle</code> e{" "}
-            <code>intervention</code> nos webhooks.
+            Propriedades presentes no <code>payload</code> dos eventos{" "}
+            <code>human_attendance_changed</code> e nas revisões do envelope de
+            ações.
           </p>
         </div>
 

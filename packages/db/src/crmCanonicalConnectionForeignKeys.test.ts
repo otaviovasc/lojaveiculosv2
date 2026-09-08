@@ -4,7 +4,6 @@ import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
   crmWebhookEffectOutbox,
-  crmTags,
   crmCampaignRecipients,
   crmCampaigns,
   crmOutboundIntents,
@@ -45,7 +44,6 @@ const connectionReferences = [
     direct: true,
     table: crmCampaignRecipients,
   },
-  { column: "connection_id", direct: true, table: crmTags },
 ] as const;
 
 const pre0059TableNames = new Map([

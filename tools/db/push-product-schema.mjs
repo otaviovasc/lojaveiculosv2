@@ -20,7 +20,6 @@ export const billingScopeIndexNames = [
 ];
 
 export const crmScopeForeignKeyNames = [
-  "crm_tags_scoped_connection_fk",
   "provider_events_store_tenant_fk",
   "provider_events_scoped_connection_fk",
   "crm_webhook_effect_outbox_scoped_provider_event_fk",
@@ -304,8 +303,6 @@ async function detachScopeForeignKeys() {
         DROP CONSTRAINT IF EXISTS "crm_campaign_recipients_scoped_connection_fk";
       ALTER TABLE IF EXISTS "crm_campaigns"
         DROP CONSTRAINT IF EXISTS "crm_campaigns_scoped_connection_fk";
-      ALTER TABLE IF EXISTS "crm_tags"
-        DROP CONSTRAINT IF EXISTS "crm_tags_scoped_connection_fk";
       ALTER TABLE IF EXISTS "provider_events"
         DROP CONSTRAINT IF EXISTS "provider_events_scoped_connection_fk",
         DROP CONSTRAINT IF EXISTS "provider_events_store_tenant_fk";
@@ -417,10 +414,6 @@ async function installScopeForeignKeys() {
         FOREIGN KEY ("step_id", "run_id", "tenant_id", "store_id")
         REFERENCES "automation_steps" ("id", "run_id", "tenant_id", "store_id")
         ON DELETE CASCADE;
-      ALTER TABLE "crm_tags"
-        ADD CONSTRAINT "crm_tags_scoped_connection_fk"
-        FOREIGN KEY ("tenant_id", "store_id", "connection_id")
-        REFERENCES "crm_channel_connections" ("tenant_id", "store_id", "id");
       ALTER TABLE "provider_events"
         ADD CONSTRAINT "provider_events_store_tenant_fk"
         FOREIGN KEY ("store_id", "tenant_id")

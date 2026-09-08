@@ -15,9 +15,9 @@ the supported triples are `whatsapp/meta_cloud/composio`,
 `olx_chat/olx/direct`.
 
 The operational projection uses contacts, conversation threads, conversation
-cycles, attendances, messages, channel connections, tags, schedules, campaigns,
+cycles, attendances, messages, channel connections, schedules, campaigns,
 and external-bot command/effect tables. The active permission catalog is
-channel-neutral (`crm.conversations.*`, `crm.messages.*`, `crm.tags.*`,
+channel-neutral (`crm.conversations.*`, `crm.messages.*`,
 `crm.scheduled_messages.*`, `crm.campaigns.*`, `crm.bot.*`,
 `crm.attendances.manage`, and `crm.messaging.connection.*`).
 
@@ -37,7 +37,7 @@ in `v1-crm-whatsapp-import.md` and are not current target schema.
 ## Current routes
 
 The implemented API still exposes some WhatsApp-qualified HTTP paths for the
-current web surface, including conversation, message, webhook, schedule, tag,
+current web surface, including conversation, message, webhook, schedule,
 and bot endpoints. These path literals do not change the canonical model:
 authorization and routing use the selected channel connection, and persistence
 uses the channel-neutral tables above. The generic connection routes are:
