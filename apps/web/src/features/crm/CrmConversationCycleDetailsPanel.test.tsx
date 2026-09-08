@@ -201,6 +201,58 @@ describe("CrmConversationCycleDetailsPanel", () => {
       "https://cdn.example.test/proposta.pdf",
     );
   });
+
+  it("renders direct WhatsApp Web links, quick action buttons, and customer data", async () => {
+    const user = userEvent.setup();
+    const onOpenFinancingSimulation = vi.fn();
+    const onScheduleVisit = vi.fn();
+
+    const customCycle: CrmConversationCycle = {
+      ...cycle(),
+      customerPhone: "5511987654321",
+      metadata: {
+        broker: "direct",
+        cpf: "123.456.789-00",
+        email: "maria@example.com",
+      },
+    };
+
+    render(
+      <CrmConversationCycleDetailsPanel
+        assignableMembers={[]}
+        onClose={vi.fn()}
+        onOpenFinancingSimulation={onOpenFinancingSimulation}
+        onScheduleVisit={onScheduleVisit}
+        cycle={customCycle}
+      />,
+    );
+
+    // Direct WhatsApp links in phone row and hero actions
+    const waLinks = screen.getAllByRole("link", { name: /WhatsApp Web/ });
+    expect(waLinks.length).toBeGreaterThanOrEqual(2);
+    expect(waLinks[0]).toHaveAttribute("href", "https://wa.me/5511987654321");
+    expect(waLinks[1]).toHaveAttribute("href", "https://wa.me/5511987654321");
+
+    // Quick action buttons
+    const visitBtn = screen.getByRole("button", { name: /Agendar Visita/ });
+    expect(visitBtn).toBeVisible();
+    await user.click(visitBtn);
+    expect(onScheduleVisit).toHaveBeenCalledTimes(1);
+
+    const credereBtn = screen.getByRole("button", {
+      name: /Simulação Credere/,
+    });
+    expect(credereBtn).toBeVisible();
+    await user.click(credereBtn);
+    expect(onOpenFinancingSimulation).toHaveBeenCalledTimes(1);
+
+    // Dados do Cliente section
+    expect(
+      screen.getByRole("heading", { name: "Dados do Cliente" }),
+    ).toBeVisible();
+    expect(screen.getByText("123.456.789-00")).toBeVisible();
+    expect(screen.getByText("maria@example.com")).toBeVisible();
+  });
 });
 
 function message(overrides: Partial<CrmMessage>): CrmMessage {

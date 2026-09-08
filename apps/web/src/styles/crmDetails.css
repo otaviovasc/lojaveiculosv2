@@ -176,9 +176,38 @@
 
 .crm-details-wa-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
   gap: 0.25rem;
   padding: 0.65rem 0.75rem 0;
+}
+
+.crm-details-quick-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0.75rem 0;
+}
+
+.crm-details-quick-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.crm-details-quick-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .crm-details-wa-action {

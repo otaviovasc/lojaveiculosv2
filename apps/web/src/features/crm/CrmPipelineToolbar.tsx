@@ -7,10 +7,14 @@ import {
   Eye,
   Search,
   Handshake,
+  Car,
+  Download,
+  X,
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { LeadFilters, CrmViewMode } from "./crmPipelineModels";
 import type { Pipeline, PipelineStage } from "./crmPipelineStorage";
+import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import { FILTER_CONFIGS, type CustomFilters } from "./CrmPipelineToolbarTypes";
 
 type Props = {
@@ -22,11 +26,13 @@ type Props = {
   filters: LeadFilters;
   onChangeFilters: (filters: LeadFilters) => void;
   onCreateClick: () => void;
+  onExportCsv?: () => void;
   visibleStages: Record<string, boolean>;
   onToggleStageVisibility: (stageId: string) => void;
   stages: PipelineStage[];
   customFilters: CustomFilters;
   onChangeCustomFilters: (next: CustomFilters) => void;
+  vehicleOptions?: LeadVehicleOption[];
   viewMode: CrmViewMode;
   onChangeViewMode: (mode: CrmViewMode) => void;
 };
@@ -43,15 +49,17 @@ export function CrmPipelineToolbar({
   onToggleStageVisibility,
   stages,
   onCreateClick,
+  onExportCsv,
   customFilters,
   onChangeCustomFilters,
+  vehicleOptions,
   viewMode,
   onChangeViewMode,
 }: Props) {
   const [showFasesDropdown, setShowFasesDropdown] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<keyof CustomFilters | null>(
-    null,
-  );
+  const [openDropdown, setOpenDropdown] = useState<
+    keyof CustomFilters | "veiculo" | null
+  >(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -213,6 +221,115 @@ export function CrmPipelineToolbar({
               </div>
             );
           })}
+
+          {/* Vehicle Inventory Filter Dropdown */}
+          {vehicleOptions && vehicleOptions.length > 0 && (
+            <div className="relative">
+              <button
+                className={
+                  "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-black cursor-pointer transition-colors " +
+                  (customFilters.veiculoId
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-line/50 bg-app-elevated/45 text-app-text hover:bg-line/25")
+                }
+                onClick={() => {
+                  setOpenDropdown(
+                    openDropdown === "veiculo" ? null : "veiculo",
+                  );
+                  setSearchQuery("");
+                }}
+                type="button"
+              >
+                <Car className="size-3 text-muted" />
+                <span className="max-w-[140px] truncate">
+                  {customFilters.veiculoId
+                    ? vehicleOptions.find(
+                        (v) => v.id === customFilters.veiculoId,
+                      )?.label || "Veículo"
+                    : "Veículo"}
+                </span>
+                {customFilters.veiculoId && (
+                  <span
+                    aria-label="Limpar filtro de veículo"
+                    className="ml-0.5 rounded-full p-0.5 hover:bg-accent/20 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChangeCustomFilters({
+                        ...customFilters,
+                        veiculoId: undefined,
+                      });
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <X className="size-3" />
+                  </span>
+                )}
+              </button>
+
+              {openDropdown === "veiculo" && (
+                <div className="absolute top-full mt-1.5 left-0 z-50 w-64 bg-panel border border-line rounded-xl shadow-xl p-2 flex flex-col gap-1.5 text-app-text">
+                  <div className="relative">
+                    <input
+                      aria-label="Buscar veículo do estoque"
+                      className="min-h-8 w-full rounded-md border border-line bg-app px-2 text-xs text-app-text outline-none placeholder:text-muted"
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar veículo do estoque..."
+                      type="text"
+                      value={searchQuery}
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto flex flex-col gap-0.5">
+                    <button
+                      className={
+                        "w-full text-left px-2.5 py-1.5 rounded-md text-xs font-bold cursor-pointer transition-colors " +
+                        (!customFilters.veiculoId
+                          ? "bg-accent/15 text-accent"
+                          : "hover:bg-line/10 text-app-text")
+                      }
+                      onClick={() => {
+                        onChangeCustomFilters({
+                          ...customFilters,
+                          veiculoId: undefined,
+                        });
+                        setOpenDropdown(null);
+                      }}
+                      type="button"
+                    >
+                      Todos os veículos
+                    </button>
+                    {vehicleOptions
+                      .filter((v) =>
+                        v.label
+                          .toLowerCase()
+                          .includes(searchQuery.toLowerCase()),
+                      )
+                      .map((v) => (
+                        <button
+                          className={
+                            "w-full text-left px-2.5 py-1.5 rounded-md text-xs font-bold cursor-pointer transition-colors truncate " +
+                            (customFilters.veiculoId === v.id
+                              ? "bg-accent/15 text-accent"
+                              : "hover:bg-line/10 text-app-text")
+                          }
+                          key={v.id}
+                          onClick={() => {
+                            onChangeCustomFilters({
+                              ...customFilters,
+                              veiculoId: v.id,
+                            });
+                            setOpenDropdown(null);
+                          }}
+                          type="button"
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Side: Phase Count + Layout + Create Button */}
@@ -307,6 +424,19 @@ export function CrmPipelineToolbar({
               </AnimatedIconSwap>
             </button>
           </div>
+
+          {onExportCsv && (
+            <button
+              aria-label="Exportar leads em CSV"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line/50 bg-app-elevated/45 px-3 text-xs font-black text-muted hover:text-app-text hover:bg-line/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.97]"
+              onClick={onExportCsv}
+              title="Exportar leads filtrados para CSV"
+              type="button"
+            >
+              <Download aria-hidden="true" className="size-3.5" />
+              <span className="hidden md:inline">Exportar CSV</span>
+            </button>
+          )}
 
           <button
             className="crm-action min-h-9 flex-1 px-4 text-xs sm:flex-none"

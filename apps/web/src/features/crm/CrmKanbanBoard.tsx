@@ -17,6 +17,13 @@ type Props = {
   onQuickAddDeal: (stageId: string) => void;
   onSimulateClick: (lead: ProductCrmLead) => void;
   onChatClick: (lead: ProductCrmLead) => void;
+  onQuickScheduleTask?:
+    | ((
+        leadId: string,
+        dueAt: string,
+        title?: string | undefined,
+      ) => Promise<void>)
+    | undefined;
   onAddStage: () => void;
   onEditStage?: (stage: PipelineStage) => void;
   onLoadMoreStage: (stageId: string) => Promise<void>;
@@ -34,6 +41,7 @@ export function CrmKanbanBoard({
   onQuickAddDeal,
   onSimulateClick,
   onChatClick,
+  onQuickScheduleTask,
   onAddStage,
   onEditStage,
   onLoadMoreStage,
@@ -254,6 +262,7 @@ export function CrmKanbanBoard({
                     lead={lead}
                     onChatClick={onChatClick}
                     onDragStart={setDraggedLeadId}
+                    onQuickScheduleTask={onQuickScheduleTask}
                     onSelectLead={onSelectLead}
                     onSimulateClick={onSimulateClick}
                     vehicleOptions={vehicleOptions}

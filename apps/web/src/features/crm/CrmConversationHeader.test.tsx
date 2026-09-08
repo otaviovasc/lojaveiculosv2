@@ -361,4 +361,64 @@ describe("CrmConversationHeader", () => {
       screen.getByRole("button", { name: "Abrir detalhes da conversa" }),
     ).toHaveFocus();
   });
+
+  it("renders direct WhatsApp Web link and Ad attribution badge when present", async () => {
+    const user = userEvent.setup();
+    const onOpenFinancingSimulation = vi.fn();
+
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead={false}
+        canScheduleMessages={false}
+        canTagSessions={false}
+        canToggleIntervention={false}
+        onAddTag={vi.fn(async () => false)}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onOpenFinancingSimulation={onOpenFinancingSimulation}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        cycle={{
+          customerDisplayName: "Carlos Vendedor",
+          customerPhone: "5511987654321",
+          channel: "whatsapp",
+          id: "cycle-ad-1",
+          status: "ACTIVE",
+          metadata: {
+            isAdInitiated: true,
+            adTitle: "Oferta Especial Corolla",
+          },
+        }}
+      />,
+    );
+
+    // Ad badge rendered in title
+    const adBadge = screen.getByText("Ad");
+    expect(adBadge).toBeVisible();
+    expect(adBadge.closest("span")).toHaveAttribute(
+      "title",
+      "Anúncio: Oferta Especial Corolla",
+    );
+
+    // WhatsApp Web direct button in header actions
+    const waLink = screen.getByRole("link", { name: "Abrir no WhatsApp Web" });
+    expect(waLink).toHaveAttribute("href", "https://wa.me/5511987654321");
+    expect(waLink).toHaveAttribute("target", "_blank");
+
+    // Open more menu and click Credere simulation
+    await user.click(screen.getByRole("button", { name: "Mais ações" }));
+    const credereBtn = screen.getByRole("menuitem", {
+      name: /Simulação Credere/,
+    });
+    expect(credereBtn).toBeVisible();
+    await user.click(credereBtn);
+    expect(onOpenFinancingSimulation).toHaveBeenCalledTimes(1);
+  });
 });

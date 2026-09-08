@@ -2,6 +2,7 @@ import {
   ArrowUpRight,
   Ban,
   Bot,
+  CalendarCheck,
   CalendarClock,
   Car,
   Check,
@@ -11,8 +12,10 @@ import {
   ExternalLink,
   Image as ImageIcon,
   FileText,
+  Landmark,
   Link2,
   Lock,
+  Mail,
   MessageCircle,
   Radio,
   Search,
@@ -22,12 +25,14 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { SiWhatsapp } from "@icons-pack/react-simple-icons";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { CrmWhatsappAdAttribution } from "./CrmWhatsappAdAttribution";
 import { readCrmChannelLabel } from "./crmConnectionStatus";
 import { readCrmHumanAttendance } from "./crmHumanAttendance";
 import { formatCycleName } from "./crmConversationModel";
 import { formatCrmPhone } from "./crmPhoneFormat";
+import { cleanPhoneForWhatsapp } from "./crmLeadCardBadges";
 import type {
   CrmAssignableMember,
   CrmConversationCycle,
@@ -44,15 +49,21 @@ export function CrmConversationCycleDetailsPanel({
   isOpen = true,
   messages = [],
   onClose,
+  onOpenFinancingSimulation,
+  onScheduleVisit,
 }: {
   assignableMembers: CrmAssignableMember[];
   cycle: CrmConversationCycle;
   isOpen?: boolean;
   messages?: CrmMessage[];
   onClose: () => void;
+  onOpenFinancingSimulation?: (() => void) | undefined;
+  onScheduleVisit?: (() => void) | undefined;
 }) {
   const name = formatCycleName(cycle);
   const formattedPhone = formatCrmPhone(cycle.customerPhone);
+  const cleanPhone = cleanPhoneForWhatsapp(cycle.customerPhone);
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [pfpOpen, setPfpOpen] = useState(false);
   const [galleryTab, setGalleryTab] = useState<"media" | "docs" | "links">(
@@ -248,11 +259,35 @@ export function CrmConversationCycleDetailsPanel({
                   <Copy className="size-3" />
                 )}
               </button>
+              {whatsappUrl ? (
+                <a
+                  aria-label="Abrir no WhatsApp Web"
+                  className="crm-details-copy-phone"
+                  href={whatsappUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  title="Abrir no WhatsApp Web"
+                >
+                  <SiWhatsapp className="size-3 text-emerald-500" title="" />
+                </a>
+              ) : null}
             </div>
           ) : null}
           <span className="crm-details-wa-presence">{presenceLabel}</span>
         </div>
         <div className="crm-details-wa-actions">
+          {whatsappUrl ? (
+            <a
+              className="crm-details-wa-action crm-details-wa-action--interactive text-emerald-600 hover:text-emerald-700"
+              href={whatsappUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+              title="Abrir no WhatsApp Web"
+            >
+              <SiWhatsapp className="size-4 text-emerald-500" title="" />
+              <small>WhatsApp Web</small>
+            </a>
+          ) : null}
           <button
             aria-pressed={muted}
             className={`crm-details-wa-action crm-details-wa-action--interactive${muted ? " is-muted" : ""}`}
@@ -294,6 +329,30 @@ export function CrmConversationCycleDetailsPanel({
             <small>Etiquetar</small>
           </button>
         </div>
+        {onScheduleVisit || onOpenFinancingSimulation ? (
+          <div className="crm-details-quick-actions">
+            {onScheduleVisit ? (
+              <button
+                className="crm-details-quick-btn"
+                onClick={onScheduleVisit}
+                type="button"
+              >
+                <CalendarCheck className="size-3.5 text-indigo-500" />
+                <span>Agendar Visita</span>
+              </button>
+            ) : null}
+            {onOpenFinancingSimulation ? (
+              <button
+                className="crm-details-quick-btn"
+                onClick={onOpenFinancingSimulation}
+                type="button"
+              >
+                <Landmark className="size-3.5 text-amber-500" />
+                <span>Simulação Credere</span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {tagEditorOpen ? (
           <div className="crm-details-wa-tag-editor">
             <p className="crm-details-muted text-xs">
@@ -445,6 +504,29 @@ export function CrmConversationCycleDetailsPanel({
               </div>
               <ArrowUpRight className="size-4 text-muted shrink-0" />
             </a>
+          </section>
+        ) : null}
+
+        {/* Dados do Cliente Card */}
+        {cycle.metadata?.cpf || cycle.metadata?.email ? (
+          <section className="crm-details-section">
+            <h2 className="crm-details-section-title">Dados do Cliente</h2>
+            <div className="crm-details-card">
+              {cycle.metadata?.cpf ? (
+                <DetailRow
+                  icon={<UserRound className="size-3.5 text-muted" />}
+                  label="CPF"
+                  value={String(cycle.metadata.cpf)}
+                />
+              ) : null}
+              {cycle.metadata?.email ? (
+                <DetailRow
+                  icon={<Mail className="size-3.5 text-muted" />}
+                  label="E-mail"
+                  value={String(cycle.metadata.email)}
+                />
+              ) : null}
+            </div>
           </section>
         ) : null}
 

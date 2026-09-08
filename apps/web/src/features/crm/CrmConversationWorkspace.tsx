@@ -48,6 +48,7 @@ export function CrmConversationWorkspace({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [scheduleMessageOpen, setScheduleMessageOpen] = useState(false);
   const [scheduleVisitOpen, setScheduleVisitOpen] = useState(false);
+  const [financingSimulationOpen, setFinancingSimulationOpen] = useState(false);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [newConversationDraft, setNewConversationDraft] = useState<{
     buyerName?: string;
@@ -104,6 +105,7 @@ export function CrmConversationWorkspace({
     setConclusionOpen(false);
     setScheduleMessageOpen(false);
     setScheduleVisitOpen(false);
+    setFinancingSimulationOpen(false);
   }, [inbox.activeCycleId, inbox.connectionFilterId]);
 
   useEffect(() => {
@@ -354,6 +356,7 @@ export function CrmConversationWorkspace({
               onRemoveTag={(tagId) =>
                 inbox.actions.removeCycleTag(activeSession.id, tagId)
               }
+              onOpenFinancingSimulation={() => setFinancingSimulationOpen(true)}
               onScheduleMessage={() => setScheduleMessageOpen(true)}
               onScheduleVisit={() => setScheduleVisitOpen(true)}
               onToggleIntervention={() => {
@@ -534,6 +537,8 @@ export function CrmConversationWorkspace({
             setDetailsOpen(false);
             focusPane("chat");
           }}
+          onOpenFinancingSimulation={() => setFinancingSimulationOpen(true)}
+          onScheduleVisit={() => setScheduleVisitOpen(true)}
           cycle={activeSession}
         />
       ) : null}
@@ -541,11 +546,13 @@ export function CrmConversationWorkspace({
         activeSession={activeSession ?? null}
         conclusionOpen={conclusionOpen}
         deleteCycleId={deleteCycleId}
+        financingSimulationOpen={financingSimulationOpen}
         inbox={inbox}
         newConversationDraft={newConversationDraft}
         newConversationOpen={newConversationOpen}
         onCloseConclusion={() => setConclusionOpen(false)}
         onCloseDelete={() => setDeleteCycleId(null)}
+        onCloseFinancingSimulation={() => setFinancingSimulationOpen(false)}
         onCloseNewConversation={() => {
           setNewConversationOpen(false);
           setNewConversationDraft(null);

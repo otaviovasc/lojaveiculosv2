@@ -25,6 +25,8 @@ import { CrmEditStageModal } from "./CrmEditStageModal";
 import { CrmListView } from "./CrmListView";
 import { CrmPipelineAlert, CrmPipelineLoading } from "./CrmPipelineViewStates";
 import { getFilteredLeads, hasAnyClientFilter } from "./CrmPipelineViewFilters";
+import { exportLeadsToCsv } from "./crmClientExport";
+import type { CustomFilters } from "./CrmPipelineToolbarTypes";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
   const {
@@ -84,12 +86,13 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   };
 
   // Custom filter selections
-  const [customFilters, setCustomFilters] = useState({
+  const [customFilters, setCustomFilters] = useState<CustomFilters>({
     resposta: [] as string[],
     origem: [] as string[],
     responsavel: [] as string[],
     semInteracao: "",
     fonte: [] as string[],
+    veiculoId: undefined,
   });
 
   const activeLead = useMemo(
@@ -149,6 +152,51 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     });
   };
 
+  const handleQuickScheduleTask = async (
+    leadId: string,
+    dueAt: string,
+    title: string = "Retornar contato",
+  ) => {
+    try {
+      await props.onCreateActivity(leadId, {
+        activityType: "task",
+        content: title,
+        direction: "internal",
+        metadata: {
+          dueAt,
+          priority: "Média",
+        },
+      });
+      setToast({
+        title: "Tarefa agendada com sucesso.",
+        tone: "success",
+      });
+    } catch {
+      setToast({
+        title: "Não foi possível agendar a tarefa.",
+        children: "Tente novamente.",
+        tone: "danger",
+      });
+    }
+  };
+
+  const handleExportCsv = () => {
+    if (filteredLeads.length === 0) {
+      setToast({
+        title: "Nenhum lead para exportar.",
+        children: "Ajuste os filtros para visualizar e exportar negócios.",
+        tone: "info",
+      });
+      return;
+    }
+    exportLeadsToCsv(filteredLeads);
+    setToast({
+      title: "Exportação CSV iniciada.",
+      children: `${filteredLeads.length} leads exportados com sucesso.`,
+      tone: "success",
+    });
+  };
+
   const filteredLeads = useMemo(() => {
     return getFilteredLeads(props.viewLeads, activePipeline, customFilters);
   }, [props.viewLeads, activePipeline, customFilters]);
@@ -172,6 +220,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       responsavel: [],
       semInteracao: "",
       fonte: [],
+      veiculoId: undefined,
     });
   };
 
@@ -309,6 +358,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             onConfigureClick={() => setIsSettingsOpen(true)}
             onCreateClick={openQuickAddLead}
             onCreatePipeline={() => setIsQuickPipelineOpen(true)}
+            onExportCsv={handleExportCsv}
             onSelectPipeline={setActivePipelineId}
             onToggleStageVisibility={(id) =>
               setVisibleStages((prev) => ({
@@ -318,6 +368,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             }
             pipelines={pipelines}
             stages={activePipeline.stages}
+            vehicleOptions={props.vehicleOptions}
             visibleStages={visibleStages}
             viewMode={props.viewMode}
             onChangeViewMode={props.onChangeViewMode}
@@ -364,6 +415,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
               onChatClick={setChatLead}
               onQuickAddDeal={setQuickAddLeadStageId}
               onLoadMoreStage={props.onLoadMoreStage}
+              onQuickScheduleTask={handleQuickScheduleTask}
               onSelectLead={props.onSelectLead}
               onSimulateClick={setSimulateLead}
               onUpdateStage={handleUpdateStage}

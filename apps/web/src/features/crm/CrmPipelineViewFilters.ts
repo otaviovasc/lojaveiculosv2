@@ -8,6 +8,7 @@ export type CustomFilters = {
   responsavel: string[];
   semInteracao: string;
   fonte: string[];
+  veiculoId?: string | undefined;
 };
 
 type BaseClientFilters = {
@@ -84,6 +85,10 @@ export function getFilteredLeads(
     });
   }
 
+  if (customFilters.veiculoId) {
+    rawLeads = rawLeads.filter((l) => l.listingId === customFilters.veiculoId);
+  }
+
   return rawLeads;
 }
 
@@ -99,6 +104,7 @@ export function hasAnyClientFilter(
     customFilters.origem.length ||
     customFilters.responsavel.length ||
     customFilters.semInteracao ||
-    customFilters.fonte.length,
+    customFilters.fonte.length ||
+    customFilters.veiculoId,
   );
 }
