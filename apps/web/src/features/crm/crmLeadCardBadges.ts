@@ -180,8 +180,9 @@ export function readLeadTemperatureBadge(
 export function readLeadCrmTags(
   metadata: Record<string, unknown>,
 ): LeadCrmTag[] {
-  const raw = metadata.tags_crm ?? metadata.tags;
-  if (!Array.isArray(raw)) return [];
+  const rawCandidate = metadata.tags_crm ?? metadata.tags;
+  if (!Array.isArray(rawCandidate)) return [];
+  const raw: readonly unknown[] = rawCandidate;
 
   const result: LeadCrmTag[] = [];
   for (let idx = 0; idx < raw.length; idx++) {

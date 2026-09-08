@@ -14,7 +14,7 @@ import { SessionList } from "./CrmConversationCycleList";
 import { SessionListSkeleton } from "./CrmSkeletons";
 import type { CrmScope } from "./CrmScopedNav";
 import type { useCrmInbox } from "./useCrmInbox";
-import {
+import type {
   CrmConversationCycle,
   CrmConversationCycleId,
 } from "./crmConversationTypes";

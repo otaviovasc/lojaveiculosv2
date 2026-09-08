@@ -230,10 +230,10 @@ export function CrmLeadCard({
                 <button
                   className="w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-sm text-app-text hover:bg-line/15 hover:text-app-text transition-colors cursor-pointer flex items-center justify-between"
                   key={opt.label}
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     setIsScheduleOpen(false);
-                    await onQuickScheduleTask?.(
+                    void onQuickScheduleTask?.(
                       lead.id,
                       opt.dueAt,
                       "Retornar contato",
