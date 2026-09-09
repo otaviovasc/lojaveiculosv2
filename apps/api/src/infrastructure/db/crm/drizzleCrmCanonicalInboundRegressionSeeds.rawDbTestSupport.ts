@@ -13,6 +13,7 @@ export async function seedCanonicalContext(
     phone?: string;
     scope: Scope;
     threadId: string;
+    threadState?: "open" | "resolved" | "archived";
   },
 ) {
   await db.insert(schema.conversationThreads).values({
@@ -22,6 +23,7 @@ export async function seedCanonicalContext(
     externalThreadId: input.externalThreadId,
     id: input.threadId,
     providerConnectionId: input.connectionId,
+    ...(input.threadState ? { state: input.threadState } : {}),
     storeId: input.scope.storeId,
     tenantId: input.scope.tenantId,
   });

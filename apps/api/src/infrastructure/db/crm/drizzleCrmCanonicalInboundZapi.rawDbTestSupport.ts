@@ -1,8 +1,12 @@
+import { randomUUID } from "node:crypto";
 import * as schema from "@lojaveiculosv2/db";
 import { eq } from "drizzle-orm";
 import { expect } from "vitest";
 import type { CanonicalInboundMessageResult } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
+import type { CrmCanonicalInboundRepository } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
+import { canonicalInbound } from "./drizzleCrmCanonicalInbound.rawDbTestSupport.js";
+import { seedCanonicalContext } from "./drizzleCrmCanonicalInboundRegressionSeeds.rawDbTestSupport.js";
 
 export async function expectCanonicalZapiState(
   transaction: DrizzleCrmClient,
@@ -32,6 +36,13 @@ export async function expectCanonicalZapiState(
         templates: false,
       },
       connected: true,
+      credentialsRef: {
+        stored: {
+          clientToken: "raw-test-client-token",
+          instanceId: "raw-test-instance",
+          instanceToken: "raw-test-instance-token",
+        },
+      },
     },
     provider: "zapi",
   });
@@ -107,4 +118,45 @@ export async function expectCanonicalZapiState(
     .from(schema.conversationCycles)
     .where(eq(schema.conversationCycles.id, input.first.cycleId));
   expect(cycle?.opportunityId).toBeNull();
+}
+
+export async function expectArchivedHuskIgnored(
+  db: DrizzleCrmClient,
+  repository: CrmCanonicalInboundRepository,
+  input: { connectionId: string; scope: { storeId: string; tenantId: string } },
+) {
+  const phone = `5511${randomUUID().replace(/\D/gu, "").slice(0, 9)}`;
+  const threadId = randomUUID();
+  const cycleId = randomUUID();
+  await seedCanonicalContext(db, {
+    connectionId: input.connectionId,
+    cycleId: randomUUID(),
+    externalThreadId: `phone:${phone}`,
+    phone: `+${phone}`,
+    scope: input.scope,
+    threadId: randomUUID(),
+    threadState: "archived",
+  });
+  await seedCanonicalContext(db, {
+    connectionId: input.connectionId,
+    cycleId,
+    externalThreadId: phone,
+    phone,
+    scope: input.scope,
+    threadId,
+  });
+  const ingested = await repository.ingestInboundMessage({
+    ...canonicalInbound({
+      channel: "whatsapp",
+      connectionId: input.connectionId,
+      externalThreadId: `phone:${phone}`,
+      identity: { kind: "phone", normalizedValue: phone },
+      provider: "zapi",
+      providerMessageId: `archived-husk-${randomUUID()}`,
+      scope: input.scope,
+    }),
+    content: "Inbound after husk merge",
+    externalThreadAliases: [phone],
+  });
+  expect(ingested).toMatchObject({ cycleId, threadId });
 }

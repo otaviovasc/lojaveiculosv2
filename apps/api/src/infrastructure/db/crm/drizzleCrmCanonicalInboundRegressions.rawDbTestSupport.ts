@@ -10,6 +10,7 @@ import type { CrmCanonicalInboundRepository } from "../../../domains/crm/ports/c
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { canonicalInbound } from "./drizzleCrmCanonicalInbound.rawDbTestSupport.js";
 import { seedCanonicalContext } from "./drizzleCrmCanonicalInboundRegressionSeeds.rawDbTestSupport.js";
+import { expectArchivedHuskIgnored } from "./drizzleCrmCanonicalInboundZapi.rawDbTestSupport.js";
 
 type Scope = { storeId: string; tenantId: string };
 
@@ -101,6 +102,7 @@ export async function validateCanonicalInboundRegressions(
     scope: input.scope,
     threadId,
   });
+  await expectArchivedHuskIgnored(db, repository, input);
   await expectAmbiguousIdentityClosed(db, repository, input);
 }
 
@@ -126,6 +128,7 @@ async function validateHydratedProjection(
   const [roleTemplate] = await db
     .select({ id: schema.roleTemplates.id })
     .from(schema.roleTemplates)
+    .where(eq(schema.roleTemplates.roleKey, "salesman"))
     .limit(1);
   expect(
     roleTemplate,

@@ -36,6 +36,17 @@ export async function seedCanonicalInboundConnection(
         templates: false,
       },
       connected: true,
+      ...(input.provider === "zapi"
+        ? {
+            credentialsRef: {
+              stored: {
+                clientToken: "raw-test-client-token",
+                instanceId: "raw-test-instance",
+                instanceToken: "raw-test-instance-token",
+              },
+            },
+          }
+        : {}),
     },
     provider: input.provider,
     state: input.state ?? "active",

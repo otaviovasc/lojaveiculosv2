@@ -1,5 +1,5 @@
 import { conversationThreads } from "@lojaveiculosv2/db";
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import type { CanonicalInboundMessageInput } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
@@ -29,6 +29,7 @@ export async function resolveCanonicalInboundThread(
         ),
         eq(conversationThreads.storeId, input.storeId),
         eq(conversationThreads.tenantId, input.tenantId),
+        ne(conversationThreads.state, "archived"),
       ),
     )
     .orderBy(asc(conversationThreads.createdAt))
