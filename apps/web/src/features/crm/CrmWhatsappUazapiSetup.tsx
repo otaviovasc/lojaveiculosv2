@@ -394,6 +394,7 @@ export function CrmWhatsappUazapiSetup({
       busy !== null ||
       !canPair ||
       !connection ||
+      !isProviderDisconnected(connection) ||
       pairingBlock !== null ||
       document.visibilityState !== "visible"
     ) {

@@ -22,7 +22,7 @@ describe("CrmConversationHeader", () => {
         canToggleIntervention={false}
         contactPresence="typing"
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -56,7 +56,7 @@ describe("CrmConversationHeader", () => {
         canToggleIntervention={false}
         onAssign={vi.fn()}
         onBack={onBack}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -89,7 +89,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages={false}
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -119,7 +119,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages={false}
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -150,7 +150,7 @@ describe("CrmConversationHeader", () => {
         canToggleIntervention
         currentUserId="user-1"
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -180,7 +180,7 @@ describe("CrmConversationHeader", () => {
       screen.getByRole("group", {
         name: "Responsabilidade pelo atendimento",
       }),
-    ).toContainElement(screen.getByRole("button", { name: "Concluir" }));
+    ).toContainElement(screen.getByRole("button", { name: "Vender" }));
   });
 
   it("keeps secondary actions available in an accessible more-actions menu", async () => {
@@ -196,7 +196,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={onMarkUnread}
         onOpenDetails={vi.fn()}
@@ -246,7 +246,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages={false}
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -292,7 +292,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages={false}
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}
@@ -330,7 +330,7 @@ describe("CrmConversationHeader", () => {
         canScheduleMessages={false}
         canToggleIntervention={false}
         onAssign={vi.fn()}
-        onClose={vi.fn()}
+        onStartSale={vi.fn()}
         onMarkRead={vi.fn()}
         onMarkUnread={vi.fn()}
         onOpenDetails={vi.fn()}

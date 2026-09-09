@@ -27,7 +27,7 @@ vi.mock("./CrmConversationParts", () => ({
     actionsDisabled,
     contactPresence,
     onBack,
-    onClose,
+    onStartSale,
     onOpenDetails,
   }: ComponentProps<typeof ChatHeader>) => (
     <>
@@ -37,8 +37,8 @@ vi.mock("./CrmConversationParts", () => ({
       <button onClick={onBack} type="button">
         Voltar para conversas
       </button>
-      <button disabled={actionsDisabled} onClick={onClose} type="button">
-        Concluir
+      <button disabled={actionsDisabled} onClick={onStartSale} type="button">
+        Vender
       </button>
       <button onClick={onOpenDetails} type="button">
         Abrir detalhes
@@ -159,10 +159,13 @@ describe("CrmConversationWorkspace conclusion", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Concluir" }));
+    await user.click(screen.getByRole("button", { name: "Vender" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(closeCycle).not.toHaveBeenCalled();
 
+    await user.click(
+      screen.getByRole("button", { name: "Encerrar sem venda" }),
+    );
     await user.click(
       screen.getByRole("button", { name: "Concluir atendimento" }),
     );
@@ -438,7 +441,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     );
 
     expect(screen.getByRole("textbox", { name: "Rascunho" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Concluir" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Vender" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Ação da mensagem" }),
     ).toBeDisabled();

@@ -100,7 +100,11 @@ export function mergeCyclesFromServer(
     const localCycle = currentCyclesById.get(serverCycle.id);
     if (!localCycle) return serverCycle;
     if (options.snapshotKind === "mutation") {
-      return serverCycle;
+      // Command/realtime DTOs serialize cycles without the joined connection;
+      // keep the hydrated one so composer readiness survives session actions.
+      return serverCycle.connection || !localCycle.connection
+        ? serverCycle
+        : { ...serverCycle, connection: localCycle.connection };
     }
 
     const revisionComparison = compareCycleRevisions(localCycle, serverCycle);

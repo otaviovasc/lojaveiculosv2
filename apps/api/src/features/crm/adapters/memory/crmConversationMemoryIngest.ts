@@ -5,6 +5,7 @@ import type {
   UpsertCrmConversationCycleContextInput,
 } from "../../../../domains/crm/ports/crmConversationRepository.js";
 import { shouldBackfillCrmMessagingPhone } from "../../../../domains/crm/messaging/contactIdentity.js";
+import { whatsappPhonesMatch } from "../../../../domains/crm/whatsapp/whatsappPhone.js";
 import { withUnreadCount } from "./crmConversationMemoryQueries.js";
 import { updateMemoryCyclePreview } from "./crmConversationCycleMemoryPreview.js";
 import { memoryProfilePhotoMetadata } from "./crmConversationMemoryProfilePhoto.js";
@@ -34,11 +35,10 @@ export function findMemoryCycle(
         Boolean(input.externalThreadId) &&
         cycle.externalThreadId === input.externalThreadId,
     ) ??
-    scoped.find(
-      (cycle) =>
-        Boolean(input.customerPhone) &&
-        cycle.customerPhone === input.customerPhone,
-    ) ??
+    scoped.find((cycle) => {
+      if (!input.customerPhone || !cycle.customerPhone) return false;
+      return whatsappPhonesMatch(input.customerPhone, cycle.customerPhone);
+    }) ??
     scoped.find(
       (cycle) =>
         Boolean(input.customerChatId) &&

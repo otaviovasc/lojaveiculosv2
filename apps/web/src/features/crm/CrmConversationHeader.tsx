@@ -1,9 +1,9 @@
 import {
   ArrowLeft,
+  BadgeDollarSign,
   Bot,
   CalendarCheck,
   CalendarClock,
-  CheckCheck,
   ChevronDown,
   ChevronUp,
   EllipsisVertical,
@@ -58,7 +58,7 @@ export function ChatHeader({
   messages = [],
   onAssign,
   onBack,
-  onClose,
+  onStartSale,
   onInsertPrompt,
   onMarkRead,
   onMarkUnread,
@@ -84,7 +84,7 @@ export function ChatHeader({
   messages?: { id: string; content: string }[];
   onAssign: (agentId: string | null) => void;
   onBack?: (() => void) | undefined;
-  onClose: () => void;
+  onStartSale: () => void;
   onInsertPrompt?: (text: string) => void;
   onMarkRead: () => void;
   onMarkUnread: () => void;
@@ -547,14 +547,17 @@ export function ChatHeader({
             ) : null}
             {canCloseSession ? (
               <button
-                aria-label="Concluir"
+                aria-label="Vender"
                 className="crm-action crm-action-concluir"
                 disabled={disabled}
-                onClick={onClose}
+                onClick={onStartSale}
                 type="button"
               >
-                <CheckCheck aria-hidden="true" className="size-3.5 shrink-0" />
-                <span className="crm-action-label">Concluir</span>
+                <BadgeDollarSign
+                  aria-hidden="true"
+                  className="size-3.5 shrink-0"
+                />
+                <span className="crm-action-label">Vender</span>
               </button>
             ) : null}
           </div>
