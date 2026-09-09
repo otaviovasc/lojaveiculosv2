@@ -1,16 +1,10 @@
 import type { LeadFilters } from "./crmPipelineModels";
 import type { Pipeline } from "./crmPipelineStorage";
-import { getLeadStageId, hasAssignedLeadOwner } from "./crmLeadData";
-import type { ProductCrmLead } from "./productCrmTypes";
+import { getLeadStageId } from "./crmLeadData";
+import type { CrmLeadSource, ProductCrmLead } from "./productCrmTypes";
+import type { CustomFilters } from "./CrmPipelineToolbarTypes";
 
-export type CustomFilters = {
-  resposta: string[];
-  origem: string[];
-  responsavel: string[];
-  semInteracao: string;
-  fonte: string[];
-  veiculoId?: string | undefined;
-};
+export type { CustomFilters };
 
 type BaseClientFilters = LeadFilters;
 
@@ -56,23 +50,6 @@ export function getFilteredLeads(
     });
   }
 
-  if (customFilters.origem.length > 0) {
-    rawLeads = rawLeads.filter((l) => {
-      const src = l.source?.toLowerCase() || "";
-      return customFilters.origem.some((v) => src === v.toLowerCase());
-    });
-  }
-
-  if (customFilters.responsavel.length > 0) {
-    rawLeads = rawLeads.filter((l) => {
-      const hasOwner = hasAssignedLeadOwner(l);
-      return (
-        (customFilters.responsavel.includes("unassigned") && !hasOwner) ||
-        (customFilters.responsavel.includes("assigned") && hasOwner)
-      );
-    });
-  }
-
   if (customFilters.semInteracao) {
     const days = parseInt(customFilters.semInteracao, 10);
     rawLeads = rawLeads.filter(
@@ -82,17 +59,6 @@ export function getFilteredLeads(
           (24 * 60 * 60 * 1000) >=
           days,
     );
-  }
-
-  if (customFilters.fonte.length > 0) {
-    rawLeads = rawLeads.filter((l) => {
-      const src = l.source?.toLowerCase() || "";
-      return customFilters.fonte.some((v) => src === v.toLowerCase());
-    });
-  }
-
-  if (customFilters.veiculoId) {
-    rawLeads = rawLeads.filter((l) => l.listingId === customFilters.veiculoId);
   }
 
   return rawLeads;
@@ -105,16 +71,18 @@ export function hasAnyClientFilter(
   return Boolean(
     filters.search.trim() ||
     filters.source !== "all" ||
+    Boolean(filters.sources && filters.sources.length > 0) ||
     filters.status !== "all" ||
     (filters.humanAttendanceState && filters.humanAttendanceState !== "all") ||
     (filters.sortBy && filters.sortBy !== "created_at") ||
     (filters.responseState && filters.responseState !== "all") ||
     (typeof filters.inactiveDays === "number" && filters.inactiveDays > 0) ||
+    Boolean(filters.assignee && filters.assignee !== "all") ||
+    Boolean(filters.listingId) ||
     customFilters.resposta.length ||
     customFilters.origem.length ||
-    customFilters.responsavel.length ||
+    Boolean(customFilters.responsavel && customFilters.responsavel !== "all") ||
     customFilters.semInteracao ||
-    customFilters.fonte.length ||
     customFilters.veiculoId,
   );
 }
@@ -123,14 +91,25 @@ export function customServerFilters(
   current: LeadFilters,
   custom: CustomFilters,
 ): LeadFilters {
+  const sources =
+    custom.origem.length > 0 ? (custom.origem as CrmLeadSource[]) : undefined;
+  const assignee =
+    custom.responsavel && custom.responsavel !== "all"
+      ? custom.responsavel
+      : undefined;
+  const listingId = custom.veiculoId || undefined;
+
   return {
     ...current,
+    assignee,
+    inactiveDays: custom.semInteracao ? Number(custom.semInteracao) : null,
+    listingId,
     responseState:
       custom.resposta.length === 1
         ? custom.resposta[0] === "responded"
           ? "responded"
           : "no_response"
         : "all",
-    inactiveDays: custom.semInteracao ? Number(custom.semInteracao) : null,
+    sources,
   };
 }

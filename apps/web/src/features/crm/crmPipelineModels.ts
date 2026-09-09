@@ -18,24 +18,30 @@ export type CrmLeadSortBy = "created_at" | "next_task";
 export const CRM_LEAD_DEFAULT_SORT: CrmLeadSortBy = "created_at";
 
 export type LeadFilters = {
-  search: string;
-  source: CrmLeadSource | "all";
-  status: CrmLeadStatus | "all";
-  responseState?: CrmLeadResponseState | "all";
-  inactiveDays?: number | null;
+  assignee?: string | undefined;
   humanAttendanceState?: CrmLeadHumanAttendanceState | "all";
+  inactiveDays?: number | null;
+  listingId?: string | undefined;
+  responseState?: CrmLeadResponseState | "all";
+  search: string;
   sortBy?: CrmLeadSortBy;
+  source: CrmLeadSource | "all";
+  sources?: CrmLeadSource[] | undefined;
+  status: CrmLeadStatus | "all";
 };
 
 export function createDefaultLeadFilters(): LeadFilters {
   return {
-    search: "",
-    source: "all",
-    status: "all",
-    responseState: "all",
-    inactiveDays: null,
+    assignee: undefined,
     humanAttendanceState: "all",
+    inactiveDays: null,
+    listingId: undefined,
+    responseState: "all",
+    search: "",
     sortBy: CRM_LEAD_DEFAULT_SORT,
+    source: "all",
+    sources: [],
+    status: "all",
   };
 }
 
@@ -46,7 +52,12 @@ export function hasActiveServerLeadFilters(filters: LeadFilters) {
       Number.isInteger(filters.inactiveDays) &&
       filters.inactiveDays > 0) ||
     (filters.humanAttendanceState && filters.humanAttendanceState !== "all") ||
-    (filters.sortBy && filters.sortBy !== CRM_LEAD_DEFAULT_SORT),
+    (filters.sortBy && filters.sortBy !== CRM_LEAD_DEFAULT_SORT) ||
+    (filters.assignee &&
+      filters.assignee !== "all" &&
+      filters.assignee !== "") ||
+    (filters.sources && filters.sources.length > 0) ||
+    Boolean(filters.listingId),
   );
 }
 

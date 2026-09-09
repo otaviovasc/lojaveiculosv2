@@ -83,14 +83,18 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   };
 
   // Custom filter selections
-  const [customFilters, setCustomFilters] = useState<CustomFilters>({
-    resposta: [] as string[],
-    origem: [] as string[],
-    responsavel: [] as string[],
-    semInteracao: "",
-    fonte: [] as string[],
-    veiculoId: undefined,
-  });
+  const [customFilters, setCustomFilters] = useState<CustomFilters>(() => ({
+    origem: (props.filters.sources ?? []) as string[],
+    resposta:
+      props.filters.responseState && props.filters.responseState !== "all"
+        ? [props.filters.responseState]
+        : [],
+    responsavel: props.filters.assignee,
+    semInteracao: props.filters.inactiveDays
+      ? String(props.filters.inactiveDays)
+      : "",
+    veiculoId: props.filters.listingId,
+  }));
 
   const activeLead = useMemo(
     () => props.leads.find((lead) => lead.id === props.activeLeadId) ?? null,
@@ -216,20 +220,22 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     setQuickAddLeadStageId(activePipeline?.stages[0]?.id ?? "new");
   const resetClientFilters = () => {
     props.onChangeFilters({
-      search: "",
-      source: "all",
-      status: "all",
+      assignee: undefined,
       humanAttendanceState: "all",
-      responseState: "all",
       inactiveDays: null,
+      listingId: undefined,
+      responseState: "all",
+      search: "",
       sortBy: props.filters.sortBy ?? "created_at",
+      source: "all",
+      sources: [],
+      status: "all",
     });
     setCustomFilters({
-      resposta: [],
       origem: [],
-      responsavel: [],
+      resposta: [],
+      responsavel: undefined,
       semInteracao: "",
-      fonte: [],
       veiculoId: undefined,
     });
   };
@@ -363,6 +369,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             activePipelineId={activePipelineId}
             customFilters={customFilters}
             filters={props.filters}
+            hasUserContext={props.hasUserContext}
             onChangeCustomFilters={(next) => {
               setCustomFilters(next);
               props.onChangeFilters(customServerFilters(props.filters, next));

@@ -25,6 +25,9 @@ export type LeadActivityType =
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
 export type CrmLeadOperationalFilters = {
+  assignee?: string;
+  sources?: readonly LeadSource[];
+  listingId?: string;
   responseState?: "responded" | "no_response";
   inactiveDays?: number;
   humanAttendanceState?: "waiting_human" | "in_human_service";

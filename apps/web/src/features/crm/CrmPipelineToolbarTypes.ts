@@ -1,46 +1,38 @@
 export type CustomFilters = {
-  resposta: string[];
   origem: string[];
-  responsavel: string[];
+  resposta: string[];
+  responsavel?: string | undefined;
   semInteracao: string;
-  fonte: string[];
   veiculoId?: string | undefined;
 };
 
 export type FilterConfig = {
-  key: keyof CustomFilters;
+  key: "origem" | "resposta" | "semInteracao";
   label: string;
   options: { id: string; label: string }[];
 };
 
 export const FILTER_CONFIGS: FilterConfig[] = [
   {
+    key: "origem",
+    label: "Origem",
+    options: [
+      { id: "manual", label: "Manual" },
+      { id: "whatsapp", label: "WhatsApp" },
+      { id: "instagram", label: "Instagram" },
+      { id: "olx", label: "OLX" },
+      { id: "public_site", label: "Site" },
+      { id: "crm", label: "CRM" },
+      { id: "external_api", label: "API externa" },
+      { id: "other", label: "Outro" },
+    ],
+  },
+  {
     key: "resposta",
     label: "Resposta",
     options: [
       { id: "no-response", label: "Apenas não respondidos" },
       { id: "responded", label: "Respondidos" },
-    ],
-  },
-  {
-    key: "origem",
-    label: "Origem",
-    options: [
-      { id: "manual", label: "Manual" },
-      { id: "public_site", label: "Site público" },
-      { id: "crm", label: "CRM" },
-      { id: "external_api", label: "API externa" },
-      { id: "olx", label: "OLX" },
-      { id: "whatsapp", label: "WhatsApp" },
-      { id: "other", label: "Outro" },
-    ],
-  },
-  {
-    key: "responsavel",
-    label: "Responsável",
-    options: [
-      { id: "unassigned", label: "Sem responsável" },
-      { id: "assigned", label: "Com responsável" },
     ],
   },
   {
@@ -52,15 +44,6 @@ export const FILTER_CONFIGS: FilterConfig[] = [
       { id: "7", label: "Mais de 7 dias" },
       { id: "15", label: "Mais de 15 dias" },
       { id: "30", label: "Mais de 30 dias" },
-    ],
-  },
-  {
-    key: "fonte",
-    label: "Fonte",
-    options: [
-      { id: "public_site", label: "Site público" },
-      { id: "external_api", label: "API externa" },
-      { id: "whatsapp", label: "WhatsApp" },
     ],
   },
 ];

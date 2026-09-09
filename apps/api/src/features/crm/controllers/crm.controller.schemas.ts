@@ -50,6 +50,17 @@ export const leadActivityDirectionSchema = z.enum([
 ]);
 
 const leadOperationalQueryFields = {
+  assignee: z
+    .union([z.enum(["assigned", "unassigned", "me"]), z.string().uuid()])
+    .optional(),
+  sources: z
+    .string()
+    .max(200)
+    .transform((value) => value.split(",").map((source) => source.trim()))
+    .pipe(z.array(leadSourceSchema).min(1).max(8))
+    .transform((values) => [...new Set(values)])
+    .optional(),
+  listingId: z.string().uuid().optional(),
   responseState: z.enum(["responded", "no_response"]).optional(),
   inactiveDays: z.coerce.number().int().min(1).max(3650).optional(),
   humanAttendanceState: z

@@ -6,6 +6,7 @@ import { readSessionActiveStore } from "../account/sessionPermissions";
 import type { CrmLeadImportInput, ProductCrmApi } from "./productCrmApi";
 import { CrmPipelineView } from "./CrmPipelineView";
 import {
+  createDefaultLeadFilters,
   createNoteActivityInput,
   createTaskActivityInput,
   type CrmViewMode,
@@ -50,12 +51,12 @@ export function CrmPipelineModule({
   const [activeLeadId, setActiveLeadId] = useState<string | null>(() =>
     readInitialLeadId(),
   );
+  const session = useOptionalAccountSession();
+  const hasUserContext = Boolean(session?.user);
   const [linkedLead, setLinkedLead] = useState<ProductCrmLead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>({
-    search: "",
-    source: "all",
-    status: "all",
-  });
+  const [filters, setFilters] = useState<LeadFilters>(() =>
+    createDefaultLeadFilters(),
+  );
   const [vehicleOptions, setVehicleOptions] = useState<LeadVehicleOption[]>([]);
   const [viewMode, setViewMode] = useState<CrmViewMode>("kanban");
   const canLoadPipeline = activeSurface !== "conversations";
@@ -203,7 +204,6 @@ export function CrmPipelineModule({
     await board.refresh();
   };
 
-  const session = useOptionalAccountSession();
   const activeStore = readSessionActiveStore(session);
   const canImportLeads = session
     ? Boolean(activeStore?.effectivePermissions?.includes("lead.create"))
@@ -239,6 +239,7 @@ export function CrmPipelineModule({
         activeLeadId={activeLeadId}
         error={board.error}
         filters={filters}
+        hasUserContext={hasUserContext}
         isLoading={board.isLoading}
         leads={visibleLeads}
         loadingStageIds={board.loadingStageIds}

@@ -59,12 +59,21 @@ export function createCrmLeadBoardQuery(
   };
 }
 
-function createCrmLeadFilters(filters: LeadFilters) {
+export function createCrmLeadFilters(filters: LeadFilters) {
   const search = filters.search.trim();
+  const sources = filters.sources?.filter(Boolean);
   return {
     ...(search ? { search } : {}),
-    ...(filters.source !== "all" ? { source: filters.source } : {}),
+    ...(sources && sources.length > 0
+      ? { sources }
+      : filters.source && filters.source !== "all"
+        ? { source: filters.source }
+        : {}),
     ...(filters.status !== "all" ? { status: filters.status } : {}),
+    ...(filters.assignee && filters.assignee !== "all"
+      ? { assignee: filters.assignee }
+      : {}),
+    ...(filters.listingId ? { listingId: filters.listingId } : {}),
     ...(filters.responseState && filters.responseState !== "all"
       ? { responseState: filters.responseState }
       : {}),

@@ -61,9 +61,8 @@ describe("CrmPipelineToolbar", () => {
     customFilters: {
       origem: [],
       resposta: [],
-      responsavel: [],
+      responsavel: undefined,
       semInteracao: "",
-      fonte: [],
       veiculoId: undefined,
     },
     filters: { search: "", source: "all" as const, status: "all" as const },
@@ -233,5 +232,116 @@ describe("CrmPipelineToolbar", () => {
     expect(
       screen.queryByRole("button", { name: "Importar leads em CSV" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders Origem dropdown with all supported sources including Instagram and toggles multi-select", () => {
+    const onChangeCustomFilters = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        onChangeCustomFilters={onChangeCustomFilters}
+      />,
+    );
+
+    const origemBtn = screen.getByRole("button", { name: "Origem" });
+    expect(origemBtn).toBeInTheDocument();
+    fireEvent.click(origemBtn);
+
+    expect(screen.getByText("Instagram")).toBeInTheDocument();
+    expect(screen.getByText("WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("Manual")).toBeInTheDocument();
+    expect(screen.getByText("OLX")).toBeInTheDocument();
+
+    const instagramCheckbox = screen.getByRole("checkbox", {
+      name: "Instagram",
+    });
+    fireEvent.click(instagramCheckbox);
+
+    expect(onChangeCustomFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ origem: ["instagram"] }),
+    );
+  });
+
+  it("renders responsible dropdown with static options and store members", () => {
+    const onChangeCustomFilters = vi.fn();
+    const sellerMembers = [
+      {
+        email: "vendedor@loja.com",
+        id: "user-123",
+        name: "Carlos Vendedor",
+        role: "salesman",
+      },
+    ];
+
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        hasUserContext={true}
+        onChangeCustomFilters={onChangeCustomFilters}
+        sellerMembers={sellerMembers}
+      />,
+    );
+
+    const respBtn = screen.getByRole("button", {
+      name: "Filtrar por responsável",
+    });
+    expect(respBtn).toBeInTheDocument();
+    fireEvent.click(respBtn);
+
+    expect(screen.getByRole("button", { name: "Todos" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Meus leads" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Com responsável" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sem responsável" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Carlos Vendedor" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Carlos Vendedor" }));
+    expect(onChangeCustomFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ responsavel: "user-123" }),
+    );
+  });
+
+  it("hides Meus leads when hasUserContext is false", () => {
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        hasUserContext={false}
+        sellerMembers={[]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Filtrar por responsável" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Meus leads" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Todos" })).toBeInTheDocument();
+  });
+
+  it("displays active responsible filter and allows clearing it", () => {
+    const onChangeCustomFilters = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        customFilters={{ ...defaultProps.customFilters, responsavel: "me" }}
+        onChangeCustomFilters={onChangeCustomFilters}
+      />,
+    );
+
+    expect(screen.getByText("Meus leads")).toBeInTheDocument();
+    const clearBtn = screen.getByLabelText("Limpar filtro de responsável");
+    fireEvent.click(clearBtn);
+
+    expect(onChangeCustomFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ responsavel: undefined }),
+    );
   });
 });
