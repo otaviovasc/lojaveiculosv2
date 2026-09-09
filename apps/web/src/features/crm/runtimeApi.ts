@@ -36,6 +36,8 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
       (await createRuntimeProductApi()).deletePipeline(pipelineId),
     getLead: async (leadId) =>
       (await createRuntimeProductApi()).getLead!(leadId),
+    importLeads: async (input) =>
+      (await createRuntimeProductApi()).importLeads(input),
     listActivities: async (leadId) =>
       createProductCrmApi(await createProductCrmApiOptions()).listActivities(
         leadId,

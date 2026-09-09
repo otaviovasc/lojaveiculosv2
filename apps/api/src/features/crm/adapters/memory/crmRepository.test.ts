@@ -29,7 +29,7 @@ describe("createMemoryCrmRepository", () => {
         listingId,
         source: "olx",
       }),
-    ).resolves.toEqual([matchedLead]);
+    ).resolves.toEqual([expect.objectContaining(matchedLead)]);
   });
 
   it("paginates scoped leads with an offset", async () => {
@@ -67,7 +67,7 @@ describe("createMemoryCrmRepository", () => {
 
     await expect(
       repository.listLeads({ ...scope, limit: 1, search: "corolla" }),
-    ).resolves.toEqual([matchedLead]);
+    ).resolves.toEqual([expect.objectContaining(matchedLead)]);
   });
 
   it("atomically reuses a store-scoped idempotent activity", async () => {

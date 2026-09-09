@@ -9,6 +9,7 @@ import type {
   ProductCrmLead,
   ProductCrmLeadActivity,
 } from "./productCrmTypes";
+import type { CrmLeadImportInput, CrmLeadImportResult } from "./productCrmApi";
 import type { PipelineStage } from "./crmPipelineStorage";
 import type { CrmPipelinesState } from "./useCrmPipelines";
 
@@ -27,6 +28,7 @@ export type LeadVehicleOption = {
 export type CrmPipelineViewProps = {
   activities: ProductCrmLeadActivity[];
   activeLeadId: string | null;
+  canImportLeads?: boolean | undefined;
   error: Error | null;
   filters: LeadFilters;
   isLoading: boolean;
@@ -39,6 +41,8 @@ export type CrmPipelineViewProps = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   onCreateLead: (input: LeadCreateDraft) => Promise<void>;
+  onImportLeads?:
+    ((input: CrmLeadImportInput) => Promise<CrmLeadImportResult>) | undefined;
   onSetLeadArchived: (leadId: string, archived: boolean) => Promise<void>;
   onLoadMoreStage: (stageId: string) => Promise<void>;
   onMoveLeadPipelineStage: (

@@ -1,3 +1,4 @@
+import type { LeadFilters } from "./crmPipelineModels";
 import type { Pipeline } from "./crmPipelineStorage";
 import { getLeadStageId, hasAssignedLeadOwner } from "./crmLeadData";
 import type { ProductCrmLead } from "./productCrmTypes";
@@ -11,16 +12,13 @@ export type CustomFilters = {
   veiculoId?: string | undefined;
 };
 
-type BaseClientFilters = {
-  search: string;
-  source: string;
-  status: string;
-};
+type BaseClientFilters = LeadFilters;
 
 export function getFilteredLeads(
   viewLeads: ProductCrmLead[],
   activePipeline: Pipeline | null,
   customFilters: CustomFilters,
+  filters?: BaseClientFilters,
 ): ProductCrmLead[] {
   if (!activePipeline) return viewLeads;
   const stageIds = new Set(activePipeline.stages.map((s) => s.id));
@@ -41,12 +39,19 @@ export function getFilteredLeads(
     );
   });
 
+  if (filters?.humanAttendanceState && filters.humanAttendanceState !== "all") {
+    rawLeads = rawLeads.filter(
+      (l) => l.humanAttendanceState === filters.humanAttendanceState,
+    );
+  }
+
   if (customFilters.resposta.length > 0) {
     rawLeads = rawLeads.filter((l) => {
-      const isNew = l.status === "new";
+      const responded = l.responseState === "responded";
       return (
-        (customFilters.resposta.includes("no-response") && isNew) ||
-        (customFilters.resposta.includes("responded") && !isNew)
+        (customFilters.resposta.includes("no-response") &&
+          l.responseState === "no_response") ||
+        (customFilters.resposta.includes("responded") && responded)
       );
     });
   }
@@ -72,9 +77,10 @@ export function getFilteredLeads(
     const days = parseInt(customFilters.semInteracao, 10);
     rawLeads = rawLeads.filter(
       (l) =>
-        (Date.now() - new Date(l.createdAt).getTime()) /
+        l.lastInteractionAt !== null &&
+        (Date.now() - new Date(l.lastInteractionAt).getTime()) /
           (24 * 60 * 60 * 1000) >=
-        days,
+          days,
     );
   }
 
@@ -100,6 +106,10 @@ export function hasAnyClientFilter(
     filters.search.trim() ||
     filters.source !== "all" ||
     filters.status !== "all" ||
+    (filters.humanAttendanceState && filters.humanAttendanceState !== "all") ||
+    (filters.sortBy && filters.sortBy !== "created_at") ||
+    (filters.responseState && filters.responseState !== "all") ||
+    (typeof filters.inactiveDays === "number" && filters.inactiveDays > 0) ||
     customFilters.resposta.length ||
     customFilters.origem.length ||
     customFilters.responsavel.length ||
@@ -107,4 +117,20 @@ export function hasAnyClientFilter(
     customFilters.fonte.length ||
     customFilters.veiculoId,
   );
+}
+
+export function customServerFilters(
+  current: LeadFilters,
+  custom: CustomFilters,
+): LeadFilters {
+  return {
+    ...current,
+    responseState:
+      custom.resposta.length === 1
+        ? custom.resposta[0] === "responded"
+          ? "responded"
+          : "no_response"
+        : "all",
+    inactiveDays: custom.semInteracao ? Number(custom.semInteracao) : null,
+  };
 }

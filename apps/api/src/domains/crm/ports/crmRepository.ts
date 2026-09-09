@@ -24,7 +24,17 @@ export type LeadActivityType =
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
+export type CrmLeadOperationalFilters = {
+  responseState?: "responded" | "no_response";
+  inactiveDays?: number;
+  humanAttendanceState?: "waiting_human" | "in_human_service";
+  sortBy?: "created_at" | "next_task";
+};
+
 export type CrmLead = {
+  responseState?: "responded" | "no_response";
+  humanAttendanceState?: "waiting_human" | "in_human_service" | null;
+  nextTask?: { id: string; title: string; dueAt: string } | null;
   assignedUserId: UserId | null;
   birthDate?: string | null;
   buyerEmail: string | null;
@@ -125,7 +135,7 @@ export type CreateIdempotentLeadActivityResult = {
   created: boolean;
 };
 
-export type ListCrmLeadsInput = {
+export type ListCrmLeadsInput = CrmLeadOperationalFilters & {
   cursor?: CrmLeadCursor;
   listingId?: string;
   limit: number;
@@ -140,6 +150,8 @@ export type ListCrmLeadsInput = {
 };
 
 export type CrmLeadCursor = {
+  sortBy?: "created_at" | "next_task";
+  sortAt?: Date | null;
   id: string;
   updatedAt: Date;
 };
@@ -180,8 +192,14 @@ export type CrmRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;
+  findLeadByEmail: (input: {
+    buyerEmail: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmLead | null>;
   findLeadByPhone: (input: {
     buyerPhone: string;
+    includeClosed?: boolean;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;

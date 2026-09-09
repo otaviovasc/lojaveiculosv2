@@ -1,9 +1,10 @@
 import type {
+  CrmLeadSortBy,
   ProductCrmApi,
   ProductCrmLeadPage,
   ProductCrmLeadQuery,
 } from "./productCrmApi";
-import type { LeadFilters } from "./crmPipelineModels";
+import { CRM_LEAD_DEFAULT_SORT, type LeadFilters } from "./crmPipelineModels";
 import type { Pipeline } from "./crmPipelineStorage";
 
 export const CRM_STAGE_PAGE_SIZE = 20;
@@ -64,5 +65,17 @@ function createCrmLeadFilters(filters: LeadFilters) {
     ...(search ? { search } : {}),
     ...(filters.source !== "all" ? { source: filters.source } : {}),
     ...(filters.status !== "all" ? { status: filters.status } : {}),
+    ...(filters.responseState && filters.responseState !== "all"
+      ? { responseState: filters.responseState }
+      : {}),
+    ...(typeof filters.inactiveDays === "number" &&
+    Number.isInteger(filters.inactiveDays) &&
+    filters.inactiveDays > 0
+      ? { inactiveDays: filters.inactiveDays }
+      : {}),
+    ...(filters.humanAttendanceState && filters.humanAttendanceState !== "all"
+      ? { humanAttendanceState: filters.humanAttendanceState }
+      : {}),
+    sortBy: (filters.sortBy ?? CRM_LEAD_DEFAULT_SORT) satisfies CrmLeadSortBy,
   };
 }

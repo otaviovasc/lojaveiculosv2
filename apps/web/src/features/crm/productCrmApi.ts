@@ -3,6 +3,8 @@ import type {
   CreateProductCrmActivityInput,
   CreateLeadFinancialProductInput,
   CreateProductCrmLeadInput,
+  CrmLeadHumanAttendanceState,
+  CrmLeadResponseState,
   CrmLeadSource,
   CrmLeadStatus,
   ProductCrmAuth,
@@ -32,6 +34,7 @@ export type ProductCrmApi = {
   deletePipeline: (pipelineId: string) => Promise<{ deleted: true }>;
   archiveLead?: (leadId: string) => Promise<ProductCrmLead>;
   getLead?: (leadId: string) => Promise<ProductCrmLead>;
+  importLeads: (input: CrmLeadImportInput) => Promise<CrmLeadImportResult>;
   listActivities: (leadId: string) => Promise<ProductCrmLeadActivity[]>;
   listLeadBoard: (
     query: ProductCrmLeadBoardQuery,
@@ -69,14 +72,20 @@ export type MoveProductCrmLeadStageInput = {
   pipelineStageId: string;
 };
 
+export type CrmLeadSortBy = "created_at" | "next_task";
+
 export type ProductCrmLeadQuery = {
   cursor?: string;
+  humanAttendanceState?: CrmLeadHumanAttendanceState;
+  inactiveDays?: number;
   listingId?: string;
   limit?: number;
   offset?: number;
   pipelineId?: string;
   pipelineStageId?: string;
+  responseState?: CrmLeadResponseState;
   search?: string;
+  sortBy?: CrmLeadSortBy;
   source?: CrmLeadSource;
   status?: CrmLeadStatus;
 };
@@ -88,11 +97,39 @@ export type ProductCrmLeadPage = {
 };
 
 export type ProductCrmLeadBoardQuery = {
+  humanAttendanceState?: CrmLeadHumanAttendanceState;
+  inactiveDays?: number;
   pipelineId: string;
+  responseState?: CrmLeadResponseState;
   search?: string;
+  sortBy?: CrmLeadSortBy;
   source?: CrmLeadSource;
   stageLimit?: number;
   status?: CrmLeadStatus;
+};
+
+export type CrmLeadImportRow = {
+  buyerEmail?: string;
+  buyerName?: string;
+  buyerPhone?: string;
+  source?: string;
+};
+
+export type CrmLeadImportInput = {
+  idempotencyKey: string;
+  pipelineStageId: string;
+  rows: CrmLeadImportRow[];
+};
+
+export type CrmLeadImportError = {
+  message: string;
+  row: number;
+};
+
+export type CrmLeadImportResult = {
+  created: number;
+  errors: CrmLeadImportError[];
+  skipped: number;
 };
 
 export type ProductCrmLeadBoardStage = ProductCrmLeadPage & {
@@ -162,6 +199,8 @@ export function createProductCrmApi({
         method: "DELETE",
       }).then(readJson<{ deleted: true }>),
     getLead: (leadId) => getJson(productCrmRoutes.lead(leadId, baseUrl)),
+    importLeads: (input) =>
+      postJson(productCrmRoutes.leadsImport(baseUrl), input),
     listActivities: (leadId) =>
       getJson<{ activities: ProductCrmLeadActivity[] }>(
         productCrmRoutes.activities(leadId, baseUrl),
@@ -222,6 +261,8 @@ export const productCrmRoutes = {
       baseUrl,
     ),
   leads: (baseUrl?: string) => createCrmEndpoint("/crm/leads", baseUrl),
+  leadsImport: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/leads/import", baseUrl),
   pipeline: (pipelineId: string, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/pipelines/${encodeURIComponent(pipelineId)}`,
@@ -244,6 +285,10 @@ export function createProductCrmLeadBoardQuery(
   addOptionalParam(params, "source", query.source);
   addOptionalParam(params, "stageLimit", query.stageLimit);
   addOptionalParam(params, "status", query.status);
+  addOptionalParam(params, "responseState", query.responseState);
+  addOptionalParam(params, "inactiveDays", query.inactiveDays);
+  addOptionalParam(params, "humanAttendanceState", query.humanAttendanceState);
+  addOptionalParam(params, "sortBy", query.sortBy);
   return params;
 }
 
@@ -258,6 +303,10 @@ export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "source", query.source);
   addOptionalParam(params, "status", query.status);
+  addOptionalParam(params, "responseState", query.responseState);
+  addOptionalParam(params, "inactiveDays", query.inactiveDays);
+  addOptionalParam(params, "humanAttendanceState", query.humanAttendanceState);
+  addOptionalParam(params, "sortBy", query.sortBy);
 
   return params;
 }

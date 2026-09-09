@@ -1,5 +1,5 @@
 import type { Context, Hono } from "hono";
-import type { z } from "zod";
+import { z } from "zod";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { FinanceServices } from "../../finance/controllers/financeServices.js";
 import {
@@ -83,6 +83,32 @@ export function registerCrmLeadCollectionRoutes(
         nextCursor: encodeCrmLeadCursor(page.nextCursor),
         total: page.total,
       });
+    }),
+  );
+
+  crmFeature.post("/leads/import", async (context) =>
+    handleCrm(context, async () => {
+      const input = await parseJson(
+        context,
+        z.object({
+          pipelineStageId: z.string().uuid(),
+          idempotencyKey: z.string().trim().min(1).max(120),
+          rows: z
+            .array(
+              z.object({
+                buyerName: z.string().max(500).optional(),
+                buyerPhone: z.string().max(100).optional(),
+                buyerEmail: z.string().max(500).optional(),
+                source: z.string().max(40).optional(),
+              }),
+            )
+            .min(1)
+            .max(500),
+        }),
+      );
+      return context.json(
+        await services.importLeads(await createContext(context), input),
+      );
     }),
   );
 

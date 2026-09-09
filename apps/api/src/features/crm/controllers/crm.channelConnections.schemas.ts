@@ -98,6 +98,7 @@ export const crmScheduledMessageStatusSchema = z.enum([
 ]);
 
 export const crmScheduledMessagesQuerySchema = z.object({
+  leadId: z.string().uuid().optional(),
   connectionId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   cycleId: z.string().uuid().optional(),

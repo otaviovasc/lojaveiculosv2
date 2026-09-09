@@ -39,6 +39,7 @@ export type {
 const readPermission = "crm.scheduled_messages.read";
 
 export type ListCrmScheduledMessagesInput = {
+  leadId?: string;
   connectionId?: string;
   limit?: number;
   cycleId?: string;
@@ -66,6 +67,7 @@ export async function listCrmScheduledMessages(
   const messages = await getCrmConversationRepository(
     ports,
   ).listScheduledMessages({
+    ...(input.leadId ? { leadId: input.leadId } : {}),
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     limit: input.limit ?? 50,
     ...(input.cycleId ? { cycleId: input.cycleId } : {}),

@@ -137,4 +137,101 @@ describe("CrmPipelineToolbar", () => {
       expect.objectContaining({ veiculoId: undefined }),
     );
   });
+
+  it("renders human attendance dropdown and toggles waiting_human filter", () => {
+    const onChangeFilters = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        onChangeFilters={onChangeFilters}
+      />,
+    );
+
+    const btn = screen.getByRole("button", { name: "Atendimento humano" });
+    expect(btn).toBeInTheDocument();
+    fireEvent.click(btn);
+
+    const waitingOption = screen.getByText("Aguardando humano");
+    fireEvent.click(waitingOption);
+
+    expect(onChangeFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ humanAttendanceState: "waiting_human" }),
+    );
+  });
+
+  it("displays active human attendance filter and allows clearing it", () => {
+    const onChangeFilters = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        filters={{
+          ...defaultProps.filters,
+          humanAttendanceState: "waiting_human",
+        }}
+        onChangeFilters={onChangeFilters}
+      />,
+    );
+
+    const clearBtn = screen.getByLabelText("Limpar filtro de atendimento");
+    expect(clearBtn).toBeInTheDocument();
+    fireEvent.click(clearBtn);
+
+    expect(onChangeFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ humanAttendanceState: "all" }),
+    );
+  });
+
+  it("renders sortBy control and changes sort to next_task", () => {
+    const onChangeFilters = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        onChangeFilters={onChangeFilters}
+      />,
+    );
+
+    const sortBtn = screen.getByRole("button", { name: "Ordenar" });
+    expect(sortBtn).toBeInTheDocument();
+    fireEvent.click(sortBtn);
+
+    const nextTaskOption = screen.getByText("Próxima tarefa");
+    fireEvent.click(nextTaskOption);
+
+    expect(onChangeFilters).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: "next_task" }),
+    );
+  });
+
+  it("renders import CSV button when canImportLeads is true and calls onImportClick", () => {
+    const onImportClick = vi.fn();
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        canImportLeads={true}
+        onImportClick={onImportClick}
+      />,
+    );
+
+    const importBtn = screen.getByRole("button", {
+      name: "Importar leads em CSV",
+    });
+    expect(importBtn).toBeInTheDocument();
+    fireEvent.click(importBtn);
+
+    expect(onImportClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not render import CSV button when canImportLeads is false", () => {
+    render(
+      <CrmPipelineToolbar
+        {...defaultProps}
+        canImportLeads={false}
+        onImportClick={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Importar leads em CSV" }),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
-import type { ProductCrmApi } from "./productCrmApi";
+import { useOptionalAccountSession } from "../account/accountSession";
+import { readSessionActiveStore } from "../account/sessionPermissions";
+import type { CrmLeadImportInput, ProductCrmApi } from "./productCrmApi";
 import { CrmPipelineView } from "./CrmPipelineView";
 import {
   createNoteActivityInput,
@@ -201,6 +203,20 @@ export function CrmPipelineModule({
     await board.refresh();
   };
 
+  const session = useOptionalAccountSession();
+  const activeStore = readSessionActiveStore(session);
+  const canImportLeads = session
+    ? Boolean(activeStore?.effectivePermissions?.includes("lead.create"))
+    : true;
+
+  const handleImportLeads = async (input: CrmLeadImportInput) => {
+    const result = await crmApi.importLeads(input);
+    if (result.created > 0) {
+      await board.refresh();
+    }
+    return result;
+  };
+
   const changeSurface = (surface: CrmSurface) => {
     setActiveSurface(surface);
     if (typeof window !== "undefined") {
@@ -240,6 +256,8 @@ export function CrmPipelineModule({
         vehicleOptions={vehicleOptions}
         viewLeads={visibleLeads}
         viewMode={viewMode}
+        canImportLeads={canImportLeads}
+        onImportLeads={handleImportLeads}
       />
     </CrmSurfaceBoundary>
   );

@@ -196,6 +196,16 @@ export const conversationCycles = pgTable(
       table.threadId,
       table.externalCycleId,
     ),
+    index("conversation_cycles_scoped_lead_idx").on(
+      table.tenantId,
+      table.storeId,
+      sql`(${table.metadata}->>'leadId')`,
+    ),
+    index("conversation_cycles_scoped_opportunity_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.opportunityId,
+    ),
     index("conversation_cycles_thread_state_idx").on(
       table.threadId,
       table.state,

@@ -70,6 +70,7 @@ describe("CrmModule", () => {
     expect(listLeadBoard).toHaveBeenCalledWith({
       pipelineId: pipeline.id,
       stageLimit: 20,
+      sortBy: "created_at",
     });
     expect(api.listActivities).not.toHaveBeenCalled();
   });
@@ -127,6 +128,7 @@ describe("CrmModule", () => {
       pipelineId: pipeline.id,
       search: "a",
       stageLimit: 20,
+      sortBy: "created_at",
     });
 
     fireEvent.change(search, { target: { value: "an" } });
@@ -136,6 +138,7 @@ describe("CrmModule", () => {
       pipelineId: pipeline.id,
       search: "an",
       stageLimit: 20,
+      sortBy: "created_at",
     });
   });
 });
@@ -144,6 +147,7 @@ function createProductCrmApi(
   overrides: Partial<ProductCrmApi> = {},
 ): ProductCrmApi {
   return {
+    importLeads: vi.fn(async () => ({ created: 0, skipped: 0, errors: [] })),
     createActivity: vi.fn(async () => {
       throw new Error("createActivity should not be called");
     }),

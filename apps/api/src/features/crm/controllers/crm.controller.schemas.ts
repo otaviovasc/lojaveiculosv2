@@ -49,7 +49,17 @@ export const leadActivityDirectionSchema = z.enum([
   "internal",
 ]);
 
+const leadOperationalQueryFields = {
+  responseState: z.enum(["responded", "no_response"]).optional(),
+  inactiveDays: z.coerce.number().int().min(1).max(3650).optional(),
+  humanAttendanceState: z
+    .enum(["waiting_human", "in_human_service"])
+    .optional(),
+  sortBy: z.enum(["created_at", "next_task"]).optional(),
+};
+
 export const listLeadsQuerySchema = z.object({
+  ...leadOperationalQueryFields,
   cursor: z.string().trim().min(1).max(512).optional(),
   listingId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -62,6 +72,7 @@ export const listLeadsQuerySchema = z.object({
 });
 
 export const listLeadBoardQuerySchema = z.object({
+  ...leadOperationalQueryFields,
   pipelineId: z.string().uuid(),
   search: z.string().trim().min(1).max(120).optional(),
   source: leadSourceSchema.optional(),

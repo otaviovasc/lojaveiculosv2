@@ -1,13 +1,17 @@
 import {
+  leadOperationalColumns,
+  operationalLeadConditions,
+  operationalLeadOrder,
+  operationalLeadCursor,
+} from "./drizzleCrmLeadOperations.js";
+import {
   and,
   count,
-  desc,
   eq,
   getTableColumns,
   ilike,
   inArray,
   lte,
-  lt,
   or,
   sql,
   type SQL,
@@ -44,22 +48,14 @@ export async function listCrmLeads(db: CrmDatabase, input: ListCrmLeadsInput) {
   const filters = await buildCrmLeadFilters(db, input);
   if (!filters) return [];
 
-  if (input.cursor) {
-    const cursorFilter = or(
-      lt(leads.updatedAt, input.cursor.updatedAt),
-      and(
-        eq(leads.updatedAt, input.cursor.updatedAt),
-        lt(leads.id, input.cursor.id),
-      ),
-    );
-    if (cursorFilter) filters.push(cursorFilter);
-  }
+  if (input.cursor)
+    filters.push(operationalLeadCursor(input.cursor, input.sortBy));
 
   const rows = await db
-    .select()
+    .select({ ...getTableColumns(leads), ...leadOperationalColumns })
     .from(leads)
     .where(and(...filters))
-    .orderBy(desc(leads.updatedAt), desc(leads.id))
+    .orderBy(operationalLeadOrder(input.sortBy))
     .offset(input.cursor ? 0 : (input.offset ?? 0))
     .limit(input.limit);
 
@@ -68,7 +64,7 @@ export async function listCrmLeads(db: CrmDatabase, input: ListCrmLeadsInput) {
     storeId: input.storeId,
     tenantId: input.tenantId,
   });
-  return rows.map((row) => toLead(row, references.get(row.id)));
+  return rows.map((row) => toOperationalLead(row, references.get(row.id)));
 }
 
 export async function listCrmLeadBoard(
@@ -81,9 +77,10 @@ export async function listCrmLeadBoard(
   const ranked = db
     .select({
       ...getTableColumns(leads),
+      ...leadOperationalColumns,
       stageRank: sql<number>`row_number() over (
           partition by ${leads.pipelineStageId}
-          order by ${leads.updatedAt} desc, ${leads.id} desc
+          order by ${operationalLeadOrder(input.sortBy)}
         )`.as("stage_rank"),
       stageTotal: sql<number>`count(*) over (
           partition by ${leads.pipelineStageId}
@@ -96,7 +93,8 @@ export async function listCrmLeadBoard(
   const rows = await db
     .select()
     .from(ranked)
-    .where(lte(ranked.stageRank, input.stageLimit));
+    .where(lte(ranked.stageRank, input.stageLimit))
+    .orderBy(ranked.pipelineStageId, ranked.stageRank);
   const references = await findLeadVehicleReferences(db, {
     leadIds: rows.map((row) => row.id),
     storeId: input.storeId,
@@ -113,7 +111,7 @@ export async function listCrmLeadBoard(
       items: [],
       total: Number(row.stageTotal),
     };
-    stage.items.push(toLead(row, references.get(row.id)));
+    stage.items.push(toOperationalLead(row, references.get(row.id)));
     stages.set(pipelineStageId, stage);
   }
   return [...stages.entries()].map(([pipelineStageId, stage]) => ({
@@ -130,6 +128,7 @@ async function buildCrmLeadFilters(
     eq(leads.storeId, input.storeId),
     eq(leads.tenantId, input.tenantId),
     eq(leads.isDeleted, false),
+    ...operationalLeadConditions(input),
   ];
 
   if (input.listingId) {
@@ -176,4 +175,24 @@ async function buildCrmLeadFilters(
   }
 
   return filters;
+}
+
+export function toOperationalLead(
+  row: Parameters<typeof toLead>[0] & {
+    actualLastInteraction: string | null;
+    responseState: "responded" | "no_response";
+    humanAttendanceState: "waiting_human" | "in_human_service" | null;
+    nextTask: { id: string; title: string; dueAt: string } | null;
+  },
+  reference: Parameters<typeof toLead>[1],
+) {
+  return {
+    ...toLead(row, reference),
+    lastInteractionAt: row.actualLastInteraction
+      ? new Date(row.actualLastInteraction)
+      : null,
+    responseState: row.responseState,
+    humanAttendanceState: row.humanAttendanceState,
+    nextTask: row.nextTask,
+  };
 }

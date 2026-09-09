@@ -1,3 +1,5 @@
+import { CrmRequestValidationError } from "./crm.controller.errors.js";
+import { leadOperationalFilters } from "../../../domains/crm/leadOperationalFilters.js";
 import type { z } from "zod";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
@@ -20,7 +22,13 @@ import { decodeCrmLeadCursor } from "./crm.leadCursor.js";
 export function cleanListLeadsInput(
   input: z.infer<typeof listLeadsQuerySchema>,
 ): ListCrmLeadsInput {
+  const cursor = decodeCrmLeadCursor(input.cursor);
+  if (cursor && cursor.sortBy !== input.sortBy)
+    throw new CrmRequestValidationError(
+      "Cursor order does not match the requested order.",
+    );
   return {
+    ...leadOperationalFilters(input),
     ...(input.cursor ? { cursor: decodeCrmLeadCursor(input.cursor)! } : {}),
     ...(input.listingId ? { listingId: input.listingId } : {}),
     limit: input.limit,
@@ -39,6 +47,7 @@ export function cleanListLeadBoardInput(
   input: z.infer<typeof listLeadBoardQuerySchema>,
 ): ListCrmLeadBoardInput {
   return {
+    ...leadOperationalFilters(input),
     pipelineId: input.pipelineId,
     ...(input.search ? { search: input.search } : {}),
     ...(input.source ? { source: input.source } : {}),

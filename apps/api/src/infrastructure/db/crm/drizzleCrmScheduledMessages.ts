@@ -1,6 +1,8 @@
 import { and, asc, desc, eq, getTableColumns, or, sql } from "drizzle-orm";
 import {
   crmCampaigns,
+  conversationCycles,
+  opportunities,
   crmSpecialDateConfigs,
   crmScheduledMessages,
   storeEntitlements,
@@ -71,6 +73,14 @@ export async function listCrmScheduledMessages(
     eq(crmScheduledMessages.storeId, input.storeId),
     eq(crmScheduledMessages.tenantId, input.tenantId),
   ];
+  if (input.leadId)
+    filters.push(sql`exists (
+    select 1 from ${conversationCycles} c where c.id = ${crmScheduledMessages.cycleId}
+      and c.tenant_id = ${input.tenantId} and c.store_id = ${input.storeId} and c.deleted_at is null
+      and (c.metadata->>'leadId' = ${input.leadId} or exists (
+        select 1 from ${opportunities} o where o.id = c.opportunity_id
+          and o.tenant_id = ${input.tenantId} and o.store_id = ${input.storeId}
+          and o.legacy_lead_id = ${input.leadId}::uuid)))`);
   if (input.connectionId) {
     filters.push(eq(crmScheduledMessages.connectionId, input.connectionId));
   }

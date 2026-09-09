@@ -1,3 +1,4 @@
+import { projectMemoryLeadOperations } from "./crmLeadOperations.js";
 import type {
   CrmLead,
   CrmLeadActivity,
@@ -129,10 +130,23 @@ export function createMemoryCrmRepository(): CrmRepository {
       ).length;
     },
     async countLeads(input) {
-      return filterMemoryCrmLeads(leads, input).length;
+      return filterMemoryCrmLeads(
+        projectMemoryLeadOperations(leads, activities),
+        input,
+      ).length;
     },
     async findLeadById(input) {
       return findScopedMemoryLead(leads, input.leadId, input) ?? null;
+    },
+    async findLeadByEmail(input) {
+      return (
+        leads.find(
+          (lead) =>
+            lead.tenantId === input.tenantId &&
+            lead.storeId === input.storeId &&
+            lead.buyerEmail?.toLowerCase() === input.buyerEmail.toLowerCase(),
+        ) ?? null
+      );
     },
     async findLeadByPhone(input) {
       const candidates = whatsappPhoneLookupCandidates(input.buyerPhone);
@@ -140,7 +154,11 @@ export function createMemoryCrmRepository(): CrmRepository {
         leads
           .filter((lead) => lead.storeId === input.storeId)
           .filter((lead) => lead.tenantId === input.tenantId)
-          .filter((lead) => !["won", "lost", "archived"].includes(lead.status))
+          .filter(
+            (lead) =>
+              input.includeClosed ||
+              !["won", "lost", "archived"].includes(lead.status),
+          )
           .filter((lead) => matchesLeadPhone(lead.buyerPhone, candidates))
           .sort(
             (left, right) =>
@@ -161,7 +179,10 @@ export function createMemoryCrmRepository(): CrmRepository {
     },
     async listLeadBoard(input) {
       const stages = new Map<string, CrmLead[]>();
-      for (const lead of filterMemoryCrmLeads(leads, input)) {
+      for (const lead of filterMemoryCrmLeads(
+        projectMemoryLeadOperations(leads, activities),
+        input,
+      )) {
         if (!lead.pipelineStageId) continue;
         const items = stages.get(lead.pipelineStageId) ?? [];
         items.push(lead);
@@ -175,8 +196,13 @@ export function createMemoryCrmRepository(): CrmRepository {
     },
     async listLeads(input) {
       const offset = input.cursor ? 0 : (input.offset ?? 0);
-      return filterMemoryCrmLeads(leads, input)
-        .filter((lead) => isMemoryLeadAfterCursor(lead, input.cursor))
+      return filterMemoryCrmLeads(
+        projectMemoryLeadOperations(leads, activities),
+        input,
+      )
+        .filter((lead) =>
+          isMemoryLeadAfterCursor(lead, input.cursor, input.sortBy),
+        )
         .slice(offset, offset + input.limit);
     },
     async updateLead(input) {
