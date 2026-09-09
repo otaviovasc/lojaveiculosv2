@@ -182,6 +182,7 @@ export type CrmRepository = {
   }) => Promise<CrmLead | null>;
   findLeadByPhone: (input: {
     buyerPhone: string;
+    includeTerminal?: boolean;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;

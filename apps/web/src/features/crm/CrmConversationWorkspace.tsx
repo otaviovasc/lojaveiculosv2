@@ -5,6 +5,7 @@ import { CrmQueueToolbar } from "./CrmQueueToolbar";
 import { CrmQueueBulkBar } from "./CrmQueueBulkBar";
 import { CrmConversationStageChip } from "./CrmConversationStageChip";
 import { CrmReadOnlyComposer } from "./CrmReadOnlyComposer";
+import { CrmSaleStartDialog } from "./CrmSaleStartDialog";
 import { CrmConversationCycleDetailsPanel } from "./CrmConversationCycleDetailsPanel";
 import {
   CrmEmptyConversationPane,
@@ -59,6 +60,7 @@ export function CrmConversationWorkspace({
     phone?: string;
   } | null>(null);
   const [conclusionOpen, setConclusionOpen] = useState(false);
+  const [saleOpen, setSaleOpen] = useState(false);
   const [deleteCycleId, setDeleteCycleId] =
     useState<CrmConversationCycleId | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<CrmMessage | null>(null);
@@ -107,6 +109,7 @@ export function CrmConversationWorkspace({
     setReplyToMessage(null);
     setDetailsOpen(false);
     setConclusionOpen(false);
+    setSaleOpen(false);
     setScheduleMessageOpen(false);
     setScheduleVisitOpen(false);
     setFinancingSimulationOpen(false);
@@ -328,7 +331,7 @@ export function CrmConversationWorkspace({
                   assignedUserId,
                 );
               }}
-              onClose={() => setConclusionOpen(true)}
+              onStartSale={() => setSaleOpen(true)}
               onMarkRead={() => {
                 void inbox.actions.markCycleRead(activeSession.id);
               }}
@@ -517,6 +520,18 @@ export function CrmConversationWorkspace({
           }}
           onOpenFinancingSimulation={() => setFinancingSimulationOpen(true)}
           onScheduleVisit={() => setScheduleVisitOpen(true)}
+          cycle={activeSession}
+        />
+      ) : null}
+      {activeSession && saleOpen ? (
+        <CrmSaleStartDialog
+          assignableMembers={inbox.assignableMembers}
+          disabled={inbox.isMutatingSession || !inbox.permissions.canClose}
+          onClose={() => setSaleOpen(false)}
+          onConcludeInstead={() => {
+            setSaleOpen(false);
+            setConclusionOpen(true);
+          }}
           cycle={activeSession}
         />
       ) : null}

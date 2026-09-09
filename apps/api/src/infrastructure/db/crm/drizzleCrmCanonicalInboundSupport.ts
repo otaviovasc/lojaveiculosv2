@@ -23,14 +23,21 @@ export function canonicalThreadCandidates(input: CanonicalInboundMessageInput) {
     }
     const digits = unprefixed.replace(/\D/gu, "");
     if (!digits || digits.length < 7 || digits.length > 15) continue;
-    phones.add(digits);
-    phones.add(`+${digits}`);
+    for (const phone of whatsappPhoneLookupCandidates(digits)) {
+      phones.add(phone);
+      phones.add(`+${phone}`);
+    }
     values.add(`phone:${digits}`);
     values.add(`phone:+${digits}`);
   }
   if (input.customerChatId) chatIds.add(input.customerChatId);
   if (input.identity.kind === "phone")
-    phones.add(input.identity.normalizedValue);
+    for (const phone of whatsappPhoneLookupCandidates(
+      input.identity.normalizedValue,
+    )) {
+      phones.add(phone);
+      phones.add(`+${phone}`);
+    }
   if (input.secondaryPhone) phones.add(input.secondaryPhone);
   return {
     chatIds: [...chatIds, "__no_chat_identity__"],
@@ -56,3 +63,4 @@ export function scopedCanonicalInboundThread(
 import { conversationThreads } from "@lojaveiculosv2/db";
 import { and, eq } from "drizzle-orm";
 import type { CanonicalInboundMessageInput } from "../../../domains/crm/ports/crmCanonicalInboundRepository.js";
+import { whatsappPhoneLookupCandidates } from "../../../domains/crm/whatsapp/whatsappPhone.js";

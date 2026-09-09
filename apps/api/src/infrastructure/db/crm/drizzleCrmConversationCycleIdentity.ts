@@ -4,12 +4,13 @@ import {
   conversationThreads,
   crmChannelConnections,
 } from "@lojaveiculosv2/db";
-import { and, desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import type {
   IngestCrmMessageInput,
   UpsertCrmConversationCycleContextInput,
 } from "../../../domains/crm/ports/crmConversationRepository.js";
 import { shouldBackfillCrmMessagingPhone } from "../../../domains/crm/messaging/contactIdentity.js";
+import { whatsappPhoneLookupCandidates } from "../../../domains/crm/whatsapp/whatsappPhone.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   canonicalConversationCycleSelection,
@@ -108,7 +109,7 @@ export async function findConversationCycleByIdentity(
       db,
       input,
       canonicalChannel,
-      eq(conversationThreads.customerPhone, input.customerPhone),
+      phoneIdentityPredicate(input.customerPhone),
     );
     if (row) return row;
   }
@@ -199,6 +200,15 @@ export async function updateConversationCycleIdentity(
   if (!updated)
     throw new Error("Canonical CRM conversation context was not found.");
   return { ...conversationCycle, cycle: updatedCycle, thread: updated };
+}
+
+function phoneIdentityPredicate(value: string): SQL {
+  const digitsSql = sql`regexp_replace(coalesce(${conversationThreads.customerPhone}, ''), '[^0-9]', '', 'g')`;
+  const predicates: SQL[] = [eq(conversationThreads.customerPhone, value)];
+  for (const candidate of whatsappPhoneLookupCandidates(value)) {
+    predicates.push(sql`${digitsSql} = ${candidate}`);
+  }
+  return or(...predicates) as SQL;
 }
 
 async function findScopedSession(

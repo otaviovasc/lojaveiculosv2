@@ -88,7 +88,8 @@ export function parseUazapiContactIdentity(
       stripUazapiJid(sender) ||
       readUazapiChatNamePhone(readString(data.chatName)) ||
       chatLid;
-  if (!phone) return null;
+  const normalizedPhone = phone?.replace(/\D/g, "");
+  if (!normalizedPhone) return null;
 
   const customerDisplayName = readUsableUazapiContactName(
     fromMe
@@ -99,7 +100,7 @@ export function parseUazapiContactIdentity(
     ...(customerDisplayName ? { customerDisplayName } : {}),
     ...(chatLid ? { chatLid } : {}),
     fromMe,
-    phone,
+    phone: normalizedPhone,
   };
 }
 

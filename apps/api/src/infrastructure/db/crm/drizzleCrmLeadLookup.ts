@@ -20,7 +20,9 @@ export async function findLeadByPhoneInDatabase(
         eq(leads.storeId, input.storeId),
         eq(leads.tenantId, input.tenantId),
         eq(leads.isDeleted, false),
-        notInArray(leads.status, ["won", "lost", "archived"]),
+        ...(input.includeTerminal
+          ? []
+          : [notInArray(leads.status, ["won", "lost", "archived"])]),
         or(...phonePredicates(input.buyerPhone)),
       ),
     )

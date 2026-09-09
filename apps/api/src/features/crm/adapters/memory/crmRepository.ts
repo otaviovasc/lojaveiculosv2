@@ -140,7 +140,11 @@ export function createMemoryCrmRepository(): CrmRepository {
         leads
           .filter((lead) => lead.storeId === input.storeId)
           .filter((lead) => lead.tenantId === input.tenantId)
-          .filter((lead) => !["won", "lost", "archived"].includes(lead.status))
+          .filter(
+            (lead) =>
+              input.includeTerminal ||
+              !["won", "lost", "archived"].includes(lead.status),
+          )
           .filter((lead) => matchesLeadPhone(lead.buyerPhone, candidates))
           .sort(
             (left, right) =>

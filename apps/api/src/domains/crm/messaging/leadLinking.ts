@@ -41,10 +41,17 @@ export async function findOrCreateCrmMessagingLead(
         tenantId: input.tenantId,
       })
     : null;
-  if (preferred && isActiveLead(preferred)) {
+  // Messaging continuity: the conversation's lead is reused even after a
+  // terminal outcome so the thread never forks into a parallel listing.
+  if (preferred) {
     return enrichExistingCrmMessagingLead(
       repository,
-      preferred,
+      await reopenTerminalMessagingLead(
+        repository,
+        preferred,
+        input,
+        placement,
+      ),
       input,
       placement,
     );
@@ -52,6 +59,9 @@ export async function findOrCreateCrmMessagingLead(
   const existing = input.buyerPhone
     ? await repository.findLeadByPhone({
         buyerPhone: input.buyerPhone,
+        // Inbound re-engagement keeps lead continuity; staff-initiated
+        // outbound to a closed lead starts a fresh opportunity.
+        includeTerminal: input.direction === "INBOUND",
         storeId: input.storeId,
         tenantId: input.tenantId,
       })
@@ -59,7 +69,7 @@ export async function findOrCreateCrmMessagingLead(
   if (existing) {
     return enrichExistingCrmMessagingLead(
       repository,
-      existing,
+      await reopenTerminalMessagingLead(repository, existing, input, placement),
       input,
       placement,
     );
@@ -79,12 +89,27 @@ export async function findOrCreateCrmMessagingLead(
   });
 }
 
-function isActiveLead(lead: CrmLead) {
-  return (
-    lead.status !== "won" &&
-    lead.status !== "lost" &&
-    lead.status !== "archived"
-  );
+async function reopenTerminalMessagingLead(
+  repository: CrmRepository,
+  lead: CrmLead,
+  input: FindOrCreateCrmMessagingLeadInput,
+  placement: Pick<CrmLead, "pipelineId" | "pipelineStageId">,
+) {
+  // A fresh inbound message from the customer reopens lost/archived leads;
+  // won leads stay won because the sale already happened.
+  if (
+    input.direction !== "INBOUND" ||
+    (lead.status !== "lost" && lead.status !== "archived")
+  ) {
+    return lead;
+  }
+  return repository.updateLead({
+    leadId: lead.id,
+    status: "new",
+    ...placement,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
 }
 
 async function enrichExistingCrmMessagingLead(
