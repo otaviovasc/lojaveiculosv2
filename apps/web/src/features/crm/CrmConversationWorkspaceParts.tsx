@@ -83,7 +83,10 @@ export function CrmQueueListPane({
   onSelect: (cycleId: CrmConversationCycleId) => void;
   selectionMode: boolean;
 }) {
-  if (inbox.isLoading && !inbox.conversationCycles.length) {
+  if (
+    (inbox.isLoading || inbox.isRefetchingSessions) &&
+    !inbox.conversationCycles.length
+  ) {
     return <SessionListSkeleton />;
   }
   return (

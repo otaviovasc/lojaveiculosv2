@@ -372,13 +372,16 @@ describe("useCrmInbox realtime queue integration", () => {
       });
     });
 
-    await waitFor(() => {
-      expect(result.current.conversationCycles).toEqual([]);
-      expect(result.current.conversationCycleCounts.filters).toMatchObject({
-        fresh: 0,
-        mine: 1,
-      });
-    });
+    await waitFor(
+      () => {
+        expect(result.current.conversationCycles).toEqual([]);
+        expect(result.current.conversationCycleCounts.filters).toMatchObject({
+          fresh: 0,
+          mine: 1,
+        });
+      },
+      { timeout: 2_500 },
+    );
 
     act(() => result.current.setQuickFilter("mine"));
 
@@ -610,7 +613,7 @@ describe("useCrmInbox realtime queue integration", () => {
     },
   );
 
-  it("reconciles a missed access revocation after SSE reconnects", async () => {
+  it("keeps the active conversation pinned after SSE reconcile refreshes", async () => {
     hookMocks.messages.evictSessionMessages.mockClear();
     let onStatus:
       | ((status: "connected" | "connecting" | "degraded" | "offline") => void)
@@ -647,13 +650,12 @@ describe("useCrmInbox realtime queue integration", () => {
     act(() => onStatus?.("connecting"));
     act(() => onStatus?.("connected"));
 
-    await waitFor(() => {
-      expect(result.current.conversationCycles).toHaveLength(0);
-      expect(result.current.activeSession).toBeNull();
-    });
-    expect(hookMocks.messages.evictSessionMessages).toHaveBeenCalledWith(
-      "cycle-1",
-    );
+    // Refresh never deselects or prunes the pinned active conversation; only
+    // an explicit delete (or a realtime revocation) removes it.
+    await waitFor(() => expect(api.listConversationCycles).toHaveBeenCalled());
+    expect(result.current.activeCycleId).toBe("cycle-1");
+    expect(result.current.activeSession?.id).toBe("cycle-1");
+    expect(hookMocks.messages.evictSessionMessages).not.toHaveBeenCalled();
   });
 
   it("keeps cached pagination while SSE reconnects", async () => {

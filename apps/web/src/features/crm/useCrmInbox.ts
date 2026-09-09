@@ -20,6 +20,7 @@ import {
 import {
   asError,
   createConnectionQuery,
+  hydrateCycleConnection,
   loadDeepLinkedCycle,
   readInitialCycleId,
 } from "./crmConversationHookSupport";
@@ -75,11 +76,14 @@ export function useCrmInbox(
   const initialCycleId = routedCycleId;
   const [activeCycleId, setActiveCycleId] =
     useState<CrmConversationCycleId | null>(initialCycleId);
+  const activeCycleIdRef = useRef(activeCycleId);
+  activeCycleIdRef.current = activeCycleId;
   const [initialSessionResolved, setInitialSessionResolved] = useState(
     initialCycleId === null,
   );
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [isRefetchingSessions, setIsRefetchingSessions] = useState(false);
   const [isLoadingMoreSessions, setIsLoadingMoreSessions] = useState(false);
   const [hasMoreSessions, setHasMoreSessions] = useState(false);
   const loadedSessionOffsetRef = useRef(0);
@@ -445,10 +449,13 @@ export function useCrmInbox(
       .then((deepLinked) => {
         if (!active) return;
         if (deepLinked) {
-          mergeCycles([deepLinked], {
-            preserveLocalOnly: true,
-            snapshotKind: "reconciled",
-          });
+          mergeCycles(
+            [hydrateCycleConnection(deepLinked, connections.connections)],
+            {
+              preserveLocalOnly: true,
+              snapshotKind: "reconciled",
+            },
+          );
           setActiveCycleId(deepLinked.id);
         }
       })
@@ -463,6 +470,7 @@ export function useCrmInbox(
     };
   }, [
     api,
+    connections.connections,
     initialCycleId,
     initialSessionResolved,
     mergeCycles,
@@ -522,7 +530,16 @@ export function useCrmInbox(
       ) {
         const deepLinked = await loadDeepLinkedCycle(api, initialCycleId);
         if (requestGeneration !== sessionRequestGenerationRef.current) return;
-        resolved = deepLinked ? [deepLinked, ...nextSessions] : nextSessions;
+        resolved = deepLinked
+          ? [
+              hydrateCycleConnection(
+                deepLinked,
+                connections.connections,
+                sessionListConnectionId,
+              ),
+              ...nextSessions,
+            ]
+          : nextSessions;
       }
       const shouldPruneLocalSession =
         options.snapshotKind === "reconciled" && authorizedCycleIds
@@ -534,13 +551,23 @@ export function useCrmInbox(
           : null;
       if (shouldPruneLocalSession) {
         sessionsRef.current
-          .filter(shouldPruneLocalSession)
+          .filter(
+            (cycle) =>
+              cycle.id !== activeCycleIdRef.current &&
+              shouldPruneLocalSession(cycle),
+          )
           .forEach((cycle) => removeSession(cycle.id));
       }
       mergeCycles(resolved, {
         ...options,
         ...(shouldPruneLocalSession
-          ? { pruneLocalOnly: shouldPruneLocalSession }
+          ? {
+              // The pinned active conversation is never pruned by a refresh;
+              // it only leaves through an explicit removeSession.
+              pruneLocalOnly: (cycle: CrmConversationCycle) =>
+                cycle.id !== activeCycleIdRef.current &&
+                shouldPruneLocalSession(cycle),
+            }
           : {}),
       });
       if (!options.preserveLocalOnly) {
@@ -553,24 +580,17 @@ export function useCrmInbox(
         );
         setHasMoreSessions(nextSessions.length === CRM_SESSION_PAGE_SIZE);
       }
-      setActiveCycleId((current) =>
-        current && resolved.some((cycle) => cycle.id === current)
-          ? current
-          : isCompleteAuthorizationSnapshot &&
-              current &&
-              !authorizedCycleIds?.has(current)
-            ? null
-            : current &&
-                sessionsRef.current.some((cycle) => cycle.id === current)
-              ? current
-              : (resolved[0]?.id ?? null),
-      );
+      // Never auto-deselect on refresh: keep the pinned active cycle (explicit
+      // deletion goes through removeSession) and only pick the first row when
+      // nothing is selected yet.
+      setActiveCycleId((current) => current ?? resolved[0]?.id ?? null);
       void refreshSessionCounts().catch((caught) => setError(asError(caught)));
     },
     [
       api,
       aggregateConnectionFilter,
       canAccessSessionSnapshot,
+      connections.connections,
       createSessionQuery,
       initialCycleId,
       mergeCycles,
@@ -640,6 +660,7 @@ export function useCrmInbox(
     api,
     patchSession,
     refreshSessions,
+    refreshSessionCounts,
     removeSession,
     conversationCycles,
     setError,
@@ -705,6 +726,7 @@ export function useCrmInbox(
     connectionId: realtimeConnectionId,
     connectionsError: connections.error ?? routing.error,
     canMergeSessionSnapshot,
+    connections: connections.connections,
     mergeRealtimeMessage,
     mergeCycles,
     onStatus: setRealtimeStatus,
@@ -735,6 +757,7 @@ export function useCrmInbox(
     setError,
     setSessions,
     setIsLoadingSessions,
+    setIsRefetchingSessions,
     storeWide: aggregateConnectionFilter,
   });
 
@@ -798,6 +821,7 @@ export function useCrmInbox(
     hasMoreSessions,
     hasRetryableSessionAction: sessionActions.hasRetryableSessionAction,
     isLoading: connections.isLoading || routing.isLoading || isLoadingSessions,
+    isRefetchingSessions,
     humanAttendanceFilter,
     isLoadingMessages: messageState.isLoadingMessages,
     isLoadingOlderMessages: messageState.isLoadingOlderMessages,

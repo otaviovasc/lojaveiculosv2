@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CrmConversationApi } from "./crmConversationApi";
+import { hydrateCycleConnection } from "./crmConversationHookSupport";
 import type {
   CrmMessage,
   CrmContactPresence,
@@ -16,6 +17,11 @@ type RealtimeOptions = {
   api: CrmConversationApi;
   canAccessSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
   canMergeSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
+  /**
+   * Loaded connections used to hydrate realtime cycle DTOs that arrive
+   * without the joined connection (first-seen cycles).
+   */
+  connections?: NonNullable<CrmConversationCycle["connection"]>[] | undefined;
   /**
    * Connection to subscribe to. `undefined` subscribes store-wide (the server
    * still scopes delivery to the subscriber's visible connections); `null`
@@ -50,6 +56,7 @@ export function useCrmRealtime({
   canAccessSessionSnapshot,
   canMergeSessionSnapshot,
   connectionId,
+  connections,
   connectionsError,
   mergeRealtimeMessage,
   mergeCycles,
@@ -90,6 +97,7 @@ export function useCrmRealtime({
     activeCustomerPhone,
     canAccessSessionSnapshot,
     canMergeSessionSnapshot,
+    connections,
     mergeRealtimeMessage,
     mergeCycles,
     onStatus,
@@ -106,6 +114,7 @@ export function useCrmRealtime({
     activeCustomerPhone,
     canAccessSessionSnapshot,
     canMergeSessionSnapshot,
+    connections,
     mergeRealtimeMessage,
     mergeCycles,
     onStatus,
@@ -152,6 +161,33 @@ export function useCrmRealtime({
         if (active) publishStatus("degraded");
       }, 10_000);
     };
+    let countsRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearCountsRefreshTimer = () => {
+      if (countsRefreshTimer) globalThis.clearTimeout(countsRefreshTimer);
+      countsRefreshTimer = null;
+    };
+    // Trailing debounce: bursts of realtime events coalesce into one HTTP
+    // counts request instead of one request per event.
+    const scheduleCountsRefresh = () => {
+      clearCountsRefreshTimer();
+      countsRefreshTimer = globalThis.setTimeout(() => {
+        countsRefreshTimer = null;
+        if (active) {
+          void latestHandlersRef.current
+            .refreshSessionCounts()
+            .catch(() => undefined);
+        }
+      }, 1_500);
+    };
+    const hydrateRealtimeCycle = (event: {
+      connectionId: string;
+      cycle: CrmConversationCycle;
+    }): CrmConversationCycle =>
+      hydrateCycleConnection(
+        event.cycle,
+        latestHandlersRef.current.connections ?? [],
+        event.connectionId,
+      );
     const handleRealtimeEvent = (event: CrmRealtimeEvent) => {
       if (!active) return;
       const latest = latestHandlersRef.current;
@@ -163,48 +199,50 @@ export function useCrmRealtime({
       )
         return;
       if (event.type === "cycle") {
+        const cycle = hydrateRealtimeCycle(event);
         if (
           latest.canMergeSessionSnapshot &&
-          !latest.canMergeSessionSnapshot(event.cycle)
+          !latest.canMergeSessionSnapshot(cycle)
         ) {
           return;
         }
         if (
           latest.canAccessSessionSnapshot &&
-          !latest.canAccessSessionSnapshot(event.cycle)
+          !latest.canAccessSessionSnapshot(cycle)
         ) {
-          latest.removeSession(event.cycle.id);
-          void latest.refreshSessionCounts().catch(() => undefined);
+          latest.removeSession(cycle.id);
+          scheduleCountsRefresh();
           return;
         }
-        latest.mergeCycles([event.cycle], {
+        latest.mergeCycles([cycle], {
           preserveLocalOnly: true,
           snapshotKind: "realtime",
         });
-        void latest.refreshSessionCounts().catch(() => undefined);
+        scheduleCountsRefresh();
         return;
       }
       if (event.type === "message") {
+        const cycle = hydrateRealtimeCycle(event);
         if (
           latest.canMergeSessionSnapshot &&
-          !latest.canMergeSessionSnapshot(event.cycle)
+          !latest.canMergeSessionSnapshot(cycle)
         ) {
           return;
         }
         if (
           latest.canAccessSessionSnapshot &&
-          !latest.canAccessSessionSnapshot(event.cycle)
+          !latest.canAccessSessionSnapshot(cycle)
         ) {
-          latest.removeSession(event.cycle.id);
-          void latest.refreshSessionCounts().catch(() => undefined);
+          latest.removeSession(cycle.id);
+          scheduleCountsRefresh();
           return;
         }
-        latest.mergeCycles([event.cycle], {
+        latest.mergeCycles([cycle], {
           preserveLocalOnly: true,
           snapshotKind: "realtime",
         });
-        void latest.refreshSessionCounts().catch(() => undefined);
-        if (String(event.cycle.id) === String(latest.activeCycleId)) {
+        scheduleCountsRefresh();
+        if (String(cycle.id) === String(latest.activeCycleId)) {
           if (event.message.direction === "INBOUND") {
             clearContactPresence();
           }
@@ -213,7 +251,7 @@ export function useCrmRealtime({
             event.message.direction === "INBOUND" &&
             document.visibilityState === "visible"
           ) {
-            latest.onVisibleInboundMessage?.(event.cycle);
+            latest.onVisibleInboundMessage?.(cycle);
           }
         }
         return;
@@ -279,6 +317,7 @@ export function useCrmRealtime({
     return () => {
       active = false;
       clearDegradedTimer();
+      clearCountsRefreshTimer();
       clearContactPresence();
       unsubscribe();
     };

@@ -200,7 +200,11 @@ describe("useCrmRealtime", () => {
       preserveLocalOnly: true,
       snapshotKind: "realtime",
     });
-    expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
+    // Counts refresh is debounced so bursts coalesce into one HTTP request.
+    expect(refreshSessionCounts).not.toHaveBeenCalled();
+    await waitFor(() => expect(refreshSessionCounts).toHaveBeenCalledTimes(1), {
+      timeout: 2_500,
+    });
   });
 
   it("merges an inbound message and its list snapshot immediately", async () => {
@@ -249,7 +253,9 @@ describe("useCrmRealtime", () => {
       snapshotKind: "realtime",
     });
     expect(mergeRealtimeMessage).toHaveBeenCalledWith(message);
-    expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(refreshSessionCounts).toHaveBeenCalledTimes(1), {
+      timeout: 2_500,
+    });
   });
 
   it("removes a cycle tombstone instead of merging it for a revoked user", async () => {
@@ -326,7 +332,10 @@ describe("useCrmRealtime", () => {
       preserveLocalOnly: true,
       snapshotKind: "realtime",
     });
-    expect(secondRefreshSessionCounts).toHaveBeenCalledTimes(1);
+    await waitFor(
+      () => expect(secondRefreshSessionCounts).toHaveBeenCalledTimes(1),
+      { timeout: 2_500 },
+    );
 
     rendered.unmount();
     expect(unsubscribe).toHaveBeenCalledTimes(1);
@@ -334,6 +343,75 @@ describe("useCrmRealtime", () => {
     onEvent?.({ connectionId: "connection-1", cycle, type: "cycle" });
     expect(secondMergeSessions).toHaveBeenCalledTimes(1);
     expect(secondRefreshSessionCounts).toHaveBeenCalledTimes(1);
+  });
+
+  it("coalesces a burst of realtime events into one counts request", async () => {
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const refreshSessionCounts = vi.fn(async () => undefined);
+    render(
+      <Harness
+        api={api}
+        mergeCycles={vi.fn()}
+        refreshSessionCounts={refreshSessionCounts}
+      />,
+    );
+    await waitFor(() => expect(onEvent).toBeDefined());
+
+    for (const id of ["cycle-a", "cycle-b", "cycle-c"]) {
+      onEvent?.({
+        connectionId: "connection-1",
+        cycle: createSession({ id }),
+        type: "cycle",
+      });
+    }
+
+    await waitFor(() => expect(refreshSessionCounts).toHaveBeenCalledTimes(1), {
+      timeout: 2_500,
+    });
+  });
+
+  it("hydrates a first-seen connection-less cycle from the loaded connections", async () => {
+    let onEvent: ((event: CrmRealtimeEvent) => void) | undefined;
+    const api = {
+      subscribeEvents: vi.fn(
+        (input: Parameters<CrmConversationApi["subscribeEvents"]>[0]) => {
+          onEvent = input.onEvent;
+          return vi.fn();
+        },
+      ),
+    } as unknown as CrmConversationApi;
+    const mergeCycles = vi.fn();
+    const connection = {
+      displayName: "Loja",
+      id: "connection-1",
+      provider: "zapi",
+      status: "active",
+    } as unknown as NonNullable<CrmConversationCycle["connection"]>;
+    render(
+      <Harness
+        api={api}
+        connections={[connection]}
+        mergeCycles={mergeCycles}
+        refreshSessionCounts={vi.fn(async () => undefined)}
+      />,
+    );
+    await waitFor(() => expect(onEvent).toBeDefined());
+    const cycle = createSession({ connection: null });
+
+    onEvent?.({ connectionId: "connection-1", cycle, type: "cycle" });
+
+    expect(mergeCycles).toHaveBeenCalledWith([{ ...cycle, connection }], {
+      preserveLocalOnly: true,
+      snapshotKind: "realtime",
+    });
   });
 
   it("does not add lifecycle churn on Strict Mode rerenders", async () => {
@@ -772,6 +850,7 @@ function Harness({
   api,
   canAccessSessionSnapshot,
   connectionId = "connection-1",
+  connections,
   connectionsError = null,
   mergeCycles,
   mergeRealtimeMessage = vi.fn(),
@@ -788,6 +867,7 @@ function Harness({
   api: CrmConversationApi;
   canAccessSessionSnapshot?: (cycle: CrmConversationCycle) => boolean;
   connectionId?: string | null;
+  connections?: NonNullable<CrmConversationCycle["connection"]>[];
   connectionsError?: Error | null;
   mergeCycles: (conversationCycles: CrmConversationCycle[]) => void;
   mergeRealtimeMessage?: Parameters<
@@ -807,6 +887,7 @@ function Harness({
     api,
     ...(canAccessSessionSnapshot ? { canAccessSessionSnapshot } : {}),
     connectionId: storeWide ? undefined : connectionId,
+    connections,
     connectionsError,
     mergeRealtimeMessage,
     mergeCycles,
