@@ -31,6 +31,7 @@ type UseCrmInboxLifecycleInput = {
   setSessions: (value: SetStateAction<CrmConversationCycle[]>) => void;
   setError: (error: Error | null) => void;
   setIsLoadingSessions: (value: SetStateAction<boolean>) => void;
+  setIsRefetchingSessions?: (value: SetStateAction<boolean>) => void;
 };
 
 export function useCrmInboxLifecycle({
@@ -48,6 +49,7 @@ export function useCrmInboxLifecycle({
   setSessions,
   setError,
   setIsLoadingSessions,
+  setIsRefetchingSessions,
   storeWide = false,
 }: UseCrmInboxLifecycleInput): void {
   useEffect(() => {
@@ -77,12 +79,17 @@ export function useCrmInboxLifecycle({
     ) {
       if (!permissions.canList) setSessions([]);
       setIsLoadingSessions(false);
+      setIsRefetchingSessions?.(false);
       return;
     }
     let active = true;
     if (!conversationCyclesCount) {
       setIsLoadingSessions(true);
     }
+    // A filter/search/connection change refetches while the previous list is
+    // still mounted; flag it so the queue shows the skeleton instead of
+    // flashing the "Nenhuma conversa encontrada" empty card.
+    setIsRefetchingSessions?.(true);
     void refreshSessions({
       preserveLocalOnly: Boolean(conversationCyclesCount),
       snapshotKind: "reconciled",
@@ -91,7 +98,10 @@ export function useCrmInboxLifecycle({
         if (active) setError(asError(caught));
       })
       .finally(() => {
-        if (active) setIsLoadingSessions(false);
+        if (active) {
+          setIsLoadingSessions(false);
+          setIsRefetchingSessions?.(false);
+        }
       });
     return () => {
       active = false;
@@ -105,6 +115,7 @@ export function useCrmInboxLifecycle({
     search,
     setError,
     setIsLoadingSessions,
+    setIsRefetchingSessions,
     setSessions,
     storeWide,
     asError,

@@ -18,6 +18,7 @@ type UseCrmConversationCycleActionsOptions = {
     preserveLocalOnly?: boolean;
     snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
   }) => Promise<void>;
+  refreshSessionCounts?: () => Promise<unknown>;
   conversationCycles: CrmConversationCycle[];
   setError: (error: Error | null) => void;
 };
@@ -27,6 +28,7 @@ export function useCrmConversationCycleActions({
   patchSession,
   removeSession,
   refreshSessions,
+  refreshSessionCounts,
   conversationCycles,
   setError,
 }: UseCrmConversationCycleActionsOptions) {
@@ -59,8 +61,10 @@ export function useCrmConversationCycleActions({
         setError(null);
         try {
           const response = await action();
+          // Single-cycle actions trust the optimistic patch plus the command
+          // response; only the sidebar counters need a server refresh.
           patchSession(response.cycle ?? fallback);
-          await refreshSessions({ preserveLocalOnly: true });
+          void refreshSessionCounts?.().catch(() => undefined);
           clearRetryAction();
           return true;
         } catch (caught) {
@@ -101,7 +105,13 @@ export function useCrmConversationCycleActions({
       inFlightRef.current.set(flightKey, promise);
       return promise;
     },
-    [clearRetryAction, patchSession, refreshSessions, setError],
+    [
+      clearRetryAction,
+      patchSession,
+      refreshSessions,
+      refreshSessionCounts,
+      setError,
+    ],
   );
 
   const runBulkSessionAction = useCallback(

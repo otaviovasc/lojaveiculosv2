@@ -205,7 +205,7 @@ describe("CrmConversationWorkspace conclusion", () => {
     expect(screen.queryByTestId("details-panel")).not.toBeInTheDocument();
   });
 
-  it("remounts the composer when the view connection changes", async () => {
+  it("keeps the composer mounted across sidebar filter changes and remounts on the session connection change", async () => {
     const user = userEvent.setup();
     const connection = createConnection("connection-1");
     const baseInbox = createInbox({
@@ -243,10 +243,9 @@ describe("CrmConversationWorkspace conclusion", () => {
     );
 
     await user.type(screen.getByRole("textbox", { name: "Rascunho" }), "oi");
-    await user.click(screen.getByRole("button", { name: "Abrir reações" }));
     expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveValue("oi");
-    expect(screen.getByRole("menu")).toHaveTextContent("Reações");
 
+    // Sidebar filter clicks must not remount the thread pane or the composer.
     rendered.rerender(
       <CrmConversationWorkspace
         leadApi={leadApi}
@@ -260,10 +259,35 @@ describe("CrmConversationWorkspace conclusion", () => {
       />,
     );
 
+    expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveValue("oi");
+
+    // Switching the session's own connection still remounts and drops drafts.
+    const nextConnection = createConnection("connection-2");
+    rendered.rerender(
+      <CrmConversationWorkspace
+        leadApi={leadApi}
+        inbox={
+          {
+            ...firstInbox,
+            activeSession: {
+              ...firstInbox.activeSession,
+              connection: {
+                id: nextConnection.id,
+                name: nextConnection.displayName,
+                provider: nextConnection.provider,
+                status: nextConnection.status,
+              },
+            },
+            activeSessionConnection: nextConnection,
+          } as unknown as ReturnType<typeof useCrmInbox>
+        }
+        onCycleChange={vi.fn()}
+        onScopeChange={vi.fn()}
+        routeCycleId="cycle-1"
+      />,
+    );
+
     expect(screen.getByRole("textbox", { name: "Rascunho" })).toHaveValue("");
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(firstInbox.activeSessionConnection?.id).toBe("connection-1");
-    expect(firstInbox.activeSession?.connection?.id).toBe("connection-1");
   });
 
   it("delegates conversation selection and mobile back to route state", async () => {

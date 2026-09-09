@@ -145,6 +145,31 @@ describe("useCrmConversationCycleActions", () => {
     expect(api.concludeCycle).toHaveBeenCalledWith(cycle.id, input);
   });
 
+  it("refreshes only the counters after a successful single-cycle action", async () => {
+    const cycle = createSession(7);
+    const api = createApi();
+    const refreshSessions = vi.fn(async () => undefined);
+    const refreshSessionCounts = vi.fn(async () => undefined);
+    const { result } = renderHook(() =>
+      useCrmConversationCycleActions({
+        api,
+        patchSession: vi.fn(),
+        removeSession: vi.fn(),
+        refreshSessions,
+        refreshSessionCounts,
+        conversationCycles: [cycle],
+        setError: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.actions.assignCycle(cycle.id, "user-1");
+    });
+
+    expect(refreshSessions).not.toHaveBeenCalled();
+    expect(refreshSessionCounts).toHaveBeenCalledTimes(1);
+  });
+
   it("runs archive, pin and delete as command-id based cycle actions", async () => {
     const cycle = createSession(3);
     const api = createApi();
