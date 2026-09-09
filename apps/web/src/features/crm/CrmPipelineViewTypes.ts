@@ -56,6 +56,7 @@ export type CrmPipelineViewProps = {
   vehicleOptions: LeadVehicleOption[];
   viewLeads: ProductCrmLead[];
   viewMode: CrmViewMode;
+  hasUserContext?: boolean | undefined;
 };
 
 export type DetailTab =

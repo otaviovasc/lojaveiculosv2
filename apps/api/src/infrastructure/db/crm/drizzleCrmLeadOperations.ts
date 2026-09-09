@@ -96,28 +96,34 @@ export function operationalLeadConditions(
   return filters;
 }
 
+// Cursor timestamps cross JSON/JavaScript Date, whose precision is milliseconds.
+// Use the same precision in both ORDER BY and the keyset comparison.
+const createdSort = sql`date_trunc('milliseconds', ${leads.createdAt})`;
+const updatedSort = sql`date_trunc('milliseconds', ${leads.updatedAt})`;
+const taskSort = sql`date_trunc('milliseconds', ${nextTaskDue})`;
+
 export function operationalLeadOrder(
   sortBy?: CrmLeadOperationalFilters["sortBy"],
 ) {
   return sortBy === "next_task"
-    ? sql`${nextTaskDue} asc nulls last, ${leads.updatedAt} desc, ${leads.id} desc`
+    ? sql`${taskSort} asc nulls last, ${updatedSort} desc, ${leads.id} desc`
     : sortBy === "created_at"
-      ? sql`${leads.createdAt} desc, ${leads.updatedAt} desc, ${leads.id} desc`
-      : sql`${leads.updatedAt} desc, ${leads.id} desc`;
+      ? sql`${createdSort} desc, ${updatedSort} desc, ${leads.id} desc`
+      : sql`${updatedSort} desc, ${leads.id} desc`;
 }
 
 export function operationalLeadCursor(
   cursor: CrmLeadCursor,
   sortBy?: CrmLeadOperationalFilters["sortBy"],
 ): SQL {
-  const tie = sql`(${leads.updatedAt}, ${leads.id}) < (${cursor.updatedAt.toISOString()}::timestamptz, ${cursor.id}::uuid)`;
+  const tie = sql`(${updatedSort}, ${leads.id}) < (${cursor.updatedAt.toISOString()}::timestamptz, ${cursor.id}::uuid)`;
   if (sortBy === "next_task")
     return cursor.sortAt
-      ? sql`(${nextTaskDue} > ${cursor.sortAt.toISOString()}::timestamptz or ${nextTaskDue} is null
-        or (${nextTaskDue} = ${cursor.sortAt.toISOString()}::timestamptz and ${tie}))`
-      : sql`(${nextTaskDue} is null and ${tie})`;
+      ? sql`(${taskSort} > ${cursor.sortAt.toISOString()}::timestamptz or ${taskSort} is null
+        or (${taskSort} = ${cursor.sortAt.toISOString()}::timestamptz and ${tie}))`
+      : sql`(${taskSort} is null and ${tie})`;
   if (sortBy === "created_at" && cursor.sortAt)
-    return sql`(${leads.createdAt} < ${cursor.sortAt.toISOString()}::timestamptz
-    or (${leads.createdAt} = ${cursor.sortAt.toISOString()}::timestamptz and ${tie}))`;
+    return sql`(${createdSort} < ${cursor.sortAt.toISOString()}::timestamptz
+    or (${createdSort} = ${cursor.sortAt.toISOString()}::timestamptz and ${tie}))`;
   return tie;
 }

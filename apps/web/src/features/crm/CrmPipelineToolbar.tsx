@@ -8,6 +8,7 @@ import {
   Handshake,
   Download,
   Upload,
+  X,
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { LeadFilters, CrmViewMode } from "./crmPipelineModels";
@@ -20,6 +21,8 @@ import {
   CrmSortByDropdown,
   CrmVehicleFilterDropdown,
 } from "./CrmPipelineToolbarParts";
+import { CrmResponsibleFilterDropdown } from "./CrmResponsibleFilterDropdown";
+import type { CrmSellerOption } from "./useCrmSellerOptions";
 
 type Props = {
   pipelines: Pipeline[];
@@ -41,6 +44,11 @@ type Props = {
   vehicleOptions?: LeadVehicleOption[] | undefined;
   viewMode: CrmViewMode;
   onChangeViewMode: (mode: CrmViewMode) => void;
+  hasUserContext?: boolean | undefined;
+  sellerMembers?: CrmSellerOption[] | undefined;
+  isLoadingMembers?: boolean | undefined;
+  memberError?: Error | null | undefined;
+  onRetryMembers?: (() => void) | undefined;
 };
 
 export function CrmPipelineToolbar({
@@ -63,6 +71,11 @@ export function CrmPipelineToolbar({
   vehicleOptions,
   viewMode,
   onChangeViewMode,
+  hasUserContext,
+  sellerMembers,
+  isLoadingMembers,
+  memberError,
+  onRetryMembers,
 }: Props) {
   const [showFasesDropdown, setShowFasesDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<
@@ -86,12 +99,15 @@ export function CrmPipelineToolbar({
     (s) => visibleStages[s.id] !== false,
   ).length;
 
-  const handleToggleOption = (key: keyof CustomFilters, id: string) => {
+  const handleToggleOption = (
+    key: "origem" | "resposta" | "semInteracao",
+    id: string,
+  ) => {
     if (key === "semInteracao") {
       const nextVal = customFilters.semInteracao === id ? "" : id;
       onChangeCustomFilters({ ...customFilters, semInteracao: nextVal });
     } else {
-      const current = customFilters[key] as string[];
+      const current = (customFilters[key] ?? []) as string[];
       const next = current.includes(id)
         ? current.filter((x) => x !== id)
         : [...current, id];
@@ -159,23 +175,68 @@ export function CrmPipelineToolbar({
           {/* Dynamic Filter dropdowns */}
           {FILTER_CONFIGS.map((cfg) => {
             const isOpen = openDropdown === cfg.key;
+            const isFiltered =
+              cfg.key === "semInteracao"
+                ? Boolean(customFilters.semInteracao)
+                : ((customFilters[cfg.key] as string[]) ?? []).length > 0;
+            const count =
+              cfg.key === "semInteracao"
+                ? 0
+                : ((customFilters[cfg.key] as string[]) ?? []).length;
             const filteredOptions = cfg.options.filter((o) =>
               o.label.toLowerCase().includes(searchQuery.toLowerCase()),
             );
 
             return (
-              <div className="relative" key={cfg.key}>
-                <button
-                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-line/50 bg-app-elevated/45 px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors"
-                  onClick={() => {
-                    setOpenDropdown(isOpen ? null : cfg.key);
-                    setSearchQuery("");
-                  }}
-                  type="button"
+              <div className="relative inline-flex items-center" key={cfg.key}>
+                <div
+                  className={
+                    "inline-flex min-h-9 items-center rounded-full border text-xs font-black transition-colors " +
+                    (isFiltered
+                      ? "border-accent bg-accent/15 text-accent"
+                      : "border-line/50 bg-app-elevated/45 text-app-text hover:bg-line/25")
+                  }
                 >
-                  <Plus className="size-3 text-muted" />
-                  {cfg.label}
-                </button>
+                  <button
+                    aria-expanded={isOpen}
+                    aria-label={cfg.label}
+                    className="inline-flex min-h-9 items-center gap-1 px-3 text-xs font-black cursor-pointer rounded-full focus-visible:outline-none"
+                    onClick={() => {
+                      setOpenDropdown(isOpen ? null : cfg.key);
+                      setSearchQuery("");
+                    }}
+                    type="button"
+                  >
+                    {!isFiltered && <Plus className="size-3 text-muted" />}
+                    <span>
+                      {cfg.label}
+                      {count > 0 ? ` (${count})` : ""}
+                    </span>
+                  </button>
+                  {isFiltered && (
+                    <button
+                      aria-label={`Limpar filtro de ${cfg.label.toLowerCase()}`}
+                      className="mr-1.5 inline-flex size-5 items-center justify-center rounded-full text-app-text hover:bg-line/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (cfg.key === "semInteracao") {
+                          onChangeCustomFilters({
+                            ...customFilters,
+                            semInteracao: "",
+                          });
+                        } else {
+                          onChangeCustomFilters({
+                            ...customFilters,
+                            [cfg.key]: [],
+                          });
+                        }
+                      }}
+                      type="button"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </div>
 
                 {isOpen && (
                   <div className="absolute top-full mt-1.5 left-0 z-50 w-56 bg-panel border border-line rounded-xl shadow-xl p-2.5 flex flex-col gap-2">
@@ -197,9 +258,9 @@ export function CrmPipelineToolbar({
                         const isChecked =
                           cfg.key === "semInteracao"
                             ? customFilters.semInteracao === opt.id
-                            : (customFilters[cfg.key] as string[]).includes(
-                                opt.id,
-                              );
+                            : (
+                                (customFilters[cfg.key] as string[]) ?? []
+                              ).includes(opt.id);
 
                         return (
                           <label
@@ -229,6 +290,28 @@ export function CrmPipelineToolbar({
               </div>
             );
           })}
+
+          <CrmResponsibleFilterDropdown
+            assignee={customFilters.responsavel}
+            hasUserContext={hasUserContext}
+            isLoadingMembers={isLoadingMembers}
+            isOpen={openDropdown === "responsavel"}
+            memberError={memberError}
+            onClose={() => setOpenDropdown(null)}
+            onRetryMembers={onRetryMembers}
+            onSelectAssignee={(nextAssignee) => {
+              onChangeCustomFilters({
+                ...customFilters,
+                responsavel: nextAssignee,
+              });
+            }}
+            onToggleOpen={() =>
+              setOpenDropdown(
+                openDropdown === "responsavel" ? null : "responsavel",
+              )
+            }
+            sellerMembers={sellerMembers}
+          />
 
           <CrmHumanAttendanceDropdown
             filters={filters}

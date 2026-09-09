@@ -1,3 +1,4 @@
+import { leadSelectionConditions } from "./drizzleCrmLeadSelection.js";
 import {
   leadOperationalColumns,
   operationalLeadConditions,
@@ -17,7 +18,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { leadVehicleInterests, leads } from "@lojaveiculosv2/db";
+import { leads } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   CountCrmLeadsInput,
@@ -129,27 +130,8 @@ async function buildCrmLeadFilters(
     eq(leads.tenantId, input.tenantId),
     eq(leads.isDeleted, false),
     ...operationalLeadConditions(input),
+    ...leadSelectionConditions(input),
   ];
-
-  if (input.listingId) {
-    const linkedRows = await db
-      .select({ leadId: leadVehicleInterests.leadId })
-      .from(leadVehicleInterests)
-      .where(
-        and(
-          eq(leadVehicleInterests.listingId, input.listingId),
-          eq(leadVehicleInterests.storeId, input.storeId),
-          eq(leadVehicleInterests.tenantId, input.tenantId),
-        ),
-      );
-    if (!linkedRows.length) return null;
-    filters.push(
-      inArray(
-        leads.id,
-        linkedRows.map((row) => row.leadId),
-      ),
-    );
-  }
 
   if (input.pipelineId) filters.push(eq(leads.pipelineId, input.pipelineId));
   if (input.pipelineStageId) {

@@ -19,6 +19,7 @@ export type CrmLeadSource =
   | "external_api"
   | "manual"
   | "olx"
+  | "instagram"
   | "whatsapp"
   | "other";
 

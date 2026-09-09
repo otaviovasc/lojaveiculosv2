@@ -75,6 +75,7 @@ export type MoveProductCrmLeadStageInput = {
 export type CrmLeadSortBy = "created_at" | "next_task";
 
 export type ProductCrmLeadQuery = {
+  assignee?: string;
   cursor?: string;
   humanAttendanceState?: CrmLeadHumanAttendanceState;
   inactiveDays?: number;
@@ -87,6 +88,7 @@ export type ProductCrmLeadQuery = {
   search?: string;
   sortBy?: CrmLeadSortBy;
   source?: CrmLeadSource;
+  sources?: readonly CrmLeadSource[] | CrmLeadSource[];
   status?: CrmLeadStatus;
 };
 
@@ -97,13 +99,16 @@ export type ProductCrmLeadPage = {
 };
 
 export type ProductCrmLeadBoardQuery = {
+  assignee?: string;
   humanAttendanceState?: CrmLeadHumanAttendanceState;
   inactiveDays?: number;
+  listingId?: string;
   pipelineId: string;
   responseState?: CrmLeadResponseState;
   search?: string;
   sortBy?: CrmLeadSortBy;
   source?: CrmLeadSource;
+  sources?: readonly CrmLeadSource[] | CrmLeadSource[];
   stageLimit?: number;
   status?: CrmLeadStatus;
 };
@@ -280,9 +285,14 @@ export function createProductCrmLeadBoardQuery(
   query: ProductCrmLeadBoardQuery,
 ) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "assignee", query.assignee);
+  addOptionalParam(params, "listingId", query.listingId);
   addOptionalParam(params, "pipelineId", query.pipelineId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "source", query.source);
+  if (query.sources && query.sources.length > 0) {
+    params.set("sources", query.sources.join(","));
+  }
   addOptionalParam(params, "stageLimit", query.stageLimit);
   addOptionalParam(params, "status", query.status);
   addOptionalParam(params, "responseState", query.responseState);
@@ -294,6 +304,7 @@ export function createProductCrmLeadBoardQuery(
 
 export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "assignee", query.assignee);
   addOptionalParam(params, "cursor", query.cursor);
   addOptionalParam(params, "listingId", query.listingId);
   addOptionalParam(params, "limit", query.limit);
@@ -302,6 +313,9 @@ export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {
   addOptionalParam(params, "pipelineStageId", query.pipelineStageId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "source", query.source);
+  if (query.sources && query.sources.length > 0) {
+    params.set("sources", query.sources.join(","));
+  }
   addOptionalParam(params, "status", query.status);
   addOptionalParam(params, "responseState", query.responseState);
   addOptionalParam(params, "inactiveDays", query.inactiveDays);

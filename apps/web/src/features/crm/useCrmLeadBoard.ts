@@ -18,16 +18,19 @@ const leadBoardCache = new WeakMap<
   Map<string, CrmLeadBoardPages>
 >();
 
-function leadBoardCacheKey(pipeline: Pipeline, filters: LeadFilters) {
+export function leadBoardCacheKey(pipeline: Pipeline, filters: LeadFilters) {
   return JSON.stringify([
     pipeline.id,
     filters.search,
     filters.source,
+    filters.sources ? [...filters.sources].sort() : [],
     filters.status,
     filters.responseState ?? "all",
     filters.inactiveDays ?? null,
     filters.humanAttendanceState ?? "all",
     filters.sortBy ?? "created_at",
+    filters.assignee ?? "",
+    filters.listingId ?? "",
   ]);
 }
 
@@ -90,6 +93,7 @@ export function useCrmLeadBoard(
     if (cachedPages) {
       setPages(cachedPages);
     } else {
+      setPages({});
       setIsLoading(true);
     }
     try {

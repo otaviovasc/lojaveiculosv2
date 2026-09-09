@@ -1,5 +1,5 @@
 import {
-  leadOperationalFilters,
+  resolvedLeadFilters,
   leadPageCursor,
 } from "../../leadOperationalFilters.js";
 import type { CrmLeadOperationalFilters } from "../../ports/crmRepository.js";
@@ -65,7 +65,7 @@ export async function listCrmLeads(
 
   const repository = getCrmRepository(ports);
   const filters = {
-    ...leadOperationalFilters(input),
+    ...resolvedLeadFilters(context, input),
     ...(input.listingId ? { listingId: input.listingId } : {}),
     ...(input.pipelineId ? { pipelineId: input.pipelineId } : {}),
     ...(input.pipelineStageId

@@ -28,6 +28,7 @@ export const listFilterStatuses: Array<CrmLeadStatus | "all"> = [
 export const sourceLabels: Record<CrmLeadSource, string> = {
   crm: "CRM",
   external_api: "API externa",
+  instagram: "Instagram",
   manual: "Manual",
   olx: "OLX",
   other: "Outros",
@@ -40,6 +41,7 @@ export const sourceOptions: Array<CrmLeadSource | "all"> = [
   "manual",
   "public_site",
   "whatsapp",
+  "instagram",
   "olx",
   "external_api",
   "crm",
