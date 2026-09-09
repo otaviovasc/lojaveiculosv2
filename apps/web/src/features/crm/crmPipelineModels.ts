@@ -1,6 +1,8 @@
 import type {
   CreateProductCrmActivityInput,
   CreateProductCrmLeadInput,
+  CrmLeadHumanAttendanceState,
+  CrmLeadResponseState,
   CrmLeadSource,
   CrmLeadStatus,
   LeadActivityType,
@@ -11,11 +13,42 @@ import type {
 
 export type CrmViewMode = "kanban" | "list" | "table";
 
+export type CrmLeadSortBy = "created_at" | "next_task";
+
+export const CRM_LEAD_DEFAULT_SORT: CrmLeadSortBy = "created_at";
+
 export type LeadFilters = {
   search: string;
   source: CrmLeadSource | "all";
   status: CrmLeadStatus | "all";
+  responseState?: CrmLeadResponseState | "all";
+  inactiveDays?: number | null;
+  humanAttendanceState?: CrmLeadHumanAttendanceState | "all";
+  sortBy?: CrmLeadSortBy;
 };
+
+export function createDefaultLeadFilters(): LeadFilters {
+  return {
+    search: "",
+    source: "all",
+    status: "all",
+    responseState: "all",
+    inactiveDays: null,
+    humanAttendanceState: "all",
+    sortBy: CRM_LEAD_DEFAULT_SORT,
+  };
+}
+
+export function hasActiveServerLeadFilters(filters: LeadFilters) {
+  return Boolean(
+    (filters.responseState && filters.responseState !== "all") ||
+    (typeof filters.inactiveDays === "number" &&
+      Number.isInteger(filters.inactiveDays) &&
+      filters.inactiveDays > 0) ||
+    (filters.humanAttendanceState && filters.humanAttendanceState !== "all") ||
+    (filters.sortBy && filters.sortBy !== CRM_LEAD_DEFAULT_SORT),
+  );
+}
 
 export type LeadCreateDraft = CreateProductCrmLeadInput & {
   initialNote?: string;

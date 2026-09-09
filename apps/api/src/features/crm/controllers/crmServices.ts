@@ -1,3 +1,8 @@
+import {
+  importCrmLeads,
+  type ImportCrmLeadsInput,
+  type ImportCrmLeadsResult,
+} from "../../../domains/crm/services/CrmService/importCrmLeads.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { createLeadActivity } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
@@ -64,6 +69,10 @@ import {
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmMessagingServices &
   CrmSpecialDateServices & {
+    importLeads: (
+      context: ServiceContext,
+      input: ImportCrmLeadsInput,
+    ) => Promise<ImportCrmLeadsResult>;
     getStatistics: (
       context: ServiceContext,
       input: GetCrmStatisticsInput,
@@ -158,6 +167,7 @@ export function createCrmServices(
 ): CrmServices {
   const ports = resolveCrmPorts(options);
   return {
+    importLeads: (context, input) => importCrmLeads(context, input, ports),
     archiveLead: (context, input) =>
       setCrmLeadArchived(context, { ...input, archived: true }, ports),
     createActivity: (context, input) =>

@@ -10,7 +10,12 @@ export function decodeCrmLeadCursor(
   try {
     const parsed = JSON.parse(
       Buffer.from(value, "base64url").toString("utf8"),
-    ) as { id?: unknown; updatedAt?: unknown };
+    ) as {
+      id?: unknown;
+      updatedAt?: unknown;
+      sortBy?: unknown;
+      sortAt?: unknown;
+    };
     if (typeof parsed.id !== "string" || typeof parsed.updatedAt !== "string") {
       throw new Error("Cursor fields are invalid.");
     }
@@ -18,7 +23,30 @@ export function decodeCrmLeadCursor(
     if (Number.isNaN(updatedAt.getTime())) {
       throw new Error("Cursor date is invalid.");
     }
-    return { id: parsed.id, updatedAt };
+    if (
+      parsed.sortBy !== undefined &&
+      parsed.sortBy !== "created_at" &&
+      parsed.sortBy !== "next_task"
+    )
+      throw new Error("Invalid sort.");
+    const sortAt =
+      parsed.sortAt === null
+        ? null
+        : typeof parsed.sortAt === "string"
+          ? new Date(parsed.sortAt)
+          : undefined;
+    if (sortAt && Number.isNaN(sortAt.getTime()))
+      throw new Error("Invalid sort date.");
+    if (
+      (parsed.sortBy && sortAt === undefined) ||
+      (parsed.sortBy === "created_at" && sortAt === null)
+    )
+      throw new Error("Missing sort date.");
+    return {
+      id: parsed.id,
+      updatedAt,
+      ...(parsed.sortBy ? { sortBy: parsed.sortBy, sortAt: sortAt! } : {}),
+    };
   } catch {
     throw new CrmRequestValidationError("Lead cursor is invalid.");
   }
@@ -30,6 +58,12 @@ export function encodeCrmLeadCursor(cursor: CrmLeadCursor | null) {
     JSON.stringify({
       id: cursor.id,
       updatedAt: cursor.updatedAt.toISOString(),
+      ...(cursor.sortBy
+        ? {
+            sortBy: cursor.sortBy,
+            sortAt: cursor.sortAt?.toISOString() ?? null,
+          }
+        : {}),
     }),
   ).toString("base64url");
 }

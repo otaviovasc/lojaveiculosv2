@@ -1,3 +1,8 @@
+import {
+  leadOperationalFilters,
+  leadPageCursor,
+} from "../../leadOperationalFilters.js";
+import type { CrmLeadOperationalFilters } from "../../ports/crmRepository.js";
 import { assertPermission } from "../../../../shared/authorization.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
@@ -15,7 +20,7 @@ import {
 
 const permission = "lead.read";
 
-export type ListCrmLeadsInput = {
+export type ListCrmLeadsInput = CrmLeadOperationalFilters & {
   cursor?: CrmLeadCursor;
   listingId?: string;
   limit?: number;
@@ -60,6 +65,7 @@ export async function listCrmLeads(
 
   const repository = getCrmRepository(ports);
   const filters = {
+    ...leadOperationalFilters(input),
     ...(input.listingId ? { listingId: input.listingId } : {}),
     ...(input.pipelineId ? { pipelineId: input.pipelineId } : {}),
     ...(input.pipelineStageId
@@ -84,9 +90,7 @@ export async function listCrmLeads(
   const items = hasMore ? rows.slice(0, limit) : rows;
   const lastItem = items.at(-1);
   const nextCursor =
-    hasMore && lastItem
-      ? { id: lastItem.id, updatedAt: lastItem.updatedAt }
-      : null;
+    hasMore && lastItem ? leadPageCursor(lastItem, input.sortBy) : null;
 
   await context.audit.record({
     action: "crm.leads.list",

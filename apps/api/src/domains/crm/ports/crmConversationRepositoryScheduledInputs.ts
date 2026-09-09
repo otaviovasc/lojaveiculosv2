@@ -18,6 +18,7 @@ export type CreateCrmScheduledMessageInput = {
 };
 
 export type ListCrmScheduledMessagesInput = {
+  leadId?: string;
   campaignBookkeepingPending?: boolean;
   campaignId?: string;
   connectionId?: string;

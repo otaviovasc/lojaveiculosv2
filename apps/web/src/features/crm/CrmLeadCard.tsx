@@ -27,6 +27,7 @@ import {
   isLeadUnread,
   readLeadCrmTags,
   readLeadFinancingBadge,
+  readLeadNextTaskBadge,
   readLeadTemperatureBadge,
   readLeadVisitBadge,
 } from "./crmLeadCardBadges";
@@ -88,6 +89,7 @@ export function CrmLeadCard({
     ownerName === undefined ? "…" : (ownerName ?? "Sem responsável");
 
   const unread = isLeadUnread(lead);
+  const nextTaskBadge = readLeadNextTaskBadge(lead.nextTask);
   const financingBadge = readLeadFinancingBadge(lead.metadata);
   const visitBadge = readLeadVisitBadge(lead.metadata);
   const temperatureBadge = readLeadTemperatureBadge(lead.metadata);
@@ -158,7 +160,7 @@ export function CrmLeadCard({
         {cleanPhone && (
           <button
             aria-label={`Conversar com ${formatLeadName(lead)} no WhatsApp Web`}
-            className="p-1 rounded hover:bg-success-soft/25 text-success-strong hover:text-success-strong cursor-pointer shrink-0 transition-colors"
+            className="p-1 rounded hover:bg-success-strong/10 text-success-strong hover:text-success-strong cursor-pointer shrink-0 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               window.open(
@@ -282,6 +284,42 @@ export function CrmLeadCard({
         </div>
       )}
 
+      {/* High-Impact Badges: Next Task */}
+      {nextTaskBadge && (
+        <div
+          aria-label={`Próxima tarefa: ${nextTaskBadge.title} (${nextTaskBadge.label})`}
+          className={
+            "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border " +
+            (nextTaskBadge.status === "overdue"
+              ? "bg-danger/10 text-danger border-danger/30"
+              : nextTaskBadge.status === "today"
+                ? "bg-warning/10 text-warning-strong border-warning-strong/30"
+                : nextTaskBadge.status === "tomorrow"
+                  ? "bg-blue-start/10 text-blue-start border-blue-start/30"
+                  : "bg-line/15 text-app-text border-line/30")
+          }
+        >
+          <Calendar className="size-3.5 shrink-0" />
+          <span className="truncate flex-1 font-bold">
+            {nextTaskBadge.title}
+          </span>
+          <span
+            className={
+              "text-xs px-1.5 py-0.5 rounded font-black shrink-0 " +
+              (nextTaskBadge.status === "overdue"
+                ? "bg-danger/20 text-danger"
+                : nextTaskBadge.status === "today"
+                  ? "bg-warning/20 text-warning-strong"
+                  : nextTaskBadge.status === "tomorrow"
+                    ? "bg-blue-start/20 text-blue-start"
+                    : "bg-line/30 text-muted")
+            }
+          >
+            {nextTaskBadge.label}
+          </span>
+        </div>
+      )}
+
       {/* High-Impact Badges: Financing Status */}
       {financingBadge && (
         <div className="flex items-center gap-1.5">
@@ -289,10 +327,10 @@ export function CrmLeadCard({
             className={
               "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border " +
               (financingBadge.status === "approved"
-                ? "bg-success-soft/20 text-success-strong border-success-strong/30"
+                ? "bg-success-strong/10 text-success-strong border-success-strong/30"
                 : financingBadge.status === "rejected"
-                  ? "bg-danger-soft/20 text-danger-strong border-danger-strong/30"
-                  : "bg-warning-soft/20 text-warning-strong border-warning-strong/30")
+                  ? "bg-danger/10 text-danger border-danger/30"
+                  : "bg-warning/10 text-warning-strong border-warning-strong/30")
             }
           >
             {financingBadge.status === "approved" && (
@@ -325,9 +363,9 @@ export function CrmLeadCard({
               className={
                 "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-black border " +
                 (temperatureBadge.type === "hot"
-                  ? "bg-danger-soft/20 text-danger-strong border-danger-strong/30"
+                  ? "bg-danger/10 text-danger border-danger/30"
                   : temperatureBadge.type === "cold"
-                    ? "bg-info-soft/20 text-info-strong border-info-strong/30"
+                    ? "bg-blue-start/10 text-blue-start border-blue-start/30"
                     : "bg-purple-500/15 text-purple-500 dark:text-purple-400 border-purple-500/30")
               }
             >

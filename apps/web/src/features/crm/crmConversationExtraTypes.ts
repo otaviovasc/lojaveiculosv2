@@ -86,6 +86,7 @@ export type CrmCreateScheduledMessageInput = CrmScheduledMessageDraft &
 export type CrmUpdateScheduledMessageInput = Partial<CrmScheduledMessageDraft>;
 
 export type CrmListScheduledMessagesInput = {
+  leadId?: string;
   connectionId?: CrmConnectionId;
   limit?: number;
   cycleId?: CrmConversationCycleId;

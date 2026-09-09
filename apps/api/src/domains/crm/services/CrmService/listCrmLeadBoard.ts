@@ -1,3 +1,8 @@
+import {
+  leadOperationalFilters,
+  leadPageCursor,
+} from "../../leadOperationalFilters.js";
+import type { CrmLeadOperationalFilters } from "../../ports/crmRepository.js";
 import { assertPermission } from "../../../../shared/authorization.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
@@ -15,7 +20,7 @@ import {
 
 const permission = "lead.read";
 
-export type ListCrmLeadBoardInput = {
+export type ListCrmLeadBoardInput = CrmLeadOperationalFilters & {
   pipelineId: string;
   search?: string;
   source?: LeadSource;
@@ -52,6 +57,7 @@ export async function listCrmLeadBoard(
   );
 
   const stages = await getCrmRepository(ports).listLeadBoard({
+    ...leadOperationalFilters(input),
     pipelineId: input.pipelineId,
     ...(input.search ? { search: input.search } : {}),
     ...(input.source ? { source: input.source } : {}),
@@ -66,7 +72,7 @@ export async function listCrmLeadBoard(
       items: stage.items,
       nextCursor:
         stage.total > stage.items.length && lastItem
-          ? { id: lastItem.id, updatedAt: lastItem.updatedAt }
+          ? leadPageCursor(lastItem, input.sortBy)
           : null,
       pipelineStageId: stage.pipelineStageId,
       total: stage.total,

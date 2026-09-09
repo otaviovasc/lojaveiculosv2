@@ -1,4 +1,5 @@
-import { and, desc, eq } from "drizzle-orm";
+import { leadOperationalColumns } from "./drizzleCrmLeadOperations.js";
+import { and, desc, eq, sql, getTableColumns } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   leadActivities,
@@ -22,6 +23,7 @@ import { createIdempotentCrmActivity } from "./drizzleCrmActivityWrites.js";
 import { createIdempotentCrmLead } from "./drizzleCrmLeadWrites.js";
 import {
   countCrmLeads,
+  toOperationalLead,
   listCrmLeadBoard,
   listCrmLeads,
 } from "./drizzleCrmLeadList.js";
@@ -98,7 +100,7 @@ export function createDrizzleCrmRepository(
     createLeadIdempotently: (input) => createIdempotentCrmLead(db, input),
     async findLeadById(input) {
       const [row] = await db
-        .select()
+        .select({ ...getTableColumns(leads), ...leadOperationalColumns })
         .from(leads)
         .where(
           and(
@@ -111,7 +113,7 @@ export function createDrizzleCrmRepository(
         .limit(1);
 
       if (!row) return null;
-      return toLead(
+      return toOperationalLead(
         row,
         await findLeadVehicleReference(db, {
           leadId: row.id,
@@ -119,6 +121,22 @@ export function createDrizzleCrmRepository(
           tenantId: input.tenantId,
         }),
       );
+    },
+    async findLeadByEmail(input) {
+      const [row] = await db
+        .select()
+        .from(leads)
+        .where(
+          and(
+            eq(leads.storeId, input.storeId),
+            eq(leads.tenantId, input.tenantId),
+            eq(leads.isDeleted, false),
+            sql`lower(${leads.buyerEmail}) = ${input.buyerEmail.toLowerCase()}`,
+          ),
+        )
+        .orderBy(desc(leads.updatedAt))
+        .limit(1);
+      return row ? toLead(row) : null;
     },
     async findLeadByPhone(input) {
       return findLeadByPhoneInDatabase(db, input);
@@ -170,7 +188,6 @@ export function createDrizzleCrmRepository(
             ? { pipelineStageId: input.pipelineStageId }
             : {}),
           ...(input.status ? { status: input.status } : {}),
-          ...(input.status ? { lastInteractionAt: new Date() } : {}),
         })
         .where(
           and(

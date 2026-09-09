@@ -34,6 +34,7 @@ export function registerCrmScheduledRoutes(
           ? { connectionId: input.data.connectionId }
           : {}),
         limit: input.data.limit,
+        ...(input.data.leadId ? { leadId: input.data.leadId } : {}),
         ...(input.data.cycleId ? { cycleId: input.data.cycleId } : {}),
         ...(input.data.status ? { status: input.data.status } : {}),
       });

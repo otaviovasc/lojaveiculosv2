@@ -150,6 +150,7 @@ export function createCrmRepository(): CrmRepository {
     countLeadsByPipelineStages: vi.fn(async () => 0),
     countLeads: vi.fn(async () => 0),
     findLeadById: vi.fn(async () => null),
+    findLeadByEmail: vi.fn(async () => null),
     findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
     listLeadBoard: vi.fn(async () => []),

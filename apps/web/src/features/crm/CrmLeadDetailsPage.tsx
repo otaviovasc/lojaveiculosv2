@@ -161,7 +161,7 @@ export function CrmLeadDetailsPage({
   return (
     <div className="crm-client-detail flex flex-col gap-5 text-app-text select-none w-full min-w-0 max-w-full">
       {/* Top Header Row */}
-      <header className="flex items-center justify-between py-3 border-b border-line/15 flex-wrap sm:flex-nowrap gap-3">
+      <header className="flex items-center justify-between py-3 border-b border-line/15 flex-wrap gap-3 w-full min-w-0">
         <div className="flex items-center gap-3.5 min-w-0">
           <button
             aria-label="Voltar para clientes"
@@ -189,7 +189,7 @@ export function CrmLeadDetailsPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap min-w-0 max-w-full">
           <button
             aria-label={`Editar dados de ${leadName}`}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line/35 bg-panel/40 px-3 text-xs font-bold text-muted transition-colors hover:bg-line/10 hover:text-app-text cursor-pointer"

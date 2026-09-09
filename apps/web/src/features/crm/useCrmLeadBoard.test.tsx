@@ -13,6 +13,48 @@ const DEFAULT_FILTERS: LeadFilters = {
 };
 
 describe("useCrmLeadBoard", () => {
+  it.each<Partial<LeadFilters>>([
+    { responseState: "responded" },
+    { inactiveDays: 7 },
+    { humanAttendanceState: "waiting_human" },
+    { sortBy: "next_task" },
+  ])(
+    "does not reuse totals from a different operational filter: %j",
+    async (changed) => {
+      const pipeline = DEFAULT_PIPELINES[0]!;
+      const listLeadBoard = vi
+        .fn<ProductCrmApi["listLeadBoard"]>()
+        .mockResolvedValueOnce({
+          stages: [
+            {
+              pipelineStageId: pipeline.stages[0]!.id,
+              leads: [],
+              nextCursor: null,
+              total: 7,
+            },
+          ],
+        })
+        .mockImplementation(() => new Promise(() => {}));
+      const api = createProductCrmApi({ listLeadBoard });
+      const first = renderHook(() =>
+        useCrmLeadBoard(api, pipeline, DEFAULT_FILTERS, true),
+      );
+      await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+      expect(first.result.current.stageTotals[pipeline.stages[0]!.id]).toBe(7);
+      first.unmount();
+      const next = renderHook(() =>
+        useCrmLeadBoard(
+          api,
+          pipeline,
+          { ...DEFAULT_FILTERS, ...changed },
+          true,
+        ),
+      );
+      expect(next.result.current.isLoading).toBe(true);
+      expect(next.result.current.stageTotals).toEqual({});
+      next.unmount();
+    },
+  );
   it("restores cached pages on remount and refreshes without loading state", async () => {
     const pipeline = DEFAULT_PIPELINES[0]!;
     const api = createProductCrmApi({
@@ -49,6 +91,7 @@ function createProductCrmApi(overrides: Partial<ProductCrmApi>): ProductCrmApi {
     throw new Error("Unexpected CRM API call");
   };
   return {
+    importLeads: vi.fn(async () => ({ created: 0, skipped: 0, errors: [] })),
     createActivity: vi.fn(notExpected),
     createFinancialProduct: vi.fn(notExpected),
     createLead: vi.fn(notExpected),

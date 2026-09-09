@@ -5,6 +5,7 @@ import {
   isLeadUnread,
   readLeadCrmTags,
   readLeadFinancingBadge,
+  readLeadNextTaskBadge,
   readLeadTemperatureBadge,
   readLeadVisitBadge,
 } from "./crmLeadCardBadges";
@@ -197,6 +198,91 @@ describe("crmLeadCardBadges", () => {
       expect(options[1]?.label).toBe("Amanhã (10h)");
       expect(options[2]?.label).toBe("Segunda-feira (10h)");
       expect(options[3]?.label).toBe("Próxima semana");
+    });
+  });
+
+  describe("next task badge", () => {
+    // 2026-09-09 12:00:00 UTC = 2026-09-09 09:00:00 in America/Sao_Paulo
+    const baseNow = new Date("2026-09-09T12:00:00.000Z");
+
+    it("returns null when nextTask is null or has no dueAt", () => {
+      expect(readLeadNextTaskBadge(null, baseNow)).toBeNull();
+      expect(readLeadNextTaskBadge(undefined, baseNow)).toBeNull();
+      expect(
+        readLeadNextTaskBadge({ id: "t1", title: "Test", dueAt: "" }, baseNow),
+      ).toBeNull();
+    });
+
+    it("identifies overdue task in America/Sao_Paulo", () => {
+      const badge = readLeadNextTaskBadge(
+        {
+          id: "t-overdue",
+          title: "Retornar proposta",
+          dueAt: "2026-09-08T15:00:00.000Z", // yesterday in SP
+        },
+        baseNow,
+      );
+      expect(badge).toEqual({
+        id: "t-overdue",
+        title: "Retornar proposta",
+        dueAt: "2026-09-08T15:00:00.000Z",
+        status: "overdue",
+        label: "Atrasada",
+      });
+    });
+
+    it("identifies today task in America/Sao_Paulo", () => {
+      const badge = readLeadNextTaskBadge(
+        {
+          id: "t-today",
+          title: "Ligar cliente",
+          dueAt: "2026-09-09T20:00:00.000Z", // today 17:00 SP
+        },
+        baseNow,
+      );
+      expect(badge).toEqual({
+        id: "t-today",
+        title: "Ligar cliente",
+        dueAt: "2026-09-09T20:00:00.000Z",
+        status: "today",
+        label: "Hoje",
+      });
+    });
+
+    it("identifies tomorrow task in America/Sao_Paulo", () => {
+      const badge = readLeadNextTaskBadge(
+        {
+          id: "t-tomorrow",
+          title: "Enviar simulação",
+          dueAt: "2026-09-10T13:00:00.000Z", // tomorrow 10:00 SP
+        },
+        baseNow,
+      );
+      expect(badge).toEqual({
+        id: "t-tomorrow",
+        title: "Enviar simulação",
+        dueAt: "2026-09-10T13:00:00.000Z",
+        status: "tomorrow",
+        label: "Amanhã",
+      });
+    });
+
+    it("formats future date in America/Sao_Paulo", () => {
+      const badge = readLeadNextTaskBadge(
+        {
+          id: "t-future",
+          title: "Confirmar visita",
+          dueAt: "2026-09-25T14:00:00.000Z", // 25/09
+        },
+        baseNow,
+      );
+      expect(badge).toEqual({
+        id: "t-future",
+        title: "Confirmar visita",
+        dueAt: "2026-09-25T14:00:00.000Z",
+        status: "date",
+        label: "25/09",
+      });
     });
   });
 });

@@ -255,3 +255,90 @@ export function getQuickScheduleDates(
     { label: "Próxima semana", dueAt: nextWeekIso },
   ];
 }
+
+export const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
+
+export type LeadNextTaskBadge = {
+  id: string;
+  title: string;
+  dueAt: string;
+  status: "overdue" | "today" | "tomorrow" | "date";
+  label: string;
+};
+
+export function getSaoPauloDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SAO_PAULO_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== "literal") values[part.type] = part.value;
+  }
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function readLeadNextTaskBadge(
+  nextTask: ProductCrmLead["nextTask"],
+  now: Date = new Date(),
+): LeadNextTaskBadge | null {
+  if (!nextTask || !nextTask.dueAt) return null;
+  const dueDate = new Date(nextTask.dueAt);
+  if (isNaN(dueDate.getTime())) return null;
+
+  const todayKey = getSaoPauloDateKey(now);
+  const dueKey = getSaoPauloDateKey(dueDate);
+
+  const [y, m, d] = todayKey.split("-").map(Number);
+  const tomorrowUtc = new Date(Date.UTC(y!, m! - 1, d! + 1));
+  const tomorrowKey = `${tomorrowUtc.getUTCFullYear()}-${String(tomorrowUtc.getUTCMonth() + 1).padStart(2, "0")}-${String(tomorrowUtc.getUTCDate()).padStart(2, "0")}`;
+
+  if (dueKey < todayKey) {
+    return {
+      id: nextTask.id,
+      title: nextTask.title,
+      dueAt: nextTask.dueAt,
+      status: "overdue",
+      label: "Atrasada",
+    };
+  }
+
+  if (dueKey === todayKey) {
+    return {
+      id: nextTask.id,
+      title: nextTask.title,
+      dueAt: nextTask.dueAt,
+      status: "today",
+      label: "Hoje",
+    };
+  }
+
+  if (dueKey === tomorrowKey) {
+    return {
+      id: nextTask.id,
+      title: nextTask.title,
+      dueAt: nextTask.dueAt,
+      status: "tomorrow",
+      label: "Amanhã",
+    };
+  }
+
+  const [nowY] = todayKey.split("-");
+  const [dueY] = dueKey.split("-");
+  const formattedDate = dueDate.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: nowY !== dueY ? "numeric" : undefined,
+    timeZone: SAO_PAULO_TIME_ZONE,
+  });
+
+  return {
+    id: nextTask.id,
+    title: nextTask.title,
+    dueAt: nextTask.dueAt,
+    status: "date",
+    label: formattedDate,
+  };
+}

@@ -33,6 +33,7 @@ describe("createLeadWithInitialStage", () => {
 
 function createApi(input: { lead: ProductCrmLead }): ProductCrmApi {
   return {
+    importLeads: vi.fn(async () => ({ created: 0, skipped: 0, errors: [] })),
     createActivity: vi.fn(),
     createFinancialProduct: vi.fn(),
     createLead: vi.fn(async () => input.lead),

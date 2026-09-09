@@ -172,7 +172,20 @@ export function createMemoryCrmConversationRepository(
       );
     },
     async listScheduledMessages(input) {
-      return listMemoryScheduledMessages(scheduledMessages, input);
+      return listMemoryScheduledMessages(
+        input.leadId
+          ? scheduledMessages.filter((message) =>
+              cycles.some(
+                (cycle) =>
+                  cycle.id === message.cycleId &&
+                  cycle.tenantId === input.tenantId &&
+                  cycle.storeId === input.storeId &&
+                  cycle.metadata.leadId === input.leadId,
+              ),
+            )
+          : scheduledMessages,
+        input,
+      );
     },
     async updateScheduledMessage(input) {
       return updateMemoryScheduledMessage(scheduledMessages, input);

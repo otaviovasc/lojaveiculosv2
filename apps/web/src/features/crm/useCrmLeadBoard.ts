@@ -19,7 +19,16 @@ const leadBoardCache = new WeakMap<
 >();
 
 function leadBoardCacheKey(pipeline: Pipeline, filters: LeadFilters) {
-  return `${pipeline.id}:${filters.search}:${filters.source}:${filters.status}`;
+  return JSON.stringify([
+    pipeline.id,
+    filters.search,
+    filters.source,
+    filters.status,
+    filters.responseState ?? "all",
+    filters.inactiveDays ?? null,
+    filters.humanAttendanceState ?? "all",
+    filters.sortBy ?? "created_at",
+  ]);
 }
 
 function readLeadBoardCache(api: ProductCrmApi, key: string) {

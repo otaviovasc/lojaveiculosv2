@@ -24,14 +24,53 @@ export function filterMemoryCrmLeads(
     .filter((lead) => Boolean(input.status) || lead.status !== "archived")
     .filter((lead) => !input.status || lead.status === input.status)
     .filter((lead) => matchesSearch(lead, input.search))
-    .sort(compareLeadsDescending);
+    .filter(
+      (lead) =>
+        !input.responseState || lead.responseState === input.responseState,
+    )
+    .filter(
+      (lead) =>
+        !input.humanAttendanceState ||
+        lead.humanAttendanceState === input.humanAttendanceState,
+    )
+    .filter(
+      (lead) =>
+        !input.inactiveDays ||
+        (lead.lastInteractionAt !== null &&
+          lead.lastInteractionAt.getTime() <=
+            Date.now() - input.inactiveDays * 86400000),
+    )
+    .sort((a, b) => {
+      if (input.sortBy === "next_task") {
+        const left = a.nextTask ? Date.parse(a.nextTask.dueAt) : Infinity;
+        const right = b.nextTask ? Date.parse(b.nextTask.dueAt) : Infinity;
+        if (left !== right) return left - right;
+      }
+      if (input.sortBy === "created_at") {
+        const difference = b.createdAt.getTime() - a.createdAt.getTime();
+        if (difference) return difference;
+      }
+      return compareLeadsDescending(a, b);
+    });
 }
 
 export function isMemoryLeadAfterCursor(
   lead: CrmLead,
   cursor: ListCrmLeadsInput["cursor"],
+  sortBy?: ListCrmLeadsInput["sortBy"],
 ) {
   if (!cursor) return true;
+  if (sortBy === "next_task") {
+    const value = lead.nextTask ? Date.parse(lead.nextTask.dueAt) : Infinity;
+    const boundary = cursor.sortAt?.getTime() ?? Infinity;
+    if (value !== boundary) return value > boundary;
+  }
+  if (
+    sortBy === "created_at" &&
+    cursor.sortAt &&
+    lead.createdAt.getTime() !== cursor.sortAt.getTime()
+  )
+    return lead.createdAt < cursor.sortAt;
   const leadTimestamp = lead.updatedAt.getTime();
   const cursorTimestamp = cursor.updatedAt.getTime();
   return (

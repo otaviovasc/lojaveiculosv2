@@ -55,6 +55,7 @@ function createProductCrmApi(overrides: Partial<ProductCrmApi>): ProductCrmApi {
     throw new Error("Unexpected CRM API call");
   };
   return {
+    importLeads: vi.fn(async () => ({ created: 0, skipped: 0, errors: [] })),
     createActivity: vi.fn(notExpected),
     createFinancialProduct: vi.fn(notExpected),
     createLead: vi.fn(notExpected),

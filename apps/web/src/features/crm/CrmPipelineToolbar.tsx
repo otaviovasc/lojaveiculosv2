@@ -4,18 +4,22 @@ import {
   Settings,
   Grid,
   List,
-  Eye,
   Search,
   Handshake,
-  Car,
   Download,
-  X,
+  Upload,
 } from "lucide-react";
 import { AnimatedIconSwap } from "../../components/ui/AnimatedIconSwap";
 import type { LeadFilters, CrmViewMode } from "./crmPipelineModels";
 import type { Pipeline, PipelineStage } from "./crmPipelineStorage";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import { FILTER_CONFIGS, type CustomFilters } from "./CrmPipelineToolbarTypes";
+import {
+  CrmFasesDropdown,
+  CrmHumanAttendanceDropdown,
+  CrmSortByDropdown,
+  CrmVehicleFilterDropdown,
+} from "./CrmPipelineToolbarParts";
 
 type Props = {
   pipelines: Pipeline[];
@@ -26,13 +30,15 @@ type Props = {
   filters: LeadFilters;
   onChangeFilters: (filters: LeadFilters) => void;
   onCreateClick: () => void;
-  onExportCsv?: () => void;
+  onExportCsv?: (() => void) | undefined;
+  canImportLeads?: boolean | undefined;
+  onImportClick?: (() => void) | undefined;
   visibleStages: Record<string, boolean>;
   onToggleStageVisibility: (stageId: string) => void;
   stages: PipelineStage[];
   customFilters: CustomFilters;
   onChangeCustomFilters: (next: CustomFilters) => void;
-  vehicleOptions?: LeadVehicleOption[];
+  vehicleOptions?: LeadVehicleOption[] | undefined;
   viewMode: CrmViewMode;
   onChangeViewMode: (mode: CrmViewMode) => void;
 };
@@ -50,6 +56,8 @@ export function CrmPipelineToolbar({
   stages,
   onCreateClick,
   onExportCsv,
+  canImportLeads,
+  onImportClick,
   customFilters,
   onChangeCustomFilters,
   vehicleOptions,
@@ -58,7 +66,7 @@ export function CrmPipelineToolbar({
 }: Props) {
   const [showFasesDropdown, setShowFasesDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<
-    keyof CustomFilters | "veiculo" | null
+    keyof CustomFilters | "veiculo" | "humanAttendance" | "sortBy" | null
   >(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -222,167 +230,53 @@ export function CrmPipelineToolbar({
             );
           })}
 
-          {/* Vehicle Inventory Filter Dropdown */}
-          {vehicleOptions && vehicleOptions.length > 0 && (
-            <div className="relative">
-              <button
-                className={
-                  "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-black cursor-pointer transition-colors " +
-                  (customFilters.veiculoId
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-line/50 bg-app-elevated/45 text-app-text hover:bg-line/25")
-                }
-                onClick={() => {
-                  setOpenDropdown(
-                    openDropdown === "veiculo" ? null : "veiculo",
-                  );
-                  setSearchQuery("");
-                }}
-                type="button"
-              >
-                <Car className="size-3 text-muted" />
-                <span className="max-w-[140px] truncate">
-                  {customFilters.veiculoId
-                    ? vehicleOptions.find(
-                        (v) => v.id === customFilters.veiculoId,
-                      )?.label || "Veículo"
-                    : "Veículo"}
-                </span>
-                {customFilters.veiculoId && (
-                  <span
-                    aria-label="Limpar filtro de veículo"
-                    className="ml-0.5 rounded-full p-0.5 hover:bg-accent/20 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChangeCustomFilters({
-                        ...customFilters,
-                        veiculoId: undefined,
-                      });
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <X className="size-3" />
-                  </span>
-                )}
-              </button>
+          <CrmHumanAttendanceDropdown
+            filters={filters}
+            isOpen={openDropdown === "humanAttendance"}
+            onChangeFilters={onChangeFilters}
+            onClose={() => setOpenDropdown(null)}
+            onToggleOpen={() =>
+              setOpenDropdown(
+                openDropdown === "humanAttendance" ? null : "humanAttendance",
+              )
+            }
+          />
 
-              {openDropdown === "veiculo" && (
-                <div className="absolute top-full mt-1.5 left-0 z-50 w-64 bg-panel border border-line rounded-xl shadow-xl p-2 flex flex-col gap-1.5 text-app-text">
-                  <div className="relative">
-                    <input
-                      aria-label="Buscar veículo do estoque"
-                      className="min-h-8 w-full rounded-md border border-line bg-app px-2 text-xs text-app-text outline-none placeholder:text-muted"
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar veículo do estoque..."
-                      type="text"
-                      value={searchQuery}
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto flex flex-col gap-0.5">
-                    <button
-                      className={
-                        "w-full text-left px-2.5 py-1.5 rounded-md text-xs font-bold cursor-pointer transition-colors " +
-                        (!customFilters.veiculoId
-                          ? "bg-accent/15 text-accent"
-                          : "hover:bg-line/10 text-app-text")
-                      }
-                      onClick={() => {
-                        onChangeCustomFilters({
-                          ...customFilters,
-                          veiculoId: undefined,
-                        });
-                        setOpenDropdown(null);
-                      }}
-                      type="button"
-                    >
-                      Todos os veículos
-                    </button>
-                    {vehicleOptions
-                      .filter((v) =>
-                        v.label
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()),
-                      )
-                      .map((v) => (
-                        <button
-                          className={
-                            "w-full text-left px-2.5 py-1.5 rounded-md text-xs font-bold cursor-pointer transition-colors truncate " +
-                            (customFilters.veiculoId === v.id
-                              ? "bg-accent/15 text-accent"
-                              : "hover:bg-line/10 text-app-text")
-                          }
-                          key={v.id}
-                          onClick={() => {
-                            onChangeCustomFilters({
-                              ...customFilters,
-                              veiculoId: v.id,
-                            });
-                            setOpenDropdown(null);
-                          }}
-                          type="button"
-                        >
-                          {v.label}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <CrmVehicleFilterDropdown
+            customFilters={customFilters}
+            isOpen={openDropdown === "veiculo"}
+            onChangeCustomFilters={onChangeCustomFilters}
+            onClose={() => setOpenDropdown(null)}
+            onSearchChange={setSearchQuery}
+            onToggleOpen={() => {
+              setOpenDropdown(openDropdown === "veiculo" ? null : "veiculo");
+              setSearchQuery("");
+            }}
+            searchQuery={searchQuery}
+            vehicleOptions={vehicleOptions}
+          />
         </div>
 
         {/* Right Side: Phase Count + Layout + Create Button */}
         <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:w-auto">
-          <div className="relative">
-            <button
-              aria-expanded={showFasesDropdown}
-              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line/50 px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer"
-              onClick={() => setShowFasesDropdown(!showFasesDropdown)}
-              type="button"
-            >
-              <AnimatedIconSwap
-                stateKey={showFasesDropdown}
-                variant="rotate-spin"
-              >
-                <Eye className="size-3.5 text-muted" />
-              </AnimatedIconSwap>
-              <span>Fases</span>
-              <span className="bg-line/20 rounded px-1 text-xs font-black">
-                {visibleStagesCount}/{stages.length}
-              </span>
-            </button>
+          <CrmFasesDropdown
+            isOpen={showFasesDropdown}
+            onToggleOpen={() => setShowFasesDropdown(!showFasesDropdown)}
+            onToggleStageVisibility={onToggleStageVisibility}
+            stages={stages}
+            visibleStages={visibleStages}
+            visibleStagesCount={visibleStagesCount}
+          />
 
-            {showFasesDropdown && (
-              <div className="absolute top-full mt-1.5 right-0 z-50 w-56 bg-panel border border-line rounded-xl shadow-xl p-3 flex flex-col gap-2.5">
-                <span className="text-xs font-black uppercase tracking-wider text-muted">
-                  Fases do Quadro
-                </span>
-                <div className="flex flex-col gap-2">
-                  {stages.map((stage) => (
-                    <label
-                      className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-app-text hover:bg-line/10 p-1 rounded"
-                      key={stage.id}
-                    >
-                      <input
-                        checked={visibleStages[stage.id] !== false}
-                        className="size-4 rounded border-line text-accent focus:ring-accent bg-app cursor-pointer"
-                        onChange={() => onToggleStageVisibility(stage.id)}
-                        type="checkbox"
-                      />
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="size-2 rounded-full"
-                          style={{ backgroundColor: stage.color }}
-                        />
-                        <span>{stage.name}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <CrmSortByDropdown
+            filters={filters}
+            isOpen={openDropdown === "sortBy"}
+            onChangeFilters={onChangeFilters}
+            onClose={() => setOpenDropdown(null)}
+            onToggleOpen={() =>
+              setOpenDropdown(openDropdown === "sortBy" ? null : "sortBy")
+            }
+          />
 
           <div className="flex items-center border border-line/50 rounded-lg overflow-hidden shrink-0 bg-app-elevated/45">
             <button
@@ -424,6 +318,19 @@ export function CrmPipelineToolbar({
               </AnimatedIconSwap>
             </button>
           </div>
+
+          {canImportLeads && onImportClick && (
+            <button
+              aria-label="Importar leads em CSV"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line/50 bg-app-elevated/45 px-3 text-xs font-black text-muted hover:text-app-text hover:bg-line/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.97]"
+              onClick={onImportClick}
+              title="Importar leads via CSV"
+              type="button"
+            >
+              <Upload aria-hidden="true" className="size-3.5" />
+              <span className="hidden md:inline">Importar CSV</span>
+            </button>
+          )}
 
           {onExportCsv && (
             <button

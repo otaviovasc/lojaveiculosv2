@@ -316,6 +316,7 @@ export function createCrmWhatsappCatalogProductsQuery(
 
 export function createCrmScheduledMessagesQuery(
   input: {
+    leadId?: string;
     connectionId?: CrmConnectionId;
     limit?: number;
     cycleId?: CrmConversationCycleId;
@@ -323,6 +324,7 @@ export function createCrmScheduledMessagesQuery(
   } = {},
 ) {
   const params = new URLSearchParams();
+  if (input?.leadId) params.set("leadId", input.leadId);
   addOptionalParam(params, "connectionId", input.connectionId);
   addOptionalParam(params, "limit", input.limit);
   addOptionalParam(params, "cycleId", input.cycleId);

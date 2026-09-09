@@ -15,6 +15,7 @@ import { CrmLeadDetailsTabsReunioes } from "./CrmLeadDetailsTabsReunioes";
 import { CrmLeadDetailsTabsNotas } from "./CrmLeadDetailsTabsNotas";
 import { CrmLeadDetailsTabsVisao } from "./CrmLeadDetailsTabsVisao";
 import { CrmLeadConversationPanel } from "./CrmLeadConversationPanel";
+import { CrmLeadScheduledMessagesPanel } from "./CrmLeadScheduledMessagesPanel";
 
 type Props = {
   activeTab: string;
@@ -65,11 +66,14 @@ export function CrmLeadDetailsTabs({
 
   if (activeTab === "tarefas") {
     return (
-      <CrmLeadDetailsTabsTarefas
-        lead={lead}
-        activities={activities}
-        onCreateActivity={onCreateActivity}
-      />
+      <div className="flex flex-col gap-6">
+        <CrmLeadDetailsTabsTarefas
+          activities={activities}
+          lead={lead}
+          onCreateActivity={onCreateActivity}
+        />
+        <CrmLeadScheduledMessagesPanel leadId={lead.id} />
+      </div>
     );
   }
 

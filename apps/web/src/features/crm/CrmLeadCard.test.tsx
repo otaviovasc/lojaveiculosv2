@@ -211,4 +211,33 @@ describe("CrmLeadCard", () => {
       "Retornar contato",
     );
   });
+
+  it("renders next task title and calendar badge when present", () => {
+    const taskLead: ProductCrmLead = {
+      ...baseLead,
+      nextTask: {
+        id: "task-1",
+        title: "Retornar proposta do Civic",
+        dueAt: "2020-01-01T13:00:00.000Z", // overdue
+      },
+    };
+
+    render(
+      <CrmLeadCard
+        lead={taskLead}
+        onChatClick={vi.fn()}
+        onDragStart={vi.fn()}
+        onSelectLead={vi.fn()}
+        vehicleOptions={[]}
+      />,
+    );
+
+    expect(screen.getByText("Retornar proposta do Civic")).toBeInTheDocument();
+    expect(screen.getByText("Atrasada")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(
+        "Próxima tarefa: Retornar proposta do Civic (Atrasada)",
+      ),
+    ).toBeInTheDocument();
+  });
 });
