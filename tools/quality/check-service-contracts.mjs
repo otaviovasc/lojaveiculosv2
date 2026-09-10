@@ -24,6 +24,7 @@ const nonEntrypointFiles = new Set([
   "crmLeadOutcomePersistence.ts",
   "crmServiceErrors.ts",
   "createBillingPlanHire.testSupport.ts",
+  "crmRoutingService.testSupport.ts",
   "financeAutoEntryEvaluator.ts",
   "financeAutoEntryLabels.ts",
   "financeAutoEntryRuleValidation.ts",

@@ -221,6 +221,16 @@ export const crmConversationCycleSchema = z
     lastMessageContent: optionalNullableString,
     lastReadAt: optionalNullableString,
     leadId: optionalNullableString,
+    leadPipelineStage: z
+      .object({
+        pipelineName: nullableString,
+        stageColor: nullableString,
+        stageId: nonEmptyString,
+        stageName: nonEmptyString,
+      })
+      .strict()
+      .nullable()
+      .optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
     profilePhotoUrl: optionalNullableString,
     revision: nonNegativeInteger,

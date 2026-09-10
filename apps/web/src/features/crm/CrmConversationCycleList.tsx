@@ -246,6 +246,27 @@ export function SessionList({
                       {cycle.vehicle.title}
                     </span>
                   ) : null}
+                  {cycle.leadPipelineStage ? (
+                    <span
+                      className="crm-cycle-chip"
+                      title={
+                        cycle.leadPipelineStage.pipelineName
+                          ? `${cycle.leadPipelineStage.pipelineName} · ${cycle.leadPipelineStage.stageName}`
+                          : cycle.leadPipelineStage.stageName
+                      }
+                    >
+                      {cycle.leadPipelineStage.stageColor ? (
+                        <span
+                          aria-hidden="true"
+                          className="crm-cycle-chip-dot"
+                          style={{
+                            backgroundColor: cycle.leadPipelineStage.stageColor,
+                          }}
+                        />
+                      ) : null}
+                      {cycle.leadPipelineStage.stageName}
+                    </span>
+                  ) : null}
                   {adTitle ? (
                     <span className="crm-cycle-chip" title={adTitle}>
                       <Megaphone aria-hidden="true" />

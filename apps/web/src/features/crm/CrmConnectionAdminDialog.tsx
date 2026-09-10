@@ -9,9 +9,6 @@ import {
   type CrmConnectionMembersHandlers,
 } from "./CrmConnectionMembersSection";
 import { ConnectionDashboard, ConnectionSetupFlow } from "./CrmConnectionViews";
-import { CrmSpecialDateSettings } from "./CrmSpecialDateSettings";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
-import { hasCrmSchedulingCapability } from "./crmProviderCapabilities";
 import type {
   CrmConnectionId,
   CrmProviderConnection,
@@ -24,7 +21,6 @@ import type {
  */
 export function CrmConnectionManageDialog({
   canManage = false,
-  canManageSpecialDates = false,
   connection,
   disabled = false,
   isRefreshing = false,
@@ -37,10 +33,8 @@ export function CrmConnectionManageDialog({
   onReplace,
   onRevokeConnectionMember,
   onSetConnectionPaused,
-  specialDateApi,
 }: {
   canManage?: boolean;
-  canManageSpecialDates?: boolean;
   connection: CrmProviderConnection | null;
   disabled?: boolean;
   isRefreshing?: boolean;
@@ -53,7 +47,6 @@ export function CrmConnectionManageDialog({
     connectionId: CrmConnectionId,
     paused: boolean,
   ) => Promise<void>;
-  specialDateApi?: CrmSpecialDateApi;
 } & CrmConnectionMembersHandlers) {
   const [lifecycleBusy, setLifecycleBusy] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
@@ -177,15 +170,6 @@ export function CrmConnectionManageDialog({
               {...(onRevokeConnectionMember
                 ? { onRevokeConnectionMember }
                 : {})}
-            />
-          ) : null}
-          {specialDateApi &&
-          connection.channel === "whatsapp" &&
-          hasCrmSchedulingCapability(connection) ? (
-            <CrmSpecialDateSettings
-              api={specialDateApi}
-              canManage={canManageSpecialDates}
-              connectionId={String(connection.id)}
             />
           ) : null}
           {onSetConnectionPaused ? (

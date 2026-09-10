@@ -216,6 +216,8 @@ function friendlyMessage(input: {
       return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
     case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
       return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
+    case "CRM_CONNECTION_SETUP_PAIRING_PHONE_INVALID":
+      return "Informe um número brasileiro válido com DDD e número completo. Exemplo: +55 (11) 99999-9999. Nenhum código foi solicitado.";
     case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS": {
       const provider = readConnectionProvider(input.details);
       if (provider === "zapi") {

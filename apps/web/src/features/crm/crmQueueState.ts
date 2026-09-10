@@ -2,6 +2,8 @@ import type {
   CrmConversationCycle,
   CrmConversationCycleCounts,
   CrmConversationCycleFilter,
+  CrmConversationCycleStatus,
+  CrmHumanAttendanceState,
 } from "./crmConversationTypes";
 
 export type CrmBulkActionDraft = {
@@ -97,6 +99,35 @@ export function filterConnectionsBrowsableByUser<
     const members = connection.memberUserIds;
     if (!members || members.length === 0 || !currentUserId) return false;
     return members.some((memberId) => String(memberId) === currentUserId);
+  });
+}
+
+export function filterSessionsForSmartFilters(
+  conversationCycles: CrmConversationCycle[],
+  input: {
+    archivedOnly: boolean;
+    humanAttendanceFilter: CrmHumanAttendanceState | "";
+    statusFilter: CrmConversationCycleStatus | "";
+    unreadOnly: boolean;
+  },
+) {
+  return conversationCycles.filter((cycle) => {
+    // Mirrors the server queue contract: the default list excludes archived
+    // cycles; archivedOnly lists only archived cycles.
+    if (input.archivedOnly !== Boolean(cycle.isArchived)) return false;
+    if (input.unreadOnly && !(cycle.unreadCount && cycle.unreadCount > 0)) {
+      return false;
+    }
+    if (input.statusFilter && cycle.status !== input.statusFilter) {
+      return false;
+    }
+    if (
+      input.humanAttendanceFilter &&
+      cycle.humanAttendanceState !== input.humanAttendanceFilter
+    ) {
+      return false;
+    }
+    return true;
   });
 }
 

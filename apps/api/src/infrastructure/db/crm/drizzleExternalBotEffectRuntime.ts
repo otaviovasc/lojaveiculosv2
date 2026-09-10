@@ -84,7 +84,8 @@ export async function loadAuthorizedExternalBotEffect(
       and ((routing.external_bot_mode='inherit_store_default'
           and routing.default_connection_id=connection.id)
         or (routing.external_bot_mode='explicit_connection'
-          and routing.external_bot_connection_id=connection.id))
+          and routing.external_bot_connection_id=connection.id)
+        or routing.external_bot_mode='all_channel_connections')
     inner join integration_accounts account
       on account.id=grant.integration_id and account.tenant_id=effect.tenant_id
       and account.store_id=effect.store_id and account.status='active'

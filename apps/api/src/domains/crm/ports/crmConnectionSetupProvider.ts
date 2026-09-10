@@ -213,6 +213,7 @@ export type CrmConnectionSetupProviderErrorCode =
   | "invalid_provider_response"
   | "pairing_disconnect_required"
   | "pairing_method_required"
+  | "pairing_phone_invalid"
   | "provider_outcome_indeterminate"
   | "provider_rejected"
   | "rate_limited"

@@ -390,6 +390,70 @@ describe("CrmWhatsappUazapiSetup", () => {
     ).toBeVisible();
   });
 
+  it("requests a pairing code with the normalized Brazilian phone", async () => {
+    const handlers = createHandlers();
+    handlers.onRequestUazapiPairingCode = vi.fn(async () => ({
+      code: "ABCD-1234",
+      expiresAt: "2099-01-01T00:05:00.000Z",
+      requested: true,
+    }));
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canSetup
+        connection={createPairingConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
+    fireEvent.change(screen.getByLabelText("Telefone para pareamento"), {
+      target: { value: "11999998888" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Solicitar código" }));
+
+    await waitFor(() =>
+      expect(handlers.onRequestUazapiPairingCode).toHaveBeenCalledWith(
+        "connection-uazapi",
+        "5511999998888",
+      ),
+    );
+    expect(await screen.findByText("ABCD-1234")).toBeVisible();
+  });
+
+  it.each(["1199999", "551199999"])(
+    "rejects the incomplete phone %s without calling the provider route",
+    async (phone) => {
+      const handlers = createHandlers();
+      handlers.onRequestUazapiPairingCode = vi.fn();
+
+      render(
+        <CrmWhatsappUazapiSetup
+          canPair
+          canSetup
+          connection={createPairingConnection()}
+          handlers={handlers}
+          onBack={vi.fn()}
+          onConnection={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("tab", { name: "Código do telefone" }));
+      fireEvent.change(screen.getByLabelText("Telefone para pareamento"), {
+        target: { value: phone },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Solicitar código" }));
+
+      expect(
+        await screen.findByText(/Informe o telefone completo com DDD/i),
+      ).toBeVisible();
+      expect(handlers.onRequestUazapiPairingCode).not.toHaveBeenCalled();
+    },
+  );
+
   it("shows success only when server readiness is confirmed", () => {
     render(
       <CrmWhatsappUazapiSetup
@@ -434,6 +498,25 @@ function createSetup(overrides: Record<string, unknown> = {}) {
     version: 2 as const,
     ...overrides,
   };
+}
+
+function createPairingConnection(): CrmProviderConnection {
+  return createConnection({
+    live: {
+      checkedAt: "2026-08-25T12:00:00.000Z",
+      connected: false,
+      connectedPhone: null,
+      providerStatus: "disconnected",
+      smartphoneConnected: false,
+    },
+    phoneNumber: null,
+    ready: false,
+    readiness: {
+      ready: false,
+      reason: "disconnected",
+      reasonCode: "disconnected",
+    },
+  });
 }
 
 function createConnection(

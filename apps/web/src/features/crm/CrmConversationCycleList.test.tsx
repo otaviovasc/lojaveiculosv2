@@ -180,6 +180,47 @@ describe("SessionList", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the lead pipeline-stage chip only when the server enriches it", () => {
+    const { rerender } = render(
+      <SessionList
+        activeCycleId={null}
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedCycleIds={[]}
+        selectionMode={false}
+        conversationCycles={[
+          {
+            ...createSession(),
+            leadPipelineStage: {
+              pipelineName: "Funil vendas",
+              stageColor: "seagreen",
+              stageId: "stage-1",
+              stageName: "Negociação",
+            },
+          },
+        ]}
+      />,
+    );
+
+    const chip = screen.getByText("Negociação");
+    expect(chip).toHaveClass("crm-cycle-chip");
+    expect(chip).toHaveAttribute("title", "Funil vendas · Negociação");
+    const dot = chip.querySelector(".crm-cycle-chip-dot") as HTMLElement;
+    expect(dot.style.backgroundColor).toBe("seagreen");
+
+    rerender(
+      <SessionList
+        activeCycleId={null}
+        onSelect={vi.fn()}
+        onToggleSelected={vi.fn()}
+        selectedCycleIds={[]}
+        selectionMode={false}
+        conversationCycles={[createSession()]}
+      />,
+    );
+    expect(screen.queryByText("Negociação")).not.toBeInTheDocument();
+  });
+
   it("loads another page and exposes the reached-end state", async () => {
     const onLoadMore = vi.fn();
     const common = {

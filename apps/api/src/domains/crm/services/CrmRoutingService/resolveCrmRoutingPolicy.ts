@@ -1,4 +1,6 @@
 import { crmMessagingChannels } from "../../ports/crmRoutingPolicyRepository.js";
+import type { CrmMessagingChannel } from "../../ports/crmRoutingPolicyRepository.js";
+import type { CrmRoutingConnection } from "../../ports/crmRoutingConnectionRepository.js";
 import {
   getCrmRoutingConnectionRepository,
   getCrmRoutingPolicyRepository,
@@ -58,7 +60,21 @@ export async function resolveCrmRoutingPolicy(
       const externalBotConnectionId =
         externalBotMode === "inherit_store_default"
           ? defaultConnectionId
-          : (policy?.externalBotConnectionId ?? null);
+          : externalBotMode === "explicit_connection"
+            ? (policy?.externalBotConnectionId ?? null)
+            : null;
+      if (externalBotMode === "all_channel_connections") {
+        return {
+          bot: resolveChannelWideBotRoute(
+            channel,
+            connections,
+            requiredCapabilities,
+            scope,
+          ),
+          channel,
+          storeDefault,
+        };
+      }
       return {
         bot: {
           ...resolveCrmConnectionRoute({
@@ -78,4 +94,51 @@ export async function resolveCrmRoutingPolicy(
     },
   );
   return { channels, ...scope };
+}
+
+/**
+ * Channel-wide bot route: ready when at least one connection of the channel is
+ * routable. No single connection represents the route, so `connection` stays
+ * null; when nothing is routable, the blocked reason is derived from the first
+ * channel connection (or the missing policy) so the UI can still explain why.
+ */
+function resolveChannelWideBotRoute(
+  channel: CrmMessagingChannel,
+  connections: readonly CrmRoutingConnection[],
+  requiredCapabilities: readonly CrmRoutingCapability[],
+  scope: { storeId: string; tenantId: string },
+): CrmChannelRoutingReadModel["bot"] {
+  const channelConnections = connections.filter(
+    (connection) => connection.channel === channel,
+  );
+  const hasReadyConnection = channelConnections.some(
+    (connection) =>
+      resolveCrmConnectionRoute({
+        channel,
+        connection,
+        connectionId: connection.id,
+        requiredCapabilities,
+        scope,
+      }).ready,
+  );
+  if (hasReadyConnection) {
+    return {
+      blocked: null,
+      connection: null,
+      mode: "all_channel_connections",
+      ready: true,
+      requiredCapabilities,
+    };
+  }
+  return {
+    ...resolveCrmConnectionRoute({
+      channel,
+      connection: channelConnections[0] ?? null,
+      connectionId: channelConnections[0]?.id ?? null,
+      requiredCapabilities,
+      scope,
+    }),
+    connection: null,
+    mode: "all_channel_connections",
+  };
 }

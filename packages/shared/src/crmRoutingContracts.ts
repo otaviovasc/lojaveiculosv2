@@ -9,6 +9,8 @@ export const crmExternalBotRouteModes = [
   "disabled",
   "inherit_store_default",
   "explicit_connection",
+  // The bot serves every routable connection of the channel, not a single one.
+  "all_channel_connections",
 ] as const;
 export type CrmExternalBotRouteMode = (typeof crmExternalBotRouteModes)[number];
 

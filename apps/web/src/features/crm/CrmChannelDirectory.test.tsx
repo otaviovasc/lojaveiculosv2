@@ -323,7 +323,10 @@ describe("CrmChannelDirectory", () => {
       />,
     );
 
-    // With the allowance model, both setup rows coexist with the connected row.
+    // With the allowance model, both provider options live inside the add row.
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    );
     fireEvent.click(
       screen.getByRole("button", {
         name: /UAZAPI.*Provisionado pelo workspace/i,
@@ -354,6 +357,15 @@ describe("CrmChannelDirectory", () => {
     expect(
       screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
     ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    );
+    expect(
+      screen.queryByRole("button", { name: /UAZAPI.*Provisionado/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Limite de conexões WhatsApp desta loja atingido/i),
     ).toHaveTextContent(/3 de 3/);
@@ -375,6 +387,9 @@ describe("CrmChannelDirectory", () => {
     expect(
       screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
     ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    );
     expect(
       screen.getByRole("button", {
         name: /UAZAPI.*Provisionado pelo workspace/i,
@@ -401,6 +416,9 @@ describe("CrmChannelDirectory", () => {
     );
 
     expect(screen.getAllByText("UAZAPI principal")).toHaveLength(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    );
     expect(
       screen.queryByRole("button", { name: /UAZAPI.*Provisionado/i }),
     ).not.toBeInTheDocument();
@@ -429,6 +447,75 @@ describe("CrmChannelDirectory", () => {
 
     expect(await screen.findByText("Reconexão necessária")).toBeVisible();
     expect(screen.queryByText("Expired credentials.")).not.toBeInTheDocument();
+  });
+
+  it("keeps one WhatsApp group with one add row for multiple instances", () => {
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        connectionAllowance={{ limit: 3, remaining: 1, used: 2 }}
+        connections={[
+          createZapiConnection(),
+          {
+            ...createZapiConnection(),
+            displayName: "UAZAPI secundário",
+            id: "connection-2",
+            provider: "uazapi" as const,
+          },
+        ]}
+        onChoose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByRole("heading", { name: "WhatsApp" })).toHaveLength(
+      1,
+    );
+    expect(screen.getByText("Z-API principal")).toBeVisible();
+    expect(screen.getByText("UAZAPI secundário")).toBeVisible();
+    expect(
+      screen.getAllByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("nests the provider choices inside the expandable add row", () => {
+    const onChoose = vi.fn();
+    render(
+      <CrmChannelDirectory
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "zapi" },
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        connectionAllowance={{ limit: 3, remaining: 2, used: 1 }}
+        connections={[createZapiConnection()]}
+        onChoose={onChoose}
+      />,
+    );
+
+    const addRow = screen.getByRole("button", {
+      name: /Adicionar número de WhatsApp/i,
+    });
+    expect(addRow).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("group", {
+        name: /Provedores disponíveis para WhatsApp/i,
+      }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(addRow);
+    expect(addRow).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Z-API.*Credencial da loja/i }),
+    );
+    expect(onChoose).toHaveBeenCalledWith("zapi");
+
+    fireEvent.click(addRow);
+    expect(addRow).toHaveAttribute("aria-expanded", "false");
   });
 });
 

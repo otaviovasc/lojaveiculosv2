@@ -34,6 +34,7 @@ describe("CRM routing HTTP contracts", () => {
       "disabled",
       "inherit_store_default",
       "explicit_connection",
+      "all_channel_connections",
     ]);
     expect(crmExternalBotRouteModes).not.toContain("auto");
   });
@@ -107,6 +108,28 @@ describe("CRM routing HTTP contracts", () => {
         ...base,
         externalBotConnectionId: connectionId,
         externalBotMode: "disabled",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts the channel-wide bot mode without a connection", () => {
+    const base = {
+      channel: "whatsapp",
+      defaultConnectionId: connectionId,
+      externalBotConnectionId: null,
+    } as const;
+
+    expect(
+      crmRoutingPolicyPatchSchema.safeParse({
+        ...base,
+        externalBotMode: "all_channel_connections",
+      }).success,
+    ).toBe(true);
+    expect(
+      crmRoutingPolicyPatchSchema.safeParse({
+        ...base,
+        externalBotConnectionId: connectionId,
+        externalBotMode: "all_channel_connections",
       }).success,
     ).toBe(false);
   });

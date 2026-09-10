@@ -15,7 +15,6 @@ import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmConversationApi } from "./crmConversationApi";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
 import { CrmConnectionManageDialog } from "./CrmConnectionAdminDialog";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 const CrmConnectionSelfServiceSetup = lazy(async () => {
   const module = await import("./CrmConnectionSelfServiceSetup");
@@ -50,8 +49,6 @@ type ConnectionAdminProps = {
     "getRoutingPolicy" | "updateRoutingPolicy"
   >;
   canManageRouting?: boolean;
-  canManageSpecialDates?: boolean;
-  specialDateApi?: CrmSpecialDateApi;
   selfService?: {
     availableSetups: readonly CrmAvailableSetup[];
     canPair: boolean;
@@ -60,8 +57,6 @@ type ConnectionAdminProps = {
     connectionAllowance?: CrmConnectionAllowance | null;
     handlers: CrmConnectionSelfServiceHandlers;
     isCrmEntitled: boolean;
-    canManageSpecialDates?: boolean;
-    specialDateApi?: CrmSpecialDateApi;
   };
 };
 
@@ -75,8 +70,6 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
     onRoutingPolicyChange,
     routingApi,
     canManageRouting = false,
-    canManageSpecialDates = false,
-    specialDateApi,
     selfService,
   } = props;
   const [managedConnectionId, setManagedConnectionId] = useState<string | null>(
@@ -115,12 +108,6 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             existingConnection={readInitialConnection(connections)}
             handlers={selfService.handlers}
             isCrmEntitled={selfService.isCrmEntitled}
-            {...(selfService.canManageSpecialDates !== undefined
-              ? { canManageSpecialDates: selfService.canManageSpecialDates }
-              : {})}
-            {...(selfService.specialDateApi
-              ? { specialDateApi: selfService.specialDateApi }
-              : {})}
             startAtDirectory={!readPendingComposioConnectionId()}
           />
         </ConnectionSetupBoundary>
@@ -146,10 +133,8 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
           <CrmConnectionManageDialog
             connection={managedConnection}
             disabled={disabled}
-            canManageSpecialDates={canManageSpecialDates}
             onClose={() => setManagedConnectionId(null)}
             onRefresh={onRefresh}
-            {...(specialDateApi ? { specialDateApi } : {})}
           />
         </>
       )}

@@ -15,6 +15,13 @@ export type CrmAssigneeConversationCycleCount = {
   count: number;
 };
 
+export type CrmConversationCycleLeadPipelineStage = {
+  pipelineName: string | null;
+  stageColor: string | null;
+  stageId: string;
+  stageName: string;
+};
+
 export type CrmConversationCycle = {
   archivedAt: Date | null;
   assignedUserId: UserId | null;
@@ -43,6 +50,7 @@ export type CrmConversationCycle = {
   lastMessageContent: string | null;
   lastReadAt: Date | null;
   leadId: string | null;
+  leadPipelineStage?: CrmConversationCycleLeadPipelineStage | null;
   messageCount: number;
   metadata: Record<string, unknown>;
   pinnedAt: Date | null;

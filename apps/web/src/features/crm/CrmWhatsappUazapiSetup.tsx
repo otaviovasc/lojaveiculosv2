@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, QrCode } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { formatBrazilianWhatsappPhone } from "../../lib/masks";
 import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
   emptyUazapiProvisionDraft,
@@ -124,7 +125,10 @@ export function CrmWhatsappUazapiSetup({
   useEffect(() => {
     setPairingBlock(null);
     setPairingMethod("qr");
-    setPhone(connection?.phoneNumber ?? "");
+    const prefilledPhone = connection?.phoneNumber ?? "";
+    setPhone(
+      prefilledPhone ? formatBrazilianWhatsappPhone(prefilledPhone) : "",
+    );
     setError(null);
   }, [connection?.id, connection?.phoneNumber]);
 
@@ -277,7 +281,8 @@ export function CrmWhatsappUazapiSetup({
       setSelectedInstanceId(undefined);
       setProvisionMode("create");
       setProvisionStage("account");
-      if (created.phoneNumber) setPhone(created.phoneNumber);
+      if (created.phoneNumber)
+        setPhone(formatBrazilianWhatsappPhone(created.phoneNumber));
       onConnection(created);
     } catch (caught) {
       if (isCurrentAction(actionGeneration)) {

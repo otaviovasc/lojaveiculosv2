@@ -41,7 +41,8 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
+    openWhatsappProviderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /^Z-API/ }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveClass(
       "feature-dialog--large",
@@ -85,7 +86,9 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /Z-API/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Z-API/ })).toBeNull();
+    openWhatsappProviderPicker();
+    expect(screen.queryByRole("button", { name: /^Z-API/ })).toBeNull();
   });
 
   it("keeps existing management visible without exposing setup actions", async () => {
@@ -340,8 +343,9 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
+    openWhatsappProviderPicker();
     expect(
-      screen.getByRole("button", { name: /WhatsApp Oficial/i }),
+      screen.getByRole("button", { name: /^WhatsApp Oficial/ }),
     ).toBeVisible();
     expect(
       screen.queryByText(/não possui uma conexão Z-API contratada/i),
@@ -384,13 +388,14 @@ describe("CrmConnectionSelfServiceSetup", () => {
     );
 
     const whatsappGroup = screen.getByRole("region", { name: "WhatsApp" });
+    openWhatsappProviderPicker();
     expect(within(whatsappGroup).getByText("WhatsApp Oficial")).toBeVisible();
     expect(within(whatsappGroup).getByText(/indisponível/i)).toBeVisible();
     expect(
       within(whatsappGroup).getByText(/nenhuma operação oficial foi iniciada/i),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: /WhatsApp Oficial/i }),
+      screen.queryByRole("button", { name: /^WhatsApp Oficial/ }),
     ).not.toBeInTheDocument();
     expect(screen.getAllByText("Instagram Oficial").length).toBeGreaterThan(0);
   });
@@ -414,9 +419,10 @@ describe("CrmConnectionSelfServiceSetup", () => {
         /nenhuma operação oficial foi iniciada/i,
       ),
     ).not.toBeInTheDocument();
+    openWhatsappProviderPicker();
     fireEvent.click(
       within(whatsappGroup).getByRole("button", {
-        name: /WhatsApp Oficial/i,
+        name: /^WhatsApp Oficial/,
       }),
     );
     expect(
@@ -469,8 +475,11 @@ describe("CrmConnectionSelfServiceSetup", () => {
         />,
       );
 
+      if (channel === "whatsapp") {
+        openWhatsappProviderPicker();
+      }
       fireEvent.click(
-        screen.getByRole("button", { name: new RegExp(chooserName) }),
+        screen.getByRole("button", { name: new RegExp(`^${chooserName}`) }),
       );
       expect(screen.getByRole("heading", { name: dialogTitle })).toBeVisible();
       fireEvent.click(
@@ -524,8 +533,9 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
+    openWhatsappProviderPicker();
     fireEvent.click(
-      screen.getByRole("button", { name: /WhatsApp Oficial.*Autorize/i }),
+      screen.getByRole("button", { name: /^WhatsApp Oficial.*Autorize/i }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: /Autorizar com a Meta/i }),
@@ -667,6 +677,121 @@ describe("CrmConnectionSelfServiceSetup", () => {
     },
   );
 
+  it("starts a fresh UAZAPI provisioning when every existing instance is ready", async () => {
+    const handlers = createHandlers();
+    render(
+      <CrmConnectionSelfServiceSetup
+        isCrmEntitled
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        canPair
+        canSetup
+        connectionAllowance={{ limit: 3, remaining: 2, used: 1 }}
+        connections={[createUazapiConnection()]}
+        handlers={handlers}
+        startAtDirectory
+      />,
+    );
+
+    const whatsappRegion = within(
+      screen.getByRole("region", { name: "WhatsApp" }),
+    );
+    openWhatsappProviderPicker();
+    fireEvent.click(
+      whatsappRegion.getByRole("button", {
+        name: /Provisionado pelo workspace/,
+      }),
+    );
+
+    expect(
+      await screen.findByText("Etapa 1 de 4 · Provisionamento"),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Token admin da uazapi")).toBeVisible();
+    expect(screen.queryByText(/conectado e pronto para uso/i)).toBeNull();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+  });
+
+  it("resumes the first UAZAPI connection still mid-setup", async () => {
+    const handlers = createHandlers();
+    const ready = createUazapiConnection();
+    const pending = createUazapiConnection({
+      displayName: "UAZAPI secundária",
+      id: "connection-uazapi-2",
+      live: {
+        checkedAt: "2026-08-25T12:00:00.000Z",
+        connected: false,
+        connectedPhone: null,
+        providerStatus: "disconnected",
+        smartphoneConnected: false,
+      },
+      phoneNumber: null,
+      readiness: { ready: false, reason: null, reasonCode: null },
+      ready: false,
+      setup: createUazapiSetup({ configuredAt: null, status: "configuring" }),
+      state: "disconnected",
+      status: "disconnected",
+    });
+    render(
+      <CrmConnectionSelfServiceSetup
+        isCrmEntitled
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        canPair
+        canSetup
+        connectionAllowance={{ limit: 3, remaining: 1, used: 2 }}
+        connections={[ready, pending]}
+        handlers={handlers}
+        startAtDirectory
+      />,
+    );
+
+    const whatsappRegion = within(
+      screen.getByRole("region", { name: "WhatsApp" }),
+    );
+    openWhatsappProviderPicker();
+    fireEvent.click(
+      whatsappRegion.getByRole("button", {
+        name: /Provisionado pelo workspace/,
+      }),
+    );
+
+    expect(
+      await screen.findByText("Etapa 2 de 4 · Configuração"),
+    ).toBeVisible();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+  });
+
+  it("reopens a ready UAZAPI connection wizard from the manage dialog", async () => {
+    render(
+      <CrmConnectionSelfServiceSetup
+        isCrmEntitled
+        availableSetups={[]}
+        canPair
+        canSetup
+        connectionAllowance={{ limit: 3, remaining: 1, used: 2 }}
+        connections={[
+          createUazapiConnection(),
+          createUazapiConnection({
+            displayName: "UAZAPI secundária",
+            id: "connection-uazapi-2",
+            phoneNumber: "5511888887777",
+          }),
+        ]}
+        handlers={createHandlers()}
+        startAtDirectory
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /UAZAPI secundária/ }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reparar ou reconectar" }),
+    );
+
+    expect(await screen.findByText("Etapa 4 de 4 · Pronto")).toBeVisible();
+  });
+
   it("closes the setup dialog with Escape", async () => {
     render(
       <CrmConnectionSelfServiceSetup
@@ -680,7 +805,8 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    openWhatsappProviderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /^WhatsApp Oficial/ }));
     expect(await screen.findByRole("dialog")).toBeVisible();
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -705,7 +831,8 @@ describe("CrmConnectionSelfServiceSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /WhatsApp Oficial/i }));
+    openWhatsappProviderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /^WhatsApp Oficial/ }));
     fireEvent.click(
       await screen.findByRole("button", { name: /Autorizar com a Meta/i }),
     );
@@ -714,7 +841,7 @@ describe("CrmConnectionSelfServiceSetup", () => {
     );
 
     fireEvent.keyDown(document, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: /Z-API/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Z-API/ }));
 
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByText("falha anterior")).not.toBeInTheDocument();
@@ -746,15 +873,21 @@ describe("CrmConnectionSelfServiceSetup", () => {
 
     expect(await screen.findByText("Equipe antiga")).toBeVisible();
     fireEvent.keyDown(document, { key: "Escape" });
-    const officialButtons = screen.getAllByRole("button", {
-      name: /WhatsApp Oficial/i,
-    });
-    fireEvent.click(officialButtons[officialButtons.length - 1]!);
+    openWhatsappProviderPicker();
+    fireEvent.click(
+      screen.getByRole("button", { name: /^WhatsApp OficialJá conectado/ }),
+    );
 
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByText("Equipe antiga")).not.toBeInTheDocument();
   });
 });
+
+function openWhatsappProviderPicker() {
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Adicionar número de WhatsApp/ }),
+  );
+}
 
 function createHandlers(): CrmConnectionSelfServiceHandlers {
   return {
@@ -847,4 +980,36 @@ function createOfficialConnection(
     provider: "meta_cloud",
     readiness: { ready: true, reason: null, reasonCode: null },
   };
+}
+
+function createUazapiSetup(overrides: Record<string, unknown> = {}) {
+  return {
+    attemptCount: 1,
+    configuredAt: "2026-08-25T12:00:00.000Z",
+    lastErrorCode: null,
+    requestedAt: "2026-08-25T11:59:00.000Z",
+    requiredTypes: ["received"],
+    status: "configured" as const,
+    succeededTypes: ["received"],
+    supportCode: "UAZAPI-SETUP",
+    updatedAt: "2026-08-25T12:00:00.000Z",
+    version: 2 as const,
+    ...overrides,
+  };
+}
+
+function createUazapiConnection(
+  overrides: Partial<CrmProviderConnection> = {},
+): CrmProviderConnection {
+  return {
+    ...createZapiConnection("active"),
+    displayName: "UAZAPI principal",
+    externalInstanceId: null,
+    id: "connection-uazapi",
+    phoneNumber: "5511999999999",
+    provider: "uazapi",
+    readiness: { ready: true, reason: null, reasonCode: "ready" },
+    setup: createUazapiSetup(),
+    ...overrides,
+  } as CrmProviderConnection;
 }

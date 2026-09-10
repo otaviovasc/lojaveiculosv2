@@ -273,6 +273,106 @@ describe("CrmChannelRoutingPanel", () => {
     ).toBeVisible();
   });
 
+  it("saves the channel-wide bot mode without a bot connection", async () => {
+    const user = userEvent.setup();
+    const updateRoutingPolicy = vi.fn(async () =>
+      createPolicy([
+        readyRoute(
+          "whatsapp",
+          "zapi-a",
+          "Equipe vendas",
+          "all_channel_connections",
+          "zapi",
+        ),
+      ]),
+    );
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(
+          createPolicy([
+            readyRoute(
+              "whatsapp",
+              "zapi-a",
+              "Equipe vendas",
+              "disabled",
+              "zapi",
+            ),
+          ]),
+          updateRoutingPolicy,
+        )}
+        canManage
+        connections={[legacyConnection("zapi-a", "zapi", "Equipe vendas")]}
+      />,
+    );
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Editar rota" }))[0]!,
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByText("Bot externo (opcional)"));
+    await user.click(within(dialog).getByLabelText("Modo do bot em WhatsApp"));
+    await user.click(
+      screen.getByRole("option", { name: "Todas as conexões do canal" }),
+    );
+    expect(
+      within(dialog).queryByLabelText("Conexão explícita do bot em WhatsApp"),
+    ).not.toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole("button", { name: "Salvar rota" }),
+    );
+
+    await waitFor(() =>
+      expect(updateRoutingPolicy).toHaveBeenCalledWith({
+        channel: "whatsapp",
+        defaultConnectionId: "zapi-a",
+        externalBotConnectionId: null,
+        externalBotMode: "all_channel_connections",
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText(
+        "Bot externo atende todas as conexões prontas do canal.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("shows the channel-wide bot as unavailable when no connection is routable", async () => {
+    render(
+      <CrmChannelRoutingPanel
+        api={createApi(
+          createPolicy([
+            {
+              channel: "whatsapp",
+              externalBot: {
+                blocked: blocked("connection_inactive"),
+                connection: null,
+                mode: "all_channel_connections",
+                ready: false,
+                requiredCapabilities: ["text"],
+              },
+              storeDefault: {
+                blocked: blocked("connection_inactive"),
+                connection: null,
+                ready: false,
+                requiredCapabilities: ["text"],
+              },
+            },
+          ]),
+          vi.fn(),
+        )}
+        canManage
+        connections={[]}
+      />,
+    );
+
+    expect(
+      await screen.findByText("Bot externo sem conexão válida neste canal."),
+    ).toBeVisible();
+  });
+
   it("blocks manage actions without permission", async () => {
     render(
       <CrmChannelRoutingPanel
