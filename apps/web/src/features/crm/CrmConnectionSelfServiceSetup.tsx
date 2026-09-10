@@ -24,6 +24,7 @@ import type {
 } from "./crmConversationTypes";
 import { CrmWhatsappZapiSetup } from "./CrmWhatsappZapiSetup";
 import { CrmWhatsappUazapiSetup } from "./CrmWhatsappUazapiSetup";
+import { readUazapiSetupStep } from "./CrmWhatsappUazapiSetupParts";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
 import { CrmConnectionManageDialog } from "./CrmConnectionAdminDialog";
 import { CrmOfficialChannelSetup } from "./CrmOfficialChannelSetup";
@@ -34,7 +35,6 @@ import {
 } from "./crmComposioOAuth";
 import { needsConnectionRepair } from "./CrmChannelDirectoryParts";
 import { isUiDemoConnection } from "./crmConnectionSelection";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 export type CrmConnectionSelfServiceHandlers = {
   onAuthorizeComposio: (
@@ -136,10 +136,8 @@ export function CrmConnectionSelfServiceSetup({
   existingConnection = null,
   handlers,
   isCrmEntitled,
-  canManageSpecialDates = false,
   marketplaceApi,
   onRedirect = (url) => window.location.assign(url),
-  specialDateApi,
   startAtDirectory = false,
 }: {
   availableSetups: readonly CrmAvailableSetup[];
@@ -151,10 +149,8 @@ export function CrmConnectionSelfServiceSetup({
   existingConnection?: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
   isCrmEntitled: boolean;
-  canManageSpecialDates?: boolean;
   marketplaceApi?: MarketplaceApi;
   onRedirect?: (url: string) => void;
-  specialDateApi?: CrmSpecialDateApi;
   startAtDirectory?: boolean;
 }) {
   const setupAllowed = canSetup;
@@ -231,27 +227,34 @@ export function CrmConnectionSelfServiceSetup({
     resetSetupProgress();
     setInitialZapiCredentialMode(undefined);
     const channel = nextChannel ?? "whatsapp";
+    const matches = (candidate: CrmProviderConnection) =>
+      isConnectionForSetupProvider(candidate, nextProvider, channel) &&
+      (candidate.state ?? candidate.status) !== "archived" &&
+      !isUiDemoConnection(candidate);
+    const candidates = connections.filter(matches);
     setConnection(
-      connections.find(
-        (candidate) =>
-          isConnectionForSetupProvider(candidate, nextProvider, channel) &&
-          (candidate.state ?? candidate.status) !== "archived" &&
-          !isUiDemoConnection(candidate),
-      ) ??
-        (existingConnection &&
-        isConnectionForSetupProvider(
-          existingConnection,
-          nextProvider,
-          channel,
-        ) &&
-        (existingConnection.state ?? existingConnection.status) !==
-          "archived" &&
-        !isUiDemoConnection(existingConnection)
-          ? existingConnection
-          : null),
+      nextProvider === "uazapi"
+        ? // UAZAPI supports multiple instances per store: resume the first
+          // connection still mid-setup; once every instance is ready, the
+          // wizard starts fresh so another number can be provisioned.
+          (candidates.find(
+            (candidate) => readUazapiSetupStep({ connection: candidate }) < 4,
+          ) ?? null)
+        : (candidates[0] ??
+            (existingConnection && matches(existingConnection)
+              ? existingConnection
+              : null)),
     );
     setOfficialChannel(channel);
     setProvider(nextProvider);
+  };
+
+  const chooseUazapiConnectionSetup = (candidate: CrmProviderConnection) => {
+    resetSetupProgress();
+    setInitialZapiCredentialMode(undefined);
+    setConnection(candidate);
+    setOfficialChannel("whatsapp");
+    setProvider("uazapi");
   };
 
   const chooseZapiCredentialSetup = (
@@ -362,6 +365,10 @@ export function CrmConnectionSelfServiceSetup({
         }}
         onRepairConnection={(candidate) => {
           if (isUiDemoConnection(candidate)) return;
+          if (candidate.provider === "uazapi") {
+            chooseUazapiConnectionSetup(candidate);
+            return;
+          }
           chooseConnectionForRepair(candidate);
         }}
         onRedirect={onRedirect}
@@ -450,12 +457,10 @@ export function CrmConnectionSelfServiceSetup({
       </FeatureDialog>
       <CrmConnectionManageDialog
         canManage={canSetup}
-        canManageSpecialDates={canManageSpecialDates}
         connection={managedConnection}
         isRefreshing={isBusy}
         onClose={() => setManagedConnectionId(null)}
         onRefresh={handlers.onRefreshConnections}
-        {...(specialDateApi ? { specialDateApi } : {})}
         {...(handlers.onListConnectionMembers
           ? { onListConnectionMembers: handlers.onListConnectionMembers }
           : {})}
@@ -498,6 +503,14 @@ export function CrmConnectionSelfServiceSetup({
           ? {
               onRefreshStatus: async () => {
                 await handlers.onRefreshUazapiStatus!(managedConnection.id);
+              },
+            }
+          : {})}
+        {...(managedConnection?.provider === "uazapi"
+          ? {
+              onRepair: () => {
+                setManagedConnectionId(null);
+                chooseUazapiConnectionSetup(managedConnection);
               },
             }
           : {})}

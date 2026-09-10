@@ -91,7 +91,8 @@ async function lockAuthorizedContext(
       and ((routing.external_bot_mode='inherit_store_default'
           and routing.default_connection_id=connection.id)
         or (routing.external_bot_mode='explicit_connection'
-          and routing.external_bot_connection_id=connection.id))
+          and routing.external_bot_connection_id=connection.id)
+        or routing.external_bot_mode='all_channel_connections')
     inner join crm_conversation_cycles cycle on cycle.thread_id=thread.id
       and cycle.tenant_id=thread.tenant_id and cycle.store_id=thread.store_id
       and cycle.state='active' and cycle.revision=command.expected_revision

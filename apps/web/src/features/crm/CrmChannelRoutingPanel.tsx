@@ -267,6 +267,11 @@ function readBotSummary(policy: CrmChannelRouting | null) {
   if (bot.mode === "inherit_store_default") {
     return "Bot externo segue o padrão do CRM.";
   }
+  if (bot.mode === "all_channel_connections") {
+    return bot.ready
+      ? "Bot externo atende todas as conexões prontas do canal."
+      : "Bot externo sem conexão válida neste canal.";
+  }
   if (bot.connection) {
     return `Bot externo atende por ${readCrmProviderLabel(bot.connection.provider)} · ${bot.connection.displayName}.`;
   }

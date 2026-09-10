@@ -45,15 +45,32 @@ export function resolveCrmInboxConnectionSelection(input: {
     channelDefault?.ready && channelDefault.connection?.id
       ? channelDefault.connection.id
       : null;
+  // A route the policy explicitly blocks must stay fail-closed; it is never a
+  // fallback candidate even when the connection DTO still looks ready.
+  const blockedDefaultId =
+    channelDefault && !channelDefault.ready && channelDefault.connection?.id
+      ? String(channelDefault.connection.id)
+      : null;
   const readOnlySandboxId =
     preferredReadOnlyDemoIds.length === 1
       ? (preferredReadOnlyDemoIds[0] ?? null)
       : connectedIds.size === 0 && sandboxIds.length === 1
         ? (sandboxIds[0] ?? null)
         : null;
+  // When no ready store default exists (default not ready, or default bound to
+  // another channel), fall back to the first connected connection so the queue
+  // never renders empty while a usable connection exists.
+  const firstConnectedId =
+    input.connections
+      .filter(isConnectedConnection)
+      .map((connection) => String(connection.id))
+      .find((connectionId) => connectionId !== blockedDefaultId) ?? null;
   const viewConnectionId =
     filteredId ??
-    (defaultId && connectedIds.has(defaultId) ? defaultId : readOnlySandboxId);
+    (defaultId && connectedIds.has(defaultId)
+      ? defaultId
+      : readOnlySandboxId) ??
+    firstConnectedId;
 
   if (!input.hasActiveSession) {
     return {

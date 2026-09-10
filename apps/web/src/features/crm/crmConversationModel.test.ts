@@ -150,6 +150,52 @@ describe("crmModel", () => {
     ).toEqual(connection);
   });
 
+  it("keeps the enriched lead stage across realtime and mutation snapshots", () => {
+    const leadPipelineStage = {
+      pipelineName: "Funil vendas",
+      stageColor: "seagreen",
+      stageId: "stage-1",
+      stageName: "Negociação",
+    };
+    const current = createSession({ leadPipelineStage, revision: 2 });
+    const incoming = createSession({ revision: 3 });
+    delete incoming.leadPipelineStage;
+
+    for (const snapshotKind of ["realtime", "mutation"] as const) {
+      expect(
+        mergeCyclesFromServer([current], [incoming], { snapshotKind })[0]
+          ?.leadPipelineStage,
+      ).toEqual(leadPipelineStage);
+    }
+  });
+
+  it("lets an enriched list snapshot replace the lead stage", () => {
+    const current = createSession({
+      leadPipelineStage: {
+        pipelineName: "Funil vendas",
+        stageColor: "seagreen",
+        stageId: "stage-1",
+        stageName: "Negociação",
+      },
+      revision: 2,
+    });
+    const enriched = createSession({
+      leadPipelineStage: {
+        pipelineName: "Funil vendas",
+        stageColor: "goldenrod",
+        stageId: "stage-2",
+        stageName: "Fechamento",
+      },
+      revision: 3,
+    });
+
+    expect(
+      mergeCyclesFromServer([current], [enriched], {
+        snapshotKind: "reconciled",
+      })[0]?.leadPipelineStage?.stageName,
+    ).toBe("Fechamento");
+  });
+
   it("does not regress attendance when an older realtime cycle arrives", () => {
     const current = createSession({
       humanAttendanceChangedAt: "2026-07-03T12:05:00.000Z",

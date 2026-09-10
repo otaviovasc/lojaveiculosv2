@@ -141,9 +141,11 @@ export async function requestWhatsappPairingCode({
   ) => void;
 }) {
   if (!connectionId || !canPair || !requestPairingCode) return;
-  const normalizedPhone = phone.replace(/\D/g, "");
-  if (normalizedPhone.length < 8 || normalizedPhone.length > 15) {
-    setError("Informe um telefone válido com DDI, DDD e número.");
+  const normalizedPhone = normalizePairingPhoneDigits(phone);
+  if (!normalizedPhone) {
+    setError(
+      "Informe o telefone completo com DDD. Exemplo: +55 (11) 99999-9999.",
+    );
     return;
   }
   const actionGeneration = beginAction();
@@ -170,4 +172,15 @@ export async function requestWhatsappPairingCode({
   } finally {
     if (isCurrentAction(actionGeneration, connectionId)) setBusy(null);
   }
+}
+
+/**
+ * The pairing phone input is masked as "+55 (DD) XXXXX-XXXX", so a complete
+ * value always carries the country code. Mirrors the provider-side
+ * `normalizeBrazilianPairingPhone` contract so an incomplete number is
+ * rejected with a clear message before any network call.
+ */
+function normalizePairingPhoneDigits(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return /^55[1-9]{2}\d{8,9}$/.test(digits) ? digits : null;
 }

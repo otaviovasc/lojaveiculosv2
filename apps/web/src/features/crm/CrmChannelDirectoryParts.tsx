@@ -160,3 +160,78 @@ export function ChannelIdentity({
     </span>
   );
 }
+
+/**
+ * One provider option nested inside a channel group. The channel is already
+ * named by the surrounding group, so the copy leads with the provider as a
+ * secondary operational detail.
+ */
+export function ProviderSetupRow({
+  badge = null,
+  channel,
+  description,
+  disabled = false,
+  icon,
+  onChoose,
+  provider,
+  title,
+}: {
+  badge?: string | null;
+  channel: "instagram" | "whatsapp";
+  description: string;
+  disabled?: boolean;
+  icon: ReactNode;
+  onChoose?: () => void;
+  provider: string;
+  title: string;
+}) {
+  const body = (
+    <>
+      <span aria-hidden="true" className="crm-channel-card-watermark">
+        {icon}
+      </span>
+      <span aria-hidden="true" className="crm-channel-icon">
+        {icon}
+      </span>
+      <span className="crm-channel-body">
+        <span className="crm-channel-title">
+          <strong>{title}</strong>
+          {badge ? (
+            <span className="crm-channel-badge" data-tone="muted">
+              {badge}
+            </span>
+          ) : null}
+        </span>
+        <span className="crm-channel-description">{description}</span>
+      </span>
+      {!disabled ? (
+        <ArrowRight aria-hidden="true" className="crm-channel-chevron" />
+      ) : null}
+    </>
+  );
+  if (disabled || !onChoose) {
+    return (
+      <div
+        aria-disabled="true"
+        className="crm-channel-row"
+        data-actionable="false"
+        data-channel={channel}
+        data-provider={provider}
+      >
+        {body}
+      </div>
+    );
+  }
+  return (
+    <button
+      className="crm-channel-row"
+      data-actionable="true"
+      data-channel={channel}
+      data-provider={provider}
+      onClick={onChoose}
+      type="button"
+    >
+      {body}
+    </button>
+  );
+}

@@ -159,7 +159,11 @@ function normalizeSetupBaseUrl(value: string) {
 function invalidPairingPhone() {
   return new CrmConnectionSetupProviderError(
     "UAZAPI pairing phone must be a valid Brazilian number",
-    "configuration_error",
+    "pairing_phone_invalid",
+    400,
+    undefined,
+    undefined,
+    false,
   );
 }
 

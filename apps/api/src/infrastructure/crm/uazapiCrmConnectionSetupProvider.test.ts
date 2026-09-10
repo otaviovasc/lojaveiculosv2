@@ -127,8 +127,23 @@ describe("createUazapiCrmConnectionSetupProvider", () => {
     await expect(
       provider.getPairingCode(credentials, "+14155552671"),
     ).rejects.toMatchObject({
-      code: "configuration_error",
+      code: "pairing_phone_invalid",
+      httpStatus: 400,
+      name: "CrmConnectionSetupProviderError",
+      retryable: false,
+    });
+  });
+
+  it("rejects a partial phone without calling the provider", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>();
+    const provider = createUazapiCrmConnectionSetupProvider(env, fetch);
+
+    await expect(
+      provider.getPairingCode(credentials, "1199999"),
+    ).rejects.toMatchObject({
+      code: "pairing_phone_invalid",
       name: "CrmConnectionSetupProviderError",
     });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

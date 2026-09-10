@@ -38,6 +38,11 @@ export function toConversationCycleDto(
     lastMessageContent: cycle.lastMessageContent,
     lastReadAt: toIsoString(cycle.lastReadAt),
     leadId: cycle.leadId,
+    // Only the list pipeline enriches cycles with the lead stage; mutation and
+    // realtime DTOs omit the key so clients keep the last enriched value.
+    ...(cycle.leadPipelineStage
+      ? { leadPipelineStage: cycle.leadPipelineStage }
+      : {}),
     metadata: cycle.metadata,
     profilePhotoUrl: cycle.profilePhotoUrl,
     revision: cycle.revision,

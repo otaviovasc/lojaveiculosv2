@@ -56,6 +56,7 @@ import { transitionWhatsappAttendanceWithTransaction } from "./drizzleCrmAttenda
 import { createSessionIdentityFinder } from "./drizzleCrmConversationCycleIdentity.js";
 import { recordCrmCampaignDelivery } from "./drizzleCrmCampaignDelivery.js";
 import { claimCrmCampaignReply } from "./drizzleCrmCampaignReply.js";
+import { enrichCyclesWithLeadPipelineStages } from "./drizzleCrmConversationPipelineStage.js";
 
 export function createDrizzleCrmConversationRepository(
   db: DrizzleCrmClient,
@@ -137,11 +138,12 @@ export function createDrizzleCrmConversationRepository(
         )
         .offset(input.offset)
         .limit(input.limit);
-      return Promise.all(
+      const cycles = await Promise.all(
         rows.map(async (row) =>
           toConversationCycle(row, await countUnreadMessages(db, row)),
         ),
       );
+      return enrichCyclesWithLeadPipelineStages(db, input, cycles);
     },
     createScheduledMessage: (input) => createCrmScheduledMessage(db, input),
     findDueScheduledMessages: (input) => findDueCrmScheduledMessages(db, input),

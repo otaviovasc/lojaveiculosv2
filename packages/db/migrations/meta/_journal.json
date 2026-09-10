@@ -610,6 +610,13 @@
       "when": 1788957600000,
       "tag": "0086_crm_lead_operational_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1789059160000,
+      "tag": "0087_crm_external_bot_all_channel_connections",
+      "breakpoints": true
     }
   ]
 }

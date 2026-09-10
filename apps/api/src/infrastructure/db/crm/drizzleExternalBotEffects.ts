@@ -56,6 +56,7 @@ export async function inspectExternalBotScope(
                   and routing.default_connection_id=connection.id)
                 or (routing.external_bot_mode='explicit_connection'
                   and routing.external_bot_connection_id=connection.id)
+                or routing.external_bot_mode='all_channel_connections'
               )
           )
       ) limit 1`);

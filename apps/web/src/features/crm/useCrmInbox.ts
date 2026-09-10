@@ -218,10 +218,17 @@ export function useCrmInbox(
   const aggregateConnectionFilter =
     connectionFilterId === null && browsableConnections.length > 1;
   const queueConnectionId = aggregateConnectionFilter ? null : connectionId;
+  // Realtime follows the queue scope — the list the user is looking at — not
+  // the active conversation's connection: a pinned/off-filter conversation
+  // must not hijack the sidebar subscription (its thread still syncs through
+  // the message poll in useCrmMessages).
   const realtimeConnectionId = aggregateConnectionFilter
     ? undefined
-    : operationalConnectionId;
+    : queueConnectionId;
   useEffect(() => {
+    // While connections are (re)loading the browsable list may be transiently
+    // empty; never clear the user's selection based on a loading snapshot.
+    if (connections.isLoading) return;
     if (
       connectionFilterId &&
       !browsableConnections.some(
@@ -230,7 +237,7 @@ export function useCrmInbox(
     ) {
       setConnectionFilterId(null);
     }
-  }, [browsableConnections, connectionFilterId]);
+  }, [browsableConnections, connectionFilterId, connections.isLoading]);
   const activeConnection = useMemo(
     () =>
       connections.connections.find(
@@ -248,16 +255,21 @@ export function useCrmInbox(
         : null,
     [activeSession, connections.connections],
   );
-  const sessionListConnectionId =
-    initialCycleId && activeSession?.id === initialCycleId
-      ? operationalConnectionId
-      : queueConnectionId;
+  // The session list always follows the user's chosen view scope. Deep-linked
+  // cycles stay pinned through activeCycleId and are re-fetched by
+  // refreshSessions, so the queue never silently switches scope — keeping the
+  // list and the badge counts (queueConnectionId) in the same scope.
+  const sessionListConnectionId = queueConnectionId;
   const queueAccess = useCrmQueueAccess({
+    archivedOnly,
     canAssign: permissions.canAssign,
     canReadUnassigned: permissions.canReadUnassigned,
     currentUserId,
     conversationCycles,
+    humanAttendanceFilter,
     queueConnectionId: sessionListConnectionId,
+    statusFilter,
+    unreadOnly,
   });
   const {
     otherAssigneeId,
@@ -549,6 +561,23 @@ export function useCrmInbox(
                 cycle.connection?.id === sessionListConnectionId &&
                 !authorizedCycleIds.has(cycle.id))
           : null;
+      // A narrowing change (filter/search/connection) replaces the list with
+      // the server page instead of merging over it, so cycles that no longer
+      // match the active smart filters leave the sidebar. The pinned active
+      // conversation is the only survivor; it only leaves through an explicit
+      // removeSession.
+      const replacementPrune = options.preserveLocalOnly
+        ? null
+        : (cycle: CrmConversationCycle) =>
+            cycle.id !== activeCycleIdRef.current;
+      const pruneLocalOnly =
+        shouldPruneLocalSession || replacementPrune
+          ? (cycle: CrmConversationCycle) =>
+              cycle.id !== activeCycleIdRef.current &&
+              Boolean(
+                replacementPrune?.(cycle) || shouldPruneLocalSession?.(cycle),
+              )
+          : null;
       if (shouldPruneLocalSession) {
         sessionsRef.current
           .filter(
@@ -560,13 +589,10 @@ export function useCrmInbox(
       }
       mergeCycles(resolved, {
         ...options,
-        ...(shouldPruneLocalSession
+        ...(pruneLocalOnly
           ? {
-              // The pinned active conversation is never pruned by a refresh;
-              // it only leaves through an explicit removeSession.
-              pruneLocalOnly: (cycle: CrmConversationCycle) =>
-                cycle.id !== activeCycleIdRef.current &&
-                shouldPruneLocalSession(cycle),
+              preserveLocalOnly: true,
+              pruneLocalOnly,
             }
           : {}),
       });

@@ -5,8 +5,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmProvider } from "@lojaveiculosv2/shared";
 import { CrmConnectionAdmin } from "./CrmConnectionAdmin";
 import type { CrmProviderConnection } from "./crmConversationTypes";
-import { CRM_SPECIAL_DATE_TYPES } from "./crmSpecialDateTypes";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 describe("CrmConnectionAdmin", () => {
   afterEach(() => {
@@ -34,38 +32,19 @@ describe("CrmConnectionAdmin", () => {
     expect(screen.queryByText(/webhook/i)).not.toBeInTheDocument();
   });
 
-  it("loads special-date settings for the selected connection", async () => {
-    const specialDateApi: CrmSpecialDateApi = {
-      getConfigs: vi.fn(async (connectionId: string) => ({
-        configs: CRM_SPECIAL_DATE_TYPES.map((dateType) => ({
-          connectionId,
-          dateType,
-          enabled: false,
-          leadDays: 0,
-          messageTemplate: "Mensagem para {nome}.",
-          sendTime: "09:00",
-        })),
-      })),
-      updateConfig: vi.fn(),
-    };
-    const connection = createConnection("zapi", "connected", true);
+  it("does not render special-date settings inside the manage dialog", () => {
     render(
       <CrmConnectionAdmin
-        canManageSpecialDates
-        connections={[connection]}
+        connections={[createConnection("zapi", "connected", true)]}
         onRefresh={vi.fn(async () => undefined)}
-        specialDateApi={specialDateApi}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /CRM channel/i }));
+    expect(screen.getByRole("dialog")).toBeVisible();
     expect(
-      await screen.findByRole("heading", { name: "Datas especiais" }),
-    ).toBeVisible();
-    const getConfigs = vi.mocked(specialDateApi.getConfigs);
-    const firstCall = getConfigs.mock.calls.at(0);
-    expect(firstCall?.[0]).toBe("zapi-connection");
-    expect(firstCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
+      screen.queryByRole("heading", { name: "Datas especiais" }),
+    ).not.toBeInTheDocument();
   });
 
   it("closes the manage dialog with Escape and restores focus", () => {
@@ -99,8 +78,11 @@ describe("CrmConnectionAdmin", () => {
     });
     expect(zapiCard).toBeEnabled();
     expect(screen.queryByText("Já conectado")).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar número de WhatsApp/i }),
+    );
     expect(
-      screen.getByRole("button", { name: /WhatsApp Oficial/i }),
+      screen.getByRole("button", { name: /^WhatsApp Oficial/i }),
     ).toBeVisible();
     fireEvent.click(zapiCard);
     expect(await screen.findByRole("dialog")).toBeVisible();

@@ -1,4 +1,5 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
+import { useState } from "react";
 import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
 import { InstagramLogo, MetaLogo, WhatsAppLogo } from "./CrmChannelLogos";
 import type { MarketplaceApi } from "../marketplaces/apiClient";
@@ -12,6 +13,7 @@ import type {
 import {
   ChannelIdentity,
   ConnectedChannelRow,
+  ProviderSetupRow,
 } from "./CrmChannelDirectoryParts";
 import { CrmOlxChannelCard } from "./CrmChannelDirectoryOlx";
 import { isComposioConnectionForProvider } from "./crmComposioOAuth";
@@ -99,6 +101,9 @@ export function CrmChannelDirectory({
   const connectionsFor = (channel: "instagram" | "olx_chat" | "whatsapp") =>
     groups.find((group) => group.channel === channel)?.connections ?? [];
   const invalidGroup = groups.find((group) => group.invalid);
+  const [whatsappPickerOpen, setWhatsappPickerOpen] = useState(false);
+  const showWhatsappAddRow =
+    showZapiSetupRow || showUazapiSetupRow || showSetupActions;
 
   return (
     <section aria-label="Canais" className="crm-channel-directory-shell">
@@ -112,91 +117,98 @@ export function CrmChannelDirectory({
                   ? { onManage: onManageConnection }
                   : {})}
                 {...(showRepairActions &&
-                connection.provider === "zapi" &&
+                (connection.provider === "zapi" ||
+                  connection.provider === "uazapi") &&
                 onRepairConnection
                   ? { onRepair: onRepairConnection }
                   : {})}
               />
             </li>
           ))}
-          {showZapiSetupRow ? (
+          {showWhatsappAddRow ? (
             <li>
               <button
-                className="crm-channel-row"
+                aria-expanded={whatsappPickerOpen}
+                className="crm-channel-row crm-channel-add-row"
                 data-actionable="true"
                 data-channel="whatsapp"
-                data-provider="zapi"
-                onClick={() => onChoose("zapi")}
+                onClick={() => setWhatsappPickerOpen((open) => !open)}
                 type="button"
               >
-                <span aria-hidden="true" className="crm-channel-card-watermark">
-                  <WhatsAppLogo />
-                </span>
                 <span aria-hidden="true" className="crm-channel-icon">
-                  <WhatsAppLogo />
+                  <Plus />
                 </span>
                 <span className="crm-channel-body">
                   <span className="crm-channel-title">
-                    <strong>Z-API</strong>
-                    <span className="crm-channel-badge" data-tone="muted">
-                      Credencial da loja
-                    </span>
+                    <strong>Adicionar número de WhatsApp</strong>
                   </span>
                   <span className="crm-channel-description">
-                    Cadastre as três credenciais da loja para configurar este
-                    transporte do CRM.
+                    Escolha o provedor da nova conexão: Z-API, UAZAPI ou
+                    WhatsApp Oficial.
                   </span>
-                  <ChannelIdentity
-                    broker="Credencial direta"
-                    channel="WhatsApp"
-                    transport="Z-API"
-                  />
                 </span>
                 <ArrowRight
                   aria-hidden="true"
                   className="crm-channel-chevron"
                 />
               </button>
-            </li>
-          ) : null}
-          {showUazapiSetupRow ? (
-            <li>
-              <button
-                className="crm-channel-row"
-                data-actionable="true"
-                data-channel="whatsapp"
-                data-provider="uazapi"
-                onClick={() => onChoose("uazapi")}
-                type="button"
-              >
-                <span aria-hidden="true" className="crm-channel-card-watermark">
-                  <WhatsAppLogo />
-                </span>
-                <span aria-hidden="true" className="crm-channel-icon">
-                  <WhatsAppLogo />
-                </span>
-                <span className="crm-channel-body">
-                  <span className="crm-channel-title">
-                    <strong>UAZAPI</strong>
-                    <span className="crm-channel-badge" data-tone="muted">
-                      Provisionado pelo workspace
-                    </span>
-                  </span>
-                  <span className="crm-channel-description">
-                    A instância é criada automaticamente pelo servidor; depois
-                    pareie o telefone por QR Code ou código.
-                  </span>
-                  <ChannelIdentity
-                    broker="Provisionamento automático"
-                    channel="WhatsApp"
-                    transport="UAZAPI"
-                  />
-                </span>
-                <ArrowRight
-                  aria-hidden="true"
-                  className="crm-channel-chevron"
-                />
-              </button>
+              {whatsappPickerOpen ? (
+                <div
+                  aria-label="Provedores disponíveis para WhatsApp"
+                  className="crm-channel-provider-picker"
+                  role="group"
+                >
+                  {showZapiSetupRow ? (
+                    <ProviderSetupRow
+                      badge="Credencial da loja"
+                      channel="whatsapp"
+                      description="Cadastre as três credenciais da loja para configurar este transporte do CRM."
+                      icon={<WhatsAppLogo />}
+                      onChoose={() => onChoose("zapi")}
+                      provider="zapi"
+                      title="Z-API"
+                    />
+                  ) : null}
+                  {showUazapiSetupRow ? (
+                    <ProviderSetupRow
+                      badge="Provisionado pelo workspace"
+                      channel="whatsapp"
+                      description="A instância é criada automaticamente pelo servidor; depois pareie o telefone por QR Code ou código."
+                      icon={<WhatsAppLogo />}
+                      onChoose={() => onChoose("uazapi")}
+                      provider="uazapi"
+                      title="UAZAPI"
+                    />
+                  ) : null}
+                  {showSetupActions ? (
+                    officialAvailable || officialConfigured ? (
+                      <ProviderSetupRow
+                        badge={officialConfigured ? "Já conectado" : null}
+                        channel="whatsapp"
+                        description={
+                          officialConfigured
+                            ? "Abra para revisar ou reautorizar a conexão oficial."
+                            : "Autorize a conta Meta em uma página segura e escolha o número remetente."
+                        }
+                        icon={<MetaLogo />}
+                        onChoose={() => onChoose("meta_cloud", "whatsapp")}
+                        provider="meta_cloud"
+                        title="WhatsApp Oficial"
+                      />
+                    ) : (
+                      <ProviderSetupRow
+                        badge="Indisponível"
+                        channel="whatsapp"
+                        description="A configuração oficial não está disponível para esta loja no momento. Nenhuma operação oficial foi iniciada."
+                        disabled
+                        icon={<MetaLogo />}
+                        provider="meta_cloud"
+                        title="WhatsApp Oficial"
+                      />
+                    )
+                  ) : null}
+                </div>
+              ) : null}
             </li>
           ) : null}
           {showZapiSetupActions &&
@@ -208,88 +220,6 @@ export function CrmChannelDirectory({
                 {connectionAllowance.used} de {connectionAllowance.limit}).
                 Nenhuma nova conexão foi criada.
               </p>
-            </li>
-          ) : null}
-          {showSetupActions ? (
-            <li>
-              {officialAvailable || officialConfigured ? (
-                <button
-                  className="crm-channel-row"
-                  data-channel="whatsapp"
-                  data-provider="meta_cloud"
-                  onClick={() => onChoose("meta_cloud", "whatsapp")}
-                  type="button"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="crm-channel-card-watermark"
-                  >
-                    <MetaLogo />
-                  </span>
-                  <span aria-hidden="true" className="crm-channel-icon">
-                    <MetaLogo />
-                  </span>
-                  <span className="crm-channel-body">
-                    <span className="crm-channel-title">
-                      <strong>WhatsApp Oficial</strong>
-                      {officialConfigured ? (
-                        <span className="crm-channel-badge" data-tone="muted">
-                          Já conectado
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="crm-channel-description">
-                      {officialConfigured
-                        ? "Abra para revisar ou reautorizar a conexão oficial."
-                        : "Autorize a conta Meta em uma página segura e escolha o número remetente."}
-                    </span>
-                    <ChannelIdentity
-                      broker="Composio"
-                      channel="WhatsApp"
-                      transport="Meta Cloud"
-                    />
-                  </span>
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="crm-channel-chevron"
-                  />
-                </button>
-              ) : (
-                <div
-                  aria-disabled="true"
-                  className="crm-channel-row"
-                  data-actionable="false"
-                  data-channel="whatsapp"
-                  data-provider="meta_cloud"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="crm-channel-card-watermark"
-                  >
-                    <MetaLogo />
-                  </span>
-                  <span aria-hidden="true" className="crm-channel-icon">
-                    <MetaLogo />
-                  </span>
-                  <span className="crm-channel-body">
-                    <span className="crm-channel-title">
-                      <strong>WhatsApp Oficial</strong>
-                      <span className="crm-channel-badge" data-tone="muted">
-                        Indisponível
-                      </span>
-                    </span>
-                    <span className="crm-channel-description">
-                      A configuração oficial não está disponível para esta loja
-                      no momento. Nenhuma operação oficial foi iniciada.
-                    </span>
-                    <ChannelIdentity
-                      broker="Composio"
-                      channel="WhatsApp"
-                      transport="Meta Cloud"
-                    />
-                  </span>
-                </div>
-              )}
             </li>
           ) : null}
         </ChannelGroup>

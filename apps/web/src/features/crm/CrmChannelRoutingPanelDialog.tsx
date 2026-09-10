@@ -22,6 +22,7 @@ const botModeOptions = [
   { label: "Desativado neste canal", value: "disabled" },
   { label: "Herdar padrão do CRM", value: "inherit_store_default" },
   { label: "Escolher conexão", value: "explicit_connection" },
+  { label: "Todas as conexões do canal", value: "all_channel_connections" },
 ] as const;
 
 /**
@@ -158,7 +159,7 @@ export function CrmChannelRoutingEditDialog({
           <summary>Bot externo (opcional)</summary>
           <div className="crm-routing-bot-fields">
             <FeatureField
-              hint="Desative neste canal, herde o padrão do CRM ou escolha uma conta específica."
+              hint="Desative neste canal, herde o padrão do CRM, escolha uma conta específica ou atenda todas as conexões do canal."
               label="Bot externo"
             >
               <FeatureSelect

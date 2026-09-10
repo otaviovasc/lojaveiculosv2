@@ -2,10 +2,13 @@ import { useCallback, useMemo, useState } from "react";
 import {
   coerceConversationCycleFilter,
   filterSessionsForAssignmentQueue,
+  filterSessionsForSmartFilters,
 } from "./crmQueueState";
 import type {
   CrmConversationCycle,
   CrmConversationCycleFilter,
+  CrmConversationCycleStatus,
+  CrmHumanAttendanceState,
 } from "./crmConversationTypes";
 
 export function useCrmQueueAccess({
@@ -14,6 +17,10 @@ export function useCrmQueueAccess({
   currentUserId,
   conversationCycles,
   queueConnectionId = null,
+  archivedOnly = false,
+  humanAttendanceFilter = "",
+  statusFilter = "",
+  unreadOnly = false,
 }: {
   canAssign: boolean;
   canReadUnassigned?: boolean;
@@ -25,6 +32,14 @@ export function useCrmQueueAccess({
   // a hydrated connection are kept because we cannot prove they belong
   // elsewhere.
   queueConnectionId?: string | null;
+  // Smart-filter scope of the current queue query. The same predicates the
+  // server applies must gate preserved/optimistic local cycles so a stale
+  // snapshot can never leak into the sidebar; the predicates read the same
+  // fields the rows render, so realtime updates re-evaluate correctly.
+  archivedOnly?: boolean;
+  humanAttendanceFilter?: CrmHumanAttendanceState | "";
+  statusFilter?: CrmConversationCycleStatus | "";
+  unreadOnly?: boolean;
 }) {
   const [requestedFilter, setRequestedFilter] =
     useState<CrmConversationCycleFilter>("fresh");
@@ -47,8 +62,14 @@ export function useCrmQueueAccess({
             String(cycle.connection.id) === queueConnectionId,
         )
       : conversationCycles;
+    const smartFiltered = filterSessionsForSmartFilters(scopedCycles, {
+      archivedOnly,
+      humanAttendanceFilter,
+      statusFilter,
+      unreadOnly,
+    });
     return filterSessionsForAssignmentQueue(
-      scopedCycles,
+      smartFiltered,
       quickFilter,
       currentUserId,
       otherAssigneeId,
@@ -59,6 +80,10 @@ export function useCrmQueueAccess({
     quickFilter,
     conversationCycles,
     queueConnectionId,
+    archivedOnly,
+    humanAttendanceFilter,
+    statusFilter,
+    unreadOnly,
   ]);
   const setQuickFilter = useCallback(
     (filter: CrmConversationCycleFilter) => {

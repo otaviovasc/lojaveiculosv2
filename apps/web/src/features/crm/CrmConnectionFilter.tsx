@@ -39,14 +39,16 @@ export function CrmConnectionFilter({
     connectionFilterId === null && showAggregateOption
       ? aggregateFilterValue
       : String(connectionFilterId ?? fallbackConnectionId ?? "");
+  // The displayed selection mirrors the queue resolution: the parent passes
+  // the resolved view connection as fallbackConnectionId, so anything that
+  // does not match a browsable connection renders as "no ready channel"
+  // rather than silently highlighting a different (default) connection.
   const selectedConnection =
     selectedId === aggregateFilterValue
       ? null
       : (browsableConnections.find(
           (connection) => String(connection.id) === selectedId,
-        ) ??
-        browsableConnections.find((connection) => connection.isDefault) ??
-        null);
+        ) ?? null);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
 

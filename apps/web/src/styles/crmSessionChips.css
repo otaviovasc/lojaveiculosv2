@@ -50,6 +50,13 @@
   max-width: 12rem;
 }
 
+.crm-cycle-chip-dot {
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
 .crm-session-status,
 .crm-cycle-status {
   background: var(--color-app);

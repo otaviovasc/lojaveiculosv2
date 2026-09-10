@@ -24,12 +24,39 @@ describe("CrmConnectionFilter", () => {
     ).toHaveAttribute("title", "Canal: Nenhum canal pronto");
   });
 
-  it("shows the only connection when the backend marks it as default", () => {
+  it("does not highlight the default connection when the queue resolved a different scope", () => {
+    const memberConnection = {
+      ...connection(true),
+      memberUserIds: ["user-current"],
+    } as CrmProviderConnection;
+    render(
+      <CrmConnectionFilter
+        canAssign={false}
+        canReadUnassigned={false}
+        connectionFilterId={null}
+        connections={[
+          memberConnection,
+          connection(false, { displayName: "Secundária", id: "connection-2" }),
+        ]}
+        currentUserId="user-current"
+        fallbackConnectionId="connection-2"
+        onChange={vi.fn()}
+      />,
+    );
+
+    // The resolved queue scope (connection-2) is not browsable by this agent;
+    // the trigger must not fall back to highlighting the default connection.
+    expect(
+      screen.getByRole("button", { name: "Filtrar por conexão" }),
+    ).toHaveAttribute("title", "Canal: Nenhum canal pronto");
+  });
+
+  it("shows the only connection when the queue resolution selects it", () => {
     render(
       <CrmConnectionFilter
         connectionFilterId={null}
         connections={[connection(true)]}
-        fallbackConnectionId={null}
+        fallbackConnectionId="connection-1"
         onChange={vi.fn()}
       />,
     );
@@ -145,7 +172,7 @@ describe("CrmConnectionFilter", () => {
         connectionFilterId={null}
         connections={[memberConnection, otherConnection]}
         currentUserId="user-current"
-        fallbackConnectionId={null}
+        fallbackConnectionId="connection-1"
         onChange={vi.fn()}
       />,
     );

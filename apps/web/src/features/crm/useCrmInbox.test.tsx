@@ -201,6 +201,7 @@ describe("useCrmInbox realtime queue integration", () => {
     hookMocks.useRealLifecycle = false;
     hookMocks.connections.connections = [createConnection()];
     hookMocks.connections.error = null;
+    hookMocks.connections.isLoading = false;
     hookMocks.connections.clearError.mockClear();
     hookMocks.routing.error = null;
     hookMocks.routing.clearError.mockClear();
@@ -981,6 +982,79 @@ describe("useCrmInbox realtime queue integration", () => {
     expect(result.current.startConversationConnections).toEqual([]);
   });
 
+  it("keeps list, counts and realtime on the selected connection when the open conversation uses another one", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({ displayName: "Secundária", id: "connection-2" }),
+    ];
+    const cycleConn1 = createSession({ id: "cycle-conn-1" });
+    const cycleConn2 = createSession({
+      connection: {
+        displayName: "Secundária",
+        id: "connection-2",
+        provider: "zapi",
+        status: "active",
+      },
+      id: "cycle-conn-2",
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (query: { connectionId?: string }) =>
+        query.connectionId === "connection-2"
+          ? [cycleConn2]
+          : [cycleConn1, cycleConn2],
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await act(async () => result.current.refreshSessions());
+    act(() => result.current.setActiveCycleId("cycle-conn-1"));
+
+    act(() => result.current.setConnectionFilterId("connection-2"));
+    await act(async () => result.current.refreshSessions());
+
+    // List, counts and the realtime subscription all follow the user's chosen
+    // queue scope — the open conversation on connection-1 must not pull the
+    // subscription back to its own connection.
+    expect(result.current.conversationCycles.map((cycle) => cycle.id)).toEqual([
+      "cycle-conn-2",
+    ]);
+    expect(api.listConversationCycles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+    expect(api.listConversationCycleCounts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+    expect(api.subscribeEvents).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectionId: "connection-2" }),
+    );
+    expect(result.current.activeCycleId).toBe("cycle-conn-1");
+
+    act(() => result.current.setConnectionFilterId(null));
+    await act(async () => result.current.refreshSessions());
+
+    expect(
+      result.current.conversationCycles.map((cycle) => cycle.id).sort(),
+    ).toEqual(["cycle-conn-1", "cycle-conn-2"]);
+    expect(
+      vi.mocked(api.listConversationCycles).mock.calls.at(-1)?.[0],
+    ).not.toHaveProperty("connectionId");
+    expect(
+      vi.mocked(api.listConversationCycleCounts).mock.calls.at(-1)?.[0],
+    ).not.toHaveProperty("connectionId");
+    expect(
+      vi.mocked(api.subscribeEvents).mock.calls.at(-1)?.[0],
+    ).not.toHaveProperty("connectionId");
+  });
+
   it("scopes queries and the subscription to the selected connection", async () => {
     hookMocks.connections.connections = [
       createConnection({ id: "connection-1", isDefault: true }),
@@ -1104,6 +1178,160 @@ describe("useCrmInbox realtime queue integration", () => {
     expect(api.listConversationCycles).toHaveBeenLastCalledWith(
       expect.objectContaining({ filter: "all" }),
     );
+  });
+
+  it("replaces the sidebar with the filtered server page when a smart filter changes", async () => {
+    hookMocks.useRealLifecycle = true;
+    const readCycle = createSession({ id: "cycle-read", unreadCount: 0 });
+    const unreadCycle = createSession({
+      id: "cycle-unread",
+      lastMessageAt: "2026-08-17T13:00:00.000Z",
+      unreadCount: 2,
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (input: { unreadOnly?: boolean }) =>
+        input.unreadOnly ? [unreadCycle] : [readCycle, unreadCycle],
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await waitFor(() =>
+      expect(
+        result.current.conversationCycles.map((cycle) => cycle.id).sort(),
+      ).toEqual(["cycle-read", "cycle-unread"]),
+    );
+
+    act(() => result.current.setUnreadOnly(true));
+
+    await waitFor(() =>
+      expect(
+        result.current.conversationCycles.map((cycle) => cycle.id),
+      ).toEqual(["cycle-unread"]),
+    );
+    expect(api.listConversationCycles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unreadOnly: true }),
+    );
+    expect(result.current.hasMoreSessions).toBe(false);
+  });
+
+  it("keeps the pinned active conversation open while a smart filter hides its row", async () => {
+    hookMocks.useRealLifecycle = true;
+    const readCycle = createSession({ id: "cycle-read", unreadCount: 0 });
+    const unreadCycle = createSession({
+      id: "cycle-unread",
+      lastMessageAt: "2026-08-17T13:00:00.000Z",
+      unreadCount: 2,
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (input: { unreadOnly?: boolean }) =>
+        input.unreadOnly ? [unreadCycle] : [readCycle, unreadCycle],
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    await waitFor(() =>
+      expect(result.current.conversationCycles).toHaveLength(2),
+    );
+    act(() => result.current.setActiveCycleId("cycle-read"));
+    act(() => result.current.setUnreadOnly(true));
+
+    await waitFor(() =>
+      expect(
+        result.current.conversationCycles.map((cycle) => cycle.id),
+      ).toEqual(["cycle-unread"]),
+    );
+    expect(result.current.activeCycleId).toBe("cycle-read");
+    expect(result.current.activeSession?.id).toBe("cycle-read");
+  });
+
+  it("keeps the queue and badge counts store-wide when a deep-linked cycle uses another connection", async () => {
+    hookMocks.connections.connections = [
+      createConnection({ id: "connection-1", isDefault: true }),
+      createConnection({
+        displayName: "Secundária",
+        id: "connection-2",
+        isDefault: false,
+      }),
+    ];
+    const deepLinked = createSession({
+      connection: {
+        displayName: "Secundária",
+        id: "connection-2",
+        provider: "zapi",
+        status: "active",
+      },
+      id: "cycle-deep",
+    });
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async (input: { cycleId?: string }) =>
+        input.cycleId === "cycle-deep" ? [deepLinked] : [],
+      ),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api, "cycle-deep"), {
+      wrapper,
+    });
+
+    await waitFor(() =>
+      expect(result.current.activeSession?.id).toBe("cycle-deep"),
+    );
+    await act(async () => result.current.refreshSessions());
+
+    expect(
+      vi.mocked(api.listConversationCycles).mock.calls.at(-1)?.[0],
+    ).not.toHaveProperty("connectionId");
+    expect(
+      vi.mocked(api.listConversationCycleCounts).mock.calls.at(-1)?.[0],
+    ).not.toHaveProperty("connectionId");
+    expect(result.current.activeCycleId).toBe("cycle-deep");
+  });
+
+  it("does not clear the connection filter while connections are still loading", () => {
+    hookMocks.connections.connections = [];
+    hookMocks.connections.isLoading = true;
+    const api = {
+      listConversationCycleCounts: vi.fn(
+        async () => defaultConversationCycleCounts,
+      ),
+      listConversationCycles: vi.fn(async () => []),
+      subscribeEvents: vi.fn(() => vi.fn()),
+    } as unknown as CrmConversationApi;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AccountSessionProvider session={createSessionBootstrap()}>
+        {children}
+      </AccountSessionProvider>
+    );
+    const { result } = renderHook(() => useCrmInbox(api), { wrapper });
+
+    act(() => result.current.setConnectionFilterId("connection-2"));
+
+    expect(result.current.connectionFilterId).toBe("connection-2");
   });
 
   it("resets a connection filter the member-restricted agent cannot browse", async () => {

@@ -17,6 +17,7 @@ export const crmExternalBotRouteMode = pgEnum("crm_external_bot_route_mode", [
   "disabled",
   "inherit_store_default",
   "explicit_connection",
+  "all_channel_connections",
 ]);
 
 export const crmChannelRoutingPolicies = pgTable(

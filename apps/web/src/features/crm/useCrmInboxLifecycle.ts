@@ -90,8 +90,11 @@ export function useCrmInboxLifecycle({
     // still mounted; flag it so the queue shows the skeleton instead of
     // flashing the "Nenhuma conversa encontrada" empty card.
     setIsRefetchingSessions?.(true);
+    // A narrowing change replaces the list with the filtered server page
+    // instead of preserving local-only cycles from the previous scope (poll
+    // and realtime reconciles below still preserve them).
     void refreshSessions({
-      preserveLocalOnly: Boolean(conversationCyclesCount),
+      preserveLocalOnly: false,
       snapshotKind: "reconciled",
     })
       .catch((caught) => {

@@ -99,12 +99,21 @@ export function mergeCyclesFromServer(
   const merged = serverCycles.map((serverCycle) => {
     const localCycle = currentCyclesById.get(serverCycle.id);
     if (!localCycle) return serverCycle;
+    // Command/realtime DTOs serialize cycles without the joined connection or
+    // the enriched lead stage; keep the hydrated values so the composer and
+    // the stage chip survive session actions and live events.
+    const preservedFields = {
+      ...(!serverCycle.connection && localCycle.connection
+        ? { connection: localCycle.connection }
+        : {}),
+      ...(serverCycle.leadPipelineStage == null && localCycle.leadPipelineStage
+        ? { leadPipelineStage: localCycle.leadPipelineStage }
+        : {}),
+    };
     if (options.snapshotKind === "mutation") {
-      // Command/realtime DTOs serialize cycles without the joined connection;
-      // keep the hydrated one so composer readiness survives session actions.
-      return serverCycle.connection || !localCycle.connection
-        ? serverCycle
-        : { ...serverCycle, connection: localCycle.connection };
+      return Object.keys(preservedFields).length
+        ? { ...serverCycle, ...preservedFields }
+        : serverCycle;
     }
 
     const revisionComparison = compareCycleRevisions(localCycle, serverCycle);
@@ -119,9 +128,7 @@ export function mergeCyclesFromServer(
       (serverCycle.humanAttendanceStateVersion ?? 0);
     return {
       ...serverCycle,
-      ...(localCycle.connection && !serverCycle.connection
-        ? { connection: localCycle.connection }
-        : {}),
+      ...preservedFields,
       ...(localIsNewer
         ? {
             lastMessageAt: localCycle.lastMessageAt,

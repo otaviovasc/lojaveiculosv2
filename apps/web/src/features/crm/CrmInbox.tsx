@@ -272,10 +272,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                 <section className="crm-section">
                   <CrmConnectionAdmin
                     canManageRouting={inbox.permissions.canRoutingDefaultManage}
-                    canManageSpecialDates={
-                      inbox.isCrmEntitled &&
-                      inbox.permissions.canConnectionSetup
-                    }
                     connections={inbox.connections}
                     disabled={!inbox.permissions.canConnectionPair}
                     embedded
@@ -391,12 +387,7 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                         onSetConnectionPaused: inbox.setConnectionPaused,
                       },
                       isCrmEntitled: inbox.isCrmEntitled,
-                      canManageSpecialDates:
-                        inbox.isCrmEntitled &&
-                        inbox.permissions.canConnectionSetup,
-                      specialDateApi,
                     }}
-                    specialDateApi={specialDateApi}
                   />
                 </section>
               </div>

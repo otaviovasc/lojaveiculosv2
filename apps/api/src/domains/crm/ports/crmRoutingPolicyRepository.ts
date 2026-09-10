@@ -8,7 +8,11 @@ export const crmMessagingChannels = [
 
 export type CrmMessagingChannel = (typeof crmMessagingChannels)[number];
 export type CrmExternalBotRouteMode =
-  "disabled" | "inherit_store_default" | "explicit_connection";
+  | "disabled"
+  | "inherit_store_default"
+  | "explicit_connection"
+  // The bot serves every routable connection of the channel, not a single one.
+  | "all_channel_connections";
 
 export type CrmChannelRoutingPolicy = {
   externalBotConnectionId: string | null;

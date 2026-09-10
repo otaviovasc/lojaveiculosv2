@@ -82,6 +82,90 @@ describe("CRM messaging connection selection", () => {
     ).toBe("missing");
   });
 
+  it("falls back to a connected connection when the store default is not ready", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const official = createConnection("meta_cloud", "official");
+    const blockedPolicy = policyWithChannelDefault(zapi);
+    const route = blockedPolicy.channels[0];
+    if (route) {
+      route.storeDefault.ready = false;
+      route.storeDefault.blocked = {
+        code: "connection_not_connected",
+        message: "blocked",
+        remediation: "reconnect",
+      };
+    }
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [zapi, official],
+        hasActiveSession: false,
+        routingPolicy: blockedPolicy,
+      }),
+    ).toEqual({
+      operationalConnectionId: "official",
+      viewConnectionId: "official",
+    });
+  });
+
+  it("falls back to a connected connection when no routing policy is loaded", () => {
+    const official = createConnection("meta_cloud", "official");
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [official],
+        hasActiveSession: false,
+        routingPolicy: null,
+      }),
+    ).toEqual({
+      operationalConnectionId: "official",
+      viewConnectionId: "official",
+    });
+  });
+
+  it("never falls back to the connection the policy explicitly blocks", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const blockedPolicy = policyWithChannelDefault(zapi);
+    const route = blockedPolicy.channels[0];
+    if (route) {
+      route.storeDefault.ready = false;
+      route.storeDefault.blocked = {
+        code: "connection_not_connected",
+        message: "blocked",
+        remediation: "reconnect",
+      };
+    }
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [zapi],
+        hasActiveSession: false,
+        routingPolicy: blockedPolicy,
+      }).viewConnectionId,
+    ).toBeNull();
+  });
+
+  it("keeps preferring the ready store default over other connected connections", () => {
+    const zapi = createConnection("zapi", "zapi");
+    const official = createConnection("meta_cloud", "official");
+
+    expect(
+      resolveCrmInboxConnectionSelection({
+        activeSessionConnectionId: null,
+        connectionFilterId: null,
+        connections: [official, zapi],
+        hasActiveSession: false,
+        routingPolicy: policyWithChannelDefault(zapi),
+      }).viewConnectionId,
+    ).toBe("zapi");
+  });
+
   it("selects a lone sandbox connection for read-only conversation browsing", () => {
     const sandbox = {
       ...createConnection("meta_cloud", "demo"),
