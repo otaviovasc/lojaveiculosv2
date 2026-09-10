@@ -29,6 +29,7 @@ import {
 import {
   contextMessage,
   findCurrentSaleForContext,
+  findUnitIdsWithCurrentSale,
   isSaleUnitConflict,
   replaceSale,
   salesErrorMessage,
@@ -345,11 +346,22 @@ export function SalesModule({
     [fetchContextOptions, runtimeApi],
   );
 
+  const workspaceContextOptions = useMemo(() => {
+    const takenUnitIds = findUnitIdsWithCurrentSale(sales, activeId);
+    if (!takenUnitIds.size) return contextOptions.options;
+    return {
+      ...contextOptions.options,
+      units: contextOptions.options.units.filter(
+        (unit) => !takenUnitIds.has(unit.id),
+      ),
+    };
+  }, [activeId, contextOptions, sales]);
+
   const workspaceView = (
     <SaleWorkspace
       inventoryApi={runtimeInventoryApi}
       contextMessage={contextMessage(contextOptions)}
-      contextOptions={contextOptions.options}
+      contextOptions={workspaceContextOptions}
       onCancel={(sale, reason) => transition(sale, "cancel", reason)}
       onClose={(sale) => transition(sale, "close")}
       onCreateLead={handleCreateLead}

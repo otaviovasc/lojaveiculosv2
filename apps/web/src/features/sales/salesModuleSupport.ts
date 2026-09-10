@@ -27,6 +27,10 @@ export function isSaleUnitConflict(error: unknown): boolean {
   return error instanceof AppApiError && error.code === "SALE_UNIT_CONFLICT";
 }
 
+export function saleUnitConflictMessage(): string {
+  return "Este veículo já tem uma venda em andamento. Selecione outro veículo para continuar.";
+}
+
 export function findCurrentSaleForContext(
   sales: readonly SaleRecord[],
   context: SaleStartContext,
@@ -41,4 +45,17 @@ export function findCurrentSaleForContext(
           ? sale.listingId === context.listingId
           : false),
   );
+}
+
+export function findUnitIdsWithCurrentSale(
+  sales: readonly SaleRecord[],
+  excludeSaleId?: string | null,
+): ReadonlySet<string> {
+  const taken = new Set<string>();
+  for (const sale of sales) {
+    if (excludeSaleId && sale.id === excludeSaleId) continue;
+    if (!sale.isCurrentRevision || sale.status === "cancelled") continue;
+    if (sale.unitId) taken.add(sale.unitId);
+  }
+  return taken;
 }
