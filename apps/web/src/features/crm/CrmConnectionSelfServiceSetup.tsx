@@ -17,6 +17,7 @@ import type {
   CrmSetupProvider,
   CrmWhatsappZapiWebhookSetupResult,
   CrmUazapiInstanceSummary,
+  CrmUazapiCredentialsInput,
   CrmUazapiListInstancesInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
@@ -83,6 +84,10 @@ export type CrmConnectionSelfServiceHandlers = {
   onRepairZapiCredentials?: (
     connectionId: CrmConnectionId,
     input: CrmZapiCredentialsInput,
+  ) => Promise<CrmProviderConnection>;
+  onRepairUazapiCredentials?: (
+    connectionId: CrmConnectionId,
+    input: CrmUazapiCredentialsInput,
   ) => Promise<CrmProviderConnection>;
   onReplaceZapiConnection?: (
     connectionId: CrmConnectionId,
@@ -512,6 +517,13 @@ export function CrmConnectionSelfServiceSetup({
                 setManagedConnectionId(null);
                 chooseUazapiConnectionSetup(managedConnection);
               },
+            }
+          : {})}
+        {...(managedConnection?.provider === "uazapi" &&
+        canRepairCredentials &&
+        handlers.onRepairUazapiCredentials
+          ? {
+              onRepairUazapiCredentials: handlers.onRepairUazapiCredentials,
             }
           : {})}
         {...(handlers.onSetConnectionPaused

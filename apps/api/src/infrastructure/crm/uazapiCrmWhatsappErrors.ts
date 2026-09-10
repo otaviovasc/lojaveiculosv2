@@ -53,11 +53,13 @@ export function uazapiProviderResponseError(
     ),
     status === 429 ? 429 : 502,
     status === 429 ? 1 : undefined,
-    status === 429
-      ? "rate_limited"
-      : status >= 500
-        ? "provider_unavailable"
-        : "provider_rejected",
+    status === 401 || status === 403
+      ? "provider_auth_failed"
+      : status === 429
+        ? "rate_limited"
+        : status >= 500
+          ? "provider_unavailable"
+          : "provider_rejected",
   );
 }
 

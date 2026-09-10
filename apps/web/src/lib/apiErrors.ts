@@ -92,6 +92,7 @@ export function getApiErrorRecovery(error: unknown): ApiErrorRecovery | null {
   const code = error.code ?? "";
 
   if (
+    code === "CRM_MESSAGING_PROVIDER_AUTH_FAILED" ||
     code === "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE" ||
     code === "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS" ||
     code === "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE" ||
@@ -212,6 +213,8 @@ function friendlyMessage(input: {
       return "Esta conversa foi alterada em outro atendimento. Atualize as conversas antes de repetir a ação.";
     case "CRM_WHATSAPP_NOT_FOUND":
       return "Esta conversa não está mais disponível. Atualize a lista e selecione outro atendimento.";
+    case "CRM_MESSAGING_PROVIDER_AUTH_FAILED":
+      return "As credenciais da instância UAZAPI não são mais válidas. Atualize as credenciais da conexão para voltar a receber e enviar mensagens.";
     case "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE":
       return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
     case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
@@ -241,6 +244,12 @@ function friendlyMessage(input: {
       return "O ID informado pertence a outra instância Z-API. Para trocar a instância sem perder o histórico, acione o suporte.";
     case "CRM_ZAPI_CREDENTIAL_VERIFICATION_FAILED":
       return "A Z-API não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token e tente novamente.";
+    case "CRM_UAZAPI_CREDENTIAL_VERIFICATION_FAILED":
+      return "A UAZAPI não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token da instância e tente novamente.";
+    case "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":
+      return "O ID informado pertence a outra instância UAZAPI. Para trocar a instância sem perder o histórico, acione o suporte.";
+    case "CRM_UAZAPI_CONNECTION_REVISION_CONFLICT":
+      return "A conexão foi alterada em outra sessão. Atualize a tela e informe as credenciais novamente.";
     case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
       return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
     case "CRM_WHATSAPP_GATEWAY_ERROR":

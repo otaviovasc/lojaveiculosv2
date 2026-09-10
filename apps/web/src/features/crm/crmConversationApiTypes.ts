@@ -87,6 +87,7 @@ import type {
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiCredentialsInput,
   CrmUazapiInstanceSummary,
   CrmUazapiListInstancesInput,
 } from "./crmConversationTypes";
@@ -148,6 +149,10 @@ export type CrmConversationApi = {
   repairZapiConnectionCredentials: (
     connectionId: CrmConnectionId,
     input: CrmZapiCredentialsInput,
+  ) => Promise<CrmProviderConnection>;
+  repairUazapiConnectionCredentials: (
+    connectionId: CrmConnectionId,
+    input: CrmUazapiCredentialsInput,
   ) => Promise<CrmProviderConnection>;
   replaceZapiConnection: (
     connectionId: CrmConnectionId,

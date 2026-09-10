@@ -244,6 +244,13 @@ export type CrmUazapiListInstancesInput = {
   baseUrl?: string;
 };
 
+export type CrmUazapiCredentialsInput = {
+  baseUrl?: string;
+  expectedRevision?: number;
+  instanceId: string;
+  instanceToken: string;
+};
+
 export type CrmZapiCredentialsInput = {
   clientToken: string;
   expectedRevision?: number;
