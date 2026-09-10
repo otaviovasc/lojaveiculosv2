@@ -13,6 +13,11 @@ import {
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { OlxChatSetupRetryTargetError } from "../../../domains/crm/services/CrmService/retryOlxChatSetup.js";
 import { CrmZapiCredentialVerificationError } from "../../../domains/crm/services/CrmChannelConnectionService/prepareZapiCredentialRotation.js";
+import {
+  CrmUazapiCredentialVerificationError,
+  UazapiConnectionRevisionConflictError,
+  UazapiIdentityReplacementRequiresSupportError,
+} from "../../../domains/crm/services/CrmWhatsappService/repairUazapiConnectionCredentialsSupport.js";
 import { ZapiIdentityReplacementRequiresSupportError } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnectionIdentity.js";
 import {
   ZapiReplacementNotFoundError,
@@ -115,6 +120,31 @@ export function handleCrmMessagingConnectionError(
       error,
       message: error.message,
       status: 502,
+    });
+  }
+  if (error instanceof CrmUazapiCredentialVerificationError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_CREDENTIAL_VERIFICATION_FAILED",
+      error,
+      message: error.message,
+      status: 502,
+    });
+  }
+  if (error instanceof UazapiIdentityReplacementRequiresSupportError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof UazapiConnectionRevisionConflictError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_CONNECTION_REVISION_CONFLICT",
+      details: error.details,
+      error,
+      message: error.message,
+      status: 409,
     });
   }
   if (error instanceof CrmZapiSetupNotEligibleError) {

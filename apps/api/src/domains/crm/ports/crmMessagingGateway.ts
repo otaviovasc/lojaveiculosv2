@@ -187,6 +187,7 @@ export class CrmMessagingGatewayError extends Error {
     public readonly retryAfterSeconds?: number,
     public readonly code:
       | "configuration_error"
+      | "provider_auth_failed"
       | "provider_unavailable"
       | "provider_rejected"
       | "rate_limited"

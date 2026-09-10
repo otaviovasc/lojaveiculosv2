@@ -9,6 +9,7 @@ import type {
   CrmCreateConnectionInput,
   CrmProviderConnection,
   CrmWhatsappZapiWebhookSetupResult,
+  CrmUazapiCredentialsInput,
   CrmUazapiListInstancesInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
@@ -198,14 +199,14 @@ export function useCrmConnections(api: CrmConversationApi) {
     ],
   );
 
-  const repairZapiConnectionCredentials = useCallback(
-    async (connectionId: CrmConnectionId, input: CrmZapiCredentialsInput) => {
+  const runCredentialRepair = useCallback(
+    async (
+      connectionId: CrmConnectionId,
+      action: () => Promise<CrmProviderConnection>,
+    ) => {
       const mutationGeneration = beginConnectionMutation(connectionId);
       try {
-        const connection = await api.repairZapiConnectionCredentials(
-          connectionId,
-          input,
-        );
+        const connection = await action();
         if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
           return (
             connectionsRef.current.find(
@@ -227,12 +228,27 @@ export function useCrmConnections(api: CrmConversationApi) {
       }
     },
     [
-      api,
       beginConnectionMutation,
       isLatestConnectionMutation,
       reconcileConnection,
       refreshConnections,
     ],
+  );
+
+  const repairZapiConnectionCredentials = useCallback(
+    (connectionId: CrmConnectionId, input: CrmZapiCredentialsInput) =>
+      runCredentialRepair(connectionId, () =>
+        api.repairZapiConnectionCredentials(connectionId, input),
+      ),
+    [api, runCredentialRepair],
+  );
+
+  const repairUazapiConnectionCredentials = useCallback(
+    (connectionId: CrmConnectionId, input: CrmUazapiCredentialsInput) =>
+      runCredentialRepair(connectionId, () =>
+        api.repairUazapiConnectionCredentials(connectionId, input),
+      ),
+    [api, runCredentialRepair],
   );
 
   const refreshZapiConnectionStatus = useCallback(
@@ -623,6 +639,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     refreshConnections,
     refreshConnectionsAndRead,
     repairZapiConnectionCredentials,
+    repairUazapiConnectionCredentials,
     replaceZapiConnection,
     requestZapiPairingCode,
     requestZapiPairingQr,

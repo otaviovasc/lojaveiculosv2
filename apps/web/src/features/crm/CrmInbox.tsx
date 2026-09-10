@@ -338,6 +338,20 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                             .catch(() => undefined);
                           return result;
                         },
+                        onRepairUazapiCredentials: async (
+                          connectionId,
+                          input,
+                        ) => {
+                          const result =
+                            await inbox.repairUazapiConnectionCredentials(
+                              connectionId,
+                              input,
+                            );
+                          void inbox
+                            .refreshRoutingPolicy()
+                            .catch(() => undefined);
+                          return result;
+                        },
                         onReplaceZapiConnection: async (
                           connectionId,
                           input,

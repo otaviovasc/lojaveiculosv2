@@ -75,6 +75,15 @@ export const whatsappZapiCredentialsSchema = z
   })
   .strict();
 
+export const whatsappUazapiCredentialsSchema = z
+  .object({
+    baseUrl: z.string().trim().url().max(500).optional(),
+    expectedRevision: z.number().int().nonnegative().optional(),
+    instanceId: z.string().trim().min(1).max(191),
+    instanceToken: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
 export const whatsappZapiReplacementSchema = z
   .object({
     clientToken: z.string().trim().min(1).max(500),

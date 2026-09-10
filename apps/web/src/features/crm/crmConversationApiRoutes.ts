@@ -119,6 +119,11 @@ export const crmConversationRoutes = {
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/disconnect`,
       baseUrl,
     ),
+  uazapiCredentials: (connectionId: CrmConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/credentials`,
+      baseUrl,
+    ),
   uazapiStatusRefresh: (connectionId: CrmConnectionId, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/channel-connections/${encodeURIComponent(String(connectionId))}/uazapi/status/refresh`,

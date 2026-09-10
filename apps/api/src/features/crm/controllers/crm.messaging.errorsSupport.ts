@@ -34,6 +34,15 @@ export function handleCrmMessagingProviderError(
         status: error.status,
       });
     }
+    if (error.code === "provider_auth_failed") {
+      return jsonApiError(context, {
+        code: "CRM_MESSAGING_PROVIDER_AUTH_FAILED",
+        error,
+        message: error.message,
+        retryable: false,
+        status: 401,
+      });
+    }
     if (error.status === 429) {
       const retryAfterSeconds = error.retryAfterSeconds ?? 1;
       context.header("Retry-After", String(retryAfterSeconds));

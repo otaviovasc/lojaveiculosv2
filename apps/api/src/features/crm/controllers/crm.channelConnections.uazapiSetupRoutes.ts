@@ -1,6 +1,7 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
+  whatsappUazapiCredentialsSchema,
   whatsappUazapiListInstancesSchema,
   whatsappUazapiPairingCodeSchema,
 } from "./crm.channelConnections.schemas.js";
@@ -48,6 +49,34 @@ export function registerCrmUazapiConnectionSetupRoutes(
         const connection = await services.disconnectUazapiConnection(
           serviceContext,
           { connectionId },
+        );
+        return context.json(toChannelConnectionOverviewItem(connection));
+      }),
+  );
+
+  crmFeature.put(
+    "/channel-connections/:connectionId/uazapi/credentials",
+    async (context) =>
+      handleCrmMessaging(context, async () => {
+        const connectionId = readConnectionId(
+          context.req.param("connectionId"),
+        );
+        const input = await parseCrmMessagingJson(
+          context,
+          whatsappUazapiCredentialsSchema,
+        );
+        const serviceContext = await createContext(context);
+        const connection = await services.repairUazapiConnectionCredentials(
+          serviceContext,
+          {
+            connectionId,
+            ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
+            ...(input.expectedRevision !== undefined
+              ? { expectedRevision: input.expectedRevision }
+              : {}),
+            instanceId: input.instanceId,
+            instanceToken: input.instanceToken,
+          },
         );
         return context.json(toChannelConnectionOverviewItem(connection));
       }),
