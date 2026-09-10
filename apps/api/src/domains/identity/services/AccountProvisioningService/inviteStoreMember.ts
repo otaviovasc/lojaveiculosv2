@@ -10,6 +10,7 @@ import {
   assertAssignableStoreInviteRole,
   assertStoreInviteRoleAllowedByActor,
   auditInvitationSendFailure,
+  providerErrorLogFields,
   type AccountProvisioningPorts,
 } from "./serviceSupport.js";
 
@@ -101,6 +102,7 @@ export async function inviteStoreMember(
       createServiceLogMetadata(context, {
         errorName: error instanceof Error ? error.name : "UnknownError",
         invitationId: invitation.id,
+        ...providerErrorLogFields(error),
       }),
     );
     return {

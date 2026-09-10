@@ -38,6 +38,7 @@ import { LeadFinancingSimulationModal } from "./LeadFinancingSimulationModal";
 import { LeadSaleModal } from "./LeadSaleModal";
 import {
   emptyCrmLeadLinkedRecords,
+  findResumableLeadSaleId,
   loadCrmLeadLinkedRecords,
   type CrmLeadLinkedRecordsState,
 } from "./crmLeadLinkedRecords";
@@ -410,7 +411,11 @@ export function CrmLeadDetailsPage({
               onOpenChatModal={() => setIsChatModalOpen(true)}
               onOpenSimulationModal={() => setIsSimulationModalOpen(true)}
               onOpenSaleModal={(saleId) =>
-                setActiveSaleModalId(saleId ?? "new")
+                setActiveSaleModalId(
+                  saleId ??
+                    findResumableLeadSaleId(linkedRecords.sales) ??
+                    "new",
+                )
               }
             />
           </div>
@@ -431,7 +436,11 @@ export function CrmLeadDetailsPage({
         <CrmLeadChatModal
           lead={lead}
           onClose={() => setIsChatModalOpen(false)}
-          onStartSale={() => setActiveSaleModalId("new")}
+          onStartSale={() =>
+            setActiveSaleModalId(
+              findResumableLeadSaleId(linkedRecords.sales) ?? "new",
+            )
+          }
         />
       )}
 

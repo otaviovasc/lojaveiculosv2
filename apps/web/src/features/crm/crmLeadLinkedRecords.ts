@@ -65,3 +65,18 @@ function uniqueDocuments(documents: readonly WorkspaceDocument[]) {
       new Date(left.uploadedAt).getTime(),
   );
 }
+
+export function findResumableLeadSaleId(
+  sales: readonly SaleRecord[],
+): string | null {
+  const resumable = sales.filter(
+    (sale) =>
+      sale.isCurrentRevision &&
+      (sale.status === "draft" || sale.status === "pending"),
+  );
+  if (!resumable.length) return null;
+  return resumable.sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  )[0]!.id;
+}
