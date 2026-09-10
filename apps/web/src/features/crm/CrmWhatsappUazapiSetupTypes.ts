@@ -6,6 +6,7 @@ export type { PairingBlock };
 
 export type CrmWhatsappUazapiSetupProps = {
   canPair: boolean;
+  canRepairCredentials?: boolean;
   canSetup: boolean;
   connection: CrmProviderConnection | null;
   handlers: CrmConnectionSelfServiceHandlers;
