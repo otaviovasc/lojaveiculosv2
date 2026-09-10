@@ -9,6 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
 import type { CrmProviderConnection } from "./crmConversationTypes";
 import { CrmWhatsappUazapiSetup } from "./CrmWhatsappUazapiSetup";
 import { readUazapiSetupStep } from "./CrmWhatsappUazapiSetupParts";
@@ -454,6 +455,103 @@ describe("CrmWhatsappUazapiSetup", () => {
     },
   );
 
+  it("offers credential repair in repair mode when the provider status is an error", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn(async () =>
+      createPairingConnection(),
+    );
+    handlers.onRefreshUazapiStatus = vi.fn(async () =>
+      createPairingConnection(),
+    );
+    const onConnection = vi.fn();
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={onConnection}
+      />,
+    );
+
+    expect(screen.getByText("Etapa 3 de 4 · Pareamento")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: " instance-1 " },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: " new-token " },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar novas credenciais" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onRepairUazapiCredentials).toHaveBeenCalledWith(
+        "connection-uazapi",
+        { instanceId: "instance-1", instanceToken: "new-token" },
+      ),
+    );
+    await waitFor(() =>
+      expect(handlers.onRefreshUazapiStatus).toHaveBeenCalledWith(
+        "connection-uazapi",
+      ),
+    );
+    expect(onConnection).toHaveBeenCalled();
+  });
+
+  it("reveals credential repair after a status refresh fails with provider auth", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+    handlers.onRefreshUazapiStatus = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_MESSAGING_PROVIDER_AUTH_FAILED",
+        message: "UAZAPI status failed with HTTP 401",
+        status: 401,
+      });
+    });
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createPairingConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Verificar agora" }));
+
+    expect(
+      await screen.findByText(
+        /credenciais da instância UAZAPI não são mais válidas/i,
+      ),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Verificar agora" }),
+    ).toBeVisible();
+  });
+
   it("shows success only when server readiness is confirmed", () => {
     render(
       <CrmWhatsappUazapiSetup
@@ -517,6 +615,21 @@ function createPairingConnection(): CrmProviderConnection {
       reasonCode: "disconnected",
     },
   });
+}
+
+function createErrorConnection(): CrmProviderConnection {
+  const connection = createPairingConnection();
+  return {
+    ...connection,
+    live: {
+      checkedAt: "2026-08-25T12:00:00.000Z",
+      connected: null,
+      connectedPhone: null,
+      errorMessage: "UAZAPI status failed with HTTP 401",
+      providerStatus: "error",
+      smartphoneConnected: null,
+    },
+  };
 }
 
 function createConnection(

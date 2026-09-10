@@ -22,6 +22,7 @@ export async function refreshWhatsappSetupChannel({
   connection,
   isCurrentAction,
   onConnection,
+  onRefreshError,
   refreshConnections,
   refreshStatus,
   setBusy,
@@ -31,6 +32,7 @@ export async function refreshWhatsappSetupChannel({
   busy: BusyState | null;
   connection: CrmProviderConnection | null | undefined;
   onConnection: (connection: CrmProviderConnection) => void;
+  onRefreshError?: (caught: unknown) => void;
   refreshConnections: () => Promise<unknown>;
   refreshStatus?:
     ((connectionId: string) => Promise<CrmProviderConnection>) | undefined;
@@ -43,7 +45,11 @@ export async function refreshWhatsappSetupChannel({
   const refresh = currentConnection ? refreshStatus : undefined;
   if (refresh && currentConnection) {
     const result = await runAction({
-      action: () => refresh(currentConnection.id),
+      action: () =>
+        refresh(currentConnection.id).catch((caught: unknown) => {
+          onRefreshError?.(caught);
+          throw caught;
+        }),
       busy: "refresh",
       fallbackError: "Não foi possível atualizar o canal.",
       isCurrent: () => isCurrentAction(actionGeneration, connectionId),

@@ -423,6 +423,7 @@ export function CrmConnectionSelfServiceSetup({
         ) : provider === "uazapi" ? (
           <CrmWhatsappUazapiSetup
             canPair={canPair}
+            canRepairCredentials={canRepairCredentials}
             canSetup={setupAllowed}
             connection={connection?.provider === "uazapi" ? connection : null}
             handlers={handlers}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, QrCode } from "lucide-react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
 import { formatBrazilianWhatsappPhone } from "../../lib/masks";
 import { ConnectionSectionCard } from "./CrmConnectionAdminParts";
 import {
@@ -17,6 +17,10 @@ import {
   UazapiWebhookSetupStatus,
 } from "./CrmWhatsappUazapiSetupParts";
 import { isProviderDisconnected } from "./crmZapiPairingState";
+import {
+  CrmUazapiCredentialsRepairSection,
+  type RepairUazapiCredentialsHandler,
+} from "./CrmWhatsappUazapiCredentials";
 import { type BusyState, runAction } from "./CrmWhatsappZapiCredentials";
 import {
   refreshWhatsappSetupChannel,
@@ -41,6 +45,7 @@ import type {
  */
 export function CrmWhatsappUazapiSetup({
   canPair,
+  canRepairCredentials = false,
   canSetup,
   connection,
   handlers,
@@ -74,6 +79,7 @@ export function CrmWhatsappUazapiSetup({
   const [pairAgainForStateRevision, setPairAgainForStateRevision] = useState<
     number | null
   >(null);
+  const [credentialsIssue, setCredentialsIssue] = useState(false);
   const [qr, setQr] = useState<{ expiresAt: string; qrCode: string } | null>(
     null,
   );
@@ -112,6 +118,7 @@ export function CrmWhatsappUazapiSetup({
   useEffect(() => {
     autoRefreshInFlightRef.current = false;
     setBusy(null);
+    setCredentialsIssue(false);
     setError(null);
     setPairingCode(null);
     setQr(null);
@@ -305,6 +312,14 @@ export function CrmWhatsappUazapiSetup({
       connection,
       isCurrentAction,
       onConnection,
+      onRefreshError: (caught) => {
+        if (
+          caught instanceof AppApiError &&
+          caught.code === "CRM_MESSAGING_PROVIDER_AUTH_FAILED"
+        ) {
+          setCredentialsIssue(true);
+        }
+      },
       refreshConnections: handlers.onRefreshConnections,
       refreshStatus: handlers.onRefreshUazapiStatus,
       setBusy,
@@ -312,6 +327,29 @@ export function CrmWhatsappUazapiSetup({
       setPairingBlock,
     });
   };
+
+  const repairUazapiCredentials = handlers.onRepairUazapiCredentials;
+  const repairCredentials: RepairUazapiCredentialsHandler = async (
+    connectionId,
+    input,
+  ) => {
+    if (!repairUazapiCredentials) {
+      throw new Error("Reparo de credenciais UAZAPI indisponível.");
+    }
+    const repaired = await repairUazapiCredentials(connectionId, input);
+    onConnection(repaired);
+    setCredentialsIssue(false);
+    await refresh();
+    return repaired;
+  };
+
+  const showCredentialsRepair = Boolean(
+    step === 3 &&
+    connection &&
+    canRepairCredentials &&
+    repairUazapiCredentials &&
+    (credentialsIssue || connection.live?.providerStatus === "error"),
+  );
 
   const disconnect = async () => {
     const disconnectUazapi = handlers.onDisconnectUazapi;
@@ -481,25 +519,35 @@ export function CrmWhatsappUazapiSetup({
           />
         ) : null}
         {step === 3 && connection ? (
-          <UazapiPairingStage
-            busy={busy}
-            canDisconnect={canSetup && Boolean(handlers.onDisconnectUazapi)}
-            canPair={canPair && pairingBlock === null}
-            codeExpired={codeExpired}
-            method={pairingMethod}
-            now={now}
-            onMethodChange={setPairingMethod}
-            onDisconnect={() => void disconnectBeforePairing()}
-            onPhoneChange={setPhone}
-            onRefresh={() => void refresh()}
-            onRequestCode={() => void requestCode()}
-            onRequestQr={() => void requestQr()}
-            pairingCode={pairingCode}
-            pairingBlock={pairingBlock}
-            phone={phone}
-            qr={qr}
-            qrExpired={qrExpired}
-          />
+          <>
+            {showCredentialsRepair ? (
+              <CrmUazapiCredentialsRepairSection
+                canManage={canSetup}
+                connection={connection}
+                disabled={busy !== null}
+                onRepair={repairCredentials}
+              />
+            ) : null}
+            <UazapiPairingStage
+              busy={busy}
+              canDisconnect={canSetup && Boolean(handlers.onDisconnectUazapi)}
+              canPair={canPair && pairingBlock === null}
+              codeExpired={codeExpired}
+              method={pairingMethod}
+              now={now}
+              onMethodChange={setPairingMethod}
+              onDisconnect={() => void disconnectBeforePairing()}
+              onPhoneChange={setPhone}
+              onRefresh={() => void refresh()}
+              onRequestCode={() => void requestCode()}
+              onRequestQr={() => void requestQr()}
+              pairingCode={pairingCode}
+              pairingBlock={pairingBlock}
+              phone={phone}
+              qr={qr}
+              qrExpired={qrExpired}
+            />
+          </>
         ) : null}
         {step === 4 && connection ? (
           <UazapiReadyState
