@@ -493,13 +493,22 @@ set `ASAAS_RUNTIME_IMPLEMENTATION=http` or
 ### External CRM bot manager (disabled unless complete)
 
 - `CRM_EXTERNAL_BOT_MODEL_VERSION`: server-approved model release bound to
-  grants and model-version kill switches.
-- `CRM_EXTERNAL_BOT_EVENT_SIGNING_KEY`: separate HMAC key used only by the
-  durable CRM-to-bot event dispatcher. Signatures cover timestamp, nonce and
-  SHA-256 body digest; receivers must enforce the replay window and consume a
-  nonce once.
-- `CRM_EXTERNAL_BOT_EVENT_URL`: HTTPS receiver used by the separately deployed
-  `crm:bot:events:process` durable outbox worker.
+  grants and model-version kill switches. Required by the API (event enqueue)
+  and by the `crm:bot:events:process` worker.
+- `CRM_EXTERNAL_BOT_EVENT_BATCH_SIZE`: optional maximum durable bot events
+  claimed per worker run. Defaults to `25` and is capped at `200`.
+
+Delivery is configured per store in `integration_accounts` (provider
+`crm_external_bot`): the store-owned HTTPS `webhookUrl` receives events signed
+with the store's own webhook secret (sealed as `webhookSecretSealed` under the
+CRM connection credential vault, purpose `crm-bot.webhook-secret`). Signatures
+cover timestamp, nonce and SHA-256 body digest; receivers must enforce the
+replay window and consume a nonce once. Events whose store integration is
+missing, disabled, or cannot be unsealed are dead-lettered
+(`integration_not_configured`, `webhook_secret_missing`,
+`webhook_secret_unseal_failed`). The worker requires
+`CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY` and is deployed as the
+`lojaveiculosv2-crm-external-bot-worker` cron service.
 
 Partial configuration does not enable bot actions. The runtime uses the
 canonical database grant/command/proposal/outbox records; missing relations fail
@@ -518,8 +527,9 @@ configuration as the API. No new provider credentials are accepted from events.
 Document delivery uses the existing durable event outbox. Failed recovery is
 released for another attempt after five seconds, while the original grant is
 valid. Grant expiry remains terminal; the worker never renews or extends a grant
-implicitly. Historical delivered events are not replayed. This worker still
-requires explicit deployment; this change does not provision a Railway service.
+implicitly. Historical delivered events are not replayed. The worker runs as the
+`lojaveiculosv2-crm-external-bot-worker` cron service defined in
+`.railway/railway.ts`.
 
 The signed event envelope may include a server-generated `document` object with
 `messageRef`, `downloadUrl`, `expiresAt`, and `contentType`. The bot should fetch

@@ -43,6 +43,7 @@ export async function handleCrmMessaging(
         error,
         message: error.message,
         status: 400,
+        ...(error.details ? { details: error.details } : {}),
       });
     }
     if (error instanceof CrmConnectionMemberValidationError) {
