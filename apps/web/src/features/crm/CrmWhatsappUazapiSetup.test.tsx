@@ -686,16 +686,17 @@ describe("CrmWhatsappUazapiSetup", () => {
     );
 
     await waitFor(() =>
-      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
-        "connection-uazapi",
-        {
-          adminToken: "admin-token-1",
-          expectedRevision: 0,
-          idempotencyKey: expect.any(String),
-          instanceId: "instance-2",
-        },
-      ),
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalled(),
     );
+    const attachCall = vi.mocked(handlers.onReplaceUazapiConnection).mock
+      .calls[0];
+    expect(attachCall?.[0]).toBe("connection-uazapi");
+    expect(attachCall?.[1]).toMatchObject({
+      adminToken: "admin-token-1",
+      expectedRevision: 0,
+      instanceId: "instance-2",
+    });
+    expect(attachCall?.[1].idempotencyKey).toEqual(expect.any(String));
     expect(handlers.onRepairUazapiCredentials).not.toHaveBeenCalled();
   });
 
@@ -747,16 +748,17 @@ describe("CrmWhatsappUazapiSetup", () => {
     );
 
     await waitFor(() =>
-      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
-        "connection-uazapi",
-        {
-          adminToken: "admin-token-1",
-          createInstance: {},
-          expectedRevision: 0,
-          idempotencyKey: expect.any(String),
-        },
-      ),
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalled(),
     );
+    const createCall = vi.mocked(handlers.onReplaceUazapiConnection).mock
+      .calls[0];
+    expect(createCall?.[0]).toBe("connection-uazapi");
+    expect(createCall?.[1]).toMatchObject({
+      adminToken: "admin-token-1",
+      createInstance: {},
+      expectedRevision: 0,
+    });
+    expect(createCall?.[1].idempotencyKey).toEqual(expect.any(String));
   });
 
   it("reveals credential repair after a status refresh fails with provider auth", async () => {
