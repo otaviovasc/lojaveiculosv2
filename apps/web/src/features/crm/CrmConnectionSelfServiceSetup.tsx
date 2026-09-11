@@ -550,6 +550,13 @@ export function CrmConnectionSelfServiceSetup({
           : {})}
         {...(managedConnection?.provider === "uazapi" &&
         canRepairCredentials &&
+        handlers.onListUazapiInstances
+          ? {
+              onListUazapiInstances: handlers.onListUazapiInstances,
+            }
+          : {})}
+        {...(managedConnection?.provider === "uazapi" &&
+        canRepairCredentials &&
         handlers.onReplaceUazapiConnection
           ? {
               onReplaceUazapiConnection: handlers.onReplaceUazapiConnection,

@@ -84,15 +84,37 @@ export const whatsappUazapiCredentialsSchema = z
   })
   .strict();
 
-export const whatsappUazapiReplacementSchema = z
-  .object({
-    baseUrl: z.string().trim().url().max(500).optional(),
-    expectedRevision: z.number().int().nonnegative(),
-    idempotencyKey: z.string().trim().min(8).max(200),
-    instanceId: z.string().trim().min(1).max(191),
-    instanceToken: z.string().trim().min(1).max(500),
-  })
-  .strict();
+const uazapiReplacementBaseFields = {
+  baseUrl: z.string().trim().url().max(500).optional(),
+  expectedRevision: z.number().int().nonnegative(),
+  idempotencyKey: z.string().trim().min(8).max(200),
+};
+
+export const whatsappUazapiReplacementSchema = z.union([
+  z
+    .object({
+      ...uazapiReplacementBaseFields,
+      instanceId: z.string().trim().min(1).max(191),
+      instanceToken: z.string().trim().min(1).max(500),
+    })
+    .strict(),
+  z
+    .object({
+      ...uazapiReplacementBaseFields,
+      adminToken: z.string().trim().min(1).max(500),
+      instanceId: z.string().trim().min(1).max(191),
+    })
+    .strict(),
+  z
+    .object({
+      ...uazapiReplacementBaseFields,
+      adminToken: z.string().trim().min(1).max(500),
+      createInstance: z
+        .object({ name: z.string().trim().min(1).max(191).optional() })
+        .strict(),
+    })
+    .strict(),
+]);
 
 export const whatsappZapiReplacementSchema = z
   .object({

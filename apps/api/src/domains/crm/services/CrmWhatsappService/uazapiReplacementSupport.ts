@@ -12,6 +12,7 @@ import { CrmConnectionNotFoundError } from "../../messaging/crmMessagingErrors.j
 import { toCrmChannelConnection } from "../../channelConnections/channelConnectionModels.js";
 import {
   CrmConnectionSetupProviderError,
+  UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE,
   UAZAPI_BASE_URL_CREDENTIAL_PURPOSE,
   UAZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
   UAZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
@@ -27,6 +28,7 @@ import type {
   UazapiReplacementResult,
   UazapiReplacementState,
 } from "./replaceUazapiConnection.js";
+import type { ResolvedUazapiReplacementCandidate } from "./uazapiReplacementCandidate.js";
 import {
   readRecord,
   readString,
@@ -127,20 +129,18 @@ export async function resolveUazapiCandidateBaseUrl(
 }
 
 export async function verifyUazapiCandidateCredentials(
-  apiBaseUrl: string,
-  input: StartUazapiReplacementInput,
+  candidate: ResolvedUazapiReplacementCandidate,
   ports: CrmServicePorts,
 ) {
   return getUazapiConnectionSetupProvider(ports).validateStatus({
-    apiBaseUrl,
-    instanceId: input.instanceId.trim(),
-    instanceToken: input.instanceToken.trim(),
+    apiBaseUrl: candidate.apiBaseUrl,
+    instanceId: candidate.instanceId,
+    instanceToken: candidate.instanceToken,
   });
 }
 
 export async function sealUazapiCandidate(
-  apiBaseUrl: string,
-  input: StartUazapiReplacementInput,
+  candidate: ResolvedUazapiReplacementCandidate,
   current: CrmConnection,
   scope: { storeId: string; tenantId: string },
   ports: CrmServicePorts,
@@ -150,20 +150,27 @@ export async function sealUazapiCandidate(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   };
-  const [baseUrl, instanceId, instanceToken] = await Promise.all([
+  const [adminToken, baseUrl, instanceId, instanceToken] = await Promise.all([
+    candidate.adminToken
+      ? vault.seal({
+          ...credentialScope,
+          plaintext: candidate.adminToken,
+          purpose: UAZAPI_ADMIN_TOKEN_CREDENTIAL_PURPOSE,
+        })
+      : undefined,
     vault.seal({
       ...credentialScope,
-      plaintext: apiBaseUrl,
+      plaintext: candidate.apiBaseUrl,
       purpose: UAZAPI_BASE_URL_CREDENTIAL_PURPOSE,
     }),
     vault.seal({
       ...credentialScope,
-      plaintext: input.instanceId.trim(),
+      plaintext: candidate.instanceId,
       purpose: UAZAPI_INSTANCE_ID_CREDENTIAL_PURPOSE,
     }),
     vault.seal({
       ...credentialScope,
-      plaintext: input.instanceToken.trim(),
+      plaintext: candidate.instanceToken,
       purpose: UAZAPI_INSTANCE_TOKEN_CREDENTIAL_PURPOSE,
     }),
   ]);
@@ -172,6 +179,7 @@ export async function sealUazapiCandidate(
     mode: "stored",
     stored: {
       ...readRecord(current.credentialsRef.stored),
+      ...(adminToken ? { adminToken } : {}),
       baseUrl,
       instanceId,
       instanceToken,

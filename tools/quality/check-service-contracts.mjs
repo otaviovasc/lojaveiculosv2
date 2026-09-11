@@ -47,6 +47,7 @@ const nonEntrypointFiles = new Set([
   "claimMarketplaceSyncJob.ts",
   "reconcileMarketplaceClaim.ts",
   "repairUazapiConnectionCredentialsSupport.ts",
+  "uazapiReplacementCandidate.ts",
   "uazapiReplacementCutover.ts",
   "uazapiReplacementSupport.ts",
   "runMarketplaceSyncJobAudit.ts",

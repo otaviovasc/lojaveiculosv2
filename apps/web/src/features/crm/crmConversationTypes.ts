@@ -258,10 +258,15 @@ export type CrmZapiCredentialsInput = {
   instanceToken: string;
 };
 
-export type CrmUazapiReplacementInput = CrmUazapiCredentialsInput & {
+export type CrmUazapiReplacementInput = {
+  baseUrl?: string;
   expectedRevision: number;
   idempotencyKey: string;
-};
+} & (
+  | { instanceId: string; instanceToken: string }
+  | { adminToken: string; instanceId: string }
+  | { adminToken: string; createInstance: { name?: string } }
+);
 
 export type CrmUazapiReplacementResult = {
   connection: CrmProviderConnection;

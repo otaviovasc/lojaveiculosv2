@@ -5,9 +5,12 @@ import type {
   CrmConnectionId,
   CrmProviderConnection,
   CrmUazapiCredentialsInput,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
   CrmUazapiReplacementInput,
   CrmUazapiReplacementResult,
 } from "./crmConversationTypes";
+import { CrmUazapiAdminReplacementSection } from "./CrmUazapiAdminReplacementSection";
 
 export type RepairUazapiCredentialsHandler = (
   connectionId: CrmConnectionId,
@@ -25,6 +28,7 @@ export function CrmUazapiCredentialsRepairSection({
   createNewConnectionBlockedReason = null,
   disabled = false,
   onCreateNewConnection,
+  onListUazapiInstances,
   onReplace,
   onRepair,
 }: {
@@ -33,10 +37,14 @@ export function CrmUazapiCredentialsRepairSection({
   createNewConnectionBlockedReason?: string | null;
   disabled?: boolean;
   onCreateNewConnection?: () => void;
+  onListUazapiInstances?: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
   onReplace?: ReplaceUazapiConnectionHandler;
   onRepair: RepairUazapiCredentialsHandler;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [entryMode, setEntryMode] = useState<"admin" | "manual">("manual");
   const [baseUrl, setBaseUrl] = useState("");
   const [instanceId, setInstanceId] = useState("");
   const [instanceToken, setInstanceToken] = useState("");
@@ -174,109 +182,155 @@ export function CrmUazapiCredentialsRepairSection({
               </p>
             </div>
           </div>
-          <div className="crm-zapi-credential-fields">
-            <div className="crm-connection-field crm-zapi-field">
-              <label htmlFor="uazapi-repair-instance-id">ID da instância</label>
-              <input
-                autoComplete="off"
-                disabled={!canManage || disabled || busy}
-                id="uazapi-repair-instance-id"
-                onChange={(event) => setInstanceId(event.target.value)}
-                spellCheck={false}
-                type="password"
-                value={instanceId}
-              />
-              <small>Disponível no painel da uazapi, na sua instância.</small>
-            </div>
-            <div className="crm-connection-field crm-zapi-field">
-              <label htmlFor="uazapi-repair-instance-token">
-                Token da instância
+          {onReplace && onListUazapiInstances ? (
+            <fieldset className="crm-connection-field">
+              <legend>Como recuperar o acesso</legend>
+              <label>
+                <input
+                  checked={entryMode === "manual"}
+                  disabled={!canManage || disabled || busy}
+                  name="uazapi-repair-entry-mode"
+                  onChange={() => setEntryMode("manual")}
+                  type="radio"
+                  value="manual"
+                />{" "}
+                Informar ID e token da instância
               </label>
-              <input
-                autoComplete="off"
-                disabled={!canManage || disabled || busy}
-                id="uazapi-repair-instance-token"
-                onChange={(event) => setInstanceToken(event.target.value)}
-                spellCheck={false}
-                type="password"
-                value={instanceToken}
-              />
-              <small>
-                Gerado pela uazapi para a instância; substitui o token
-                rejeitado.
-              </small>
-            </div>
-            <div className="crm-connection-field crm-zapi-field">
-              <label htmlFor="uazapi-repair-base-url">
-                URL base da uazapi (opcional)
+              <label>
+                <input
+                  checked={entryMode === "admin"}
+                  disabled={!canManage || disabled || busy}
+                  name="uazapi-repair-entry-mode"
+                  onChange={() => setEntryMode("admin")}
+                  type="radio"
+                  value="admin"
+                />{" "}
+                Usar token admin da conta
               </label>
-              <input
-                autoComplete="off"
-                disabled={!canManage || disabled || busy}
-                id="uazapi-repair-base-url"
-                inputMode="url"
-                onChange={(event) => setBaseUrl(event.target.value)}
-                placeholder="https://free.uazapi.com"
-                value={baseUrl}
-              />
-              <small>
-                Preencha apenas se a sua conta usa um endereço próprio.
-              </small>
-            </div>
-          </div>
-          {error ? (
-            <p className="crm-connection-error" role="alert">
-              {error}
-            </p>
+            </fieldset>
           ) : null}
-          {identityMismatch && onReplace ? (
-            <div className="crm-zapi-inline-actions">
-              <button
-                className="crm-action crm-action-primary crm-connection-save"
-                disabled={!canManage || disabled || busy}
-                onClick={() => void replace()}
-                type="button"
-              >
-                {busy ? (
-                  <Loader2 aria-hidden="true" className="crm-spin" />
-                ) : (
-                  <ArrowRightLeft aria-hidden="true" />
-                )}
-                {busy ? "Trocando instância" : "Trocar para a nova instância"}
-              </button>
-              <small>
-                A instância informada é diferente da atual. A troca é verificada
-                com o provedor antes de valer e o histórico do CRM é preservado.
-              </small>
-            </div>
-          ) : null}
-          <div className="crm-zapi-inline-actions">
-            <button
-              className="crm-action crm-action-primary crm-connection-save"
-              disabled={!canManage || disabled || busy}
-              onClick={() => void submit()}
-              type="button"
-            >
-              {busy ? (
-                <Loader2 aria-hidden="true" className="crm-spin" />
-              ) : (
-                <KeyRound aria-hidden="true" />
-              )}
-              {busy ? "Salvando" : "Confirmar novas credenciais"}
-            </button>
-            <button
-              className="crm-action crm-action-muted crm-action-secondary"
-              disabled={busy}
-              onClick={() => {
-                setExpanded(false);
-                setError(null);
-                setIdentityMismatch(false);
-              }}
-              type="button"
-            >
-              Cancelar
-            </button>
-          </div>
+          {entryMode === "admin" && onReplace && onListUazapiInstances ? (
+            <CrmUazapiAdminReplacementSection
+              canManage={canManage}
+              connection={connection}
+              disabled={disabled}
+              onListInstances={onListUazapiInstances}
+              onReplace={onReplace}
+            />
+          ) : (
+            <>
+              <div className="crm-zapi-credential-fields">
+                <div className="crm-connection-field crm-zapi-field">
+                  <label htmlFor="uazapi-repair-instance-id">
+                    ID da instância
+                  </label>
+                  <input
+                    autoComplete="off"
+                    disabled={!canManage || disabled || busy}
+                    id="uazapi-repair-instance-id"
+                    onChange={(event) => setInstanceId(event.target.value)}
+                    spellCheck={false}
+                    type="password"
+                    value={instanceId}
+                  />
+                  <small>
+                    Disponível no painel da uazapi, na sua instância.
+                  </small>
+                </div>
+                <div className="crm-connection-field crm-zapi-field">
+                  <label htmlFor="uazapi-repair-instance-token">
+                    Token da instância
+                  </label>
+                  <input
+                    autoComplete="off"
+                    disabled={!canManage || disabled || busy}
+                    id="uazapi-repair-instance-token"
+                    onChange={(event) => setInstanceToken(event.target.value)}
+                    spellCheck={false}
+                    type="password"
+                    value={instanceToken}
+                  />
+                  <small>
+                    Gerado pela uazapi para a instância; substitui o token
+                    rejeitado.
+                  </small>
+                </div>
+                <div className="crm-connection-field crm-zapi-field">
+                  <label htmlFor="uazapi-repair-base-url">
+                    URL base da uazapi (opcional)
+                  </label>
+                  <input
+                    autoComplete="off"
+                    disabled={!canManage || disabled || busy}
+                    id="uazapi-repair-base-url"
+                    inputMode="url"
+                    onChange={(event) => setBaseUrl(event.target.value)}
+                    placeholder="https://free.uazapi.com"
+                    value={baseUrl}
+                  />
+                  <small>
+                    Preencha apenas se a sua conta usa um endereço próprio.
+                  </small>
+                </div>
+              </div>
+              {error ? (
+                <p className="crm-connection-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              {identityMismatch && onReplace ? (
+                <div className="crm-zapi-inline-actions">
+                  <button
+                    className="crm-action crm-action-primary crm-connection-save"
+                    disabled={!canManage || disabled || busy}
+                    onClick={() => void replace()}
+                    type="button"
+                  >
+                    {busy ? (
+                      <Loader2 aria-hidden="true" className="crm-spin" />
+                    ) : (
+                      <ArrowRightLeft aria-hidden="true" />
+                    )}
+                    {busy
+                      ? "Trocando instância"
+                      : "Trocar para a nova instância"}
+                  </button>
+                  <small>
+                    A instância informada é diferente da atual. A troca é
+                    verificada com o provedor antes de valer e o histórico do
+                    CRM é preservado.
+                  </small>
+                </div>
+              ) : null}
+              <div className="crm-zapi-inline-actions">
+                <button
+                  className="crm-action crm-action-primary crm-connection-save"
+                  disabled={!canManage || disabled || busy}
+                  onClick={() => void submit()}
+                  type="button"
+                >
+                  {busy ? (
+                    <Loader2 aria-hidden="true" className="crm-spin" />
+                  ) : (
+                    <KeyRound aria-hidden="true" />
+                  )}
+                  {busy ? "Salvando" : "Confirmar novas credenciais"}
+                </button>
+                <button
+                  className="crm-action crm-action-muted crm-action-secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    setExpanded(false);
+                    setError(null);
+                    setIdentityMismatch(false);
+                  }}
+                  type="button"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </>
+          )}
         </section>
       ) : null}
     </div>
