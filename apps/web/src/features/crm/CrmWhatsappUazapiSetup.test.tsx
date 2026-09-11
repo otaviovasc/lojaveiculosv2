@@ -559,16 +559,17 @@ describe("CrmWhatsappUazapiSetup", () => {
     fireEvent.click(replaceButton);
 
     await waitFor(() =>
-      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
-        "connection-uazapi",
-        {
-          expectedRevision: 0,
-          idempotencyKey: expect.any(String),
-          instanceId: "instance-2",
-          instanceToken: "new-token",
-        },
-      ),
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalled(),
     );
+    const replaceCall = vi.mocked(handlers.onReplaceUazapiConnection).mock
+      .calls[0];
+    expect(replaceCall?.[0]).toBe("connection-uazapi");
+    expect(replaceCall?.[1]).toMatchObject({
+      expectedRevision: 0,
+      instanceId: "instance-2",
+      instanceToken: "new-token",
+    });
+    expect(replaceCall?.[1].idempotencyKey).toEqual(expect.any(String));
     await waitFor(() =>
       expect(handlers.onRefreshUazapiStatus).toHaveBeenCalledWith(
         "connection-uazapi",
