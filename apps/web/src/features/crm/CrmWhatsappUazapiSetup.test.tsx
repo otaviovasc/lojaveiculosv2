@@ -507,6 +507,123 @@ describe("CrmWhatsappUazapiSetup", () => {
     expect(onConnection).toHaveBeenCalled();
   });
 
+  it("offers instance replacement when repair reports an identity mismatch", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn(async () => {
+      throw new AppApiError({
+        code: "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT",
+        message: "identity mismatch",
+        status: 409,
+      });
+    });
+    handlers.onReplaceUazapiConnection = vi.fn(async () => ({
+      connection: createPairingConnection(),
+      operationId: "op-1",
+      status: "completed" as const,
+    }));
+    handlers.onRefreshUazapiStatus = vi.fn(async () =>
+      createPairingConnection(),
+    );
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("ID da instância"), {
+      target: { value: "instance-2" },
+    });
+    fireEvent.change(screen.getByLabelText("Token da instância"), {
+      target: { value: "new-token" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar novas credenciais" }),
+    );
+
+    const replaceButton = await screen.findByRole("button", {
+      name: "Trocar para a nova instância",
+    });
+    expect(replaceButton).toBeVisible();
+    fireEvent.click(replaceButton);
+
+    await waitFor(() =>
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
+        "connection-uazapi",
+        {
+          expectedRevision: 0,
+          idempotencyKey: expect.any(String),
+          instanceId: "instance-2",
+          instanceToken: "new-token",
+        },
+      ),
+    );
+    await waitFor(() =>
+      expect(handlers.onRefreshUazapiStatus).toHaveBeenCalledWith(
+        "connection-uazapi",
+      ),
+    );
+  });
+
+  it("offers starting a fresh connection from the repair state", () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+    const onStartFreshSetup = vi.fn();
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        onStartFreshSetup={onStartFreshSetup}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Criar nova conexão" }));
+    expect(onStartFreshSetup).toHaveBeenCalledTimes(1);
+  });
+
+  it("explains honestly when the connection limit blocks a fresh setup", () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        freshSetupBlockedReason="Limite de conexões WhatsApp desta loja atingido (3 de 3). Arquive uma conexão existente antes de criar outra; nenhuma nova conexão foi criada."
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+        onStartFreshSetup={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Criar nova conexão" }),
+    ).toBeNull();
+    expect(screen.getByRole("note")).toHaveTextContent(
+      /Limite de conexões WhatsApp desta loja atingido/,
+    );
+  });
+
   it("reveals credential repair after a status refresh fails with provider auth", async () => {
     const handlers = createHandlers();
     handlers.onRepairUazapiCredentials = vi.fn();

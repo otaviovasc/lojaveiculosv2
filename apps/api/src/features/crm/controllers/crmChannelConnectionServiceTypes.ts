@@ -43,6 +43,10 @@ import type { listUazapiInstances } from "../../../domains/crm/services/CrmChann
 import type { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
 import type { repairUazapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairUazapiConnectionCredentials.js";
 import type {
+  getUazapiConnectionReplacementStatus,
+  startUazapiConnectionReplacement,
+} from "../../../domains/crm/services/CrmWhatsappService/replaceUazapiConnection.js";
+import type {
   getZapiConnectionReplacementStatus,
   startZapiConnectionReplacement,
 } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnection.js";
@@ -141,6 +145,14 @@ export type CrmChannelConnectionServices = {
   repairUazapiConnectionCredentials: ContextService<
     Parameters<typeof repairUazapiConnectionCredentials>[1],
     Awaited<ReturnType<typeof repairUazapiConnectionCredentials>>
+  >;
+  startUazapiConnectionReplacement: ContextService<
+    Parameters<typeof startUazapiConnectionReplacement>[1],
+    Awaited<ReturnType<typeof startUazapiConnectionReplacement>>
+  >;
+  getUazapiConnectionReplacementStatus: ContextService<
+    Parameters<typeof getUazapiConnectionReplacementStatus>[1],
+    Awaited<ReturnType<typeof getUazapiConnectionReplacementStatus>>
   >;
   startZapiConnectionReplacement: ContextService<
     Parameters<typeof startZapiConnectionReplacement>[1],

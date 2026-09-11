@@ -19,6 +19,8 @@ import type {
   CrmUazapiInstanceSummary,
   CrmUazapiCredentialsInput,
   CrmUazapiListInstancesInput,
+  CrmUazapiReplacementInput,
+  CrmUazapiReplacementResult,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
@@ -89,6 +91,10 @@ export type CrmConnectionSelfServiceHandlers = {
     connectionId: CrmConnectionId,
     input: CrmUazapiCredentialsInput,
   ) => Promise<CrmProviderConnection>;
+  onReplaceUazapiConnection?: (
+    connectionId: CrmConnectionId,
+    input: CrmUazapiReplacementInput,
+  ) => Promise<CrmUazapiReplacementResult>;
   onReplaceZapiConnection?: (
     connectionId: CrmConnectionId,
     input: CrmZapiReplacementInput,
@@ -288,6 +294,19 @@ export function CrmConnectionSelfServiceSetup({
     setProvider(null);
   };
 
+  const startFreshUazapiSetup = () => {
+    resetSetupProgress();
+    setInitialZapiCredentialMode(undefined);
+    setConnection(null);
+    setOfficialChannel("whatsapp");
+    setProvider("uazapi");
+  };
+
+  const freshUazapiSetupBlockedReason =
+    connectionAllowance && connectionAllowance.remaining <= 0
+      ? `Limite de conexões WhatsApp desta loja atingido (${connectionAllowance.used} de ${connectionAllowance.limit}). Arquive uma conexão existente antes de criar outra; nenhuma nova conexão foi criada.`
+      : null;
+
   function resetSetupProgress() {
     setupSessionRef.current += 1;
     completingConnectionRef.current = null;
@@ -426,9 +445,11 @@ export function CrmConnectionSelfServiceSetup({
             canRepairCredentials={canRepairCredentials}
             canSetup={setupAllowed}
             connection={connection?.provider === "uazapi" ? connection : null}
+            freshSetupBlockedReason={freshUazapiSetupBlockedReason}
             handlers={handlers}
             onBack={closeSetup}
             onConnection={setConnection}
+            onStartFreshSetup={startFreshUazapiSetup}
           />
         ) : isOfficialSetupProvider(provider) ? (
           <CrmOfficialChannelSetup
@@ -525,6 +546,13 @@ export function CrmConnectionSelfServiceSetup({
         handlers.onRepairUazapiCredentials
           ? {
               onRepairUazapiCredentials: handlers.onRepairUazapiCredentials,
+            }
+          : {})}
+        {...(managedConnection?.provider === "uazapi" &&
+        canRepairCredentials &&
+        handlers.onReplaceUazapiConnection
+          ? {
+              onReplaceUazapiConnection: handlers.onReplaceUazapiConnection,
             }
           : {})}
         {...(handlers.onSetConnectionPaused

@@ -153,6 +153,19 @@ export function createCrmConversationApi({
         crmConversationRoutes.uazapiCredentials(connectionId, baseUrl),
         input,
       ),
+    replaceUazapiConnection: (connectionId, input) =>
+      postJson(
+        crmConversationRoutes.uazapiReplacement(connectionId, baseUrl),
+        input,
+      ),
+    getUazapiReplacementStatus: (connectionId, operationId) =>
+      getJson(
+        crmConversationRoutes.uazapiReplacementStatus(
+          connectionId,
+          operationId,
+          baseUrl,
+        ),
+      ),
     replaceZapiConnection: (connectionId, input) =>
       postJson(
         crmConversationRoutes.zapiReplacement(connectionId, baseUrl),

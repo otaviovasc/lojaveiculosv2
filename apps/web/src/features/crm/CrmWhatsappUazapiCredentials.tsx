@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { KeyRound, Loader2 } from "lucide-react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { ArrowRightLeft, KeyRound, Loader2, Plus } from "lucide-react";
+import { AppApiError, formatApiErrorDisplay } from "../../lib/apiErrors";
 import type {
   CrmConnectionId,
   CrmProviderConnection,
   CrmUazapiCredentialsInput,
+  CrmUazapiReplacementInput,
+  CrmUazapiReplacementResult,
 } from "./crmConversationTypes";
 
 export type RepairUazapiCredentialsHandler = (
@@ -12,15 +14,26 @@ export type RepairUazapiCredentialsHandler = (
   input: CrmUazapiCredentialsInput,
 ) => Promise<CrmProviderConnection>;
 
+export type ReplaceUazapiConnectionHandler = (
+  connectionId: CrmConnectionId,
+  input: CrmUazapiReplacementInput,
+) => Promise<CrmUazapiReplacementResult>;
+
 export function CrmUazapiCredentialsRepairSection({
   canManage,
   connection,
+  createNewConnectionBlockedReason = null,
   disabled = false,
+  onCreateNewConnection,
+  onReplace,
   onRepair,
 }: {
   canManage: boolean;
   connection: CrmProviderConnection;
+  createNewConnectionBlockedReason?: string | null;
   disabled?: boolean;
+  onCreateNewConnection?: () => void;
+  onReplace?: ReplaceUazapiConnectionHandler;
   onRepair: RepairUazapiCredentialsHandler;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -29,6 +42,13 @@ export function CrmUazapiCredentialsRepairSection({
   const [instanceToken, setInstanceToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [identityMismatch, setIdentityMismatch] = useState(false);
+
+  const readDraft = () => ({
+    ...(baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}),
+    instanceId: instanceId.trim(),
+    instanceToken: instanceToken.trim(),
+  });
 
   const submit = async () => {
     if (busy) return;
@@ -40,20 +60,51 @@ export function CrmUazapiCredentialsRepairSection({
     setError(null);
     try {
       await onRepair(connection.id, {
-        ...(baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}),
+        ...readDraft(),
         ...(connection.revision !== undefined
           ? { expectedRevision: connection.revision }
           : {}),
-        instanceId: instanceId.trim(),
-        instanceToken: instanceToken.trim(),
       });
       setExpanded(false);
+      setIdentityMismatch(false);
+      setInstanceToken("");
+    } catch (caught) {
+      if (
+        onReplace &&
+        caught instanceof AppApiError &&
+        caught.code === "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT"
+      ) {
+        setIdentityMismatch(true);
+      }
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível atualizar as credenciais da conexão.",
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const replace = async () => {
+    if (busy || !onReplace) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onReplace(connection.id, {
+        ...readDraft(),
+        expectedRevision: connection.revision ?? 0,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      setExpanded(false);
+      setIdentityMismatch(false);
       setInstanceToken("");
     } catch (caught) {
       setError(
         formatApiErrorDisplay(
           caught,
-          "Não foi possível atualizar as credenciais da conexão.",
+          "Não foi possível trocar a instância desta conexão.",
         ),
       );
     } finally {
@@ -69,6 +120,7 @@ export function CrmUazapiCredentialsRepairSection({
         onClick={() => {
           setExpanded((current) => !current);
           setError(null);
+          setIdentityMismatch(false);
         }}
         type="button"
       >
@@ -79,6 +131,29 @@ export function CrmUazapiCredentialsRepairSection({
         Revalida o ID e o token da mesma instância uazapi sem perder o histórico
         do CRM.
       </small>
+      {onCreateNewConnection ? (
+        <>
+          <button
+            className="crm-action crm-action-secondary"
+            disabled={!canManage || disabled || busy}
+            onClick={onCreateNewConnection}
+            type="button"
+          >
+            <Plus aria-hidden="true" />
+            Criar nova conexão
+          </button>
+          <small>
+            Abandona este reparo e começa uma conexão do zero, com uma nova
+            instância. A conexão atual e todo o histórico do CRM ficam intactos;
+            as duas conexões passam a existir lado a lado.
+          </small>
+        </>
+      ) : null}
+      {!onCreateNewConnection && createNewConnectionBlockedReason ? (
+        <p className="crm-channel-empty" role="note">
+          {createNewConnectionBlockedReason}
+        </p>
+      ) : null}
       {expanded ? (
         <section
           aria-labelledby="uazapi-credentials-repair-title"
@@ -154,6 +229,27 @@ export function CrmUazapiCredentialsRepairSection({
               {error}
             </p>
           ) : null}
+          {identityMismatch && onReplace ? (
+            <div className="crm-zapi-inline-actions">
+              <button
+                className="crm-action crm-action-primary crm-connection-save"
+                disabled={!canManage || disabled || busy}
+                onClick={() => void replace()}
+                type="button"
+              >
+                {busy ? (
+                  <Loader2 aria-hidden="true" className="crm-spin" />
+                ) : (
+                  <ArrowRightLeft aria-hidden="true" />
+                )}
+                {busy ? "Trocando instância" : "Trocar para a nova instância"}
+              </button>
+              <small>
+                A instância informada é diferente da atual. A troca é verificada
+                com o provedor antes de valer e o histórico do CRM é preservado.
+              </small>
+            </div>
+          ) : null}
           <div className="crm-zapi-inline-actions">
             <button
               className="crm-action crm-action-primary crm-connection-save"
@@ -174,6 +270,7 @@ export function CrmUazapiCredentialsRepairSection({
               onClick={() => {
                 setExpanded(false);
                 setError(null);
+                setIdentityMismatch(false);
               }}
               type="button"
             >

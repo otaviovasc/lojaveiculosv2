@@ -258,6 +258,17 @@ export type CrmZapiCredentialsInput = {
   instanceToken: string;
 };
 
+export type CrmUazapiReplacementInput = CrmUazapiCredentialsInput & {
+  expectedRevision: number;
+  idempotencyKey: string;
+};
+
+export type CrmUazapiReplacementResult = {
+  connection: CrmProviderConnection;
+  operationId: string;
+  status: "verifying" | "verified" | "failed" | "completed";
+};
+
 export type CrmZapiReplacementInput = CrmZapiCredentialsInput & {
   expectedRevision: number;
   idempotencyKey: string;

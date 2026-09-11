@@ -156,6 +156,14 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).repairUazapiConnectionCredentials(connectionId, input),
+    replaceUazapiConnection: async (connectionId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).replaceUazapiConnection(connectionId, input),
+    getUazapiReplacementStatus: async (connectionId, operationId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).getUazapiReplacementStatus(connectionId, operationId),
     replaceZapiConnection: async (connectionId, input) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

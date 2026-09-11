@@ -20,6 +20,7 @@ import { isProviderDisconnected } from "./crmZapiPairingState";
 import {
   CrmUazapiCredentialsRepairSection,
   type RepairUazapiCredentialsHandler,
+  type ReplaceUazapiConnectionHandler,
 } from "./CrmWhatsappUazapiCredentials";
 import { type BusyState, runAction } from "./CrmWhatsappZapiCredentials";
 import {
@@ -48,9 +49,11 @@ export function CrmWhatsappUazapiSetup({
   canRepairCredentials = false,
   canSetup,
   connection,
+  freshSetupBlockedReason = null,
   handlers,
   onBack,
   onConnection,
+  onStartFreshSetup,
 }: CrmWhatsappUazapiSetupProps) {
   const [busy, setBusy] = useState<BusyState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -343,6 +346,21 @@ export function CrmWhatsappUazapiSetup({
     return repaired;
   };
 
+  const replaceUazapiConnection = handlers.onReplaceUazapiConnection;
+  const replaceConnection: ReplaceUazapiConnectionHandler = async (
+    connectionId,
+    input,
+  ) => {
+    if (!replaceUazapiConnection) {
+      throw new Error("Troca de instância UAZAPI indisponível.");
+    }
+    const result = await replaceUazapiConnection(connectionId, input);
+    onConnection(result.connection);
+    setCredentialsIssue(false);
+    await refresh();
+    return result;
+  };
+
   const showCredentialsRepair = Boolean(
     step === 3 &&
     connection &&
@@ -525,6 +543,17 @@ export function CrmWhatsappUazapiSetup({
                 canManage={canSetup}
                 connection={connection}
                 disabled={busy !== null}
+                {...(freshSetupBlockedReason
+                  ? {
+                      createNewConnectionBlockedReason: freshSetupBlockedReason,
+                    }
+                  : {})}
+                {...(onStartFreshSetup && !freshSetupBlockedReason
+                  ? { onCreateNewConnection: onStartFreshSetup }
+                  : {})}
+                {...(replaceUazapiConnection
+                  ? { onReplace: replaceConnection }
+                  : {})}
                 onRepair={repairCredentials}
               />
             ) : null}

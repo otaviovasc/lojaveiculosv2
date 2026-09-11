@@ -826,6 +826,7 @@ export function useCrmInbox(
       connections.repairZapiConnectionCredentials,
     repairUazapiConnectionCredentials:
       connections.repairUazapiConnectionCredentials,
+    replaceUazapiConnection: connections.replaceUazapiConnection,
     replaceZapiConnection: connections.replaceZapiConnection,
     refreshRoutingPolicy: routing.refresh,
     requestZapiPairingCode: connections.requestZapiPairingCode,
