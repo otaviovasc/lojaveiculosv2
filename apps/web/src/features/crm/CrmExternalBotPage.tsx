@@ -1,23 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  BookOpen,
-  Bot,
-  CalendarHeart,
-  Loader2,
-  TriangleAlert,
-} from "lucide-react";
-import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { FeatureField } from "../../components/ui/FeatureForms";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BookOpen, Bot, Loader2, TriangleAlert } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmExternalBotDocs } from "./CrmExternalBotDocs";
 import { CrmProviderEventIssuesPanel } from "./CrmProviderEventIssuesPanel";
 import type { CrmExternalBotView } from "./crmExternalBotView";
-import type { CrmProviderConnection } from "./crmConversationTypes";
-import { hasCrmSchedulingCapability } from "./crmProviderCapabilities";
-import { CrmSpecialDateSettings } from "./CrmSpecialDateSettings";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 import type { CrmRoutingChannel, CrmRoutingPolicy } from "./crmRoutingTypes";
 import { CrmExternalBotPolicyOverview } from "./CrmExternalBotPolicyOverview";
 import {
@@ -35,7 +23,6 @@ const integrationViews = [
   { icon: Bot, label: "Configuracao", value: "configuration" },
   { icon: TriangleAlert, label: "Eventos", value: "events" },
   { icon: BookOpen, label: "Referencia", value: "reference" },
-  { icon: CalendarHeart, label: "Datas especiais", value: "special-dates" },
 ] as const;
 
 export function CrmExternalBotPage({
@@ -43,9 +30,6 @@ export function CrmExternalBotPage({
   canManage,
   canRead,
   canRetry,
-  canManageSpecialDates = false,
-  connections = [],
-  specialDateApi,
 }: CrmExternalBotPageProps) {
   const [activeView, setActiveView] =
     useState<CrmExternalBotView>("configuration");
@@ -72,42 +56,6 @@ export function CrmExternalBotPage({
   const [routingPolicy, setRoutingPolicy] = useState<CrmRoutingPolicy | null>(
     null,
   );
-  const configuredConnections = useMemo(
-    () =>
-      connections.filter(
-        (connection) =>
-          connection.channel === "whatsapp" &&
-          (connection.state ?? connection.status) !== "archived" &&
-          hasCrmSchedulingCapability(connection) &&
-          Boolean(connection.id),
-      ),
-    [connections],
-  );
-  const hasWhatsappConnection = connections.some(
-    (connection) =>
-      connection.channel === "whatsapp" &&
-      (connection.state ?? connection.status) !== "archived" &&
-      Boolean(connection.id),
-  );
-  const [specialDateConnectionId, setSpecialDateConnectionId] = useState<
-    string | null
-  >(() => String(configuredConnections[0]?.id ?? ""));
-
-  useEffect(() => {
-    setSpecialDateConnectionId((current) => {
-      if (
-        current &&
-        configuredConnections.some(
-          (connection) => String(connection.id) === current,
-        )
-      ) {
-        return current;
-      }
-      return configuredConnections[0]
-        ? String(configuredConnections[0].id)
-        : null;
-    });
-  }, [configuredConnections]);
 
   const applyIntegration = useCallback((next: CrmExternalBotConfiguration) => {
     setEnabled(next.enabled);
@@ -288,58 +236,7 @@ export function CrmExternalBotPage({
             <CrmExternalBotDocs />
           </div>
         ) : null}
-
-        {activeView === "special-dates" ? (
-          <div aria-label="Configuração de datas especiais" role="tabpanel">
-            {specialDateApi && canManageSpecialDates ? (
-              specialDateConnectionId ? (
-                <>
-                  <FeatureField
-                    className="crm-special-date-connection-selector"
-                    label="Conexão"
-                  >
-                    <FeatureSelect
-                      ariaLabel="Conexão para datas especiais"
-                      onChange={setSpecialDateConnectionId}
-                      options={configuredConnections.map((connection) => ({
-                        label: readConnectionOptionLabel(connection),
-                        value: String(connection.id),
-                      }))}
-                      value={specialDateConnectionId ?? undefined}
-                    />
-                  </FeatureField>
-                  <CrmSpecialDateSettings
-                    api={specialDateApi}
-                    canManage={canManageSpecialDates}
-                    connectionId={specialDateConnectionId}
-                  />
-                </>
-              ) : (
-                <p className="crm-integrations-state" role="status">
-                  {hasWhatsappConnection
-                    ? "Esta conexão WhatsApp ainda não informa a capacidade de agendamento."
-                    : "Configure uma conexão WhatsApp antes de ativar datas especiais."}
-                </p>
-              )
-            ) : (
-              <PermissionNotice message="Seu usuário precisa do CRM e da permissão de configurar conexões para gerenciar datas especiais." />
-            )}
-          </div>
-        ) : null}
       </div>
     </section>
   );
-}
-
-function readConnectionOptionLabel(connection: CrmProviderConnection) {
-  const channel = connection.channel ?? "Canal";
-  const channelLabel =
-    channel === "whatsapp"
-      ? "WhatsApp"
-      : channel === "instagram"
-        ? "Instagram"
-        : channel === "olx_chat"
-          ? "OLX Chat"
-          : "Canal";
-  return `${channelLabel} · ${connection.displayName}`;
 }

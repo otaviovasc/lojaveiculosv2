@@ -1,2 +1,1 @@
-export type CrmExternalBotView =
-  "configuration" | "events" | "reference" | "special-dates";
+export type CrmExternalBotView = "configuration" | "events" | "reference";

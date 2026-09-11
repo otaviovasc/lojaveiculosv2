@@ -9,8 +9,6 @@ import type {
   CrmScheduledMessage,
 } from "./crmConversationTypes";
 import type { CrmCampaign } from "./crmCampaignTypes";
-import type { CrmProviderConnection } from "./crmConversationTypes";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 import {
   peekCrmScopedCache,
   CRM_CAMPAIGNS_CACHE_KEY,
@@ -91,17 +89,11 @@ export function CrmIntegrationsSection({
   canManage,
   canRead,
   canRetry,
-  canManageSpecialDates = false,
-  connections = [],
-  specialDateApi,
 }: {
   api: CrmConversationApi;
   canManage: boolean;
   canRead: boolean;
   canRetry: boolean;
-  canManageSpecialDates?: boolean;
-  connections?: readonly CrmProviderConnection[];
-  specialDateApi?: CrmSpecialDateApi;
 }) {
   return (
     <CrmExternalBotPage
@@ -109,9 +101,6 @@ export function CrmIntegrationsSection({
       canManage={canManage}
       canRead={canRead}
       canRetry={canRetry}
-      canManageSpecialDates={canManageSpecialDates}
-      connections={connections}
-      {...(specialDateApi ? { specialDateApi } : {})}
     />
   );
 }

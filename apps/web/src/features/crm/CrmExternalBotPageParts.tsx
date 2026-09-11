@@ -2,17 +2,12 @@ import { Bot, KeyRound, LinkIcon, Save, ShieldCheck } from "lucide-react";
 import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import type { CrmConversationApi } from "./crmConversationApi";
-import type { CrmProviderConnection } from "./crmConversationTypes";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
 
 export type CrmExternalBotPageProps = {
   api: CrmConversationApi;
   canManage: boolean;
   canRead: boolean;
   canRetry: boolean;
-  canManageSpecialDates?: boolean;
-  connections?: readonly CrmProviderConnection[];
-  specialDateApi?: CrmSpecialDateApi;
 };
 
 export type BotIntegrationFormProps = {
@@ -73,8 +68,9 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
               Webhook URL
             </label>
             <span className="crm-bot-input-wrap">
-              <LinkIcon aria-hidden="true" />
+              <LinkIcon aria-hidden="true" className="crm-bot-input-icon" />
               <input
+                className="crm-bot-input"
                 id="crm-bot-webhook-url"
                 onChange={(event) =>
                   props.onWebhookUrlChange(event.target.value)
@@ -91,8 +87,9 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
               Novo segredo (assinatura HMAC dos eventos entregues no webhook)
             </label>
             <span className="crm-bot-input-wrap">
-              <KeyRound aria-hidden="true" />
+              <KeyRound aria-hidden="true" className="crm-bot-input-icon" />
               <input
+                className="crm-bot-input"
                 id="crm-bot-secret"
                 onChange={(event) => props.onSecretChange(event.target.value)}
                 placeholder={
@@ -113,8 +110,9 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
               Novo token da API de acoes (Bearer de POST /crm/bot/actions)
             </label>
             <span className="crm-bot-input-wrap">
-              <KeyRound aria-hidden="true" />
+              <KeyRound aria-hidden="true" className="crm-bot-input-icon" />
               <input
+                className="crm-bot-input"
                 id="crm-bot-api-token"
                 onChange={(event) => props.onApiTokenChange(event.target.value)}
                 placeholder={
