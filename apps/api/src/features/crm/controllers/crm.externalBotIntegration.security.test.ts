@@ -83,7 +83,8 @@ describe("CRM external bot integration security", () => {
     expect(response.status).toBe(400);
     await expectApiError(response, {
       code: "CRM_MESSAGING_VALIDATION_ERROR",
-      message: "Request body is invalid.",
+      message:
+        "Request body is invalid: webhookSecret — Too small: expected string to have >=32 characters",
     });
   });
 });

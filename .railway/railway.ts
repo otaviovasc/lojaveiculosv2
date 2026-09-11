@@ -64,6 +64,7 @@ export default defineRailway((context) => {
       CREDERE_ENVIRONMENT: preserve(),
       CREDERE_REDIRECT_URI: context.shared.CREDERE_REDIRECT_URI,
       CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY: preserve(),
+      CRM_EXTERNAL_BOT_MODEL_VERSION: "model-v1",
       CRM_OLX_CHAT_ENABLED: context.shared.CRM_OLX_CHAT_ENABLED,
       CRM_OLX_TRUST_PROXY_HEADERS: preserve(),
       CRM_OLX_WEBHOOK_ALLOWED_IPS: preserve(),
@@ -292,6 +293,42 @@ export default defineRailway((context) => {
     start: "pnpm --filter @lojaveiculosv2/api crm:push:process",
   });
 
+  const crmExternalBotWorker = service(
+    "lojaveiculosv2-crm-external-bot-worker",
+    {
+      source: appSource,
+      build: "pnpm --filter @lojaveiculosv2/api build",
+      deploy: {
+        cronSchedule: "* * * * *",
+        restartPolicyType: "NEVER",
+      },
+      env: {
+        APP_ENV: appEnvironment,
+        AUDIT_DATABASE_URL: auditDatabase.env.DATABASE_URL,
+        CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
+          api.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+        CRM_EXTERNAL_BOT_EVENT_BATCH_SIZE: "25",
+        CRM_EXTERNAL_BOT_MODEL_VERSION: api.env.CRM_EXTERNAL_BOT_MODEL_VERSION,
+        CRM_ZAPI_API_BASE_URL: api.env.CRM_ZAPI_API_BASE_URL,
+        CRM_ZAPI_CLIENT_TOKEN: api.env.CRM_ZAPI_CLIENT_TOKEN,
+        DATABASE_URL: productDatabase.env.DATABASE_URL,
+        DB_POOL_MAX: "1",
+        LOG_LEVEL: api.env.LOG_LEVEL,
+        NODE_ENV: "production",
+        R2_ACCESS_KEY_ID: api.env.R2_ACCESS_KEY_ID,
+        R2_BUCKET_NAME: api.env.R2_BUCKET_NAME,
+        R2_DOWNLOAD_URL_EXPIRES_SECONDS:
+          api.env.R2_DOWNLOAD_URL_EXPIRES_SECONDS,
+        R2_ENDPOINT: api.env.R2_ENDPOINT,
+        R2_PUBLIC_BASE_URL: api.env.R2_PUBLIC_BASE_URL,
+        R2_REGION: api.env.R2_REGION,
+        R2_SECRET_ACCESS_KEY: api.env.R2_SECRET_ACCESS_KEY,
+        R2_UPLOAD_URL_EXPIRES_SECONDS: api.env.R2_UPLOAD_URL_EXPIRES_SECONDS,
+      },
+      start: "pnpm --filter @lojaveiculosv2/api crm:bot:events:process",
+    },
+  );
+
   return project("respectful-respect", {
     resources: [
       productDatabase,
@@ -303,6 +340,7 @@ export default defineRailway((context) => {
       billingReconciliationWorker,
       crmRetentionWorker,
       crmPushWorker,
+      crmExternalBotWorker,
     ],
   });
 });

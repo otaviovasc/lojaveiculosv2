@@ -95,7 +95,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
                 placeholder={
                   secretConfigured
                     ? "Segredo configurado"
-                    : "Mínimo 8 caracteres"
+                    : "Mínimo 32 caracteres"
                 }
                 type="password"
                 value={props.secretDraft}
@@ -151,6 +151,14 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
         </label>
 
         <div className="crm-bot-routing-callout">
+          <p>
+            <strong>Uma URL para todos os números:</strong> esta Webhook URL
+            recebe os eventos de todas as conexões roteadas para o bot (ex.: os
+            dois números de WhatsApp da loja). Cada evento inclui{" "}
+            <code>channel</code> e <code>connectionId</code>, então o mesmo bot
+            consegue identificar de qual número a mensagem veio — se os dois
+            números usam o mesmo bot, basta apontar a mesma URL.
+          </p>
           <p>
             <strong>Roteamento por canal:</strong> Para definir quais números e
             perfis de WhatsApp, Instagram ou OLX devem acionar este bot, acesse

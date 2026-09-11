@@ -88,9 +88,18 @@ export function requireManager(manager: ExternalBotManagerPorts | undefined) {
   return manager;
 }
 
+type ValidationIssue = {
+  path: readonly PropertyKey[];
+  message: string;
+};
+
 export async function parseBody<
   Schema extends {
-    safeParse(value: unknown): { success: boolean; data?: unknown };
+    safeParse(value: unknown): {
+      success: boolean;
+      data?: unknown;
+      error?: { issues: readonly ValidationIssue[] };
+    };
   },
 >(context: Context, schema: Schema) {
   let body: unknown;
@@ -100,8 +109,19 @@ export async function parseBody<
     throw new CrmMessagingValidationError("Request body must be valid JSON.");
   }
   const parsed = schema.safeParse(body);
-  if (!parsed.success)
-    throw new CrmMessagingValidationError("Request body is invalid.");
+  if (!parsed.success) {
+    const fields = (parsed.error?.issues ?? []).map((issue) => ({
+      message: issue.message,
+      path: issue.path.map(String).join("."),
+    }));
+    const first = fields[0];
+    throw new CrmMessagingValidationError(
+      first
+        ? `Request body is invalid: ${first.path || "body"} — ${first.message}`
+        : "Request body is invalid.",
+      fields.length ? { fields } : undefined,
+    );
+  }
   return parsed.data as ReturnType<Schema["safeParse"]> extends {
     data?: infer Data;
   }

@@ -99,14 +99,39 @@ export function CrmExternalBotPage({
 
   const save = async () => {
     if (!canManage || isSaving) return;
+    const trimmedUrl = webhookUrl.trim();
+    const trimmedSecret = secretDraft.trim();
+    const trimmedApiToken = apiTokenDraft.trim();
+    const willHaveSecret =
+      Boolean(trimmedSecret) || Boolean(integration?.secretConfigured);
+    if (trimmedUrl && !isValidPublicHttpsUrl(trimmedUrl)) {
+      setError(
+        "A Webhook URL deve usar HTTPS público (ex.: https://bot.exemplo.com/webhook), sem usuário e senha.",
+      );
+      return;
+    }
+    if (trimmedSecret && trimmedSecret.length < 32) {
+      setError("O segredo do webhook deve ter no mínimo 32 caracteres.");
+      return;
+    }
+    if (trimmedApiToken && trimmedApiToken.length < 32) {
+      setError("O token da API de ações deve ter no mínimo 32 caracteres.");
+      return;
+    }
+    if (enabled && (!trimmedUrl || !willHaveSecret)) {
+      setError(
+        "Para ativar o bot, informe a Webhook URL e o segredo (mínimo 32 caracteres) antes de salvar.",
+      );
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
       const response = await api.updateBotIntegration({
         enabled,
-        ...(secretDraft.trim() ? { webhookSecret: secretDraft.trim() } : {}),
-        ...(apiTokenDraft.trim() ? { apiToken: apiTokenDraft.trim() } : {}),
-        webhookUrl: webhookUrl.trim() || null,
+        ...(trimmedSecret ? { webhookSecret: trimmedSecret } : {}),
+        ...(trimmedApiToken ? { apiToken: trimmedApiToken } : {}),
+        webhookUrl: trimmedUrl || null,
       });
       applyIntegration(response.configuration);
       setSecretDraft("");
@@ -239,4 +264,13 @@ export function CrmExternalBotPage({
       </div>
     </section>
   );
+}
+
+function isValidPublicHttpsUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }

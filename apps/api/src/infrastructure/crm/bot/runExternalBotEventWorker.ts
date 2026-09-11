@@ -2,24 +2,27 @@ import type { ExternalBotEventPreparer } from "../../../domains/crm/bot/ports/ex
 import type { ExternalBotEventOutbox } from "../../../domains/crm/bot/ports/externalBotPorts.js";
 import {
   dispatchNextExternalBotEvent,
+  type ExternalBotDeliveryResolver,
   type ExternalBotEventSender,
 } from "./externalBotEventOutboxDispatcher.js";
 
 export async function runExternalBotEventWorkerOnce(input: {
-  eventSigningKey: string;
   prepare: ExternalBotEventPreparer;
+  eventSigningKey?: string;
   now?: Date;
   outbox: ExternalBotEventOutbox;
-  sender: ExternalBotEventSender;
+  resolveDelivery?: ExternalBotDeliveryResolver;
+  sender?: ExternalBotEventSender;
 }) {
-  if (!input.eventSigningKey.trim()) {
+  if (!input.resolveDelivery && !input.eventSigningKey?.trim()) {
     throw new Error("CRM external bot event signing key is required.");
   }
   return dispatchNextExternalBotEvent({
     prepare: input.prepare,
     now: input.now ?? new Date(),
     outbox: input.outbox,
-    secret: input.eventSigningKey,
-    sender: input.sender,
+    ...(input.resolveDelivery
+      ? { resolveDelivery: input.resolveDelivery }
+      : { secret: input.eventSigningKey ?? "", sender: input.sender! }),
   });
 }

@@ -39,7 +39,7 @@ describe("CrmExternalBotPage", () => {
       target: { value: "https://bot.example.test/webhook" },
     });
     fireEvent.change(screen.getByPlaceholderText("Segredo configurado"), {
-      target: { value: "novo-segredo" },
+      target: { value: "novo-segredo-com-mais-de-32-caracteres" },
     });
     fireEvent.change(screen.getByLabelText(/Novo token da API de acoes/i), {
       target: { value: "novo-token-de-integracao-com-32-chars" },
@@ -51,7 +51,7 @@ describe("CrmExternalBotPage", () => {
       expect(updateBotIntegration).toHaveBeenCalledWith({
         apiToken: "novo-token-de-integracao-com-32-chars",
         enabled: true,
-        webhookSecret: "novo-segredo",
+        webhookSecret: "novo-segredo-com-mais-de-32-caracteres",
         webhookUrl: "https://bot.example.test/webhook",
       }),
     );
@@ -59,6 +59,49 @@ describe("CrmExternalBotPage", () => {
     expect(
       screen.queryByDisplayValue("novo-token-de-integracao-com-32-chars"),
     ).not.toBeInTheDocument();
+  });
+
+  it("blocks saving a webhook secret shorter than 32 characters", async () => {
+    const updateBotIntegration = vi.fn();
+    renderPage(createApi({ updateBotIntegration }));
+
+    fireEvent.change(
+      await screen.findByPlaceholderText("Segredo configurado"),
+      {
+        target: { value: "segredo-curto" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+
+    expect(
+      await screen.findByText(
+        "O segredo do webhook deve ter no mínimo 32 caracteres.",
+      ),
+    ).toBeVisible();
+    expect(updateBotIntegration).not.toHaveBeenCalled();
+  });
+
+  it("blocks enabling the bot without webhook URL and secret", async () => {
+    const updateBotIntegration = vi.fn();
+    const api = createApi({
+      getBotIntegration: vi.fn(async () => ({
+        configuration: createIntegration(),
+      })),
+      updateBotIntegration,
+    });
+    renderPage(api);
+
+    fireEvent.click(
+      await screen.findByRole("checkbox", { name: /bot habilitado/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+
+    expect(
+      await screen.findByText(
+        "Para ativar o bot, informe a Webhook URL e o segredo (mínimo 32 caracteres) antes de salvar.",
+      ),
+    ).toBeVisible();
+    expect(updateBotIntegration).not.toHaveBeenCalled();
   });
 
   it("separates reference content and keeps documentation closed", async () => {

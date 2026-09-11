@@ -209,6 +209,10 @@ function friendlyMessage(input: {
       return "Faltam alguns dados de cobrança da loja. Complete abaixo para continuar.";
     case "CRM_WHATSAPP_VALIDATION_ERROR":
       return "A solicitação do atendimento está incompleta ou desatualizada. Atualize as conversas e tente novamente.";
+    case "CRM_EXTERNAL_BOT_INTEGRATION_INCOMPLETE":
+      return "Para ativar o bot, configure a Webhook URL (HTTPS público) e o segredo com no mínimo 32 caracteres antes de salvar.";
+    case "CRM_EXTERNAL_BOT_INTEGRATION_INVALID":
+      return "Configuração do bot inválida: a Webhook URL deve ser HTTPS público sem usuário e senha, e o segredo/token deve ter no mínimo 32 caracteres.";
     case "CRM_WHATSAPP_SESSION_REVISION_CONFLICT":
       return "Esta conversa foi alterada em outro atendimento. Atualize as conversas antes de repetir a ação.";
     case "CRM_WHATSAPP_NOT_FOUND":
@@ -321,6 +325,7 @@ function friendlyMessage(input: {
 }
 
 const crmFieldLabels: Record<string, string> = {
+  apiToken: "Token da API de ações",
   buyerEmail: "E-mail",
   buyerName: "Nome",
   buyerPhone: "Telefone",
@@ -328,6 +333,8 @@ const crmFieldLabels: Record<string, string> = {
   name: "Nome",
   pipelineStageId: "Etapa",
   stages: "Etapas",
+  webhookSecret: "Segredo do webhook",
+  webhookUrl: "Webhook URL",
 };
 
 function withFieldDetail(details: unknown) {
