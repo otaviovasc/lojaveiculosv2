@@ -12,9 +12,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
 import { CrmExternalBotPage } from "./CrmExternalBotPage";
 import type { CrmConversationApi } from "./crmConversationApi";
-import type { CrmProviderConnection } from "./crmConversationTypes";
-import type { CrmSpecialDateApi } from "./crmSpecialDateApi";
-import { CRM_SPECIAL_DATE_TYPES } from "./crmSpecialDateTypes";
 
 describe("CrmExternalBotPage", () => {
   afterEach(() => {
@@ -126,90 +123,6 @@ describe("CrmExternalBotPage", () => {
     expect(
       screen.getByText(/não tem permissão para visualizar eventos/i),
     ).toBeVisible();
-  });
-
-  it("loads special dates for the selected connection", async () => {
-    const user = userEvent.setup();
-    const specialDateApi: CrmSpecialDateApi = {
-      getConfigs: vi.fn(async (connectionId: string) => ({
-        configs: CRM_SPECIAL_DATE_TYPES.map((dateType) => ({
-          connectionId,
-          dateType,
-          enabled: false,
-          leadDays: 0,
-          messageTemplate: "Mensagem para {nome}.",
-          sendTime: "09:00",
-        })),
-      })),
-      updateConfig: vi.fn(),
-    };
-    const api = createApi();
-    const connection: CrmProviderConnection = {
-      capabilities: ["outbound", "scheduling", "text"],
-      channel: "whatsapp",
-      displayName: "WhatsApp principal",
-      id: "connection_1",
-      provider: "zapi",
-      status: "active",
-    };
-
-    render(
-      <CrmExternalBotPage
-        api={api}
-        canManage
-        canManageSpecialDates
-        canRead
-        canRetry
-        connections={[connection]}
-        specialDateApi={specialDateApi}
-      />,
-    );
-
-    await user.click(
-      await screen.findByRole("tab", { name: "Datas especiais" }),
-    );
-    expect(
-      await screen.findByRole("heading", { name: "Datas especiais" }),
-    ).toBeVisible();
-    const getConfigs = vi.mocked(specialDateApi.getConfigs);
-    const firstCall = getConfigs.mock.calls.at(0);
-    expect(firstCall?.[0]).toBe("connection_1");
-    expect(firstCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
-  });
-
-  it("keeps special dates unavailable until scheduling capability is confirmed", async () => {
-    const user = userEvent.setup();
-    const specialDateApi: CrmSpecialDateApi = {
-      getConfigs: vi.fn(),
-      updateConfig: vi.fn(),
-    };
-    const connection: CrmProviderConnection = {
-      channel: "whatsapp",
-      displayName: "WhatsApp sem capacidades",
-      id: "connection_without_capability",
-      provider: "zapi",
-      status: "active",
-    };
-
-    render(
-      <CrmExternalBotPage
-        api={createApi()}
-        canManage
-        canManageSpecialDates
-        canRead
-        canRetry
-        connections={[connection]}
-        specialDateApi={specialDateApi}
-      />,
-    );
-
-    await user.click(
-      await screen.findByRole("tab", { name: "Datas especiais" }),
-    );
-    expect(
-      await screen.findByText(/ainda não informa a capacidade de agendamento/i),
-    ).toBeVisible();
-    expect(specialDateApi.getConfigs).not.toHaveBeenCalled();
   });
 });
 

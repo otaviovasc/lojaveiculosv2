@@ -178,7 +178,36 @@
 }
 
 .crm-bot-input-wrap {
-  align-items: center;
+  display: block;
+  min-width: 0;
+  position: relative;
+}
+
+.crm-bot-input-wrap:focus-within {
+  outline: none;
+}
+
+.crm-bot-input-icon {
+  color: var(--color-muted);
+  left: 0.85rem;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.crm-bot-input-wrap:focus-within .crm-bot-input-icon {
+  color: var(--color-text);
+}
+
+.crm-bot-input-wrap .crm-bot-input-icon svg,
+svg.crm-bot-input-icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-bot-input-wrap input,
+.crm-bot-input {
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
@@ -188,38 +217,33 @@
   border-radius: var(--radius-lg, 0.75rem);
   box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
     inset;
-  display: flex;
-  gap: 0.65rem;
-  min-height: 2.85rem;
-  padding: 0 0.95rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  outline: none;
-}
-
-.crm-bot-input-wrap:focus-within {
-  background: var(--color-panel);
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
-  outline: none;
-}
-
-.crm-bot-input-wrap svg {
-  color: var(--color-muted);
-  flex-shrink: 0;
-  height: 1.15rem;
-  width: 1.15rem;
-}
-
-.crm-bot-input-wrap input {
-  background: transparent;
-  border: 0;
   color: var(--color-text);
-  flex: 1 1 auto;
   font-family: var(--font-sans);
   font-size: var(--font-size-sm);
   font-weight: 500;
+  min-height: 2.85rem;
   min-width: 0;
   outline: none;
+  padding: 0 0.95rem 0 2.5rem;
+  transition:
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.crm-bot-input-wrap input::placeholder,
+.crm-bot-input::placeholder {
+  color: color-mix(in srgb, var(--color-muted) 82%, transparent);
+  font-weight: 500;
+}
+
+.crm-bot-input-wrap input:focus,
+.crm-bot-input:focus {
+  background: var(--color-panel) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16) !important;
+  outline: none !important;
 }
 
 /* Modern Switch Card */

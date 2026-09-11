@@ -9,7 +9,6 @@ import {
   Terminal,
 } from "lucide-react";
 import { botDocCards } from "./CrmExternalBotDocsData";
-import { CrmExternalBotLlmsBanner } from "./CrmExternalBotLlmsBanner";
 
 export function CrmExternalBotDocsOverview() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -64,9 +63,6 @@ export function CrmExternalBotDocsOverview() {
           </article>
         ))}
       </div>
-
-      {/* LLMS.txt AI Agents Banner */}
-      <CrmExternalBotLlmsBanner />
 
       {/* Quickstart Callout & cURL Example */}
       <div className="crm-bot-quickstart-card">

@@ -79,7 +79,7 @@ export function CrmExternalBotDocs() {
             <span>Estados de atendimento humano</span>
           </button>
         </div>
-        <CrmExternalBotLlmsBanner variant="button" />
+        <CrmExternalBotLlmsBanner />
       </div>
 
       {/* Render Selected View */}

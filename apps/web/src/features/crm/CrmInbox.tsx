@@ -425,11 +425,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
                   canManage={inbox.permissions.canIntegrationsManage}
                   canRead={inbox.permissions.canRead}
                   canRetry={inbox.permissions.canSend}
-                  canManageSpecialDates={
-                    inbox.isCrmEntitled && inbox.permissions.canConnectionSetup
-                  }
-                  connections={inbox.connections}
-                  specialDateApi={specialDateApi}
                 />
               </div>
             ) : null}

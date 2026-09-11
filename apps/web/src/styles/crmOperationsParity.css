@@ -115,7 +115,6 @@
   border-radius: 999px;
 }
 
-.crm-bot-form-field > span,
 .crm-connection-field input {
   border-radius: var(--radius-md);
 }
