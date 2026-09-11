@@ -24,7 +24,7 @@ import { runExternalBotEventWorkerOnce } from "../infrastructure/crm/bot/runExte
 loadLocalEnv();
 
 async function main() {
-  const storage = createRuntimeObjectStorage(process.env);
+  const storage = createObjectStorageOrNull(process.env);
   const auditClient = postgres(requireEnv("AUDIT_DATABASE_URL"), { max: 1 });
   const client = postgres(requireEnv("DATABASE_URL"), { max: 1 });
   try {
@@ -115,6 +115,17 @@ async function main() {
   }
 }
 
+function createObjectStorageOrNull(env: Record<string, string | undefined>) {
+  try {
+    return createRuntimeObjectStorage(env);
+  } catch (error) {
+    process.stderr.write(
+      `${JSON.stringify({ errorName: error instanceof Error ? error.name : "UnknownError", event: "object_storage_unavailable", status: "degraded" })}\n`,
+    );
+    return null;
+  }
+}
+
 function readBatchSize(env: Record<string, string | undefined>) {
   const raw = Number(env.CRM_EXTERNAL_BOT_EVENT_BATCH_SIZE ?? "25");
   if (!Number.isInteger(raw) || raw < 1) return 25;
@@ -129,7 +140,7 @@ function requireEnv(name: string) {
 
 void main().catch((error) => {
   process.stderr.write(
-    `${JSON.stringify({ errorName: error instanceof Error ? error.name : "UnknownError", status: "failed" })}\n`,
+    `${JSON.stringify({ errorName: error instanceof Error ? error.name : "UnknownError", message: error instanceof Error ? error.message : null, status: "failed" })}\n`,
   );
   process.exitCode = 1;
 });
