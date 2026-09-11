@@ -53,6 +53,7 @@ export function createClerkInvitationSender(options: {
       try {
         const invitation = await client.invitations.createInvitation({
           emailAddress: input.email,
+          ignoreExisting: true,
           notify: true,
           publicMetadata: input.metadata,
           ...(options.redirectUrl ? { redirectUrl: options.redirectUrl } : {}),

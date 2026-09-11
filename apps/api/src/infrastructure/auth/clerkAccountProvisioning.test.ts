@@ -36,6 +36,7 @@ describe("createClerkInvitationSender", () => {
     });
     expect(createInvitation).toHaveBeenCalledWith({
       emailAddress: "seller@example.com",
+      ignoreExisting: true,
       notify: true,
       publicMetadata: { role: "salesman" },
       redirectUrl: "https://app.example.com/auth/session",
