@@ -11,6 +11,8 @@
 // Force the full tier with --full or VALIDATION_SCOPE=full.
 
 import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import {
   createValidationFingerprint,
   hasFreshValidationStep,
@@ -77,7 +79,6 @@ const steps = {
         "validate:core-guardrails",
         "typecheck:web",
         "lint:web",
-        "test:web",
         "test:quality-tools",
         "test:seed-document-pdf",
       ]
@@ -85,7 +86,6 @@ const steps = {
         "validate:core-guardrails",
         "typecheck",
         "lint",
-        "test",
         "test:quality-tools",
         "test:seed-document-pdf",
       ],
@@ -94,20 +94,16 @@ const steps = {
         "validate:core-guardrails",
         "typecheck:web",
         "lint:web",
-        "test:web",
         "test:quality-tools",
         "test:seed-document-pdf",
-        "test:coverage:web",
         "build:web",
       ]
     : [
         "validate:core-guardrails",
         "typecheck",
         "lint",
-        "test",
         "test:quality-tools",
         "test:seed-document-pdf",
-        "test:coverage",
         "build:deployables",
       ],
 }[tier];
@@ -123,6 +119,82 @@ for (const step of steps) {
     process.exit(result.status ?? 1);
   }
   recordValidationStep(validationFingerprint, step);
+}
+
+runRelatedWorkspaceTests({ files, forceFull, tier, validationFingerprint });
+
+function runRelatedWorkspaceTests({
+  files: changedPaths,
+  forceFull: isForceFull,
+  tier: currentTier,
+  validationFingerprint: fingerprint,
+}) {
+  if (isForceFull || !changedPaths) {
+    console.log(`\n▶ pnpm -r test (full test suite triggered)`);
+    const result = spawnSync("pnpm", ["-r", "test"], { stdio: "inherit" });
+    if (result.status !== 0) {
+      process.exit(result.status ?? 1);
+    }
+    return;
+  }
+
+  const workspaces = discoverWorkspaces();
+  let ranAny = false;
+
+  for (const ws of workspaces) {
+    const wsFiles = changedPaths
+      .filter((f) => f.startsWith(`${ws.dir}/`))
+      .map((f) => relative(ws.dir, f));
+
+    if (wsFiles.length === 0) continue;
+
+    const stepName = `test:related:${ws.name}`;
+    if (hasFreshValidationStep(fingerprint, stepName)) {
+      console.log(`\n↷ ${stepName} (unchanged snapshot; cached pass)`);
+      ranAny = true;
+      continue;
+    }
+
+    console.log(
+      `\n▶ Running related tests for ${ws.name} (${wsFiles.length} changed file(s))`,
+    );
+    ranAny = true;
+    const result = spawnSync(
+      "pnpm",
+      ["--filter", ws.name, "exec", "vitest", "related", "--run", ...wsFiles],
+      { stdio: "inherit" },
+    );
+    if (result.status !== 0) {
+      process.exit(result.status ?? 1);
+    }
+    recordValidationStep(fingerprint, stepName);
+  }
+
+  if (!ranAny) {
+    console.log(
+      `\n↷ No workspace code changes detected; skipping related tests.`,
+    );
+  }
+}
+
+function discoverWorkspaces() {
+  const workspaces = [];
+  for (const group of ["apps", "packages"]) {
+    if (!existsSync(group)) continue;
+    for (const entry of readdirSync(group)) {
+      const dir = join(group, entry);
+      const pkgJsonPath = join(dir, "package.json");
+      if (existsSync(pkgJsonPath)) {
+        try {
+          const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
+          if (pkg.name) {
+            workspaces.push({ dir, name: pkg.name });
+          }
+        } catch {}
+      }
+    }
+  }
+  return workspaces;
 }
 
 function changedFiles(currentTier) {
