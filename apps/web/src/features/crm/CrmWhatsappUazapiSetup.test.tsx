@@ -625,6 +625,140 @@ describe("CrmWhatsappUazapiSetup", () => {
     );
   });
 
+  it("replaces the instance with an account instance via the admin token", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+    handlers.onListUazapiInstances = vi.fn(async () => [
+      {
+        connectedPhone: null,
+        id: "instance-2",
+        name: "Instância B",
+        status: "disconnected",
+      },
+    ]);
+    handlers.onReplaceUazapiConnection = vi.fn(async () => ({
+      connection: createPairingConnection(),
+      operationId: "op-admin-1",
+      status: "completed" as const,
+    }));
+    handlers.onRefreshUazapiStatus = vi.fn(async () =>
+      createPairingConnection(),
+    );
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Usar token admin da conta" }),
+    );
+    fireEvent.change(screen.getByLabelText("Token admin da conta"), {
+      target: { value: " admin-token-1 " },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Buscar instâncias da conta" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onListUazapiInstances).toHaveBeenCalledWith({
+        adminToken: "admin-token-1",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Instância uazapi existente" }),
+    );
+    fireEvent.click(await screen.findByRole("option", { name: /Instância B/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar troca de instância" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
+        "connection-uazapi",
+        {
+          adminToken: "admin-token-1",
+          expectedRevision: 0,
+          idempotencyKey: expect.any(String),
+          instanceId: "instance-2",
+        },
+      ),
+    );
+    expect(handlers.onRepairUazapiCredentials).not.toHaveBeenCalled();
+  });
+
+  it("creates a fresh provider instance from the admin token path", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+    handlers.onListUazapiInstances = vi.fn(async () => []);
+    handlers.onReplaceUazapiConnection = vi.fn(async () => ({
+      connection: createPairingConnection(),
+      operationId: "op-admin-2",
+      status: "completed" as const,
+    }));
+    handlers.onRefreshUazapiStatus = vi.fn(async () =>
+      createPairingConnection(),
+    );
+
+    render(
+      <CrmWhatsappUazapiSetup
+        canPair
+        canRepairCredentials
+        canSetup
+        connection={createErrorConnection()}
+        handlers={handlers}
+        onBack={vi.fn()}
+        onConnection={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Atualizar credenciais da instância",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Usar token admin da conta" }),
+    );
+    fireEvent.change(screen.getByLabelText("Token admin da conta"), {
+      target: { value: "admin-token-1" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Buscar instâncias da conta" }),
+    );
+
+    expect(
+      await screen.findByText(/Nenhuma instância foi encontrada/),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar troca de instância" }),
+    );
+
+    await waitFor(() =>
+      expect(handlers.onReplaceUazapiConnection).toHaveBeenCalledWith(
+        "connection-uazapi",
+        {
+          adminToken: "admin-token-1",
+          createInstance: {},
+          expectedRevision: 0,
+          idempotencyKey: expect.any(String),
+        },
+      ),
+    );
+  });
+
   it("reveals credential repair after a status refresh fails with provider auth", async () => {
     const handlers = createHandlers();
     handlers.onRepairUazapiCredentials = vi.fn();

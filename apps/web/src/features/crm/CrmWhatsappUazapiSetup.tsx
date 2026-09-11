@@ -551,6 +551,9 @@ export function CrmWhatsappUazapiSetup({
                 {...(onStartFreshSetup && !freshSetupBlockedReason
                   ? { onCreateNewConnection: onStartFreshSetup }
                   : {})}
+                {...(handlers.onListUazapiInstances
+                  ? { onListUazapiInstances: handlers.onListUazapiInstances }
+                  : {})}
                 {...(replaceUazapiConnection
                   ? { onReplace: replaceConnection }
                   : {})}

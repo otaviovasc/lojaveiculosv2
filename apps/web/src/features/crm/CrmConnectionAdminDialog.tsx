@@ -17,6 +17,8 @@ import {
 import type {
   CrmConnectionId,
   CrmProviderConnection,
+  CrmUazapiInstanceSummary,
+  CrmUazapiListInstancesInput,
 } from "./crmConversationTypes";
 
 /**
@@ -35,6 +37,7 @@ export function CrmConnectionManageDialog({
   onRefresh,
   onRefreshStatus,
   onRepair,
+  onListUazapiInstances,
   onRepairUazapiCredentials,
   onReplaceUazapiConnection,
   onReplace,
@@ -49,6 +52,9 @@ export function CrmConnectionManageDialog({
   onRefresh: () => Promise<void> | void;
   onRefreshStatus?: () => Promise<void>;
   onRepair?: () => void;
+  onListUazapiInstances?: (
+    input: CrmUazapiListInstancesInput,
+  ) => Promise<readonly CrmUazapiInstanceSummary[]>;
   onRepairUazapiCredentials?: RepairUazapiCredentialsHandler;
   onReplaceUazapiConnection?: ReplaceUazapiConnectionHandler;
   onReplace?: () => void;
@@ -158,6 +164,7 @@ export function CrmConnectionManageDialog({
               canManage={canManage}
               connection={connection}
               disabled={disabled || lifecycleBusy}
+              {...(onListUazapiInstances ? { onListUazapiInstances } : {})}
               {...(onReplaceUazapiConnection
                 ? { onReplace: onReplaceUazapiConnection }
                 : {})}

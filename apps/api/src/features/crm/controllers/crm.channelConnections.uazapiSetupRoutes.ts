@@ -95,15 +95,29 @@ export function registerCrmUazapiConnectionSetupRoutes(
           whatsappUazapiReplacementSchema,
         );
         const serviceContext = await createContext(context);
+        const candidateInput =
+          "instanceToken" in input
+            ? {
+                instanceId: input.instanceId,
+                instanceToken: input.instanceToken,
+              }
+            : "createInstance" in input
+              ? {
+                  adminToken: input.adminToken,
+                  createInstance: input.createInstance,
+                }
+              : {
+                  adminToken: input.adminToken,
+                  instanceId: input.instanceId,
+                };
         const result = await services.startUazapiConnectionReplacement(
           serviceContext,
           {
             connectionId,
+            ...candidateInput,
             ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
             expectedRevision: input.expectedRevision,
             idempotencyKey: input.idempotencyKey,
-            instanceId: input.instanceId,
-            instanceToken: input.instanceToken,
           },
         );
         return context.json({
