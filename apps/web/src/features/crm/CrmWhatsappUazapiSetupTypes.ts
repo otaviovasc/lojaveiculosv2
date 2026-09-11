@@ -9,9 +9,11 @@ export type CrmWhatsappUazapiSetupProps = {
   canRepairCredentials?: boolean;
   canSetup: boolean;
   connection: CrmProviderConnection | null;
+  freshSetupBlockedReason?: string | null;
   handlers: CrmConnectionSelfServiceHandlers;
   onBack: () => void;
   onConnection: (connection: CrmProviderConnection) => void;
+  onStartFreshSetup?: () => void;
 };
 
 export function readUazapiConnectionStateKey(

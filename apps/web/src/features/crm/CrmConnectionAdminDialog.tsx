@@ -12,6 +12,7 @@ import { ConnectionDashboard, ConnectionSetupFlow } from "./CrmConnectionViews";
 import {
   CrmUazapiCredentialsRepairSection,
   type RepairUazapiCredentialsHandler,
+  type ReplaceUazapiConnectionHandler,
 } from "./CrmWhatsappUazapiCredentials";
 import type {
   CrmConnectionId,
@@ -35,6 +36,7 @@ export function CrmConnectionManageDialog({
   onRefreshStatus,
   onRepair,
   onRepairUazapiCredentials,
+  onReplaceUazapiConnection,
   onReplace,
   onRevokeConnectionMember,
   onSetConnectionPaused,
@@ -48,6 +50,7 @@ export function CrmConnectionManageDialog({
   onRefreshStatus?: () => Promise<void>;
   onRepair?: () => void;
   onRepairUazapiCredentials?: RepairUazapiCredentialsHandler;
+  onReplaceUazapiConnection?: ReplaceUazapiConnectionHandler;
   onReplace?: () => void;
   onSetConnectionPaused?: (
     connectionId: CrmConnectionId,
@@ -155,6 +158,9 @@ export function CrmConnectionManageDialog({
               canManage={canManage}
               connection={connection}
               disabled={disabled || lifecycleBusy}
+              {...(onReplaceUazapiConnection
+                ? { onReplace: onReplaceUazapiConnection }
+                : {})}
               onRepair={onRepairUazapiCredentials}
             />
           ) : null}

@@ -38,13 +38,15 @@ export function createMemoryCrmConnectionRepository(
       return candidates;
     },
     async createConnection(input) {
-      const duplicate = connections.some(
-        (connection) =>
-          connection.storeId === input.storeId &&
-          connection.channel === input.channel &&
-          connection.provider === input.provider &&
-          connection.status !== "archived",
-      );
+      const duplicate =
+        input.provider !== "uazapi" &&
+        connections.some(
+          (connection) =>
+            connection.storeId === input.storeId &&
+            connection.channel === input.channel &&
+            connection.provider === input.provider &&
+            connection.status !== "archived",
+        );
       if (duplicate) {
         throw new Error("CRM_CONNECTION_PROVIDER_ALREADY_EXISTS");
       }

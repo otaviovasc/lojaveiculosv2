@@ -24,14 +24,16 @@ export function createTestCrmConnectionRepository(
       return [];
     },
     async createConnection(input) {
-      const duplicate = connections.some(
-        (connection) =>
-          connection.storeId === input.storeId &&
-          connection.tenantId === input.tenantId &&
-          connection.channel === input.channel &&
-          connection.provider === input.provider &&
-          connection.status !== "archived",
-      );
+      const duplicate =
+        input.provider !== "uazapi" &&
+        connections.some(
+          (connection) =>
+            connection.storeId === input.storeId &&
+            connection.tenantId === input.tenantId &&
+            connection.channel === input.channel &&
+            connection.provider === input.provider &&
+            connection.status !== "archived",
+        );
       if (duplicate) throw new Error("CRM_CONNECTION_PROVIDER_ALREADY_EXISTS");
       const connection: CrmConnection = {
         broker: input.broker,

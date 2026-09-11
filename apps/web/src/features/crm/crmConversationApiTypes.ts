@@ -90,6 +90,8 @@ import type {
   CrmUazapiCredentialsInput,
   CrmUazapiInstanceSummary,
   CrmUazapiListInstancesInput,
+  CrmUazapiReplacementInput,
+  CrmUazapiReplacementResult,
 } from "./crmConversationTypes";
 
 export type CrmConversationApi = {
@@ -154,6 +156,14 @@ export type CrmConversationApi = {
     connectionId: CrmConnectionId,
     input: CrmUazapiCredentialsInput,
   ) => Promise<CrmProviderConnection>;
+  replaceUazapiConnection: (
+    connectionId: CrmConnectionId,
+    input: CrmUazapiReplacementInput,
+  ) => Promise<CrmUazapiReplacementResult>;
+  getUazapiReplacementStatus: (
+    connectionId: CrmConnectionId,
+    operationId: string,
+  ) => Promise<CrmUazapiReplacementResult>;
   replaceZapiConnection: (
     connectionId: CrmConnectionId,
     input: CrmZapiReplacementInput,

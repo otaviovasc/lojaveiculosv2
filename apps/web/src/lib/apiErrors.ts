@@ -247,9 +247,15 @@ function friendlyMessage(input: {
     case "CRM_UAZAPI_CREDENTIAL_VERIFICATION_FAILED":
       return "A UAZAPI não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token da instância e tente novamente.";
     case "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":
-      return "O ID informado pertence a outra instância UAZAPI. Para trocar a instância sem perder o histórico, acione o suporte.";
+      return "O ID informado pertence a outra instância UAZAPI. Use a troca de instância abaixo para apontar a conexão para a nova instância; o histórico do CRM será preservado.";
+    case "CRM_UAZAPI_REPLACEMENT_NOT_FOUND":
+      return "A troca de instância não está mais disponível. Atualize a tela e tente novamente.";
+    case "CRM_UAZAPI_REPLACEMENT_REVISION_CONFLICT":
+      return "A conexão foi alterada em outra sessão. Atualize a tela antes de trocar a instância.";
     case "CRM_UAZAPI_CONNECTION_REVISION_CONFLICT":
       return "A conexão foi alterada em outra sessão. Atualize a tela e informe as credenciais novamente.";
+    case "CRM_WHATSAPP_CONNECTION_LIMIT_REACHED":
+      return "Limite de conexões WhatsApp ativas atingido. Arquive uma conexão existente antes de criar outra; nenhuma nova conexão foi criada.";
     case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
       return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
     case "CRM_WHATSAPP_GATEWAY_ERROR":

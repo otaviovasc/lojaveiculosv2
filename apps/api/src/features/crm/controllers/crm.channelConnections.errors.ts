@@ -8,6 +8,7 @@ import {
   CrmChannelConnectionProviderAlreadyExistsError,
   CrmUazapiConnectionPhoneConflictError,
   CrmUazapiInstanceNotFoundError,
+  CrmWhatsappConnectionLimitError,
   CrmZapiConnectionConflictError,
 } from "../../../domains/crm/channelConnections/connectionCreation.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
@@ -18,6 +19,10 @@ import {
   UazapiConnectionRevisionConflictError,
   UazapiIdentityReplacementRequiresSupportError,
 } from "../../../domains/crm/services/CrmWhatsappService/repairUazapiConnectionCredentialsSupport.js";
+import {
+  UazapiReplacementNotFoundError,
+  UazapiReplacementRevisionConflictError,
+} from "../../../domains/crm/services/CrmWhatsappService/replaceUazapiConnection.js";
 import { ZapiIdentityReplacementRequiresSupportError } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnectionIdentity.js";
 import {
   ZapiReplacementNotFoundError,
@@ -47,6 +52,15 @@ export function handleCrmMessagingConnectionError(
     return jsonApiError(context, {
       code: "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS",
       details: { provider: error.provider },
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof CrmWhatsappConnectionLimitError) {
+    return jsonApiError(context, {
+      code: "CRM_WHATSAPP_CONNECTION_LIMIT_REACHED",
+      details: { limit: error.limit },
       error,
       message: error.message,
       status: 409,
@@ -141,6 +155,23 @@ export function handleCrmMessagingConnectionError(
   if (error instanceof UazapiConnectionRevisionConflictError) {
     return jsonApiError(context, {
       code: "CRM_UAZAPI_CONNECTION_REVISION_CONFLICT",
+      details: error.details,
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof UazapiReplacementNotFoundError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_REPLACEMENT_NOT_FOUND",
+      error,
+      message: error.message,
+      status: 404,
+    });
+  }
+  if (error instanceof UazapiReplacementRevisionConflictError) {
+    return jsonApiError(context, {
+      code: "CRM_UAZAPI_REPLACEMENT_REVISION_CONFLICT",
       details: error.details,
       error,
       message: error.message,

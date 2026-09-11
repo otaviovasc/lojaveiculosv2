@@ -44,6 +44,10 @@ import { retryOlxChatSetup } from "../../../domains/crm/services/CrmService/retr
 import { repairZapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairZapiConnectionCredentials.js";
 import { repairUazapiConnectionCredentials } from "../../../domains/crm/services/CrmWhatsappService/repairUazapiConnectionCredentials.js";
 import {
+  getUazapiConnectionReplacementStatus,
+  startUazapiConnectionReplacement,
+} from "../../../domains/crm/services/CrmWhatsappService/replaceUazapiConnection.js";
+import {
   getZapiConnectionReplacementStatus,
   startZapiConnectionReplacement,
 } from "../../../domains/crm/services/CrmWhatsappService/replaceZapiConnection.js";
@@ -76,6 +80,8 @@ type ConnectionBindings = Pick<
   | "requestUazapiPairingQr"
   | "repairZapiConnectionCredentials"
   | "repairUazapiConnectionCredentials"
+  | "startUazapiConnectionReplacement"
+  | "getUazapiConnectionReplacementStatus"
   | "startZapiConnectionReplacement"
   | "getZapiConnectionReplacementStatus"
   | "retryOlxChatSetup"
@@ -138,6 +144,10 @@ export const createCrmChannelConnectionBindings = (
     repairZapiConnectionCredentials(context, input, ports),
   repairUazapiConnectionCredentials: (context, input) =>
     repairUazapiConnectionCredentials(context, input, ports),
+  startUazapiConnectionReplacement: (context, input) =>
+    startUazapiConnectionReplacement(context, input, ports),
+  getUazapiConnectionReplacementStatus: (context, input) =>
+    getUazapiConnectionReplacementStatus(context, input, ports),
   startZapiConnectionReplacement: (context, input) =>
     startZapiConnectionReplacement(context, input, ports),
   getZapiConnectionReplacementStatus: (context, input) =>

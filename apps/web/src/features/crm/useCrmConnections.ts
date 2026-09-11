@@ -11,6 +11,7 @@ import type {
   CrmWhatsappZapiWebhookSetupResult,
   CrmUazapiCredentialsInput,
   CrmUazapiListInstancesInput,
+  CrmUazapiReplacementInput,
   CrmZapiCredentialsInput,
   CrmZapiReplacementInput,
   CrmZapiReplacementResult,
@@ -279,11 +280,14 @@ export function useCrmConnections(api: CrmConversationApi) {
     ],
   );
 
-  const replaceZapiConnection = useCallback(
-    async (connectionId: CrmConnectionId, input: CrmZapiReplacementInput) => {
+  const runConnectionReplacement = useCallback(
+    async <Result extends { connection: CrmProviderConnection }>(
+      connectionId: CrmConnectionId,
+      action: () => Promise<Result>,
+    ): Promise<Result> => {
       const mutationGeneration = beginConnectionMutation(connectionId);
       try {
-        const result = await api.replaceZapiConnection(connectionId, input);
+        const result = await action();
         if (!isLatestConnectionMutation(connectionId, mutationGeneration)) {
           return result;
         }
@@ -295,19 +299,34 @@ export function useCrmConnections(api: CrmConversationApi) {
             connectionsRef.current.find(
               (candidate) => String(candidate.id) === String(connectionId),
             ) ?? result.connection,
-        } satisfies CrmZapiReplacementResult;
+        };
       } catch (caught) {
         setError(asError(caught));
         throw caught;
       }
     },
     [
-      api,
       beginConnectionMutation,
       isLatestConnectionMutation,
       reconcileConnection,
       refreshConnections,
     ],
+  );
+
+  const replaceZapiConnection = useCallback(
+    (connectionId: CrmConnectionId, input: CrmZapiReplacementInput) =>
+      runConnectionReplacement(connectionId, () =>
+        api.replaceZapiConnection(connectionId, input),
+      ),
+    [api, runConnectionReplacement],
+  );
+
+  const replaceUazapiConnection = useCallback(
+    (connectionId: CrmConnectionId, input: CrmUazapiReplacementInput) =>
+      runConnectionReplacement(connectionId, () =>
+        api.replaceUazapiConnection(connectionId, input),
+      ),
+    [api, runConnectionReplacement],
   );
 
   const setConnectionPaused = useCallback(
@@ -640,6 +659,7 @@ export function useCrmConnections(api: CrmConversationApi) {
     refreshConnectionsAndRead,
     repairZapiConnectionCredentials,
     repairUazapiConnectionCredentials,
+    replaceUazapiConnection,
     replaceZapiConnection,
     requestZapiPairingCode,
     requestZapiPairingQr,

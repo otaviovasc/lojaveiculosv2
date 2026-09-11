@@ -1,33 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { CrmUazapiProvisioningProvider } from "../../../domains/crm/ports/crmUazapiProvisioningProvider.js";
 import { CrmConnectionSetupProviderError } from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
 import { createTestApp } from "./crm.controller.testSupport.js";
-
-function createProvisioningStub(): CrmUazapiProvisioningProvider & {
-  createInstance: ReturnType<typeof vi.fn>;
-  listInstances: ReturnType<typeof vi.fn>;
-} {
-  return {
-    createInstance: vi.fn(async ({ name }: { name: string }) => ({
-      baseUrl: "https://uazapi.test",
-      instanceId: name,
-      instanceToken: "instance-token-1",
-    })),
-    deleteInstance: vi.fn(async () => undefined),
-    listInstances: vi.fn(async () => [
-      {
-        connectedPhone: "5511988880000",
-        id: "inst-1",
-        name: "Loja A",
-        status: "connected",
-        token: "server-token-1",
-      },
-    ]),
-  } as CrmUazapiProvisioningProvider & {
-    createInstance: ReturnType<typeof vi.fn>;
-    listInstances: ReturnType<typeof vi.fn>;
-  };
-}
+import { createUazapiProvisioningStub as createProvisioningStub } from "./crm.channelConnections.uazapiCreate.testSupport.js";
 
 describe("CRM channel connection creation with uazapi", () => {
   it("creates a BYOK uazapi WhatsApp connection in create mode", async () => {

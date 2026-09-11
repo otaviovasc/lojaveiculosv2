@@ -763,6 +763,52 @@ describe("CrmConnectionSelfServiceSetup", () => {
     expect(handlers.onCreate).not.toHaveBeenCalled();
   });
 
+  it("abandons a stuck UAZAPI repair and starts a fresh setup", async () => {
+    const handlers = createHandlers();
+    handlers.onRepairUazapiCredentials = vi.fn();
+    const stuck = createUazapiConnection({
+      live: {
+        checkedAt: "2026-08-25T12:00:00.000Z",
+        connected: null,
+        connectedPhone: null,
+        errorMessage: "UAZAPI status failed with HTTP 401",
+        providerStatus: "error",
+        smartphoneConnected: null,
+      },
+      phoneNumber: null,
+      readiness: { ready: false, reason: "error", reasonCode: "error" },
+      ready: false,
+    });
+    render(
+      <CrmConnectionSelfServiceSetup
+        isCrmEntitled
+        availableSetups={[
+          { broker: "direct", channel: "whatsapp", provider: "uazapi" },
+        ]}
+        canPair
+        canRepairCredentials
+        canSetup
+        connectionAllowance={{ limit: 3, remaining: 2, used: 1 }}
+        connections={[stuck]}
+        handlers={handlers}
+        startAtDirectory
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /UAZAPI principal/ }));
+    expect(await screen.findByText("Etapa 3 de 4 · Pareamento")).toBeVisible();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Criar nova conexão" }),
+    );
+
+    expect(
+      await screen.findByText("Etapa 1 de 4 · Provisionamento"),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Token admin da uazapi")).toBeVisible();
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+  });
+
   it("reopens a ready UAZAPI connection wizard from the manage dialog", async () => {
     render(
       <CrmConnectionSelfServiceSetup
