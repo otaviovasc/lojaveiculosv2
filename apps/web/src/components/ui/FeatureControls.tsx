@@ -2,8 +2,12 @@ import type { ComponentProps, ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { CustomSelect, type CustomSelectOption } from "./CustomSelect";
 import { DatePickerField } from "./DatePickerField";
+import { TimePickerField } from "./TimePickerField";
+import { Morphicon } from "./Morphicon";
 import { cx, type FeatureIcon } from "./featureShared";
 
+export { DatePickerField } from "./DatePickerField";
+export { TimePickerField } from "./TimePickerField";
 export { FeatureTabs } from "./FeatureTabs";
 
 export function FeatureInput({
@@ -50,12 +54,16 @@ export function FeatureSearchField({
   inputClassName?: string;
   label: string;
 }) {
+  const hasValue = Boolean(props.value);
   return (
     <label className={cx("relative block", className)}>
       <span className="sr-only">{label}</span>
-      <Search
+      <Morphicon
+        active={hasValue}
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+        name="search-close"
+        size={16}
       />
       <FeatureInput {...props} className={cx("pl-10", inputClassName)} />
     </label>
@@ -66,6 +74,7 @@ export function FeatureSelect<Value extends string = string>({
   className,
   density = "default",
   iconInset = false,
+  invalid = false,
   radius = "default",
   ...props
 }: {
@@ -76,6 +85,7 @@ export function FeatureSelect<Value extends string = string>({
   disabled?: boolean | undefined;
   emptyMessage?: string | undefined;
   iconInset?: boolean;
+  invalid?: boolean | undefined;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: (value: Value) => void;
@@ -89,6 +99,7 @@ export function FeatureSelect<Value extends string = string>({
   return (
     <CustomSelect
       {...props}
+      invalid={invalid}
       className={cx(
         "border border-line bg-app px-3 text-sm",
         density === "compact" ? "!min-h-9 !py-1 !text-xs" : "min-h-11",
@@ -105,6 +116,7 @@ export function FeatureDateField({
   align = "left",
   className,
   disabled,
+  invalid = false,
   label,
   max,
   min,
@@ -115,6 +127,7 @@ export function FeatureDateField({
   align?: "left" | "right" | undefined;
   className?: string | undefined;
   disabled?: boolean | undefined;
+  invalid?: boolean | undefined;
   label: string;
   max?: string | undefined;
   min?: string | undefined;
@@ -127,6 +140,7 @@ export function FeatureDateField({
       {name ? <input name={name} type="hidden" value={value} /> : null}
       <DatePickerField
         align={align}
+        invalid={invalid}
         isDisabled={disabled}
         label={label}
         maxDate={parseDateInputValue(max)}

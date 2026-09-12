@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  analyzeJsxButtonShadows,
   collectActionClassNames,
   findCssButtonShadowViolations,
   findJsxButtonShadowViolations,
@@ -51,6 +52,39 @@ describe("button shadow rules", () => {
     expect(
       findCssButtonShadowViolations("actions.css", css, classes),
     ).toHaveLength(1);
+  });
+
+  it("combines action discovery and JSX diagnostics without changing results", () => {
+    const source = `
+      <FeatureActionButton
+        className={active ? "primary-cta hover:shadow-lg" : "secondary-cta"}
+        style={{ boxShadow: "0 0 1rem red" }}
+      />
+    `;
+
+    const result = analyzeJsxButtonShadows("Example.tsx", source);
+
+    expect(result.actionClassNames).toEqual(
+      new Set(["primary-cta", "shadow-lg", "secondary-cta"]),
+    );
+    expect(result.actionClassNames).toEqual(
+      collectActionClassNames("Example.tsx", source),
+    );
+    expect(result.violations).toEqual(
+      findJsxButtonShadowViolations("Example.tsx", source),
+    );
+    expect(result.violations).toEqual([
+      {
+        detail: 'decorative shadow class "hover:shadow-lg"',
+        file: "Example.tsx",
+        line: 3,
+      },
+      {
+        detail: "inline style.boxShadow",
+        file: "Example.tsx",
+        line: 4,
+      },
+    ]);
   });
 
   it("rejects JSX shadow utilities in every decorative state", () => {

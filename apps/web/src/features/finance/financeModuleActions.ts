@@ -83,6 +83,12 @@ export async function updateFinanceEntryStatus(
         status: "pending",
       });
     }
+    context.setToast({
+      kind: "success",
+      message: entry.name,
+      title:
+        action === "pay" ? "Pagamento confirmado" : "Marcado como pendente",
+    });
     context.refresh();
   } catch (error) {
     context.setToast({

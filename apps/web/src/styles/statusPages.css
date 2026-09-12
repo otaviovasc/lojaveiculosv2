@@ -89,20 +89,23 @@
   width: 100%;
 }
 
+/* Status code reads as an eyebrow chip above the title — legible hierarchy
+   instead of a giant pill overlapping the illustration scene. */
 .status-page__code {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
+  background: var(--status-accent-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--status-accent) 28%, var(--color-line));
   border-radius: 999px;
-  box-shadow: var(--shadow-raised);
   color: var(--status-accent-strong);
   font-family: var(--font-display);
-  font-size: var(--font-size-display);
+  font-size: var(--font-size-sm);
   font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  margin-top: -1.5rem;
-  padding: 0.35rem 1.5rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  margin-top: 1.75rem;
+  padding: 0.5rem 1rem 0.5rem 1.125rem;
   position: relative;
+  text-transform: uppercase;
 }
 
 .status-page__title {
@@ -111,7 +114,7 @@
   font-weight: 900;
   letter-spacing: -0.01em;
   line-height: 1.15;
-  margin-top: 1.25rem;
+  margin-top: 1rem;
 }
 
 .status-page__body {
@@ -135,6 +138,30 @@
   color: var(--color-caption);
   font-size: var(--font-size-xs);
   font-weight: 700;
+  margin-top: 1.25rem;
+}
+
+/* Reference codes (e.g. crash id) are easy to read and copy for support. */
+.status-page__meta code {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  margin-left: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  user-select: all;
+}
+
+/* Fill layout (crashes/restricted states inside the shell) keeps the same
+   rhythm on a smaller stage so the panel doesn't tower over the workspace. */
+.status-page--fill .status-page__scene {
+  width: min(100%, 16rem);
+}
+
+.status-page--fill .status-page__code {
   margin-top: 1.25rem;
 }
 

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureAnchoredPopover } from "./FeaturePopover";
@@ -50,6 +51,28 @@ describe("FeatureAnchoredPopover", () => {
       expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
     );
   });
+
+  it("restores focus to the anchor after Escape", async () => {
+    const user = userEvent.setup();
+    render(<PopoverHarness />);
+
+    const checkbox = screen.getByRole("checkbox");
+    checkbox.focus();
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Colunas" })).toHaveFocus();
+  });
+
+  it("restores focus to the anchor after a selection closes it", async () => {
+    const user = userEvent.setup();
+    render(<PopoverHarness />);
+
+    await user.click(screen.getByRole("button", { name: "Aplicar" }));
+
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Colunas" })).toHaveFocus();
+  });
 });
 
 function PopoverHarness() {
@@ -70,6 +93,9 @@ function PopoverHarness() {
           <input type="checkbox" />
           Dias em Estoque
         </label>
+        <button onClick={() => setOpen(false)} type="button">
+          Aplicar
+        </button>
       </FeatureAnchoredPopover>
     </div>
   );

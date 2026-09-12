@@ -1,6 +1,4 @@
 import type {
-  PaymentProviderCheckoutInput,
-  PaymentProviderCheckoutResult,
   PaymentProviderCustomerInput,
   PaymentProviderCustomerResult,
   PaymentProviderSubscriptionInput,
@@ -13,6 +11,15 @@ import {
   readString,
   requiredString,
 } from "./asaasPaymentProviderHttp.js";
+import {
+  asaasSubscriptionStatus,
+  centsToAsaasValue,
+  onlyDigits,
+  parseAsaasDate,
+} from "./asaasPaymentProviderValues.js";
+
+export { createAsaasCheckout } from "./asaasPaymentProviderCheckout.js";
+export { lookupAsaasPaymentCorrelation } from "./asaasPaymentProviderCorrelation.js";
 
 export async function syncAsaasCustomer(
   client: AsaasClient,
@@ -65,41 +72,82 @@ export async function syncAsaasSubscription(
   input: PaymentProviderSubscriptionInput,
 ): Promise<PaymentProviderSubscriptionResult> {
   const body = subscriptionBody(input);
-  const subscription = input.existingProviderSubscriptionId
+  const correlatedProviderSubscriptionId =
+    input.existingProviderSubscriptionId ??
+    (await findSubscriptionByExternalReference(
+      client,
+      input.externalReference,
+    ));
+  const subscription = correlatedProviderSubscriptionId
     ? await client.request(
         "PUT",
-        `/subscriptions/${encodeURIComponent(input.existingProviderSubscriptionId)}`,
+        `/subscriptions/${encodeURIComponent(correlatedProviderSubscriptionId)}`,
         { body },
       )
     : await client.request("POST", "/subscriptions", { body });
+  const returnedProviderSubscriptionId = requiredString(
+    subscription.id,
+    "subscription.id",
+  );
+  if (
+    correlatedProviderSubscriptionId &&
+    returnedProviderSubscriptionId !== correlatedProviderSubscriptionId
+  ) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_identity_mismatch",
+      "Asaas returned a different subscription identity after update.",
+      409,
+    );
+  }
 
   return {
-    created: !input.existingProviderSubscriptionId,
+    created: !correlatedProviderSubscriptionId,
     currentPeriodEnd: parseAsaasDate(readString(subscription.nextDueDate)),
     provider: "asaas",
-    providerSubscriptionId: requiredString(subscription.id, "subscription.id"),
+    providerSubscriptionId: returnedProviderSubscriptionId,
     status: asaasSubscriptionStatus(readString(subscription.status)),
   };
 }
 
-export async function createAsaasCheckout(
+async function findSubscriptionByExternalReference(
   client: AsaasClient,
-  input: PaymentProviderCheckoutInput,
-): Promise<PaymentProviderCheckoutResult> {
-  const body = checkoutBody(input);
-  const checkout = await client.request("POST", "/checkouts", { body });
-  const providerCheckoutId = requiredString(checkout.id, "checkout.id");
+  externalReference: string,
+) {
+  const result = await client.request("GET", "/subscriptions", {
+    query: { externalReference, limit: "2" },
+  });
+  const matches = readRecordArray(result.data);
+  if (result.hasMore === true || matches.length > 1) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_correlation_ambiguous",
+      "Multiple Asaas subscriptions match the billing external reference.",
+      409,
+    );
+  }
+  const match = matches[0];
+  if (match && readString(match.externalReference) !== externalReference) {
+    throw new AsaasGatewayError(
+      "asaas_subscription_correlation_ambiguous",
+      "Asaas returned a subscription outside the requested external reference.",
+      409,
+    );
+  }
+  return match ? requiredString(match.id, "subscription.id") : null;
+}
 
-  return {
-    checkoutUrl:
-      readString(checkout.link) ??
-      checkoutUrl(client.checkoutBaseUrl, providerCheckoutId),
-    expiresAt: checkoutExpiresAt(input.minutesToExpire),
-    externalReference: input.externalReference,
-    provider: "asaas",
-    providerCheckoutId,
-    raw: checkout,
-  };
+export async function cancelAsaasSubscription(
+  client: AsaasClient,
+  providerSubscriptionId: string,
+): Promise<void> {
+  try {
+    await client.request(
+      "DELETE",
+      `/subscriptions/${encodeURIComponent(providerSubscriptionId)}`,
+    );
+  } catch (error) {
+    if (error instanceof AsaasGatewayError && error.status === 404) return;
+    throw error;
+  }
 }
 
 async function findCustomer(
@@ -107,9 +155,17 @@ async function findCustomer(
   query: Record<string, string>,
 ): Promise<PaymentProviderCustomerResult | null> {
   const result = await client.request("GET", "/customers", {
-    query: { ...query, limit: "1" },
+    query: { ...query, limit: "2" },
   });
-  const first = readRecordArray(result.data)[0];
+  const matches = readRecordArray(result.data);
+  if (result.hasMore === true || matches.length > 1) {
+    throw new AsaasGatewayError(
+      "asaas_customer_correlation_ambiguous",
+      "Multiple Asaas customers match the billing identity.",
+      409,
+    );
+  }
+  const first = matches[0];
   const customerId = first ? readString(first.id) : null;
   if (!customerId) return null;
   return {
@@ -130,88 +186,4 @@ function subscriptionBody(input: PaymentProviderSubscriptionInput) {
     updatePendingPayments: input.updatePendingPayments,
     value: centsToAsaasValue(input.valueCents),
   };
-}
-
-function checkoutBody(input: PaymentProviderCheckoutInput) {
-  const customer = customerData(input);
-  return {
-    billingTypes: input.billingTypes,
-    callback: input.callback,
-    chargeTypes: ["RECURRENT"],
-    ...(customer ? { customerData: customer } : {}),
-    externalReference: input.externalReference,
-    items: input.items.map((item) => ({
-      ...(item.description
-        ? { description: truncate(item.description, 150) }
-        : {}),
-      name: truncate(item.name, 30),
-      quantity: item.quantity,
-      value: centsToAsaasValue(item.valueCents),
-    })),
-    minutesToExpire: input.minutesToExpire,
-    subscription: {
-      cycle: "MONTHLY",
-      nextDueDate: input.nextDueDate,
-    },
-  };
-}
-
-function customerData(input: PaymentProviderCheckoutInput) {
-  if (!input.customerData) return null;
-  const cpfCnpj = input.customerData.cpfCnpj
-    ? onlyDigits(input.customerData.cpfCnpj)
-    : null;
-  const phone = input.customerData.phone
-    ? onlyDigits(input.customerData.phone)
-    : null;
-  const data = {
-    ...(cpfCnpj ? { cpfCnpj } : {}),
-    ...(input.customerData.email ? { email: input.customerData.email } : {}),
-    name: input.customerData.name,
-    ...(phone ? { phone } : {}),
-  };
-  return Object.keys(data).length > 1 ? data : null;
-}
-
-function truncate(value: string, maxLength: number): string {
-  return value.trim().slice(0, maxLength).trimEnd();
-}
-
-function centsToAsaasValue(cents: number): number {
-  return Number((cents / 100).toFixed(2));
-}
-
-function onlyDigits(value: string | null): string | null {
-  const digits = value?.replace(/\D/g, "") ?? "";
-  return digits ? digits : null;
-}
-
-function asaasSubscriptionStatus(
-  status: string | null,
-): PaymentProviderSubscriptionResult["status"] {
-  if (
-    status === "ACTIVE" ||
-    status === "EXPIRED" ||
-    status === "INACTIVE" ||
-    status === "OVERDUE"
-  ) {
-    return status;
-  }
-  return "UNKNOWN";
-}
-
-function parseAsaasDate(value: string | null): Date | null {
-  if (!value) return null;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function checkoutUrl(baseUrl: string, providerCheckoutId: string): string {
-  const url = new URL(baseUrl);
-  url.searchParams.set("id", providerCheckoutId);
-  return url.toString();
-}
-
-function checkoutExpiresAt(minutesToExpire: number): Date {
-  return new Date(Date.now() + minutesToExpire * 60_000);
 }

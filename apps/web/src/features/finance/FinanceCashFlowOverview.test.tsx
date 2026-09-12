@@ -8,7 +8,7 @@ import type { FinanceEntry } from "./types";
 describe("FinanceCashFlowOverview", () => {
   afterEach(() => cleanup());
 
-  it("keeps the tinted commission hierarchy and exposes ledger shortcuts", () => {
+  it("renders the cash-flow summary cards and exposes ledger shortcuts", () => {
     const onShowOverdue = vi.fn();
     const onShowPending = vi.fn();
     const { container } = render(
@@ -16,6 +16,7 @@ describe("FinanceCashFlowOverview", () => {
         entries={entries}
         onShowOverdue={onShowOverdue}
         onShowPending={onShowPending}
+        status="ready"
       />,
     );
 
@@ -34,6 +35,40 @@ describe("FinanceCashFlowOverview", () => {
 
     expect(onShowPending).toHaveBeenCalledOnce();
     expect(onShowOverdue).toHaveBeenCalledOnce();
+  });
+
+  it("keeps values unknown and shortcuts disabled until data is ready", () => {
+    const onShowOverdue = vi.fn();
+    const onShowPending = vi.fn();
+    const { rerender } = render(
+      <FinanceCashFlowOverview
+        entries={[]}
+        onShowOverdue={onShowOverdue}
+        onShowPending={onShowPending}
+        status="loading"
+      />,
+    );
+
+    expect(screen.getAllByText("Carregando valor")).toHaveLength(4);
+    expect(screen.queryByText("R$ 0,00")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Mostrar lançamentos em aberto" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Mostrar lançamentos vencidos" }),
+    ).toBeDisabled();
+
+    rerender(
+      <FinanceCashFlowOverview
+        entries={[]}
+        onShowOverdue={onShowOverdue}
+        onShowPending={onShowPending}
+        status="error"
+      />,
+    );
+
+    expect(screen.getAllByText("Indisponível")).toHaveLength(4);
+    expect(screen.queryByText("R$ 0,00")).not.toBeInTheDocument();
   });
 });
 

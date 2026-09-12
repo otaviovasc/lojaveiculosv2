@@ -17,7 +17,12 @@ describe("VehicleService unit edits", () => {
     const ports = createInMemoryVehiclePorts([createListing()]);
     const unit = await attachVehicleUnit(
       context,
-      { listingId: "listing_1", plate: "ABC1D23", stockNumber: "stock_1" },
+      {
+        listingId: "listing_1",
+        plate: "ABC1D23",
+        renavam: "12345678901",
+        stockNumber: "stock_1",
+      },
       ports,
     );
 
@@ -25,6 +30,7 @@ describe("VehicleService unit edits", () => {
       context,
       {
         plate: "DEF4G56",
+        renavam: "10987654321",
         status: "inactive",
         stockNumber: "stock_2",
         unitId: unit.id,
@@ -35,6 +41,7 @@ describe("VehicleService unit edits", () => {
 
     expect(updated).toMatchObject({
       plate: "DEF4G56",
+      renavam: "10987654321",
       status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",
@@ -53,6 +60,11 @@ describe("VehicleService unit edits", () => {
       after: "DEF4G56",
       before: "ABC1D23",
       path: "unit.plate",
+    });
+    expect(event.changes).toContainEqual({
+      after: "10987654321",
+      before: "12345678901",
+      path: "unit.renavam",
     });
     expect(event.changes).toContainEqual({
       after: "stock_2",

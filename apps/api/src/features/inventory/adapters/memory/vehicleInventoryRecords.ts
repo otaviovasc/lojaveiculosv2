@@ -46,6 +46,7 @@ export function createUnitRecord(
     colorName: record.colorName ?? null,
     createdAt: now,
     id: `unit_${sequence}`,
+    renavam: record.renavam ?? null,
     updatedAt: now,
   };
 }

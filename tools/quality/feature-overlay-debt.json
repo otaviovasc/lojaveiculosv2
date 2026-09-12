@@ -8,10 +8,6 @@
       "maxViolations": 1,
       "reason": "legacy print preview dialog pending shared overlay migration"
     },
-    "apps/web/src/features/inventory/components/TestDriveWizard.tsx": {
-      "maxViolations": 1,
-      "reason": "legacy test-drive wizard pending shared overlay migration"
-    },
     "apps/web/src/features/publicSite/CustomPagesListParts.tsx": {
       "maxViolations": 1,
       "reason": "legacy custom-page preview pending shared overlay migration"
@@ -23,6 +19,14 @@
     "apps/web/src/features/publicSite/PageBuilderMediaBlocks.tsx": {
       "maxViolations": 1,
       "reason": "legacy page-builder media editor pending shared overlay migration"
+    },
+    "apps/web/src/features/publicSite/quadra/QuadraListingContactModal.tsx": {
+      "maxViolations": 1,
+      "reason": "intentional V1 storefront contact dialog with local focus containment"
+    },
+    "apps/web/src/features/publicSite/quadra/QuadraListingGallery.tsx": {
+      "maxViolations": 1,
+      "reason": "intentional V1 fullscreen gallery with local focus containment"
     },
     "apps/web/src/features/publicSite/WebsiteBuilderDesign.tsx": {
       "maxViolations": 1,

@@ -4,11 +4,9 @@ import {
   AutoEntryInlineError,
   AutoEntrySaveAction,
   AutoEntrySellerField,
-  AutoEntryValueOrigin,
 } from "./AutoEntryDomainPrimitives";
 import {
   AutoEntryRateMatrix,
-  emptyRankValues,
   type AutoEntryRankValues,
 } from "./AutoEntryRateMatrix";
 import {
@@ -22,6 +20,7 @@ import {
   toMutation,
   toStatusMutation,
 } from "./domainModel";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
 import type { AutoEntryRule, AutoEntryRuleMutation } from "./types";
 
@@ -47,6 +46,8 @@ function FinancingStoreCard({
   const [values, setValues] = useState(storedValues);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setValues(storedValues), [storedValues]);
+  const isDirty = hasRankChanges(storedValues, values);
+  useAutoEntryDirty("financing_approved", isDirty);
 
   const save = () => {
     const mutations = buildRankMutations(rules, values, "store", null);
@@ -63,18 +64,17 @@ function FinancingStoreCard({
       description="A loja recebe uma taxa por faixa R1–R5 do financiamento. Campos vazios não criam regras sugeridas."
       title="Matriz da loja"
     >
-      <AutoEntryValueOrigin
-        active={Object.values(storedValues).some(Boolean)}
-      />
       <AutoEntryRateMatrix
         label="Percentual da loja por faixa"
         onChange={setValues}
+        stored={storedValues}
         suggestions={financingStoreSuggestions}
         values={values}
       />
       <AutoEntryInlineError message={error} />
       <AutoEntrySaveAction
         canManage={canManage}
+        isDirty={isDirty}
         isSaving={isSaving}
         onClick={save}
       />
@@ -94,9 +94,13 @@ function FinancingSellerCard({
     () => rankValues(rules, "financing.seller", sellerUserId),
     [rules, sellerUserId],
   );
-  const [values, setValues] = useState<AutoEntryRankValues>(emptyRankValues());
+  // Initialize from the same baseline isDirty derives from so the dirty
+  // registry never sees a transient mismatch on the first render.
+  const [values, setValues] = useState<AutoEntryRankValues>(storedValues);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setValues(storedValues), [storedValues]);
+  const isDirty = hasRankChanges(storedValues, values);
+  useAutoEntryDirty("financing_approved", isDirty);
 
   const save = () => {
     if (!sellerUserId) {
@@ -124,23 +128,29 @@ function FinancingSellerCard({
         sellers={sellers}
         value={sellerUserId}
       />
-      <AutoEntryValueOrigin
-        active={Object.values(storedValues).some(Boolean)}
-      />
       <AutoEntryRateMatrix
         label="Comissão do vendedor por faixa"
         onChange={setValues}
+        stored={storedValues}
         suggestions={financingSellerSuggestions}
         values={values}
       />
       <AutoEntryInlineError message={error} />
       <AutoEntrySaveAction
         canManage={canManage}
+        isDirty={isDirty}
         isSaving={isSaving}
         onClick={save}
       />
     </AutoEntryDomainCard>
   );
+}
+
+function hasRankChanges(
+  stored: AutoEntryRankValues,
+  values: AutoEntryRankValues,
+) {
+  return financingRanks.some((rank) => stored[rank] !== values[rank]);
 }
 
 export function rankValues(

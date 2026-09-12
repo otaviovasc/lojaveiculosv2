@@ -26,11 +26,14 @@ export function createDrizzleVehicleStoreBrandingReader(
       const contactLine = joinText([phone, settings.profile.contactEmail]);
       return {
         address,
+        city: settings.profile.addressCity,
         contactLine,
         document: settings.profile.documentNumber,
         email: settings.profile.contactEmail,
+        logoUrl: settings.profile.logoImageUrl,
         name: settings.identity.tradingName,
         phone,
+        state: settings.profile.addressState,
       };
     },
   };

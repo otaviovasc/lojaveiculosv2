@@ -13,6 +13,20 @@ const booleanQuerySchema = z
 const pageSchema = z.coerce.number().int().min(1).default(1);
 const limitSchema = z.coerce.number().int().min(1).max(100).default(50);
 const optionalPositiveMoneySchema = z.coerce.number().nonnegative().optional();
+const EXTERNAL_LEAD_METADATA_MAX_BYTES = 4_096;
+
+export const externalLeadMetadataSchema = z
+  .object({
+    message: z.string().trim().min(1).max(2000).optional(),
+    title: z.string().trim().min(1).max(191).optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      new TextEncoder().encode(JSON.stringify(value)).byteLength <=
+      EXTERNAL_LEAD_METADATA_MAX_BYTES,
+    `Lead metadata must not exceed ${EXTERNAL_LEAD_METADATA_MAX_BYTES} bytes.`,
+  );
 
 export const externalVehicleQuerySchema = z.object({
   available: booleanQuerySchema,
@@ -70,7 +84,7 @@ export const externalCreateLeadSchema = z.object({
   email: z.string().email().nullable().optional(),
   listingId: z.string().trim().min(1).nullable().optional(),
   message: z.string().trim().min(1).max(2000).nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: externalLeadMetadataSchema.optional(),
   name: z.string().trim().min(1).max(191).optional(),
   phone: z.string().trim().min(3).max(40).nullable().optional(),
   source: leadSourceSchema.default("external_api"),
@@ -84,7 +98,7 @@ export const externalUpdateLeadSchema = z.object({
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   email: z.string().email().nullable().optional(),
   message: z.string().trim().min(1).max(2000).nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: externalLeadMetadataSchema.optional(),
   name: z.string().trim().min(1).max(191).optional(),
   phone: z.string().trim().min(3).max(40).nullable().optional(),
   status: leadStatusSchema.optional(),

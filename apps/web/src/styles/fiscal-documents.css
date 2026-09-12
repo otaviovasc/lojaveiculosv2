@@ -1,0 +1,678 @@
+/* Fiscal documents tab — list, status chips, cancel bar and correction card.
+   Follows the billing/credere visual language: display-font headings,
+   uppercase micro-labels, pill controls and tone-aware surfaces. All colors
+   come from design tokens; never hardcode hex/rgb values here. */
+
+.fiscal-docs {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+
+.fiscal-docs-toolbar {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .fiscal-docs-toolbar {
+    align-items: center;
+    flex-direction: row;
+  }
+}
+
+.fiscal-docs-count {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  letter-spacing: 0.08em;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fiscal-docs-count strong {
+  color: var(--color-accent-strong);
+  font-weight: 900;
+}
+
+/* ── Status filter chips (segmented pill group with counts) ──────────── */
+
+.fiscal-status-chips {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+  border-radius: 999px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  width: 100%;
+}
+
+.fiscal-status-chip {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 0%;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  text-align: center;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+  white-space: nowrap;
+}
+
+.fiscal-status-chip:hover {
+  color: var(--color-text);
+}
+
+.fiscal-status-chip:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.fiscal-status-chip[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.fiscal-status-chip__count {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  min-height: 1.125rem;
+  min-width: 1.125rem;
+  padding: 0 0.3rem;
+}
+
+.fiscal-status-chip[aria-pressed="true"] .fiscal-status-chip__count {
+  background: color-mix(
+    in srgb,
+    var(--color-accent-foreground) 18%,
+    transparent
+  );
+}
+
+/* ── Document table ──────────────────────────────────────────────────── */
+
+.fiscal-doc-kind {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.fiscal-doc-kind--danger {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+  color: var(--color-danger);
+}
+
+.fiscal-doc-title {
+  color: var(--color-text);
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.fiscal-doc-subtitle {
+  color: var(--color-muted);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+.fiscal-doc-error {
+  border-left: 2px solid var(--color-danger);
+  color: var(--color-danger);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.45;
+  margin-top: 0.4rem;
+  max-width: 18rem;
+  padding-left: 0.5rem;
+}
+
+.fiscal-doc-total {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.fiscal-artifact-feedback {
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  max-width: 20rem;
+  text-align: right;
+}
+
+.fiscal-artifact-feedback--error {
+  color: var(--color-danger);
+}
+
+/* ── Expandable document details and provider-safe history ─────────── */
+
+.fiscal-document-details-row > td {
+  background: color-mix(in srgb, var(--color-app-elevated) 58%, transparent);
+  padding: 0 1rem 1rem;
+}
+
+.fiscal-document-details {
+  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.fiscal-document-details__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.fiscal-document-details__eyebrow,
+.fiscal-document-details__grid dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fiscal-document-details__header h3 {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  font-weight: 900;
+  margin-top: 0.15rem;
+}
+
+.fiscal-document-details__provider {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
+  border-radius: 999px;
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+}
+
+.fiscal-document-details__grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.fiscal-document-details__grid > div {
+  background: color-mix(in srgb, var(--color-app) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+}
+
+.fiscal-document-details__grid dt {
+  align-items: center;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.fiscal-document-details__grid dd {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-top: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-document-details__access-key {
+  align-items: flex-start;
+  color: var(--color-accent-strong);
+  display: flex;
+  font-size: var(--font-size-xs);
+  gap: 0.55rem;
+}
+
+.fiscal-document-details__access-key span {
+  color: var(--color-muted);
+  display: grid;
+  font-family: var(--font-mono);
+  gap: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-document-details__access-key strong {
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.fiscal-document-details__error {
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border-left: 3px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.6rem 0.75rem;
+}
+
+.fiscal-document-details__history h4 {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  gap: 0.4rem;
+}
+
+.fiscal-document-details__history ol {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.fiscal-document-details__history li {
+  align-items: center;
+  border-left: 2px solid var(--color-accent);
+  color: var(--color-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.35rem 0.75rem;
+  justify-content: space-between;
+  padding-left: 0.65rem;
+}
+
+.fiscal-document-details__history time,
+.fiscal-document-details__history p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.fiscal-document-details__history p {
+  margin-top: 0.5rem;
+}
+
+/* ── Inline cancellation bar ─────────────────────────────────────────── */
+
+.fiscal-cancel-bar {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-danger) 6%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, transparent);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.5rem;
+}
+
+.fiscal-cancel-bar__hint {
+  align-items: center;
+  color: var(--color-danger);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.35rem;
+  margin-right: auto;
+  padding-left: 0.25rem;
+}
+
+.fiscal-cancel-bar__confirm {
+  align-items: center;
+  background: var(--color-danger);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    opacity var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.fiscal-cancel-bar__confirm:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+.fiscal-cancel-bar__dismiss {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  transition:
+    color var(--motion-duration-base) var(--motion-ease-standard),
+    opacity var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.fiscal-cancel-bar__dismiss:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.fiscal-cancel-bar__confirm:focus-visible,
+.fiscal-cancel-bar__dismiss:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.fiscal-cancel-bar__confirm:disabled,
+.fiscal-cancel-bar__dismiss:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── Mobile document cards ───────────────────────────────────────────── */
+
+.fiscal-doc-card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  transition:
+    border-color var(--motion-duration-base) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.fiscal-doc-card:hover {
+  border-color: var(--color-line-strong);
+}
+
+.fiscal-doc-card--rejected {
+  background: color-mix(in srgb, var(--color-danger) 4%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+}
+
+.fiscal-doc-card__meta {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  gap: 0.25rem;
+}
+
+.fiscal-doc-card__meta strong {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.fiscal-doc-card__error {
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 0.5rem 0.65rem;
+}
+
+.fiscal-doc-card__actions {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+  padding-top: 0.75rem;
+}
+
+/* ── Correction banner (elegant warning alert card) ──────────────────── */
+
+.fiscal-correction {
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, transparent);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 1rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  position: relative;
+}
+
+@media (min-width: 640px) {
+  .fiscal-correction {
+    padding: 1.5rem;
+  }
+}
+
+.fiscal-correction::before {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-radius: 999px;
+  content: "";
+  filter: blur(90px);
+  height: 12rem;
+  pointer-events: none;
+  position: absolute;
+  right: -4rem;
+  top: -6rem;
+  width: 16rem;
+}
+
+.fiscal-correction__watermark {
+  bottom: -1.75rem;
+  color: var(--color-warning);
+  opacity: 0.1;
+  pointer-events: none;
+  position: absolute;
+  right: -1rem;
+  transform: rotate(-12deg);
+  z-index: 0;
+}
+
+.fiscal-correction__watermark svg {
+  height: 8rem;
+  stroke-width: 1.2;
+  width: 8rem;
+}
+
+.fiscal-correction__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.fiscal-correction__heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.fiscal-correction__mark {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--color-warning-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.fiscal-correction__eyebrow {
+  color: var(--color-warning-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.fiscal-correction__title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-top: 0.2rem;
+}
+
+.fiscal-correction__body {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.6;
+  max-width: 62ch;
+  position: relative;
+  z-index: 1;
+}
+
+.fiscal-correction__body strong {
+  color: var(--color-text);
+}
+
+.fiscal-correction__reason {
+  color: var(--color-warning-strong);
+  font-weight: 800;
+  margin-top: 0.35rem;
+}
+
+.fiscal-correction__fields {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 640px) {
+  .fiscal-correction__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fiscal-correction__field {
+  background: color-mix(in srgb, var(--color-app) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+}
+
+.fiscal-correction__field dt {
+  color: var(--color-warning-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fiscal-correction__field dd {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.fiscal-correction__dismiss {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  transition:
+    color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.fiscal-correction__dismiss:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-text);
+}
+
+.fiscal-correction__dismiss:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiscal-status-chip,
+  .fiscal-doc-card,
+  .fiscal-cancel-bar__confirm,
+  .fiscal-cancel-bar__dismiss,
+  .fiscal-correction__dismiss {
+    transition: none;
+  }
+}

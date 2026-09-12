@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { listingDetailPayload } from "../api/apiClientTestSupport";
 import type { InventoryListingDetail } from "../model/types";
-import { buildSalesRouteFromInventoryDetail } from "./InventoryDetailSalesRoute";
+import {
+  buildSaleContextFromInventoryDetail,
+  buildSalesRouteFromInventoryDetail,
+} from "./InventoryDetailSalesRoute";
 
 describe("inventory detail sales route", () => {
   it("builds a sales-page route with selected vehicle context", () => {
@@ -38,6 +41,16 @@ describe("inventory detail sales route", () => {
     expect(params.get("colorName")).toBe("Preto");
     expect(params.get("primaryMediaUrl")).toBe("https://cdn.local/public.jpg");
     expect(params.get("priceCents")).toBe("12990000");
+
+    const context = buildSaleContextFromInventoryDetail(detail, "unit_2");
+    expect(context.listingId).toBe("listing_42");
+    expect(context.listingTitle).toBe("Honda Civic Touring");
+    expect(context.unitId).toBe("unit_2");
+    expect(context.unitLabel).toBe("EST-42");
+    expect(context.plate).toBe("TRD1E23");
+    expect(context.colorName).toBe("Preto");
+    expect(context.primaryMediaUrl).toBe("https://cdn.local/public.jpg");
+    expect(context.priceCents).toBe(12990000);
   });
 });
 

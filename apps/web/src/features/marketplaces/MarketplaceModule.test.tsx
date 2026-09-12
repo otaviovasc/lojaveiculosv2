@@ -10,22 +10,28 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppApiError } from "../../lib/apiErrors";
+import { markCrmOlxOauthReturn } from "../crm/crmOlxOauthReturn";
 import type { MarketplaceApi } from "./apiClient";
 import { MarketplaceModule } from "./MarketplaceModule";
-import type {
-  MarketplaceJob,
-  MarketplaceOverview,
-  MarketplaceStockPlan,
-} from "./types";
+import type { MarketplaceOverview, MarketplaceStockPlan } from "./types";
+import {
+  failedJob,
+  marketplaceStockPlan as plan,
+  queuedJob,
+} from "./MarketplaceModule.testFixtures";
 
 describe("MarketplaceModule", () => {
   afterEach(() => {
     cleanup();
+    window.sessionStorage.clear();
     window.history.replaceState({}, "", "/");
   });
 
   it("renders the account requirement checklist", async () => {
+    const user = userEvent.setup();
     render(<MarketplaceModule api={createApi()} />);
+
+    await user.click(await screen.findByText("Requisitos do canal"));
 
     await waitFor(() =>
       expect(screen.getByText("Estado da conta")).toBeVisible(),
@@ -35,7 +41,7 @@ describe("MarketplaceModule", () => {
       "/images/integrationslogos/olx.png",
     );
     expect(
-      screen.getByRole("region", {
+      screen.getByRole("group", {
         name: "Resumo operacional dos marketplaces",
       }),
     ).toBeVisible();
@@ -61,9 +67,9 @@ describe("MarketplaceModule", () => {
     const card = heading.closest(".marketplace-card");
     expect(card).not.toBeNull();
     expect(card).toHaveAttribute("data-connection-tone", "danger");
-    expect(card?.querySelector(".marketplace-connection-status")).toHaveClass(
-      "is-danger",
-    );
+    expect(
+      within(card as HTMLElement).getAllByText("Reconexão necessária").length,
+    ).toBeGreaterThan(0);
     expect(
       within(card as HTMLElement).getByRole("button", {
         name: "Reconectar conta do OLX",
@@ -73,7 +79,12 @@ describe("MarketplaceModule", () => {
       within(card as HTMLElement).getByRole("button", {
         name: /Validar lote.*OLX/i,
       }),
-    ).toBeDisabled();
+    ).toBeEnabled();
+    expect(
+      within(card as HTMLElement).queryByRole("button", {
+        name: /Enviar lote à OLX/i,
+      }),
+    ).not.toBeInTheDocument();
     expect(
       within(card as HTMLElement).queryByRole("button", { name: "Ativar" }),
     ).not.toBeInTheDocument();
@@ -93,12 +104,54 @@ describe("MarketplaceModule", () => {
     );
 
     expect(await screen.findByText("Honda Civic EXL")).toBeVisible();
-    expect(screen.getByText("Publicar")).toBeVisible();
-    expect(screen.getByText("Bloqueados")).toBeVisible();
+    expect(screen.getByText("BMW 320i")).toBeVisible();
+    expect(screen.getByText("Volvo V40 2013")).toBeVisible();
+    expect(screen.getByText("Estoque encontrado")).toBeVisible();
+    expect(screen.getByText("Prontos para publicar")).toBeVisible();
+    expect(screen.getByText("Precisam de correção")).toBeVisible();
+    expect(screen.getAllByText("Fora da publicação").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Em processamento").length).toBeGreaterThan(0);
     expect(screen.getByText(/Fotos públicas obrigatórias/i)).toBeVisible();
     expect(
       screen.getByText(/Adicione e selecione fotos públicas/i),
     ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Publicar no site: Volvo V40 2013" }),
+    ).toBeEnabled();
+  });
+
+  it("keeps send disabled when the preview has no executable decisions", async () => {
+    const blockedOnlyPlan: MarketplaceStockPlan = {
+      ...plan,
+      accounting: {
+        excluded: 0,
+        found: 1,
+        needsCorrection: 1,
+        processing: 0,
+        ready: 0,
+      },
+      items: [plan.items[0]!],
+      noOp: 0,
+      publish: 0,
+      total: 1,
+    };
+    const api = createApi({
+      previewStockSync: vi.fn(async () => ({
+        batchId: "blocked_batch",
+        plan: blockedOnlyPlan,
+        provider: "olx" as const,
+      })),
+    });
+    const user = userEvent.setup();
+    render(<MarketplaceModule api={api} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /Validar lote.*OLX/i }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Enviar lote à OLX/i }),
+    ).toBeDisabled();
   });
 
   it("runs a stock sync batch from the latest preview", async () => {
@@ -169,13 +222,13 @@ describe("MarketplaceModule", () => {
 
     expect(await screen.findByText("Falha no marketplace")).toBeVisible();
     expect(screen.getByText(/Muitas tentativas em sequencia/)).toBeVisible();
-    expect(screen.getByText("Aguardar 60 segundos.")).toBeVisible();
-    expect(within(screen.getByRole("alert")).getByText("OLX")).toBeVisible();
-    expect(screen.getByText("Honda Civic EXL")).toBeVisible();
-    expect(screen.getByText("req_123")).toBeVisible();
+    expect(screen.getByText(/Aguardar 60 segundos\./)).toBeVisible();
+    expect(within(screen.getByRole("alert")).getByText(/OLX/)).toBeVisible();
+    expect(screen.getByText(/req_123/)).toBeVisible();
   });
 
   it("explains the different provider contracts", async () => {
+    const user = userEvent.setup();
     render(
       <MarketplaceModule
         api={createApi({
@@ -190,6 +243,9 @@ describe("MarketplaceModule", () => {
     await waitFor(() =>
       expect(screen.getByText("Autoupload de classificados")).toBeVisible(),
     );
+    for (const summary of screen.getAllByText("Requisitos do canal")) {
+      await user.click(summary);
+    }
     expect(
       screen.getByText("Categoria, marca, modelo, versão e ano"),
     ).toBeVisible();
@@ -201,9 +257,7 @@ describe("MarketplaceModule", () => {
     window.history.replaceState(
       {},
       "",
-      `/marketplaces/oauth/callback?code=authorization_code_123&state=${encodeURIComponent(
-        JSON.stringify({ provider: "olx" }),
-      )}`,
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=11111111-1111-4111-8111-111111111111#/marketplaces",
     );
     const api = createApi();
 
@@ -211,9 +265,7 @@ describe("MarketplaceModule", () => {
 
     await waitFor(() =>
       expect(api.completeConnection).toHaveBeenCalledWith({
-        code: "authorization_code_123",
-        provider: "olx",
-        redirectUri: "http://localhost:3000/marketplaces/oauth/callback",
+        transactionId: "11111111-1111-4111-8111-111111111111",
       }),
     );
     expect(
@@ -222,11 +274,108 @@ describe("MarketplaceModule", () => {
     expect(window.location.pathname).toBe("/dashboard");
     expect(window.location.hash).toBe("#/marketplaces");
   });
+
+  it("shows a neutral Conectando OLX transition without flashing Marketplace when OAuth started in the CRM", async () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=33333333-3333-4333-8333-333333333333#/marketplaces",
+    );
+    const api = createApi();
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(await screen.findByText(/Conectando OLX/)).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.completeConnection).toHaveBeenCalledWith({
+        transactionId: "33333333-3333-4333-8333-333333333333",
+      }),
+    );
+  });
+
+  it("keeps a friendly CRM return transition for an OAuth callback error", () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=error&provider=olx&errorCode=MARKETPLACE_OAUTH_CALLBACK_FAILED#/marketplaces",
+    );
+
+    render(<MarketplaceModule api={createApi()} />);
+
+    expect(
+      screen.getByText(/conexão com a OLX não foi concluída/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the CRM return transition when OLX authorization is cancelled", async () => {
+    markCrmOlxOauthReturn();
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=44444444-4444-4444-8444-444444444444#/marketplaces",
+    );
+    const api = createApi({
+      completeConnection: vi.fn(async () => ({
+        kind: "cancelled" as const,
+        provider: "olx" as const,
+      })),
+    });
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(
+      await screen.findByText(/autorização da OLX foi cancelada/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Marketplaces" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reports partial OLX completion and exposes an explicit retry", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/dashboard?marketplaceOauth=pending&provider=olx&transactionId=22222222-2222-4222-8222-222222222222#/marketplaces",
+    );
+    const capabilities = degradedOlxOverview.providerStates[0]?.capabilities;
+    if (!capabilities) throw new Error("Expected degraded OLX capabilities.");
+    const api = createApi({
+      completeConnection: vi.fn(async () => ({
+        account,
+        capabilities,
+        kind: "partial" as const,
+      })),
+      getOverview: vi.fn(async () => degradedOlxOverview),
+    });
+
+    render(<MarketplaceModule api={api} />);
+
+    expect(
+      await screen.findByText(/OLX autorizada parcialmente/i),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("OLX conectado. Nenhum anúncio foi enviado."),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Revisar conexão do OLX" }),
+    ).toBeEnabled();
+  });
 });
 
 function createApi(overrides: Partial<MarketplaceApi> = {}): MarketplaceApi {
   const api: MarketplaceApi = {
-    completeConnection: vi.fn(async () => account),
+    completeConnection: vi.fn(async () => ({
+      account,
+      kind: "connected" as const,
+    })),
     createConnectUrl: vi.fn(async () => ({
       authorizationUrl: "https://provider.local/oauth",
       provider: "olx" as const,
@@ -238,6 +387,7 @@ function createApi(overrides: Partial<MarketplaceApi> = {}): MarketplaceApi {
       plan,
       provider: "olx" as const,
     })),
+    reconcileSyncJob: vi.fn(async () => queuedJob),
     retrySyncJob: vi.fn(async () => ({
       job: { ...failedJob, id: "job_retry", status: "queued" as const },
       previousJobId: failedJob.id,
@@ -272,6 +422,26 @@ const overview: MarketplaceOverview = {
   providerStates: [
     {
       accountId: "account_1",
+      capabilities: {
+        chat: {
+          capability: "messaging",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+        leads: {
+          capability: "lead_ingestion",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+        stock: {
+          capability: "inventory_sync",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+      },
       connectionStatus: "connected",
       lastSyncSummary: null,
       provider: "olx",
@@ -295,6 +465,7 @@ const reconnectRequiredOverview: MarketplaceOverview = {
   providerStates: [
     {
       accountId: "account_1",
+      capabilities: overview.providerStates[0]?.capabilities ?? null,
       connectionStatus: "reconnect_required",
       lastSyncSummary: null,
       provider: "olx",
@@ -306,6 +477,39 @@ const reconnectRequiredOverview: MarketplaceOverview = {
           userAction: "Reconnect the provider account.",
         },
       ],
+    },
+  ],
+};
+
+const degradedOlxOverview: MarketplaceOverview = {
+  ...overview,
+  providerStates: [
+    {
+      accountId: "account_1",
+      capabilities: {
+        chat: {
+          capability: "messaging",
+          grantState: "granted",
+          reason: "runtime_unavailable",
+          status: "error",
+        },
+        leads: {
+          capability: "lead_ingestion",
+          grantState: "granted",
+          reason: "runtime_unavailable",
+          status: "error",
+        },
+        stock: {
+          capability: "inventory_sync",
+          grantState: "granted",
+          reason: null,
+          status: "active",
+        },
+      },
+      connectionStatus: "degraded",
+      lastSyncSummary: null,
+      provider: "olx",
+      requirements: [],
     },
   ],
 };
@@ -324,6 +528,7 @@ const bothProvidersOverview: MarketplaceOverview = {
     ...overview.providerStates,
     {
       accountId: "account_ml",
+      capabilities: null,
       connectionStatus: "connected",
       lastSyncSummary: null,
       provider: "mercado_livre",
@@ -331,71 +536,4 @@ const bothProvidersOverview: MarketplaceOverview = {
     },
   ],
   providers: ["olx", "mercado_livre"],
-};
-
-const plan: MarketplaceStockPlan = {
-  blocked: 1,
-  items: [
-    {
-      blockers: [
-        {
-          code: "MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS",
-          message: "Foto publica obrigatoria.",
-          userAction: "Adicionar fotos publicas ao veiculo.",
-        },
-      ],
-      decision: "blocked",
-      externalId: null,
-      jobType: null,
-      listing: {
-        catalog: null,
-        condition: "used",
-        contactPhone: null,
-        description: null,
-        doors: null,
-        fuelType: null,
-        isVisibleOnPublicSite: true,
-        licensePlate: null,
-        listingId: "listing_1",
-        locationZipCode: null,
-        mediaUrls: [],
-        mileageKm: null,
-        modelYear: 2020,
-        priceCents: 9000000,
-        publicSlug: "honda-civic-exl",
-        selectedMedia: [],
-        selectedUnitId: null,
-        status: "published",
-        stockLabel: "Honda Civic EXL",
-        title: "Honda Civic",
-        trimName: "EXL",
-        vehicleType: "cars",
-      },
-      provider: "olx",
-    },
-  ],
-  noOp: 0,
-  publish: 2,
-  total: 3,
-  unpublish: 0,
-  update: 0,
-};
-
-const failedJob: MarketplaceJob = {
-  accountId: "account_1",
-  completedAt: null,
-  createdAt: "2026-01-01T00:00:00.000Z",
-  errorMessage: "Falha: preco ausente. Corrigir: preencher preco.",
-  id: "job_failed",
-  jobType: "listing_publish",
-  metadata: { batchId: "batch_1", listingId: "listing_1", stockSync: true },
-  provider: "olx",
-  status: "failed",
-};
-
-const queuedJob: MarketplaceJob = {
-  ...failedJob,
-  errorMessage: null,
-  id: "job_queued",
-  status: "queued",
 };

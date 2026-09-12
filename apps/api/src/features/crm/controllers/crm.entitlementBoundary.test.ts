@@ -1,6 +1,6 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 describe("CRM commercial entitlement boundary", () => {
   it("keeps customers and pipelines available without the WhatsApp add-on", async () => {
@@ -22,12 +22,12 @@ describe("CRM commercial entitlement boundary", () => {
     const app = createTestApp({
       entitlements: [],
       permissions: [
-        "crm.whatsapp.list",
-        "crm.whatsapp.read",
+        "crm.conversations.read",
+        "crm.conversations.read",
       ] satisfies PermissionKey[],
     });
 
-    const response = await app.request("/api/v1/crm/whatsapp/sessions");
+    const response = await app.request("/api/v1/crm/conversation-cycles");
 
     expect(response.status).toBe(403);
   });

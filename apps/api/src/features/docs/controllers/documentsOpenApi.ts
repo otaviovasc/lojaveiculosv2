@@ -71,12 +71,15 @@ export const documentsSchemas = {
   DocumentsWorkspaceResponse: {
     type: "object",
     additionalProperties: false,
-    required: ["documents"],
+    required: ["documents", "limit", "offset", "total"],
     properties: {
       documents: {
         type: "array",
         items: { $ref: "#/components/schemas/DocumentWorkspaceItem" },
       },
+      limit: { type: "integer", minimum: 1, maximum: 200 },
+      offset: { type: "integer", minimum: 0 },
+      total: { type: "integer", minimum: 0 },
     },
   },
   ...documentTemplateSchemas,
@@ -91,7 +94,17 @@ export const documentsPaths = {
       operationId: "listDocumentsWorkspace",
       security: [{ bearerAuth: ["documents.read"] }],
       parameters: [
+        optionalQuery("dateFrom", { type: "string", format: "date" }),
+        optionalQuery("dateTo", { type: "string", format: "date" }),
         optionalQuery("kind"),
+        optionalQuery("origin", {
+          type: "string",
+          enum: ["automatic", "manual"],
+        }),
+        optionalQuery("scope", {
+          type: "string",
+          enum: ["general", "vehicle"],
+        }),
         optionalQuery("status"),
         optionalQuery("targetType"),
         optionalQuery("targetId"),
@@ -101,6 +114,12 @@ export const documentsPaths = {
           name: "limit",
           required: false,
           schema: { type: "integer", minimum: 1, maximum: 200, default: 100 },
+        },
+        {
+          in: "query",
+          name: "offset",
+          required: false,
+          schema: { type: "integer", minimum: 0, default: 0 },
         },
       ],
       responses: {
@@ -125,11 +144,14 @@ export const documentsPaths = {
   ...documentTemplatePaths,
 } as const;
 
-function optionalQuery(name: string) {
+function optionalQuery(
+  name: string,
+  schema: Record<string, unknown> = { type: "string" },
+) {
   return {
     in: "query",
     name,
     required: false,
-    schema: { type: "string" },
+    schema,
   };
 }

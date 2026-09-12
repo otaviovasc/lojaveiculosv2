@@ -7,19 +7,23 @@ import {
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import {
+  createContextualAuditSink,
   createNoopAuditSink,
   createPolicyAwareAuditSink,
 } from "../../shared/auditSink.js";
-import type {
-  ServiceContext,
-  ServiceLogger,
+import {
+  createServiceContext,
+  type ServiceContext,
+  type ServiceLogger,
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
 import { createPlaceholderServiceContext } from "./createPlaceholderServiceContext.js";
 import {
   createExternalApiServiceContext,
   externalApiContextKey,
+  assertExternalApiAudience,
   readExternalApiKey,
+  readExternalApiRequestFingerprint,
 } from "./externalApiHttpContext.js";
 import {
   HttpContextAuthenticationError,
@@ -48,19 +52,34 @@ export async function createHttpServiceContext(
   options: CreateHttpServiceContextOptions = {},
 ): Promise<ServiceContext> {
   const request = readHttpRequestHeaders(context);
-  const logger =
+  const baseLogger =
     options.logger ??
     createConsoleServiceLogger({
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+      service: "api",
+    });
+  const logger =
+    baseLogger.child?.({
+      component: "http",
       correlationId: request.correlationId,
       requestId: request.requestId,
-    });
+    }) ?? baseLogger;
   const audit = createPolicyAwareAuditSink({
-    sink: options.audit ?? createNoopAuditSink(),
+    sink: createContextualAuditSink({
+      request,
+      sink: options.audit ?? createNoopAuditSink(),
+      source: {
+        component: "http",
+        environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+        service: "api",
+      },
+    }),
     logger,
   });
   const externalApiKey = readExternalApiKey(context);
 
   if (externalApiKey) {
+    assertExternalApiAudience(request.path);
     return createExternalApiServiceContext({
       audit,
       apiKey: externalApiKey,
@@ -69,6 +88,7 @@ export async function createHttpServiceContext(
         context.set(externalApiContextKey, metadata);
       },
       request,
+      ...readExternalApiRequestFingerprint(context),
       ...(options.externalApiRepository
         ? { repository: options.externalApiRepository }
         : {}),
@@ -78,7 +98,11 @@ export async function createHttpServiceContext(
   const identity = await resolveHttpIdentity(context, options.identityVerifier);
 
   if (!identity) {
-    return createPlaceholderServiceContext(context);
+    return createPlaceholderServiceContext(context, {
+      audit,
+      logger,
+      request,
+    });
   }
 
   if (!options.repository) {
@@ -101,15 +125,27 @@ export async function createHttpServiceContext(
     storeSlug: identity.storeSlug,
   });
 
-  return {
-    ...resolved,
-    correlationId: request.correlationId,
+  return createServiceContext({
+    actor: resolved.actor,
+    audit: resolved.audit,
+    ...(resolved.billingManagedBy
+      ? { billingManagedBy: resolved.billingManagedBy }
+      : {}),
+    entitlements: resolved.entitlements,
+    logger,
+    ...(resolved.membershipRole
+      ? { membershipRole: resolved.membershipRole }
+      : {}),
+    permissions: resolved.permissions,
     request,
     source: {
       component: "http",
+      environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
       service: "api",
     },
-  };
+    storeId: resolved.storeId,
+    tenantId: resolved.tenantId,
+  });
 }
 
 async function resolveHttpIdentity(

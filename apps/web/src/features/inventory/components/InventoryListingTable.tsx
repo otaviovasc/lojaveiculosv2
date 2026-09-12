@@ -7,24 +7,20 @@ import {
 } from "lucide-react";
 import {
   formatInventoryPrice,
-  getInventoryCatalogLine,
-  getInventoryPlate,
-  getInventoryYearLine,
   getInventoryDisplayStatus,
-  getInventoryKm,
-  getInventoryStockDays,
   getInventoryFipeComparison,
-  getInventoryLeadsCount,
+  getInventoryKm,
+  getInventoryPlate,
+  getInventoryStockDays,
+  getInventoryVehicleSubtitle,
+  getInventoryVehicleTitle,
+  getInventoryYearLine,
 } from "../model/listCatalogModel";
 import type { InventoryListSortKey } from "../model/inventoryListSortModel";
 import type { InventoryListingSummary } from "../model/types";
 import { EmptyCatalog } from "./InventoryListingCardGrid";
 import { MercosulPlateBadge, StatusPill } from "./InventoryListingBadges";
-import {
-  FeatureRowAction,
-  FeatureRowActions,
-  FeatureTableFrame,
-} from "../../../components/ui/FeatureTable";
+import { FeatureTableFrame } from "../../../components/ui/FeatureTable";
 import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
 import { InventoryLeadBadge } from "./InventoryLeadBadge";
 import { InventorySortableHeader } from "./InventorySortableHeader";
@@ -144,13 +140,15 @@ export function InventoryListingTable({
           {items.map((item) => {
             const listing = item.listing;
             const plate = getInventoryPlate(item);
-            const km = getInventoryKm(listing.id, listing.modelYear);
-            const days = getInventoryStockDays(listing.createdAt, listing.id);
+            const km = getInventoryKm(listing.mileageKm);
+            const days = getInventoryStockDays(listing.createdAt);
             const fipe = getInventoryFipeComparison(
               listing.priceCents,
-              listing.id,
+              listing.catalog?.priceCents ?? null,
             );
-            const leads = getInventoryLeadsCount(listing.id);
+            const fipePercentage = fipe?.percentage ?? 0;
+            const fipeIsBelow = fipe?.isBelow ?? false;
+            const leads = item.leadsCount;
 
             return (
               <tr
@@ -189,10 +187,10 @@ export function InventoryListingTable({
                 {visibleColumns.marcaModelo && (
                   <td className="min-w-[220px] max-w-[280px] px-4 py-3 align-middle">
                     <div className="whitespace-normal break-words text-sm font-black leading-snug text-app-text transition-colors group-hover:text-accent">
-                      {listing.title}
+                      {getInventoryVehicleTitle(listing)}
                     </div>
-                    <div className="mt-1 whitespace-normal break-words text-xs font-bold leading-snug text-muted">
-                      {getInventoryCatalogLine(listing.catalog, listing)}
+                    <div className="mt-1 whitespace-normal break-words text-xs font-semibold leading-snug text-muted">
+                      {getInventoryVehicleSubtitle(listing, listing.catalog)}
                     </div>
                   </td>
                 )}
@@ -211,18 +209,18 @@ export function InventoryListingTable({
                     <div
                       className={
                         "font-black text-sm " +
-                        (fipe.percentage > 10
+                        (fipePercentage > 10
                           ? "text-accent-strong"
-                          : fipe.percentage > 3
+                          : fipePercentage > 3
                             ? "text-amber-500"
-                            : fipe.percentage > 0 || fipe.isBelow
+                            : fipePercentage > 0 || fipeIsBelow
                               ? "text-emerald-500"
                               : "text-app-text")
                       }
                     >
                       {formatInventoryPrice(listing.priceCents)}
                     </div>
-                    {fipe.percentage !== 0 && (
+                    {fipe && fipe.percentage !== 0 && (
                       <div
                         className={
                           "text-xs font-black mt-0.5 " +
@@ -285,37 +283,153 @@ export function InventoryListingTable({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {onAction ? (
-                      <FeatureRowActions className="gap-2.5">
-                        <FeatureRowAction
-                          ariaLabel={`Criar post para ${listing.title}`}
-                          icon={LayoutTemplate}
-                          iconClassName="text-accent"
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          aria-label={`Criar post para ${listing.title}`}
+                          className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-violet-700 dark:text-violet-400 hover:text-violet-900 dark:hover:text-violet-200 transition-all hover:border-violet-500/40 hover:bg-violet-500/10 active:scale-95"
                           onClick={() => onAction("template", item)}
-                          tooltip="Criar post"
-                        />
-                        <FeatureRowAction
-                          ariaLabel={`Agendar test drive para ${listing.title}`}
-                          icon={CalendarClock}
-                          iconClassName="text-success"
-                          onClick={() => onAction("test-drive", item)}
-                          tooltip="Test drive"
-                        />
-                        {item.mediaCount > 0 ? (
-                          <FeatureRowAction
-                            ariaLabel={`Baixar fotos de ${listing.title}`}
-                            icon={FileArchive}
-                            iconClassName="text-accent"
-                            onClick={() => onAction("zip-photos", item)}
-                            tooltip="Baixar fotos em ZIP"
+                          title="Criar post"
+                          type="button"
+                        >
+                          <LayoutTemplate
+                            aria-hidden="true"
+                            className="size-3.5"
                           />
+                        </button>
+                        <button
+                          aria-label={`Agendar test drive para ${listing.title}`}
+                          className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-emerald-500 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 active:scale-95"
+                          onClick={() => onAction("test-drive", item)}
+                          title="Test drive"
+                          type="button"
+                        >
+                          <CalendarClock
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
+                        </button>
+                        {item.mediaCount > 0 ? (
+                          <button
+                            aria-label={`Baixar fotos de ${listing.title}`}
+                            className="flex size-7 items-center justify-center rounded-lg border border-line/60 bg-panel/90 text-accent transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent-strong active:scale-95"
+                            onClick={() => onAction("zip-photos", item)}
+                            title="Baixar fotos em ZIP"
+                            type="button"
+                          >
+                            <FileArchive
+                              aria-hidden="true"
+                              className="size-3.5"
+                            />
+                          </button>
                         ) : null}
-                      </FeatureRowActions>
+                      </div>
                     ) : null}
                   </td>
                 )}
               </tr>
             );
           })}
+        </tbody>
+      </table>
+    </FeatureTableFrame>
+  );
+}
+
+export function InventoryListingLoadingTable({
+  visibleColumns = {
+    fotos: true,
+    placa: true,
+    marcaModelo: true,
+    anoKm: true,
+    preco: true,
+    dias: true,
+    fase: true,
+    leads: true,
+    acoes: true,
+  },
+}: {
+  visibleColumns?: Record<string, boolean>;
+}) {
+  return (
+    <FeatureTableFrame>
+      <table
+        aria-label="Carregando veículos"
+        className="min-w-full border-collapse text-left text-sm"
+        role="status"
+      >
+        <thead className="border-b border-line bg-app/80 text-xs font-black uppercase tracking-wider text-muted">
+          <tr>
+            {visibleColumns.fotos && <th className="px-4 py-3.5">Fotos</th>}
+            {visibleColumns.placa && <th className="px-4 py-3.5">Placa</th>}
+            {visibleColumns.marcaModelo && (
+              <th className="px-4 py-3.5">Marca/Modelo</th>
+            )}
+            {visibleColumns.anoKm && <th className="px-4 py-3.5">Ano/KM</th>}
+            {visibleColumns.preco && <th className="px-4 py-3.5">Preço</th>}
+            {visibleColumns.dias && <th className="px-4 py-3.5">Dias</th>}
+            {visibleColumns.fase && <th className="px-4 py-3.5">Fase</th>}
+            {visibleColumns.leads && <th className="px-4 py-3.5">Leads</th>}
+            {visibleColumns.acoes && (
+              <th className="px-4 py-3.5 text-right">Ações</th>
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line/40">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <tr aria-hidden="true" key={index}>
+              {visibleColumns.fotos && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-10 w-16 animate-pulse rounded-lg border border-line/40 bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.placa && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-7 w-20 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.marcaModelo && (
+                <td className="min-w-[220px] max-w-[280px] px-4 py-3 align-middle">
+                  <div className="mb-1.5 h-4 w-3/4 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.anoKm && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="mb-1 h-3.5 w-16 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-12 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.preco && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="mb-1 h-4 w-20 animate-pulse rounded bg-app-elevated" />
+                  <div className="h-3 w-14 animate-pulse rounded bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.dias && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-14 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.fase && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.leads && (
+                <td className="whitespace-nowrap px-4 py-3 align-middle">
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-app-elevated" />
+                </td>
+              )}
+              {visibleColumns.acoes && (
+                <td className="whitespace-nowrap px-4 py-3 text-right align-middle">
+                  <div className="inline-flex gap-2">
+                    <div className="size-7 animate-pulse rounded-lg bg-app-elevated" />
+                    <div className="size-7 animate-pulse rounded-lg bg-app-elevated" />
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
         </tbody>
       </table>
     </FeatureTableFrame>

@@ -23,14 +23,14 @@ CREATE TABLE "crm_whatsapp_campaigns" (
   "content" text NOT NULL,
   "created_by_user_id" uuid,
   "failed_count" integer DEFAULT 0 NOT NULL,
-  "initial_tag_id" uuid,
+  "initial_stage_id" uuid,
   "interval_minutes" integer DEFAULT 1 NOT NULL,
   "media_type" varchar(120),
   "media_url" text,
   "metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
   "name" varchar(191) NOT NULL,
   "replied_count" integer DEFAULT 0 NOT NULL,
-  "reply_tag_id" uuid,
+  "reply_stage_id" uuid,
   "scheduled_count" integer DEFAULT 0 NOT NULL,
   "scheduled_end_at" timestamp with time zone NOT NULL,
   "scheduled_start_at" timestamp with time zone NOT NULL,
@@ -50,11 +50,11 @@ ALTER TABLE "crm_whatsapp_campaigns"
   ADD CONSTRAINT "crm_whatsapp_campaigns_created_by_user_id_users_id_fk"
   FOREIGN KEY ("created_by_user_id") REFERENCES "users"("id");
 ALTER TABLE "crm_whatsapp_campaigns"
-  ADD CONSTRAINT "crm_whatsapp_campaigns_initial_tag_id_crm_tags_id_fk"
-  FOREIGN KEY ("initial_tag_id") REFERENCES "crm_tags"("id");
+  ADD CONSTRAINT "crm_whatsapp_campaigns_initial_stage_id_crm_pipeline_stages_id_fk"
+  FOREIGN KEY ("initial_stage_id") REFERENCES "crm_pipeline_stages"("id");
 ALTER TABLE "crm_whatsapp_campaigns"
-  ADD CONSTRAINT "crm_whatsapp_campaigns_reply_tag_id_crm_tags_id_fk"
-  FOREIGN KEY ("reply_tag_id") REFERENCES "crm_tags"("id");
+  ADD CONSTRAINT "crm_whatsapp_campaigns_reply_stage_id_crm_pipeline_stages_id_fk"
+  FOREIGN KEY ("reply_stage_id") REFERENCES "crm_pipeline_stages"("id");
 ALTER TABLE "crm_whatsapp_campaigns"
   ADD CONSTRAINT "crm_whatsapp_campaigns_selected_connection_id_crm_connections_id_fk"
   FOREIGN KEY ("selected_connection_id") REFERENCES "crm_connections"("id");

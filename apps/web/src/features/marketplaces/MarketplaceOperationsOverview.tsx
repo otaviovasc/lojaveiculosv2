@@ -1,5 +1,15 @@
-import { Activity, BadgeCheck, CarFront, TriangleAlert } from "lucide-react";
-import { StatCard } from "../../components/ui/stat-card";
+import {
+  Activity,
+  ArrowUpRight,
+  BadgeCheck,
+  CarFront,
+  CircleX,
+  TriangleAlert,
+} from "lucide-react";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
 import { resolveMarketplaceConnectionPresentation } from "./marketplaceConnectionPresentation";
 import type { MarketplaceOverview } from "./types";
 
@@ -18,7 +28,10 @@ export function MarketplaceOperationsOverview({
   const channelsRequiringAttention =
     overview.providers.length - connectedProviders;
   const pendingJobs = overview.jobs.filter(
-    (job) => job.status === "queued" || job.status === "running",
+    (job) =>
+      job.status === "queued" ||
+      job.status === "running" ||
+      job.status === "submitted",
   ).length;
   const failedJobs = overview.jobs.filter(
     (job) => job.status === "failed",
@@ -27,80 +40,54 @@ export function MarketplaceOperationsOverview({
     (total, state) => total + (state.lastSyncSummary?.total ?? 0),
     0,
   );
-  const ConnectionSummaryIcon = channelsRequiringAttention
-    ? TriangleAlert
-    : BadgeCheck;
-  const connectionSummary =
-    channelsRequiringAttention === 0
-      ? "Todos os canais prontos"
-      : connectedProviders === 0
-        ? `${channelsRequiringAttention} canais pedem atenção`
-        : `${connectedProviders} de ${overview.providers.length} canais prontos`;
 
   return (
-    <section className="marketplace-operations marketplace-panel">
-      <header className="marketplace-section-heading">
-        <div>
-          <span className="marketplace-section-heading__eyebrow">
-            Operação centralizada
-          </span>
-          <h2>Distribuição do estoque</h2>
-          <p>Prontidão, correções e fila de publicação dos canais.</p>
-        </div>
-        <div
-          className="marketplace-operations__connection-summary"
-          data-ready={channelsRequiringAttention === 0}
-        >
-          <ConnectionSummaryIcon aria-hidden="true" className="size-4" />
-          <span>{connectionSummary}</span>
-        </div>
-      </header>
-
-      <div
-        aria-label="Resumo operacional dos marketplaces"
-        className="marketplace-operations__metrics"
-        role="region"
-      >
-        <StatCard
-          density="compact"
+    <section
+      aria-label="Operação dos marketplaces"
+      className="marketplace-overview"
+    >
+      <FeatureKpiStrip ariaLabel="Resumo operacional dos marketplaces">
+        <FeatureKpiCard
+          animationIndex={0}
           icon={BadgeCheck}
           label="Canais prontos"
-          theme="success"
+          tone="green"
           value={connectedProviders}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
+        <FeatureKpiCard
+          animationIndex={1}
           icon={TriangleAlert}
           label="Pedem atenção"
-          theme="amber"
+          tone="pink"
           value={channelsRequiringAttention}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
+        <FeatureKpiCard
+          animationIndex={2}
           icon={Activity}
-          label="Na fila agora"
-          theme="blue"
+          label="Em processamento"
+          tone="blue"
           value={pendingJobs}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
-          icon={TriangleAlert}
+        <FeatureKpiCard
+          animationIndex={3}
+          icon={CircleX}
           label="Falhas recentes"
-          theme={failedJobs ? "amber" : "default"}
+          tone="violet"
           value={failedJobs}
-          variant="cell"
         />
-      </div>
+      </FeatureKpiStrip>
 
-      <aside className="marketplace-operations__scope">
-        <span className="marketplace-operations__scope-icon">
+      <aside className="marketplace-scope-note">
+        <span className="marketplace-scope-note__icon">
           <CarFront aria-hidden="true" className="size-5" />
         </span>
-        <div>
-          <strong>Visão por veículo</strong>
+        <div className="marketplace-scope-note__content">
+          <div className="marketplace-scope-note__header">
+            <strong>Visão por veículo</strong>
+            <span className="marketplace-scope-note__badge">
+              Inventário sincronizado
+            </span>
+          </div>
           <p>
             Ajustes de um anúncio ficam no detalhe do veículo; esta central
             cuida dos lotes da loja.
@@ -109,6 +96,14 @@ export function MarketplaceOperationsOverview({
               : " Gere uma prévia para medir a cobertura."}
           </p>
         </div>
+        <a
+          className="marketplace-scope-note__link"
+          href="#/inventory"
+          title="Abrir o inventário de veículos"
+        >
+          <span>Abrir inventário</span>
+          <ArrowUpRight aria-hidden="true" className="size-3.5" />
+        </a>
       </aside>
     </section>
   );

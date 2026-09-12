@@ -53,6 +53,9 @@ const updatePageSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
   visible: z.boolean().optional(),
 });
+const vehicleVitrineSchema = z.object({
+  visible: z.boolean().default(true),
+});
 
 export type StorefrontPagesContextFactory = (
   context: Context,
@@ -90,6 +93,18 @@ export function createStorefrontPagesFeature(
         cleanCreateInput(input),
       );
       return context.json({ page }, 201);
+    }),
+  );
+
+  feature.put("/pages/vehicle-vitrine/:listingId", (context) =>
+    handleStorefrontPages(context, async () => {
+      const input = await parseJson(context, vehicleVitrineSchema);
+      const serviceContext = await createContext(context);
+      const page = await services.createOrReuseVehicleVitrine(serviceContext, {
+        listingId: listingId(context),
+        visible: input.visible,
+      });
+      return context.json({ page });
     }),
   );
 
@@ -163,6 +178,17 @@ function pageId(context: Context): string {
     throw new StorefrontPagesRequestValidationError("Page id is required.");
   }
   return id;
+}
+
+function listingId(context: Context): string {
+  const id = context.req.param("listingId");
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) {
+    throw new StorefrontPagesRequestValidationError(
+      "Listing id must be a valid UUID.",
+    );
+  }
+  return parsed.data;
 }
 
 function toUpdateInput(

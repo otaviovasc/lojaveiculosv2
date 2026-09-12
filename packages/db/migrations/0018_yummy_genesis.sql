@@ -1,0 +1,8 @@
+ALTER TABLE "crm_whatsapp_outbound_intents" ADD COLUMN "recovery_expires_at" timestamp with time zone;--> statement-breakpoint
+CREATE UNIQUE INDEX "crm_connections_scope_id_unique" ON "crm_connections" USING btree ("tenant_id","store_id","id");--> statement-breakpoint
+CREATE UNIQUE INDEX "crm_whatsapp_messages_scope_connection_session_id_unique" ON "crm_whatsapp_messages" USING btree ("tenant_id","store_id","connection_id","session_id","id");--> statement-breakpoint
+CREATE UNIQUE INDEX "crm_whatsapp_sessions_scope_connection_id_unique" ON "crm_whatsapp_sessions" USING btree ("tenant_id","store_id","connection_id","id");--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_outbound_intents" ADD CONSTRAINT "crm_whatsapp_outbound_intents_scoped_connection_fk" FOREIGN KEY ("tenant_id","store_id","connection_id") REFERENCES "public"."crm_connections"("tenant_id","store_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_outbound_intents" ADD CONSTRAINT "crm_whatsapp_outbound_intents_scoped_session_fk" FOREIGN KEY ("tenant_id","store_id","connection_id","session_id") REFERENCES "public"."crm_whatsapp_sessions"("tenant_id","store_id","connection_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_outbound_intents" ADD CONSTRAINT "crm_whatsapp_outbound_intents_scoped_message_fk" FOREIGN KEY ("tenant_id","store_id","connection_id","session_id","message_id") REFERENCES "public"."crm_whatsapp_messages"("tenant_id","store_id","connection_id","session_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "crm_whatsapp_outbound_intents_recovery_expiry_idx" ON "crm_whatsapp_outbound_intents" USING btree ("recovery_expires_at");

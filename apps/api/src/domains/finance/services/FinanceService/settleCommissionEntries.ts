@@ -4,11 +4,11 @@ import {
   auditFinanceServiceEvent,
   getCommissionWorkspaceRepository,
   logFinanceServiceEvent,
-  requireFinanceScope,
+  requireCommissionScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
-const permission = "finance.update";
+const permission = "commissions.settle";
 
 export type SettleCommissionEntriesInput = {
   entryIds: readonly string[];
@@ -45,7 +45,7 @@ export async function settleCommissionEntries(
   ) {
     throw new CommissionSettlementValidationError();
   }
-  const scope = requireFinanceScope(context);
+  const scope = requireCommissionScope(context);
   logFinanceServiceEvent(context, "commission_settlement.started", {
     count: entryIds.length,
     paidAt: paidAt.toISOString(),

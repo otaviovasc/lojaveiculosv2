@@ -64,6 +64,7 @@ describe("createHttpMarketplaceProviderGateway", () => {
           providerStatus: "active",
         },
       },
+      operationToken: null,
       providerStatus: "active",
     });
   });

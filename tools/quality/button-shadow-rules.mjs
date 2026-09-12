@@ -11,30 +11,16 @@ const actionNamePattern =
   /(?:^|[-_])(?:action|btn|button|choice|control|download|option|tab|toggle|trigger)(?:$|--)/i;
 
 export function collectActionClassNames(file, source) {
-  const sourceFile = parseTypeScriptSource(file, source);
-  const classNames = new Set();
-
-  walkTypeScript(sourceFile, (node) => {
-    if (!isJsxElement(node) || !isActionTag(node.tagName.getText(sourceFile))) {
-      return;
-    }
-    for (const attribute of node.attributes.properties) {
-      if (
-        ts.isJsxAttribute(attribute) &&
-        propertyNameText(attribute.name) === "className"
-      ) {
-        for (const className of extractClassNames(attribute.initializer)) {
-          classNames.add(className.slice(className.lastIndexOf(":") + 1));
-        }
-      }
-    }
-  });
-
-  return classNames;
+  return analyzeJsxButtonShadows(file, source).actionClassNames;
 }
 
 export function findJsxButtonShadowViolations(file, source) {
+  return analyzeJsxButtonShadows(file, source).violations;
+}
+
+export function analyzeJsxButtonShadows(file, source) {
   const sourceFile = parseTypeScriptSource(file, source);
+  const actionClassNames = new Set();
   const violations = [];
 
   walkTypeScript(sourceFile, (node) => {
@@ -46,6 +32,7 @@ export function findJsxButtonShadowViolations(file, source) {
       const name = propertyNameText(attribute.name);
       if (name === "className") {
         for (const className of extractClassNames(attribute.initializer)) {
+          actionClassNames.add(className.slice(className.lastIndexOf(":") + 1));
           if (isForbiddenShadowClass(className)) {
             violations.push({
               detail: `decorative shadow class ${JSON.stringify(className)}`,
@@ -65,7 +52,7 @@ export function findJsxButtonShadowViolations(file, source) {
     }
   });
 
-  return violations;
+  return { actionClassNames, violations };
 }
 
 export function findCssButtonShadowViolations(

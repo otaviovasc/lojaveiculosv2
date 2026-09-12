@@ -1,12 +1,14 @@
 import {
   Banknote,
   CalendarClock,
+  LayoutGrid,
+  List,
   Pencil,
   Plus,
   Trash2,
   Users,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   FeatureCard,
   FeatureCardHeader,
@@ -20,7 +22,9 @@ import {
 import {
   FeatureRowAction,
   FeatureRowActions,
+  FeatureTableFrame,
 } from "../../components/ui/FeatureTable";
+import { FeatureToneIcon } from "../../components/ui/FeatureToneIcon";
 import { cx } from "../../components/ui/featureShared";
 import { Switch } from "../../components/ui/switch";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
@@ -32,6 +36,22 @@ import {
 import { AutoEntryFact, AutoEntryStat } from "./AutoEntryDomainPrimitives";
 import { autoEntryMetaForTab } from "./domainMeta";
 import type { AutoEntryRule } from "./types";
+
+type RuleListView = "cards" | "list";
+
+const VIEW_STORAGE_KEY = "auto_entries_rule_list_view";
+
+/** View preference persisted like the other modules (CRM pipeline, inventory). */
+function readStoredView(): RuleListView | null {
+  if (typeof window === "undefined") return null;
+  const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+  return stored === "cards" || stored === "list" ? stored : null;
+}
+
+function storeView(view: RuleListView) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+}
 
 export function AutoEntryRuleList({
   canManage,
@@ -52,6 +72,9 @@ export function AutoEntryRuleList({
   sellers: readonly SaleSellerOption[];
   workingKey: string | null;
 }) {
+  const [storedView, setStoredView] = useState<RuleListView | null>(
+    readStoredView,
+  );
   const sellerNames = useMemo(
     () => new Map(sellers.map((seller) => [seller.id, seller.label])),
     [sellers],
@@ -64,6 +87,13 @@ export function AutoEntryRuleList({
       ),
     [rules],
   );
+
+  // Without a stored preference, many rules read better as a compact list.
+  const view = storedView ?? (orderedRules.length > 4 ? "list" : "cards");
+  const sellerLabel = (rule: AutoEntryRule) =>
+    rule.sellerUserId
+      ? (sellerNames.get(rule.sellerUserId) ?? "Vendedor específico")
+      : "Todos os vendedores da origem";
 
   if (orderedRules.length === 0) {
     return (
@@ -85,19 +115,18 @@ export function AutoEntryRuleList({
     );
   }
 
-  return (
-    <section
-      aria-label="Regras configuradas"
-      className="grid gap-4 lg:grid-cols-2"
-    >
+  const changeView = (next: RuleListView) => {
+    setStoredView(next);
+    storeView(next);
+  };
+
+  const renderRuleCards = (className: string) => (
+    <div className={className}>
       {orderedRules.map((rule) => {
         const isWorking = workingKey === rule.id;
         const isActive = rule.status === "active";
         const meta = autoEntryMetaForTab(rule.event);
         const Icon = meta.icon;
-        const sellerName = rule.sellerUserId
-          ? (sellerNames.get(rule.sellerUserId) ?? "Vendedor específico")
-          : "Todos os vendedores da origem";
         return (
           <FeatureCard
             className={cx(
@@ -110,19 +139,24 @@ export function AutoEntryRuleList({
           >
             <FeatureCardHeader
               actions={
-                <FeatureStatusBadge tone={isActive ? "success" : "neutral"}>
-                  {isActive ? "Ativa" : "Pausada"}
-                </FeatureStatusBadge>
+                <div className="flex items-center gap-2.5">
+                  <FeatureStatusBadge
+                    className="auto-entry-rule-card__status"
+                    tone={isActive ? "success" : "neutral"}
+                  >
+                    {isActive ? "Ativa" : "Pausada"}
+                  </FeatureStatusBadge>
+                  <Switch
+                    aria-label={`Ativar regra ${rule.name}`}
+                    checked={isActive}
+                    disabled={!canManage || isWorking}
+                    onCheckedChange={(checked) => onToggle(rule, checked)}
+                    title={isActive ? "Pausar regra" : "Ativar regra"}
+                  />
+                </div>
               }
               className="auto-entry-rule-card__header"
-              icon={
-                <span
-                  aria-hidden="true"
-                  className="auto-entry-rule-card__badge"
-                >
-                  <Icon className="size-4" />
-                </span>
-              }
+              icon={<FeatureToneIcon icon={Icon} size="lg" />}
             >
               <FeatureCardTitle className="auto-entry-rule-card__title">
                 {rule.name}
@@ -150,43 +184,155 @@ export function AutoEntryRuleList({
                 <AutoEntryFact
                   icon={Users}
                   label="Escopo do vendedor"
-                  value={sellerName}
+                  value={sellerLabel(rule)}
                 />
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-xs font-black text-muted">
-                    Ativa
-                    <Switch
-                      aria-label={`Ativar regra ${rule.name}`}
-                      checked={isActive}
-                      disabled={!canManage || isWorking}
-                      onCheckedChange={(checked) => onToggle(rule, checked)}
+                {canManage ? (
+                  <FeatureRowActions>
+                    <FeatureRowAction
+                      ariaLabel={`Editar regra ${rule.name}`}
+                      disabled={isWorking}
+                      icon={Pencil}
+                      onClick={() => onEdit(rule)}
+                      tooltip="Editar regra"
                     />
-                  </label>
-                  {canManage ? (
-                    <FeatureRowActions>
-                      <FeatureRowAction
-                        ariaLabel={`Editar regra ${rule.name}`}
-                        disabled={isWorking}
-                        icon={Pencil}
-                        onClick={() => onEdit(rule)}
-                        tooltip="Editar regra"
-                      />
-                      <FeatureRowAction
-                        ariaLabel={`Excluir regra ${rule.name}`}
-                        disabled={isWorking}
-                        icon={Trash2}
-                        iconClassName="text-danger"
-                        onClick={() => onDelete(rule)}
-                        tooltip="Excluir regra"
-                      />
-                    </FeatureRowActions>
-                  ) : null}
-                </div>
+                    <FeatureRowAction
+                      ariaLabel={`Excluir regra ${rule.name}`}
+                      disabled={isWorking}
+                      icon={Trash2}
+                      iconClassName="text-danger"
+                      onClick={() => onDelete(rule)}
+                      tooltip="Excluir regra"
+                    />
+                  </FeatureRowActions>
+                ) : null}
               </div>
             </div>
           </FeatureCard>
         );
       })}
+    </div>
+  );
+
+  return (
+    <section aria-label="Regras configuradas" className="grid gap-3">
+      <div
+        aria-label="Alternar visualização das regras"
+        className="flex items-center justify-end gap-1 border border-line/50 rounded-lg overflow-hidden bg-app-elevated/45 w-fit ml-auto"
+        role="group"
+      >
+        <button
+          aria-label="Exibir como cartões"
+          aria-pressed={view === "cards"}
+          className={cx(
+            "p-2 cursor-pointer transition-colors duration-150",
+            view === "cards"
+              ? "text-accent bg-line/20"
+              : "text-muted hover:text-app-text hover:bg-line/25",
+          )}
+          onClick={() => changeView("cards")}
+          title="Exibir como cartões"
+          type="button"
+        >
+          <LayoutGrid aria-hidden="true" className="size-3.5" />
+        </button>
+        <button
+          aria-label="Exibir como lista"
+          aria-pressed={view === "list"}
+          className={cx(
+            "p-2 cursor-pointer transition-colors duration-150",
+            view === "list"
+              ? "text-accent bg-line/20"
+              : "text-muted hover:text-app-text hover:bg-line/25",
+          )}
+          onClick={() => changeView("list")}
+          title="Exibir como lista"
+          type="button"
+        >
+          <List aria-hidden="true" className="size-3.5" />
+        </button>
+      </div>
+
+      {view === "list" ? (
+        <>
+          <FeatureTableFrame className="hidden md:block">
+            <table className="w-full min-w-[820px] border-collapse text-left text-sm">
+              <thead className="border-b border-line bg-app/45 text-xs uppercase tracking-wider text-muted">
+                <tr>
+                  <th className="px-4 py-3 font-black">Nome</th>
+                  <th className="px-4 py-3 font-black">Origem</th>
+                  <th className="px-4 py-3 font-black">Cálculo</th>
+                  <th className="px-4 py-3 font-black">Vendedor</th>
+                  <th className="px-4 py-3 font-black">Status</th>
+                  <th className="px-4 py-3 font-black w-24">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line/60">
+                {orderedRules.map((rule) => {
+                  const isWorking = workingKey === rule.id;
+                  const isActive = rule.status === "active";
+                  const meta = autoEntryMetaForTab(rule.event);
+                  return (
+                    <tr className="transition-colors" key={rule.id}>
+                      <td className="px-4 py-3">
+                        <strong className="block text-app-text font-extrabold">
+                          {rule.name}
+                        </strong>
+                        <span className="mt-0.5 block text-xs font-semibold text-muted">
+                          {rule.category} · prioridade {rule.priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-muted">
+                        {meta.tab}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-muted">
+                        {autoEntryOutputLabel(rule.outputType)} ·{" "}
+                        {autoEntryCalculationLabel(rule.calculation)}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-muted">
+                        {sellerLabel(rule)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Switch
+                          aria-label={`Ativar regra ${rule.name}`}
+                          checked={isActive}
+                          disabled={!canManage || isWorking}
+                          onCheckedChange={(checked) => onToggle(rule, checked)}
+                          title={isActive ? "Pausar regra" : "Ativar regra"}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        {canManage ? (
+                          <FeatureRowActions>
+                            <FeatureRowAction
+                              ariaLabel={`Editar regra ${rule.name}`}
+                              disabled={isWorking}
+                              icon={Pencil}
+                              onClick={() => onEdit(rule)}
+                              tooltip="Editar regra"
+                            />
+                            <FeatureRowAction
+                              ariaLabel={`Excluir regra ${rule.name}`}
+                              disabled={isWorking}
+                              icon={Trash2}
+                              iconClassName="text-danger"
+                              onClick={() => onDelete(rule)}
+                              tooltip="Excluir regra"
+                            />
+                          </FeatureRowActions>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </FeatureTableFrame>
+          {/* Small screens always fall back to cards. */}
+          {renderRuleCards("grid gap-4 lg:grid-cols-2 md:hidden")}
+        </>
+      ) : (
+        renderRuleCards("grid gap-4 lg:grid-cols-2")
+      )}
     </section>
   );
 }

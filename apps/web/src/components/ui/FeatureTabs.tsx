@@ -1,7 +1,9 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { cx, type FeatureIcon } from "./featureShared";
+import { useDragToScroll } from "../../lib/useDragToScroll";
 
 type FeatureTabOption<Value extends string> = {
+  ariaLabel?: string;
   icon?: FeatureIcon | undefined;
   label: ReactNode;
   value: Value;
@@ -24,8 +26,9 @@ export function FeatureTabs<Value extends string>({
   optionClassName?: string;
   options: ReadonlyArray<FeatureTabOption<Value>>;
   value: Value;
-  variant?: "default" | "panel";
+  variant?: "default" | "panel" | "split";
 }) {
+  const dragRef = useDragToScroll<HTMLDivElement>();
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const activeIndex = options.findIndex((option) => option.value === value);
 
@@ -55,9 +58,12 @@ export function FeatureTabs<Value extends string>({
   return (
     <div
       aria-label={ariaLabel}
+      ref={dragRef}
       className={cx(
         variant === "panel" &&
           "inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line/60 bg-panel/75 p-1 shadow-sm backdrop-blur-md",
+        variant === "split" &&
+          "grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-line/60 bg-app-elevated/70 p-1.5 shadow-sm backdrop-blur-md",
         className,
       )}
       role="tablist"
@@ -68,6 +74,7 @@ export function FeatureTabs<Value extends string>({
         return (
           <button
             aria-selected={active}
+            aria-label={option.ariaLabel}
             className={cx(optionClassName, active && activeClassName)}
             key={option.value}
             onClick={() => onChange(option.value)}

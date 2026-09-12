@@ -1,3 +1,4 @@
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { Car, Clock, Edit, Eye, Layers, Trash2, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
@@ -131,7 +132,10 @@ function SaleCard({
             </h3>
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs font-bold text-muted uppercase mt-1">
               {!!sale.listingSnapshot?.colorName && (
-                <span>Cor: {String(sale.listingSnapshot.colorName)}</span>
+                <span>
+                  Cor:{" "}
+                  {getVehicleColorLabel(String(sale.listingSnapshot.colorName))}
+                </span>
               )}
               {!!(
                 sale.listingSnapshot?.colorName &&

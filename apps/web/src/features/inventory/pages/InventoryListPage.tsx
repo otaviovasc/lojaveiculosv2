@@ -9,7 +9,10 @@ import {
   InventoryListToolbar,
   InventoryLoadMore,
 } from "../components/InventoryListToolbar";
-import { InventoryListingTable } from "../components/InventoryListingTable";
+import {
+  InventoryListingTable,
+  InventoryListingLoadingTable,
+} from "../components/InventoryListingTable";
 import { InventoryListModals } from "../components/InventoryListModals";
 import { InventoryCreateMode } from "./InventoryCreateMode";
 import { InventoryDetailWorkspace } from "../components/InventoryDetailWorkspace";
@@ -128,7 +131,11 @@ export function InventoryListPage({
       <div className="flex flex-col gap-6">
         <section className="w-full flex flex-col gap-6">
           {listState.kind === "loading" ? (
-            <InventoryListingLoadingGrid />
+            viewMode === "cards" ? (
+              <InventoryListingLoadingGrid />
+            ) : (
+              <InventoryListingLoadingTable visibleColumns={visibleColumns} />
+            )
           ) : null}
           {listState.kind === "error" ? (
             <InventoryListingError message={listState.message} />

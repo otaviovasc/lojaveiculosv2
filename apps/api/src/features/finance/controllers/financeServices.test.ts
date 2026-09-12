@@ -158,6 +158,7 @@ describe("finance services", () => {
 function createContext(permissions: string[]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["commissions", "finance"],
     permissions,
     request: { requestId: "req_1" },
     storeId: "store_1",

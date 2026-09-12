@@ -27,7 +27,6 @@ export type CustomPageEditorProps = {
   onDirty?: () => void;
   onSave: (page: StorefrontCustomPage) => Promise<boolean>;
   page: StorefrontCustomPage;
-  statusMessage?: { text: string; type: "error" | "success" } | null;
   storeSlug: string;
 };
 
@@ -38,7 +37,6 @@ export function CustomPageEditor({
   onDirty,
   onSave,
   page,
-  statusMessage,
   storeSlug,
 }: CustomPageEditorProps) {
   const [draft, setDraft] = useState(page);
@@ -233,18 +231,6 @@ export function CustomPageEditor({
             : ""
         }`}
       />
-      {statusMessage ? (
-        <div
-          className={cn(
-            "mx-4 mt-2 rounded-lg px-4 py-2.5 text-xs font-bold",
-            statusMessage.type === "error"
-              ? "bg-destructive/10 text-destructive"
-              : "bg-success/10 text-success-strong",
-          )}
-        >
-          {statusMessage.text}
-        </div>
-      ) : null}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <aside
           className={cn(

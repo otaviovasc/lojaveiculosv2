@@ -6,7 +6,6 @@ import {
   Car,
   FileText,
   Gauge,
-  Globe,
   HandCoins,
   Home,
   KeyRound,
@@ -17,7 +16,6 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
-  Sparkles,
   Store,
   Users,
 } from "lucide-react";
@@ -45,12 +43,10 @@ export type ModuleId =
   | "checklists"
   | "public-site"
   | "custom-pages"
-  | "domain"
   | "marketplaces"
   | "public-api"
   | "fiscal"
   | "paid-traffic"
-  | "autobot"
   | "settings";
 
 export type NavigationItem = {
@@ -73,18 +69,38 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Operação diária",
     items: [
       { icon: Home, id: "dashboard", label: "Início" },
-      { icon: Car, id: "inventory", label: "Veículos" },
-      { icon: BadgeDollarSign, id: "sales", label: "Vendas" },
-      { icon: Users, id: "customers", label: "Clientes" },
+      {
+        entitlementKey: "inventory",
+        icon: Car,
+        id: "inventory",
+        label: "Veículos",
+      },
+      {
+        entitlementKey: "sales",
+        icon: BadgeDollarSign,
+        id: "sales",
+        label: "Vendas",
+      },
+      {
+        entitlementKey: "sales",
+        icon: Users,
+        id: "customers",
+        label: "Clientes",
+      },
       {
         entitlementKey: "crm",
         icon: MessageCircle,
         id: "crm",
         label: "WhatsApp",
       },
-      { icon: FileText, id: "documents", label: "Documentos" },
       {
-        entitlementKey: "simulations",
+        entitlementKey: "documents",
+        icon: FileText,
+        id: "documents",
+        label: "Documentos",
+      },
+      {
+        entitlementKey: "financing",
         icon: Calculator,
         id: "simulations",
         label: "Simulações",
@@ -94,16 +110,31 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Gestão",
     items: [
-      { icon: Bot, id: "auto-entries", label: "Lançamentos" },
       {
-        entitlementKey: "automation",
-        icon: Sparkles,
-        id: "autobot",
-        label: "Operador IA",
+        entitlementKey: "finance",
+        icon: Bot,
+        id: "auto-entries",
+        label: "Lançamentos",
       },
-      { icon: HandCoins, id: "commissions", label: "Comissões" },
+      {
+        entitlementKey: "commissions",
+        icon: HandCoins,
+        id: "commissions",
+        label: "Comissões",
+      },
       { icon: Receipt, id: "billing", label: "Assinatura" },
-      { icon: Receipt, id: "expenses", label: "Gastos" },
+      {
+        entitlementKey: "finance",
+        icon: Receipt,
+        id: "expenses",
+        label: "Gastos",
+      },
+      {
+        entitlementKey: "fiscal",
+        icon: FileText,
+        id: "fiscal",
+        label: "NF-e",
+      },
       {
         entitlementKey: "analytics",
         icon: BarChart3,
@@ -111,6 +142,7 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Relatórios",
       },
       {
+        entitlementKey: "checklists",
         icon: ShieldCheck,
         id: "checklists",
         label: "Checklists",
@@ -118,36 +150,19 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    label: "Serviços",
-    items: [
-      {
-        entitlementKey: "nfe",
-        icon: FileText,
-        id: "fiscal",
-        label: "NF-e",
-      },
-    ],
-  },
-  {
     label: "Canais",
     items: [
       {
-        entitlementKey: "subdomain",
+        entitlementKey: "storefront",
         icon: Palette,
         id: "public-site",
         label: "Personalizar",
       },
       {
-        entitlementKey: "subdomain",
+        entitlementKey: "storefront",
         icon: FileText,
         id: "custom-pages",
         label: "Páginas",
-      },
-      {
-        entitlementKey: "custom_domain",
-        icon: Globe,
-        id: "domain",
-        label: "Domínio",
       },
       {
         entitlementKey: "marketplace",

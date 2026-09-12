@@ -24,6 +24,7 @@ describe("createDrizzleAuditSink", () => {
       entityId: "listing_1",
       entityType: "vehicle_listing",
       failureTier: "important",
+      id: "88888888-8888-4888-8888-888888888888",
       metadata: { storeSlug: "test-store" },
       occurredAt: "2026-06-17T12:00:00.000Z",
       outcome: "succeeded",
@@ -56,6 +57,7 @@ describe("createDrizzleAuditSink", () => {
         entityId: "listing_1",
         entityType: "vehicle_listing",
         failureTier: "important",
+        id: "88888888-8888-4888-8888-888888888888",
         metadata: { storeSlug: "test-store" },
         occurredAt: new Date("2026-06-17T12:00:00.000Z"),
         providerEventId: "evt_1",
@@ -65,24 +67,31 @@ describe("createDrizzleAuditSink", () => {
         tenantId: "77777777-7777-4777-8777-777777777777",
       }),
     ]);
+    expect(db.conflictTargets).toEqual([auditEvents.id]);
     expect(db.tables).toEqual([auditEvents]);
   });
 });
 
 function createFakeAuditDb() {
   const inserted: unknown[] = [];
+  const conflictTargets: unknown[] = [];
   const tables: unknown[] = [];
 
   const db: DrizzleAuditSinkClient = {
     insert(table) {
       tables.push(table);
       return {
-        async values(record) {
+        values(record) {
           inserted.push(record);
+          return {
+            async onConflictDoNothing(input) {
+              conflictTargets.push(input.target);
+            },
+          };
         },
       };
     },
   };
 
-  return { ...db, inserted, tables };
+  return { ...db, conflictTargets, inserted, tables };
 }

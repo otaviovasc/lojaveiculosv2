@@ -3,7 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { InternalHealthSnapshot } from "../../ports/internalMonitoringRepository.js";
+import type {
+  InternalHealthSnapshot,
+  InternalMonitoringQuery,
+} from "../../ports/internalMonitoringRepository.js";
 import {
   normalizeInternalHealthLimit,
   requireInternalMonitoringScope,
@@ -12,21 +15,39 @@ import {
 
 export async function getInternalHealthSnapshot(
   context: ServiceContext,
-  input: { limit: number },
+  input: InternalMonitoringQuery,
   ports: InternalMonitoringServicePorts,
 ): Promise<InternalHealthSnapshot> {
   assertPermission(context, "audit.read");
   const scope = requireInternalMonitoringScope(context);
-  const limit = normalizeInternalHealthLimit(input.limit);
+  const query = {
+    ...input,
+    limit: normalizeInternalHealthLimit(input.limit),
+  } satisfies InternalMonitoringQuery;
   context.logger.info(
     "internal.health.read",
     createServiceLogMetadata(context, {
-      limit,
+      filters: {
+        action: query.action ?? null,
+        actorId: query.actorId ?? null,
+        category: query.category ?? null,
+        correlationId: query.correlationId ?? null,
+        criticality: query.criticality ?? null,
+        entityId: query.entityId ?? null,
+        entityType: query.entityType ?? null,
+        from: query.from?.toISOString() ?? null,
+        outcome: query.outcome ?? null,
+        providerName: query.providerName ?? null,
+        requestId: query.requestId ?? null,
+        severity: query.severity ?? null,
+        to: query.to?.toISOString() ?? null,
+      },
+      limit: query.limit,
       requestedLimit: input.limit,
     }),
   );
   const snapshot = await ports.internalMonitoringRepository.getHealthSnapshot({
-    limit,
+    query,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
@@ -40,7 +61,7 @@ export async function getInternalHealthSnapshot(
     entityType: "internal_health",
     metadata: {
       criticalEvents: snapshot.summary.criticalEvents,
-      limit,
+      limit: query.limit,
       openSinkFailures: snapshot.summary.openSinkFailures,
       recentEvents: snapshot.summary.recentEvents,
       requestedLimit: input.limit,

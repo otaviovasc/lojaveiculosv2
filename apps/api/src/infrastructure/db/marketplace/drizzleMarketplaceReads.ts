@@ -157,8 +157,7 @@ export async function listListingProjections(
           ? [inArray(vehicleListings.id, [...input.listingIds])]
           : []),
       ),
-    )
-    .limit(500);
+    );
   const projections = await Promise.all(
     rows.map((row) =>
       findListingProjection(db, {

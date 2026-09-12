@@ -8,6 +8,7 @@ import type {
   FiscalDocument,
   FiscalDocumentStatus,
 } from "../../ports/fiscalRepository.js";
+import { FiscalDocumentCancellationNotAllowedError } from "../../domain/fiscalErrors.js";
 import {
   requireFiscalScope,
   requireScopedFiscalDocument,
@@ -39,16 +40,51 @@ export async function cancelFiscalDocument(
     input.documentId,
     ports.fiscalRepository,
   );
+  if (
+    persistedDocument.status !== "authorized" &&
+    persistedDocument.status !== "issued"
+  ) {
+    await auditCancel(
+      context,
+      scope,
+      persistedDocument.id,
+      "cancel_attempt",
+      {
+        reason: "document_status_not_cancellable",
+        status: persistedDocument.status,
+      },
+      "failed",
+    );
+    throw new FiscalDocumentCancellationNotAllowedError(
+      persistedDocument.status,
+    );
+  }
   await auditCancel(context, scope, input.documentId, "cancel_attempt", {
     providerDocumentId: persistedDocument.providerDocumentId,
   });
 
-  const providerResult = await ports.fiscalProviderGateway.cancelDocument({
-    providerDocumentId: persistedDocument.providerDocumentId,
-    reason: input.reason,
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-  });
+  const providerResult = await ports.fiscalProviderGateway
+    .cancelDocument({
+      documentKind: persistedDocument.documentKind,
+      providerDocumentId: persistedDocument.providerDocumentId,
+      reason: input.reason,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+    })
+    .catch(async (error: unknown) => {
+      await auditCancel(
+        context,
+        scope,
+        persistedDocument.id,
+        "cancel",
+        {
+          errorName: error instanceof Error ? error.name : "UnknownError",
+          providerOutcome: "unknown",
+        },
+        "failed",
+      );
+      throw error;
+    });
   const document = await ports.fiscalRepository.updateDocumentStatus({
     accessKey: providerResult.accessKey,
     documentId: input.documentId,
@@ -79,7 +115,7 @@ export async function cancelFiscalDocument(
       providerDocumentId: document.providerDocumentId,
       status: document.status,
     },
-    isFailureStatus(document.status) ? "failed" : "succeeded",
+    document.status === "cancelled" ? "succeeded" : "failed",
   );
   return document;
 }
@@ -114,10 +150,9 @@ async function auditCancel(
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
-    summary: "Cancelled fiscal document through provider",
+    summary:
+      suffix === "cancel"
+        ? "Processed fiscal document cancellation through provider"
+        : "Attempted fiscal document cancellation through provider",
   });
-}
-
-function isFailureStatus(status: FiscalDocumentStatus) {
-  return status === "error" || status === "failed" || status === "rejected";
 }

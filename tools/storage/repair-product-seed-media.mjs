@@ -43,6 +43,7 @@ try {
   const media = await readSeedMediaRows();
   const placeholders = [];
   const resolutions = [];
+  const materializedMedia = [];
   const result = {
     copied: 0,
     databaseDocumentSizesUpdated: 0,
@@ -53,18 +54,39 @@ try {
     reusedPlaceholders: 0,
     skippedExisting: 0,
     wouldCopy: 0,
+    downloaded: 0,
     wouldGeneratePlaceholders: 0,
+    wouldDownload: 0,
   };
 
   for (const row of media) {
     const target = await objects.readObjectState(row.targetKey);
     if (isExpectedSeedMediaObject(target, row)) {
       result.skippedExisting += 1;
+      materializedMedia.push({
+        contentType: target.contentType,
+        mediaId: row.mediaId,
+        sizeBytes: target.contentLength,
+      });
       resolutions.push({ row, storageKey: row.targetKey });
       console.info(`exists ${row.targetKey}`);
       continue;
     }
     if (target.exists) result.invalidExisting += 1;
+
+    if (row.sourceUrl) {
+      resolutions.push({ row, storageKey: row.targetKey });
+      if (!apply) {
+        result.wouldDownload += 1;
+        console.info(`would download ${row.sourceUrl} -> ${row.targetKey}`);
+      } else {
+        const uploaded = await objects.uploadRemoteObject(row);
+        materializedMedia.push({ ...uploaded, mediaId: row.mediaId });
+        result.downloaded += 1;
+        console.info(`downloaded ${row.sourceUrl} -> ${row.targetKey}`);
+      }
+      continue;
+    }
 
     const source = await objects.findLegacyObject(row);
     if (source) {
@@ -100,6 +122,10 @@ try {
   if (apply && failOnMissing) await assertMaterialized(resolutions);
 
   if (apply) {
+    result.databaseMediaMetadataUpdated = await reconcileSeedMediaMetadata({
+      db,
+      media: materializedMedia,
+    });
     result.databasePlaceholderRowsUpdated =
       await reconcileSeedMediaPlaceholders({ db, placeholders });
     const documentSizes = await readSeedDocumentObjectSizes({
@@ -152,6 +178,9 @@ async function readSeedMediaRows() {
       m.storage_key as "targetKey",
       m.tenant_id as "tenantId",
       u.listing_id as "listingId",
+      m.metadata->>'sourceLicense' as "sourceLicense",
+      m.metadata->>'sourcePage' as "sourcePage",
+      m.metadata->>'sourceUrl' as "sourceUrl",
       (m.metadata->>'sizeBytes')::int as "sizeBytes"
     from vehicle_media m
     inner join vehicle_units u on u.id = m.unit_id
@@ -159,6 +188,25 @@ async function readSeedMediaRows() {
     where m.metadata->>'source' = 'r2_seed'
     order by m.display_order, m.id
   `;
+}
+
+async function reconcileSeedMediaMetadata({ db, media }) {
+  let updated = 0;
+  for (const row of media) {
+    const result = await db`
+      update vehicle_media
+      set metadata = metadata || jsonb_build_object(
+        'contentType', ${row.contentType}::text,
+        'sizeBytes', ${row.sizeBytes}::int
+      ),
+      updated_at = now()
+      where id = ${row.mediaId}
+        and metadata->>'source' = 'r2_seed'
+      returning id
+    `;
+    updated += result.length;
+  }
+  return updated;
 }
 
 function readR2Config() {

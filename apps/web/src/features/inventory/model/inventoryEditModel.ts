@@ -5,6 +5,7 @@ import type {
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
 } from "./types";
+import { formatCurrencyValue } from "../../../lib/masks";
 import { parsePriceCents } from "./formModel";
 
 export type InventoryEditState = {
@@ -15,11 +16,13 @@ export type InventoryEditState = {
   engineAspiration: NonNullable<InventoryListing["engineAspiration"]> | "";
   engineDisplacement: NonNullable<InventoryListing["engineDisplacement"]> | "";
   fuelType: NonNullable<InventoryListing["fuelType"]> | "";
+  internalNotes: string;
   manufactureYear: string;
   mileageKm: string;
   modelYear: string;
   plate: string;
   price: string;
+  renavam: string;
   status: InventoryListing["status"];
   stockNumber: string;
   title: string;
@@ -42,6 +45,7 @@ export function createInventoryEditState(
     engineAspiration: listing.engineAspiration ?? "",
     engineDisplacement: listing.engineDisplacement ?? "",
     fuelType: listing.fuelType ?? "",
+    internalNotes: listing.internalNotes ?? "",
     manufactureYear: optionalNumberText(listing.manufactureYear),
     mileageKm: optionalNumberText(listing.mileageKm),
     modelYear: optionalNumberText(listing.modelYear),
@@ -49,7 +53,8 @@ export function createInventoryEditState(
     price:
       listing.priceCents === null
         ? ""
-        : String((listing.priceCents / 100).toFixed(2)).replace(".", ","),
+        : formatCurrencyValue(listing.priceCents / 100),
+    renavam: unit?.renavam ?? "",
     status: listing.status,
     stockNumber: unit?.stockNumber ?? "",
     title: listing.title,
@@ -92,6 +97,7 @@ export function buildListingEditInput(
     engineAspiration: form.engineAspiration || null,
     engineDisplacement: form.engineDisplacement || null,
     fuelType: form.fuelType || null,
+    internalNotes: nullableText(form.internalNotes),
     manufactureYear: parseOptionalInteger(form.manufactureYear),
     mileageKm: parseOptionalInteger(form.mileageKm),
     modelYear: parseOptionalInteger(form.modelYear),
@@ -118,6 +124,7 @@ export function buildListingEditInput(
     next.engineDisplacement,
   );
   setChanged(input, "fuelType", listing.fuelType, next.fuelType);
+  setChanged(input, "internalNotes", listing.internalNotes, next.internalNotes);
   setChanged(
     input,
     "manufactureYear",
@@ -141,6 +148,12 @@ export function buildUnitEditInput(
   const input: UpdateInventoryUnitInput = {};
   setChanged(input, "colorName", unit.colorName, form.colorName || null);
   setChanged(input, "plate", unit.plate, nullablePlate(form.plate));
+  setChanged(
+    input,
+    "renavam",
+    unit.renavam ?? null,
+    nullableText(form.renavam),
+  );
   setChanged(
     input,
     "stockNumber",
@@ -189,7 +202,10 @@ function optionalNumberText(value: number | null) {
 function parseOptionalInteger(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  const parsed = Number(trimmed);
+  const normalized = /^\d{1,3}(?:\.\d{3})+$/.test(trimmed)
+    ? trimmed.replace(/\./g, "")
+    : trimmed;
+  const parsed = Number(normalized);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 

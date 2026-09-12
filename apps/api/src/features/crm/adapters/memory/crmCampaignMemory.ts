@@ -1,0 +1,134 @@
+import { randomUUID } from "node:crypto";
+import type {
+  CreateCrmCampaignInput,
+  CrmCampaign,
+  ListCrmCampaignsInput,
+  FindCrmCampaignInput,
+  IncrementCrmCampaignCountsInput,
+  UpdateCrmCampaignInput,
+} from "../../../../domains/crm/ports/crmConversationRepository.js";
+
+export function createMemoryCampaign(
+  campaigns: CrmCampaign[],
+  input: CreateCrmCampaignInput,
+) {
+  const now = new Date();
+  const metadata = input.metadata ?? {};
+  const campaign: CrmCampaign = {
+    content: input.content,
+    createdAt: now,
+    createdByUserId: input.createdByUserId ?? null,
+    failedCount: 0,
+    id: randomUUID(),
+    initialStageId: input.initialStageId ?? null,
+    intervalMinutes: input.intervalMinutes,
+    mediaFileName:
+      typeof metadata.mediaFileName === "string"
+        ? metadata.mediaFileName
+        : null,
+    mediaStorageKey:
+      typeof metadata.mediaStorageKey === "string"
+        ? metadata.mediaStorageKey
+        : null,
+    mediaType: input.mediaType ?? null,
+    mediaUrl: input.mediaUrl ?? null,
+    metadata,
+    name: input.name,
+    repliedCount: input.repliedCount ?? 0,
+    replyRate: 0,
+    replyStageId: input.replyStageId ?? null,
+    scheduledCount: input.scheduledCount,
+    scheduledEndAt: input.scheduledEndAt,
+    scheduledStartAt: input.scheduledStartAt,
+    secondaryContent: input.secondaryContent ?? null,
+    secondaryDelayMinutes: input.secondaryDelayMinutes ?? 1,
+    secondarySentCount: input.secondarySentCount ?? 0,
+    selectedConnectionId: input.selectedConnectionId ?? null,
+    sentCount: input.sentCount ?? 0,
+    status: input.status,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+    totalRecipients: input.totalRecipients,
+    updatedAt: now,
+  };
+  campaigns.push(campaign);
+  return campaign;
+}
+
+export function findMemoryCampaign(
+  campaigns: readonly CrmCampaign[],
+  input: FindCrmCampaignInput,
+) {
+  return (
+    campaigns.find(
+      (campaign) =>
+        campaign.id === input.campaignId &&
+        campaign.storeId === input.storeId &&
+        campaign.tenantId === input.tenantId,
+    ) ?? null
+  );
+}
+
+export function listMemoryCampaigns(
+  campaigns: readonly CrmCampaign[],
+  input: ListCrmCampaignsInput,
+) {
+  return campaigns
+    .filter((campaign) => campaign.storeId === input.storeId)
+    .filter((campaign) => campaign.tenantId === input.tenantId)
+    .filter((campaign) => !input.status || campaign.status === input.status)
+    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .slice(0, input.limit);
+}
+
+export function updateMemoryCampaign(
+  campaigns: CrmCampaign[],
+  input: UpdateCrmCampaignInput,
+) {
+  const campaign = findMemoryCampaign(campaigns, input);
+  if (!campaign) return null;
+  if (input.failedCount !== undefined) campaign.failedCount = input.failedCount;
+  if (input.metadata !== undefined) {
+    campaign.metadata = input.metadata;
+    campaign.mediaFileName =
+      typeof input.metadata.mediaFileName === "string"
+        ? input.metadata.mediaFileName
+        : null;
+    campaign.mediaStorageKey =
+      typeof input.metadata.mediaStorageKey === "string"
+        ? input.metadata.mediaStorageKey
+        : null;
+  }
+  if (input.repliedCount !== undefined) {
+    campaign.repliedCount = input.repliedCount;
+  }
+  if (input.scheduledCount !== undefined) {
+    campaign.scheduledCount = input.scheduledCount;
+  }
+  if (input.secondarySentCount !== undefined) {
+    campaign.secondarySentCount = input.secondarySentCount;
+  }
+  if (input.sentCount !== undefined) campaign.sentCount = input.sentCount;
+  if (input.status !== undefined) campaign.status = input.status;
+  campaign.replyRate =
+    campaign.sentCount > 0 ? campaign.repliedCount / campaign.sentCount : 0;
+  campaign.updatedAt = new Date();
+  return campaign;
+}
+
+export function incrementMemoryCampaignCounts(
+  campaigns: CrmCampaign[],
+  input: IncrementCrmCampaignCountsInput,
+) {
+  const campaign = findMemoryCampaign(campaigns, input);
+  if (!campaign) return null;
+  campaign.failedCount += input.failedDelta ?? 0;
+  campaign.repliedCount += input.repliedDelta ?? 0;
+  campaign.scheduledCount += input.scheduledDelta ?? 0;
+  campaign.secondarySentCount += input.secondarySentDelta ?? 0;
+  campaign.sentCount += input.sentDelta ?? 0;
+  campaign.replyRate =
+    campaign.sentCount > 0 ? campaign.repliedCount / campaign.sentCount : 0;
+  campaign.updatedAt = new Date();
+  return campaign;
+}

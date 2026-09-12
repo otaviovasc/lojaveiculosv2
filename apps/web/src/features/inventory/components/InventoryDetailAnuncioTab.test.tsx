@@ -17,6 +17,47 @@ import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 afterEach(cleanup);
 
 describe("InventoryDetailAnuncioTab", () => {
+  it("publishes the canonical listing from the publication portals card", async () => {
+    const fixture = createInventoryDetailFixture();
+    const detail = {
+      ...fixture,
+      listing: {
+        ...fixture.listing,
+        publicSlug: null,
+        status: "draft" as const,
+      },
+    };
+    const published = {
+      ...detail,
+      listing: {
+        ...detail.listing,
+        publicSlug: "inventory-title-1",
+        status: "published" as const,
+      },
+    };
+    const publishListing = vi.fn(async () => published);
+    const onUpdated = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <InventoryDetailAnuncioTab
+        api={{ publishListing } as unknown as InventoryApi}
+        detail={detail}
+        onUpdated={onUpdated}
+        publicListingUrl={null}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Publicar veículo" }));
+
+    await waitFor(() =>
+      expect(publishListing).toHaveBeenCalledWith("listing_1", {
+        reason: "Published from inventory publication portals.",
+      }),
+    );
+    expect(onUpdated).toHaveBeenCalledWith(published);
+  });
+
   it("persists description, price, tags, and video through the inventory API", async () => {
     let persisted = createInventoryDetailFixture();
     const updateListingDetails = vi.fn(
@@ -86,7 +127,10 @@ describe("InventoryDetailAnuncioTab", () => {
     expect(screen.queryByText("Configurar integração")).toBeNull();
     expect(
       screen.getAllByText("Integração não disponível nesta tela."),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("link", { name: "Gerenciar integração" }),
+    ).toHaveLength(2);
     expect(
       screen.getByRole("link", { name: "Visualizar anúncio" }),
     ).toHaveAttribute("href", "/test-store?listing=veiculo-teste");

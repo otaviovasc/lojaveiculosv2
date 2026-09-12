@@ -146,7 +146,7 @@ function createContext(record: ReturnType<typeof createHarness>["record"]) {
       storeId: "store_1",
       tenantId: "tenant_1",
     }),
-    entitlements: ["nfe"],
+    entitlements: ["fiscal"],
   };
 }
 
@@ -156,15 +156,20 @@ function createHarness(options: {
 }) {
   const basePorts = createFiscalTestPorts();
   const ports = {
+    fiscalConnectionRepository: basePorts.fiscalConnectionRepository,
+    fiscalProviderAdminGateway: basePorts.fiscalProviderAdminGateway,
     fiscalProviderGateway: restrictAdapter(basePorts.fiscalProviderGateway, [
+      "getProviderStatus",
       "issueDocument",
     ]),
     fiscalRepository: restrictAdapter(basePorts.fiscalRepository, [
       "createDocument",
       "createDocumentSnapshot",
+      "getRecipient",
       "getTemplate",
       "updateDocumentStatus",
     ]),
+    fiscalWebhookRepository: basePorts.fiscalWebhookRepository,
   };
   const record = vi.fn(async () => undefined);
   const createDocument = vi.spyOn(ports.fiscalRepository, "createDocument");

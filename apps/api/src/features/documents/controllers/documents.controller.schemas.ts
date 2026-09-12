@@ -2,7 +2,9 @@ import { z } from "zod";
 import { documentTemplateKeys } from "@lojaveiculosv2/documents";
 
 export const documentKinds = [
+  "buyer_acknowledgment",
   "buyer_document",
+  "consignment_contract",
   "delivery_term",
   "finance_receipt",
   "inspection",
@@ -15,6 +17,7 @@ export const documentKinds = [
   "sale_contract",
   "test_drive",
   "vehicle_registration",
+  "warranty_certificate",
 ] as const;
 
 export const documentStatuses = [
@@ -40,9 +43,14 @@ export const documentLinkTargets = [
 export const documentTemplateKinds = documentTemplateKeys;
 
 export const listDocumentsQuerySchema = z.object({
+  dateFrom: z.string().date().optional(),
+  dateTo: z.string().date().optional(),
   kind: z.enum(documentKinds).optional(),
   limit: z.coerce.number().int().positive().max(200).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
+  origin: z.enum(["automatic", "manual"]).optional(),
   search: z.string().trim().min(1).max(120).optional(),
+  scope: z.enum(["general", "vehicle"]).optional(),
   status: z.enum(documentStatuses).optional(),
   targetId: z.string().trim().min(1).optional(),
   targetType: z.enum(documentLinkTargets).optional(),

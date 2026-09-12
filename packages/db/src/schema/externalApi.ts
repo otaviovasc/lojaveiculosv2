@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   jsonb,
@@ -106,6 +108,8 @@ export const apiIdempotencyKeys = pgTable(
       length: 191,
     }).notNull(),
     requestId: varchar("request_id", { length: 191 }).notNull(),
+    responseBody: jsonb("response_body"),
+    responseContentType: varchar("response_content_type", { length: 100 }),
     responseMs: integer("response_ms"),
     status: apiIdempotencyStatus("status").notNull().default("started"),
     statusCode: integer("status_code"),
@@ -117,6 +121,10 @@ export const apiIdempotencyKeys = pgTable(
       .references(() => tenants.id),
   },
   (table) => [
+    check(
+      "api_idempotency_keys_replay_response_check",
+      sql`${table.status} <> 'completed' OR (${table.responseBody} IS NOT NULL AND ${table.responseContentType} IS NOT NULL AND ${table.responseContentType} ILIKE 'application/json%' AND ${table.statusCode} IS NOT NULL AND octet_length(${table.responseBody}::text) <= 524288)`,
+    ),
     index("api_idempotency_keys_client_id_idx").on(table.clientId),
     index("api_idempotency_keys_store_created_idx").on(
       table.storeId,

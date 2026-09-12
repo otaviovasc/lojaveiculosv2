@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -6,13 +7,12 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { leads } from "./leads.js";
 import { sales } from "./sales.js";
 import { stores, tenants, users } from "./identity.js";
-import { vehicleListings, vehicleUnits } from "./inventory.js";
 import { lifecycleColumns } from "./_shared.js";
 
 export const financeEntryType = pgEnum("finance_entry_type", [
@@ -99,10 +99,25 @@ export const financeEntryLinks = pgTable(
   },
   (table) => [
     index("finance_entry_links_entry_id_idx").on(table.entryId),
+    index("finance_entry_links_scope_entry_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.entryId,
+    ),
+    index("finance_entry_links_scope_target_idx").on(
+      table.tenantId,
+      table.storeId,
+      table.targetType,
+      table.targetId,
+      table.entryId,
+    ),
     index("finance_entry_links_target_idx").on(
       table.targetType,
       table.targetId,
     ),
+    uniqueIndex("finance_entry_links_vehicle_cost_target_unique")
+      .on(table.tenantId, table.storeId, table.targetId)
+      .where(sql`${table.targetType} = 'vehicle_cost'`),
   ],
 );
 
@@ -185,52 +200,4 @@ export const commissions = pgTable(
     index("commissions_sale_id_idx").on(table.saleId),
     index("commissions_seller_user_id_idx").on(table.sellerUserId),
   ],
-);
-
-export const financingInquiries = pgTable(
-  "financing_inquiries",
-  {
-    ...lifecycleColumns,
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-    leadId: uuid("lead_id").references(() => leads.id),
-    listingId: uuid("listing_id")
-      .notNull()
-      .references(() => vehicleListings.id),
-    metadata: jsonb("metadata").notNull().default({}),
-    provider: varchar("provider", { length: 80 }).notNull(),
-    providerInquiryId: varchar("provider_inquiry_id", { length: 191 }),
-    status: varchar("status", { length: 80 }).notNull().default("requested"),
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-    unitId: uuid("unit_id").references(() => vehicleUnits.id),
-  },
-  (table) => [
-    index("financing_inquiries_lead_id_idx").on(table.leadId),
-    index("financing_inquiries_listing_id_idx").on(table.listingId),
-    index("financing_inquiries_store_status_idx").on(
-      table.storeId,
-      table.status,
-    ),
-  ],
-);
-
-export const financingConditions = pgTable(
-  "financing_conditions",
-  {
-    ...lifecycleColumns,
-    bankName: varchar("bank_name", { length: 120 }).notNull(),
-    inquiryId: uuid("inquiry_id")
-      .notNull()
-      .references(() => financingInquiries.id),
-    installments: integer("installments").notNull(),
-    metadata: jsonb("metadata").notNull().default({}),
-    status: varchar("status", { length: 80 }).notNull(),
-    summary: text("summary"),
-    totalAmountCents: integer("total_amount_cents"),
-  },
-  (table) => [index("financing_conditions_inquiry_id_idx").on(table.inquiryId)],
 );

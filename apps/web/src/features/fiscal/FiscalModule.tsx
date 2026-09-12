@@ -1,150 +1,327 @@
-import { FileQuestion, FileText, RefreshCcw, ShieldAlert } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Clock,
+  FilePlus2,
+  FileText,
+  PlugZap,
+  ReceiptText,
+  RefreshCcw,
+  ShieldAlert,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
   FeaturePageHeader,
   FeaturePageShell,
-  FeatureSection,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureKpiCard,
-  FeatureKpiStrip,
-} from "../../components/ui/FeatureKpis";
 import {
   FeatureAlert,
   FeatureEmptyState,
   FeatureLoadingState,
-  FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
+import { AnimatedCounter } from "../../components/ui/CountUp";
+import type { FeatureIcon } from "../../components/ui/featureShared";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { cn } from "../../lib/utils";
+import "../../styles/fiscal-shell.css";
 import type { FiscalApi } from "./apiClient";
 import { FiscalCatalogPanels } from "./FiscalCatalogPanels";
-import { FiscalDocumentActions } from "./FiscalDocumentActions";
+import { FiscalConnectionTab } from "./FiscalConnectionTab";
+import { FiscalCorrectionPanel } from "./FiscalCorrectionPanel";
+import { FiscalDocumentList } from "./FiscalDocumentList";
 import { FiscalIssueComposer } from "./FiscalIssueComposer";
 import { FiscalProviderPanel } from "./FiscalProviderPanel";
 import { createRuntimeFiscalApi } from "./runtimeApi";
-import {
-  formatFiscalDate,
-  getFiscalDocumentStatusLabel,
-  getFiscalDocumentTypeLabel,
-} from "./fiscalLabels";
-import type { FiscalDocument, FiscalOverview } from "./types";
-import "./fiscal.css";
+import { createIssueDraftFromDocument } from "./fiscalDocumentPrefill";
+import type { FiscalStatusFilter } from "./fiscalDocumentDisplay";
+import type { FiscalIssueDraft } from "./fiscalIssueModel";
+import type {
+  FiscalConnection,
+  FiscalConnectionStatus,
+  FiscalDocument,
+  FiscalOverview,
+} from "./types";
+
+type FiscalTab = "catalogo" | "conexao" | "emitir" | "notas";
+
+type LoadStatus =
+  { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
+
+const tabOptions: ReadonlyArray<{
+  icon: typeof FileText;
+  label: string;
+  value: FiscalTab;
+}> = [
+  { icon: FileText, label: "Notas", value: "notas" },
+  { icon: FilePlus2, label: "Emitir", value: "emitir" },
+  { icon: PlugZap, label: "Conexão", value: "conexao" },
+  { icon: Users, label: "Tomadores e modelos", value: "catalogo" },
+];
+
+const connectionChipLabels: Record<FiscalConnectionStatus, string> = {
+  error: "Spedy: verificar conexão",
+  not_configured: "Spedy: não configurada",
+  pending_review: "Spedy: em análise",
+  ready: "Spedy: emissão liberada",
+};
 
 export function FiscalModule({ api }: { api?: FiscalApi }) {
   const fiscalApi = useMemo(() => api ?? createRuntimeFiscalApi(), [api]);
   const [overview, setOverview] = useState<FiscalOverview | null>(null);
+  const [connection, setConnection] = useState<FiscalConnection | null>(null);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
+  const [tab, setTab] = useState<FiscalTab>("notas");
+  const [statusFilter, setStatusFilter] = useState<FiscalStatusFilter>("all");
+  const [correction, setCorrection] = useState<{
+    document: FiscalDocument;
+    draft: FiscalIssueDraft;
+  } | null>(null);
 
-  const refresh = async () => {
-    setStatus({ kind: "loading" });
-    try {
-      setOverview(await fiscalApi.getOverview());
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    }
-  };
+  const refresh = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!options?.silent) setStatus({ kind: "loading" });
+      try {
+        const [nextOverview, nextConnection] = await Promise.all([
+          fiscalApi.getOverview(),
+          fiscalApi.getConnection(),
+        ]);
+        setOverview(nextOverview);
+        setConnection(nextConnection);
+        setStatus({ kind: "ready" });
+      } catch (error) {
+        setStatus({ kind: "error", message: errorMessage(error) });
+      }
+    },
+    [fiscalApi],
+  );
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [refresh]);
+
+  const reportError = (message: string) =>
+    setStatus({ kind: "error", message });
+
+  const startCorrection = (document: FiscalDocument) => {
+    setCorrection({
+      document,
+      draft: createIssueDraftFromDocument(document),
+    });
+    setTab("emitir");
+  };
+
+  const handleIssued = async () => {
+    setCorrection(null);
+    await refresh({ silent: true });
+    setTab("notas");
+  };
+
+  const toggleStatusFilter = (filter: FiscalStatusFilter) =>
+    setStatusFilter((current) => (current === filter ? "all" : filter));
+
+  const emissionReady = connection?.status === "ready";
+  const canIssueDocuments = overview?.capabilities.canIssueDocuments ?? false;
 
   return (
-    <FeaturePageShell mainClassName="feature-shell">
+    <FeaturePageShell className="fiscal-shell" variant="content">
+      <div aria-hidden="true" className="fiscal-shell-blob" />
       <FeaturePageHeader
         actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            label="Atualizar"
-            onClick={() => void refresh()}
-            title="Atualizar fiscal"
-          />
+          <>
+            <FeatureActionButton
+              icon={RefreshCcw}
+              label="Atualizar"
+              onClick={() => void refresh()}
+              title="Atualizar dados fiscais"
+            />
+            <FeatureActionButton
+              disabled={!canIssueDocuments}
+              icon={FilePlus2}
+              label="Emitir documento"
+              onClick={() => setTab("emitir")}
+              title="Abrir a emissão de documento fiscal"
+              variant="primary"
+            />
+          </>
         }
-        description="Emita e acompanhe notas fiscais vinculadas às operações reais da loja."
-        eyebrow="Notas fiscais · Spedy"
-        title="Operação fiscal"
+        chip={
+          connection ? (
+            <>
+              <PlugZap aria-hidden="true" className="size-3.5" />
+              {connectionChipLabels[connection.status]}
+            </>
+          ) : undefined
+        }
+        className="fiscal-shell-header"
+        description="Emita e acompanhe as notas fiscais vinculadas às operações reais da loja."
+        eyebrow={
+          <>
+            <ReceiptText aria-hidden="true" className="size-4" />
+            Operação fiscal
+          </>
+        }
+        title="Notas fiscais"
       />
 
-      {status.kind === "error" ? (
-        <FeatureAlert>{status.message}</FeatureAlert>
+      {status.kind === "error" && overview ? (
+        <FeatureAlert
+          className="fiscal-shell-notice"
+          icon={<AlertTriangle aria-hidden="true" className="size-5" />}
+          title={
+            <span className="fiscal-notice-header">
+              <span className="fiscal-notice-title">
+                Erro de comunicação fiscal
+              </span>
+              <span className="fiscal-notice-badge fiscal-notice-badge--danger">
+                Aviso
+              </span>
+            </span>
+          }
+          tone="danger"
+        >
+          <div className="fiscal-notice-text-wrap">
+            <p className="fiscal-notice-body">{status.message}</p>
+          </div>
+        </FeatureAlert>
       ) : null}
-      {overview ? (
+
+      {overview && connection ? (
         <>
-          <section className="fiscal-setup-grid">
-            <FiscalProviderPanel overview={overview} />
-            <FiscalIssueComposer
-              api={fiscalApi}
-              disabled={
-                status.kind === "saving" || !overview.provider.configured
+          {!overview.provider.configured ? (
+            <FiscalProviderPanel
+              onOpenConnection={() => setTab("conexao")}
+              overview={overview}
+            />
+          ) : !emissionReady ? (
+            <FeatureAlert
+              action={
+                <FeatureActionButton
+                  icon={PlugZap}
+                  label="Abrir conexão fiscal"
+                  onClick={() => setTab("conexao")}
+                  title="Abrir a configuração da conexão fiscal"
+                />
               }
-              onError={(message) => setStatus({ kind: "error", message })}
-              onIssued={refresh}
-            />
-          </section>
-          <FiscalCatalogPanels
-            api={fiscalApi}
-            onError={(message) => setStatus({ kind: "error", message })}
-          />
-          <FeatureKpiStrip ariaLabel="Resumo fiscal">
-            <FeatureKpiCard
-              icon={FileText}
-              label="Emitidas"
-              tone="green"
-              value={overview.summary.issued}
-            />
-            <FeatureKpiCard
-              icon={FileText}
-              label="Pendentes"
-              tone="blue"
-              value={overview.summary.pending}
-            />
-            <FeatureKpiCard
-              icon={FileText}
-              label="Canceladas"
-              tone="pink"
-              value={overview.summary.cancelled}
-            />
-            <FeatureKpiCard
-              icon={ShieldAlert}
-              label="Falhas"
-              tone="violet"
-              value={overview.summary.failed}
-            />
-          </FeatureKpiStrip>
-          <FeatureSection className="feature-panel" title="Documentos recentes">
-            {overview.documents.length ? (
-              <div className="feature-list">
-                {overview.documents.map((document) => (
-                  <article key={document.id}>
-                    <strong>
-                      {getFiscalDocumentTypeLabel(document.documentType)}
-                    </strong>
-                    <FeatureStatusBadge tone={statusTone(document)}>
-                      {getFiscalDocumentStatusLabel(document.status)}
-                    </FeatureStatusBadge>
-                    <small>
-                      Registrado em {formatFiscalDate(document.createdAt)}
-                    </small>
-                    <FiscalDocumentActions
-                      api={fiscalApi}
-                      document={document}
-                      onError={(message) =>
-                        setStatus({ kind: "error", message })
-                      }
-                      onRefresh={refresh}
-                    />
-                  </article>
-                ))}
+              className="fiscal-shell-notice"
+              icon={<PlugZap aria-hidden="true" className="size-5" />}
+              title={
+                <span className="fiscal-notice-header">
+                  <span className="fiscal-notice-title">
+                    Emissão fiscal bloqueada
+                  </span>
+                  <span className="fiscal-notice-badge fiscal-notice-badge--warning">
+                    Configuração pendente
+                  </span>
+                </span>
+              }
+              tone="warning"
+            >
+              <div className="fiscal-notice-text-wrap">
+                <p className="fiscal-notice-body">
+                  A emissão está bloqueada porque a conexão fiscal ainda não
+                  está pronta. Conclua a configuração da empresa, do certificado
+                  e dos padrões fiscais.
+                </p>
               </div>
-            ) : (
-              <FeatureEmptyState
-                body="As notas emitidas pela loja aparecerão aqui depois da primeira operação fiscal."
-                icon={FileQuestion}
-                title="Nenhum documento fiscal"
+            </FeatureAlert>
+          ) : null}
+
+          <FeatureTabs<FiscalTab>
+            activeClassName="!bg-accent !text-accent-foreground"
+            ariaLabel="Seções do módulo fiscal"
+            className="fiscal-tabs w-full"
+            onChange={setTab}
+            optionClassName="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
+            options={tabOptions}
+            value={tab}
+            variant="panel"
+          />
+
+          {tab === "notas" ? (
+            <div className="grid gap-4">
+              <FiscalKpiGrid
+                onToggle={toggleStatusFilter}
+                statusFilter={statusFilter}
+                summary={overview.summary}
               />
-            )}
-          </FeatureSection>
+              <FiscalDocumentList
+                api={fiscalApi}
+                capabilities={overview.capabilities}
+                canDownloadOfficialArtifacts={
+                  overview.capabilities.canDownloadOfficialArtifacts
+                }
+                documents={overview.documents}
+                events={overview.events ?? []}
+                onCorrect={startCorrection}
+                onError={reportError}
+                onRefresh={() => refresh({ silent: true })}
+                onStatusFilterChange={setStatusFilter}
+                statusFilter={statusFilter}
+              />
+            </div>
+          ) : null}
+
+          {tab === "emitir" ? (
+            <div className="grid gap-4">
+              {emissionReady && canIssueDocuments ? (
+                <>
+                  {correction ? (
+                    <FiscalCorrectionPanel
+                      document={correction.document}
+                      draft={correction.draft}
+                      onDismiss={() => setCorrection(null)}
+                    />
+                  ) : null}
+                  <FiscalIssueComposer
+                    api={fiscalApi}
+                    disabled={false}
+                    initialDraft={correction?.draft ?? null}
+                    onError={reportError}
+                    onIssued={handleIssued}
+                  />
+                </>
+              ) : (
+                <FeatureEmptyState
+                  action={
+                    <FeatureActionButton
+                      icon={PlugZap}
+                      label="Configurar conexão fiscal"
+                      onClick={() => setTab("conexao")}
+                      title="Ir para a configuração da conexão fiscal"
+                      variant="primary"
+                    />
+                  }
+                  body={
+                    canIssueDocuments
+                      ? "A emissão de notas só é liberada quando a conexão com o provedor estiver pronta: empresa criada, certificado válido e padrões fiscais confirmados. Nenhuma emissão foi iniciada."
+                      : "Seu perfil pode consultar as notas, mas não tem permissão para emitir documentos fiscais. Nenhuma emissão foi iniciada."
+                  }
+                  className="fiscal-shell-notice"
+                  icon={ShieldAlert}
+                  title={
+                    canIssueDocuments
+                      ? "Emissão bloqueada"
+                      : "Sem permissão para emitir"
+                  }
+                />
+              )}
+            </div>
+          ) : null}
+
+          {tab === "conexao" ? (
+            <FiscalConnectionTab
+              api={fiscalApi}
+              connection={connection}
+              onConnectionChange={setConnection}
+            />
+          ) : null}
+
+          {tab === "catalogo" ? (
+            <FiscalCatalogPanels api={fiscalApi} onError={reportError} />
+          ) : null}
         </>
       ) : status.kind === "error" ? (
         <FeatureEmptyState
@@ -156,28 +333,102 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
             />
           }
           body="Não foi possível consultar a situação fiscal da loja. Nenhuma emissão foi iniciada."
+          className="fiscal-shell-notice"
           icon={ShieldAlert}
           title="Operação fiscal indisponível"
         />
       ) : (
-        <FeatureLoadingState>Carregando operação fiscal</FeatureLoadingState>
+        <FeatureLoadingState title="Carregando operação fiscal">
+          Consultando o provedor fiscal da loja.
+        </FeatureLoadingState>
       )}
     </FeaturePageShell>
   );
 }
 
-function statusTone(document: FiscalDocument) {
-  if (document.status === "issued") return "success" as const;
-  if (document.status === "failed") return "danger" as const;
-  if (document.status === "cancelled") return "neutral" as const;
-  return "warning" as const;
-}
+type FiscalKpiTone = "accent" | "info" | "pink" | "violet";
 
-type LoadStatus =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" }
-  | { kind: "saving" };
+function FiscalKpiGrid({
+  onToggle,
+  statusFilter,
+  summary,
+}: {
+  onToggle: (filter: FiscalStatusFilter) => void;
+  statusFilter: FiscalStatusFilter;
+  summary: FiscalOverview["summary"];
+}) {
+  const kpis: ReadonlyArray<{
+    filter: FiscalStatusFilter;
+    icon: FeatureIcon;
+    label: string;
+    tone: FiscalKpiTone;
+    value: number;
+  }> = [
+    {
+      filter: "issued",
+      icon: FileText,
+      label: "Emitidas",
+      tone: "accent",
+      value: summary.issued,
+    },
+    {
+      filter: "pending",
+      icon: Clock,
+      label: "Pendentes",
+      tone: "info",
+      value: summary.pending,
+    },
+    {
+      filter: "cancelled",
+      icon: XCircle,
+      label: "Canceladas",
+      tone: "pink",
+      value: summary.cancelled,
+    },
+    {
+      filter: "failed",
+      icon: ShieldAlert,
+      label: "Falhas",
+      tone: "violet",
+      value: summary.failed,
+    },
+  ];
+
+  return (
+    <section
+      aria-label="Resumo fiscal"
+      className="fiscal-kpi-grid"
+      role="group"
+    >
+      {kpis.map(({ filter, icon: IconComponent, label, tone, value }) => {
+        const active = statusFilter === filter;
+        return (
+          <button
+            aria-label={`Filtrar por ${label}`}
+            aria-pressed={active}
+            className={cn(
+              "fiscal-kpi-card",
+              `fiscal-kpi-card--${tone}`,
+              active && "is-active",
+            )}
+            key={filter}
+            onClick={() => onToggle(filter)}
+            type="button"
+          >
+            <IconComponent
+              aria-hidden="true"
+              className="fiscal-kpi-card__watermark"
+            />
+            <span className="fiscal-kpi-card__label">{label}</span>
+            <strong className="fiscal-kpi-card__value">
+              <AnimatedCounter value={value} />
+            </strong>
+          </button>
+        );
+      })}
+    </section>
+  );
+}
 
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(

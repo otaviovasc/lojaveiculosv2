@@ -14,16 +14,18 @@ const input = {
 };
 
 describe("seed product media placeholder", () => {
-  it("creates a deterministic, honest SVG at an SVG storage key", () => {
+  it("creates a deterministic generated WebP at a WebP storage key", () => {
     const first = createSeedMediaPlaceholder(input);
     const second = createSeedMediaPlaceholder(input);
 
     expect(first).toEqual(second);
-    expect(first.contentType).toBe("image/svg+xml");
-    expect(first.storageKey).toMatch(/seed-photo-pending-[a-f0-9]+\.svg$/);
-    expect(first.body.toString("utf8")).toContain("FOTO EM PREPARAÇÃO");
-    expect(first.body.toString("utf8")).toContain("&quot;Prestige&quot;");
-    expect(first.body.toString("utf8")).not.toContain("<preto>");
+    expect(first.altText).toBe('Audi A4 "Prestige": foto em preparação');
+    expect(first.contentType).toBe("image/webp");
+    expect(first.storageKey).toMatch(/seed-photo-pending-[a-f0-9]+\.webp$/);
+    expect(first.body.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(first.body.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    expect(first.height).toBe(900);
+    expect(first.width).toBe(1600);
     expect(first.sizeBytes).toBe(first.body.byteLength);
   });
 
@@ -32,7 +34,7 @@ describe("seed product media placeholder", () => {
     const metadata = lowerCaseKeys(seedMediaPlaceholderMetadata(placeholder));
     const object = {
       contentLength: placeholder.sizeBytes,
-      contentType: "image/svg+xml",
+      contentType: "image/webp",
       exists: true,
       metadata,
     };

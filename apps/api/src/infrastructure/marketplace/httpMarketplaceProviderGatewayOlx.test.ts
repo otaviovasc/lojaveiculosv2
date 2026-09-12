@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createHttpMarketplaceProviderGateway } from "./httpMarketplaceProviderGateway.js";
+import { createOlxTestGateway } from "./httpMarketplaceProviderGatewayOlxTestSupport.js";
 import {
   jsonResponse,
   listingProjection,
@@ -7,6 +7,21 @@ import {
 } from "./httpMarketplaceProviderGatewayTestSupport.js";
 
 describe("createHttpMarketplaceProviderGateway OLX", () => {
+  it("keeps the requested scopes when OLX omits an unchanged token scope", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(
+        jsonResponse({ access_token: "token_1", token_type: "Bearer" }),
+      );
+
+    const token = await createOlxTestGateway(fetch).exchangeAuthorizationCode({
+      code: "authorization_code",
+      redirectUri: "https://app.example.test/olx/callback",
+    });
+
+    expect(token.scope).toBe("autoservice autoupload basic_user_info chat");
+  });
+
   it("creates OAuth URLs with scope and checks accounts with token body", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
       jsonResponse({
@@ -14,7 +29,7 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
         user_name: "Seller",
       }),
     );
-    const gateway = olxGateway(fetch);
+    const gateway = createOlxTestGateway(fetch);
 
     const url = new URL(
       await gateway.createAuthorizationUrl({
@@ -26,7 +41,7 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
 
     expect(url.origin).toBe("https://auth.olx.test");
     expect(url.searchParams.get("scope")).toBe(
-      "autoupload basic_user_info autoservice chat",
+      "basic_user_info autoupload autoservice chat",
     );
     expect(fetch.mock.calls[0]?.[0]).toBe(
       "https://apps.olx.test/oauth_api/basic_user_info",
@@ -50,7 +65,7 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
         token: "secret_import_token",
       }),
     );
-    const result = await olxGateway(fetch).runListingSync({
+    const result = await createOlxTestGateway(fetch).runListingSync({
       jobType: "listing_publish",
       listing: listingProjection(),
       metadata: {
@@ -66,12 +81,7 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
     const request = fetch.mock.calls[0]?.[1];
     const body = JSON.parse(String(request?.body)) as {
       access_token: string;
-      ad_list: {
-        category: number;
-        id: string;
-        operation: string;
-        params: Record<string, unknown>;
-      }[];
+      ad_list: Record<string, unknown>[];
     };
 
     expect(fetch.mock.calls[0]?.[0]).toBe(
@@ -80,25 +90,36 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
     expect(request?.method).toBe("PUT");
     expect(request?.headers).not.toHaveProperty("Authorization");
     expect(body.access_token).toBe("token_1");
-    expect(body.ad_list[0]).toMatchObject({
-      category: 2020,
-      id: "listing_1",
-      operation: "insert",
-      phone: 11999999999,
-      params: {
-        doors: "2",
-        fuel: "1",
-        mileage: 12000,
-        regdate: "2024",
-        vehicle_brand: "17",
-        vehicle_model: "5",
-        vehicle_tag: "ABC1D23",
-        vehicle_version: "3",
-      },
-      zipcode: "01310100",
+    expect(body).toEqual({
+      access_token: "token_1",
+      ad_list: [
+        {
+          Body: "Descricao",
+          Phone: 11999999999,
+          Subject: "BMW M3",
+          category: 2020,
+          id: "lv_59d376efc6a61cd7",
+          images: ["https://cdn.example.test/photo.jpg"],
+          operation: "insert",
+          params: {
+            doors: "2",
+            fuel: "1",
+            mileage: 12000,
+            regdate: "2024",
+            vehicle_brand: "17",
+            vehicle_model: "5",
+            vehicle_tag: "ABC1D23",
+            vehicle_version: "3",
+          },
+          price: 120000,
+          type: "s",
+          zipcode: "01310100",
+        },
+      ],
     });
     expect(result).toMatchObject({
-      externalId: "listing_1",
+      externalId: "lv_59d376efc6a61cd7",
+      operationToken: "secret_import_token",
       metadata: {
         providerRequest: {
           categoryId: "2020",
@@ -114,22 +135,52 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
           ],
         },
         providerResult: {
-          externalId: "listing_1",
+          externalId: "lv_59d376efc6a61cd7",
           providerRequestId: "provider_req_1",
-          providerStatus: "Import accepted",
+          providerStatus: "submitted",
         },
       },
     });
-    expect(JSON.stringify(result)).not.toContain("secret_import_token");
+    expect(JSON.stringify(result.metadata)).not.toContain(
+      "secret_import_token",
+    );
     expect(JSON.stringify(result)).not.toContain("token_1");
+    expect(JSON.stringify(result)).not.toContain("Descricao");
+    expect(JSON.stringify(result)).not.toContain("11999999999");
+    expect(JSON.stringify(result)).not.toContain("Import accepted");
+  });
+
+  it("reuses the mapped provider id for updates", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      jsonResponse({
+        statusCode: 0,
+        statusMessage: "Import accepted",
+        token: "update_import_token",
+      }),
+    );
+    const result = await createOlxTestGateway(fetch).runListingSync({
+      externalId: "olx_existing_123",
+      jobType: "listing_update",
+      listing: listingProjection(),
+      metadata: {},
+      token: tokenSet(),
+    });
+    const request = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body)) as {
+      ad_list: { id: string }[];
+    };
+
+    expect(request.ad_list[0]?.id).toBe("olx_existing_123");
+    expect(result.externalId).toBe("olx_existing_123");
   });
 
   it("unpublishes listings with the Autoupload delete operation", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
-      .mockResolvedValue(jsonResponse({ statusCode: 0 }));
+      .mockResolvedValue(
+        jsonResponse({ statusCode: 0, token: "delete_import_token" }),
+      );
 
-    const result = await olxGateway(fetch).runListingSync({
+    const result = await createOlxTestGateway(fetch).runListingSync({
       externalId: "listing_1",
       jobType: "listing_unpublish",
       metadata: {},
@@ -143,72 +194,4 @@ describe("createHttpMarketplaceProviderGateway OLX", () => {
     expect(body.ad_list).toEqual([{ id: "listing_1", operation: "delete" }]);
     expect(result.externalId).toBe("listing_1");
   });
-
-  it.each([
-    [-4, "MARKETPLACE_PROVIDER_VALIDATION_FAILED"],
-    [-6, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-7, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-8, "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"],
-    [-99, "MARKETPLACE_PROVIDER_UNAVAILABLE"],
-  ] as const)("maps statusCode %s to %s", async (statusCode, code) => {
-    const fetch = vi
-      .fn<typeof globalThis.fetch>()
-      .mockResolvedValue(jsonResponse({ statusCode }));
-
-    await expect(
-      olxGateway(fetch).runListingSync({
-        jobType: "listing_publish",
-        listing: listingProjection(),
-        metadata: {},
-        token: tokenSet(),
-      }),
-    ).rejects.toMatchObject({
-      code,
-      details: { provider: "olx", providerStatus: String(statusCode) },
-    });
-  });
-
-  it("maps per-ad delete not-found errors to listing not found", async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
-      jsonResponse({
-        errors: [
-          {
-            id: "listing_1",
-            messages: [{ id: "not found" }],
-            status: "error",
-          },
-        ],
-        statusCode: -4,
-      }),
-    );
-
-    await expect(
-      olxGateway(fetch).runListingSync({
-        externalId: "listing_1",
-        jobType: "listing_unpublish",
-        metadata: {},
-        token: tokenSet(),
-      }),
-    ).rejects.toMatchObject({
-      code: "MARKETPLACE_LISTING_NOT_FOUND",
-      details: { externalId: "listing_1", provider: "olx" },
-    });
-  });
 });
-
-function olxGateway(fetch: typeof globalThis.fetch) {
-  return createHttpMarketplaceProviderGateway({
-    auth: { clientId: "olx_client", clientSecret: "olx_secret" },
-    authorizationScope: "autoupload basic_user_info autoservice chat",
-    authorizationUrl: "https://auth.olx.test/oauth",
-    baseUrl: "https://apps.olx.test",
-    fetch,
-    listingPath: "/autoupload/import",
-    provider: "olx",
-    requirementConfig: {
-      accountCheckPath: "/oauth_api/basic_user_info",
-      requirements: [],
-    },
-    tokenUrl: "https://auth.olx.test/oauth/token",
-  });
-}

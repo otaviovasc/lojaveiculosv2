@@ -18,6 +18,13 @@ describe("sales workflow payment allocations", () => {
       const dueAt = new Date("2026-07-09T12:00:00.000Z");
       const draft = await services.createDraft(context(["sale.draft"]), {
         ...completeDraft(),
+        ...(method === "trade_in"
+          ? {
+              saleSourceSnapshot: {
+                tradeIn: completeTradeInSnapshot(5000000),
+              },
+            }
+          : {}),
         payments: [
           {
             amountCents: 5000000,
@@ -33,10 +40,18 @@ describe("sales workflow payment allocations", () => {
         ],
       });
 
-      await services.transition(context(["sale.close"]), {
-        saleId: draft.id,
-        status: "closed",
-      });
+      await services.transition(
+        context([
+          "sale.close",
+          ...(method === "trade_in"
+            ? (["inventory.create", "inventory.update_unit"] as const)
+            : []),
+        ]),
+        {
+          saleId: draft.id,
+          status: "closed",
+        },
+      );
 
       const [financeEntry] = vehiclePorts.financeRepository.entries;
       expect(financeEntry).toMatchObject({
@@ -168,3 +183,18 @@ describe("sales workflow payment allocations", () => {
     expect(missingFields).toContain("payment_principal_coverage");
   });
 });
+
+function completeTradeInSnapshot(valuationCents: number) {
+  return {
+    brand: "Honda",
+    chassi: "93HFC1630KZ123456",
+    color: "Prata",
+    enabled: true,
+    model: "Civic",
+    plate: "ABC1D23",
+    renavam: "12345678901",
+    valuationCents,
+    yearFabrication: 2020,
+    yearModel: 2021,
+  };
+}

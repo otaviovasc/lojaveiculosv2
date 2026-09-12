@@ -2,11 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import type { FiscalDocument } from "../../../domains/fiscal/ports/fiscalRepository.js";
 import {
+  FiscalDocumentCancellationNotAllowedError,
+  FiscalDocumentRepeatNotAllowedError,
+} from "../../../domains/fiscal/domain/fiscalErrors.js";
+import {
   FiscalDocumentNotFoundError,
   FiscalProviderReferenceMissingError,
 } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
 import { createFiscalFeature } from "./fiscal.controller.js";
 import type { FiscalServices } from "./fiscalServices.js";
+import { SpedyGatewayHttpError } from "../../../infrastructure/fiscal/spedyErrors.js";
 
 describe("fiscal controller persisted provider reference contract", () => {
   it("passes only the local document id and reason to cancellation", async () => {
@@ -25,6 +30,9 @@ describe("fiscal controller persisted provider reference contract", () => {
     });
 
     expect(response.status).toBe(200);
+    const payload: unknown = await response.json();
+    expect(payload).toMatchObject({ hasProviderReference: true });
+    expect(payload).not.toHaveProperty("providerDocumentId");
     expect(services.cancelDocument).toHaveBeenCalledWith(
       expect.objectContaining({ actor: { id: "user_1", kind: "user" } }),
       {
@@ -98,6 +106,16 @@ describe("fiscal controller persisted provider reference contract", () => {
       409,
       "FISCAL_PROVIDER_REFERENCE_MISSING",
     ],
+    [
+      new FiscalDocumentCancellationNotAllowedError("processing"),
+      409,
+      "FISCAL_CANCELLATION_NOT_ALLOWED",
+    ],
+    [
+      new FiscalDocumentRepeatNotAllowedError("rejected"),
+      409,
+      "FISCAL_REPEAT_NOT_ALLOWED",
+    ],
   ] as const)("maps %s to %s/%s", async (error, status, code) => {
     const services = createServices();
     services.cancelDocument.mockRejectedValueOnce(error);
@@ -121,12 +139,46 @@ describe("fiscal controller persisted provider reference contract", () => {
       requestId: "request_1",
     });
   });
+
+  it("does not expose raw provider errors to callers", async () => {
+    const services = createServices();
+    services.cancelDocument.mockRejectedValueOnce(
+      new SpedyGatewayHttpError(
+        "certificate password invalid for customer 12345678000190",
+        422,
+      ),
+    );
+    const feature = createFiscalFeature({
+      contextFactory: async () => createContext(),
+      services: services.value,
+    });
+
+    const response = await feature.request("/documents/document_1/cancel", {
+      body: JSON.stringify({ reason: "Customer requested cancellation" }),
+      headers: {
+        "content-type": "application/json",
+        "x-request-id": "request_1",
+      },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(503);
+    const payload: unknown = await response.json();
+    expect(payload).toMatchObject({
+      code: "FISCAL_PROVIDER_UNAVAILABLE",
+      message: "Fiscal provider is temporarily unavailable.",
+      requestId: "request_1",
+    });
+    const serialized = JSON.stringify(payload);
+    expect(serialized).not.toContain("certificate password");
+    expect(serialized).not.toContain("12345678000190");
+  });
 });
 
-function createContext() {
+function createContext(permissions = ["fiscal.manage"]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
-    permissions: ["fiscal.manage"],
+    permissions,
     request: { requestId: "request_1" },
     storeId: "store_1",
     tenantId: "tenant_1",
@@ -144,22 +196,33 @@ function createServices() {
     archiveRecipient: unused("archiveRecipient"),
     archiveTemplate: unused("archiveTemplate"),
     cancelDocument,
+    confirmDefaults: unused("confirmDefaults"),
     createRecipient: unused("createRecipient"),
     createTemplate: unused("createTemplate"),
+    downloadDocumentArtifact: unused("downloadDocumentArtifact"),
+    getConnection: unused("getConnection"),
     getOverview: unused("getOverview"),
     issueDocument: unused("issueDocument"),
     listRecipients: unused("listRecipients"),
     listTemplates: unused("listTemplates"),
     previewTemplate: unused("previewTemplate"),
+    processWebhook: unused("processWebhook"),
     repeatDocument: unused("repeatDocument"),
+    setupConnection: unused("setupConnection"),
+    syncConnection: unused("syncConnection"),
     syncDocumentStatus,
     updateRecipient: unused("updateRecipient"),
     updateTemplate: unused("updateTemplate"),
+    uploadCertificate: unused("uploadCertificate"),
   };
-  return { cancelDocument, syncDocumentStatus, value };
+  return {
+    cancelDocument,
+    syncDocumentStatus,
+    value,
+  };
 }
 
-const documentRecord: FiscalDocument = {
+const documentRecord = {
   accessKey: "access_key_1",
   createdAt: new Date("2026-07-12T12:00:00.000Z"),
   documentKind: "nfe",
@@ -175,7 +238,7 @@ const documentRecord: FiscalDocument = {
   templateId: null,
   templateVersion: null,
   tenantId: "tenant_1",
-};
+} satisfies FiscalDocument;
 
 function unused(name: string): never {
   return (async () => {

@@ -5,6 +5,7 @@ import {
   Loader2,
   Printer,
 } from "lucide-react";
+import { Button } from "../../../components/ui/button";
 import type { TestDriveStep } from "./TestDriveWizardTypes";
 
 export function TestDriveWizardFooter({
@@ -25,59 +26,53 @@ export function TestDriveWizardFooter({
   onSubmit: () => void;
 }) {
   return (
-    <div className="p-6 border-t border-line flex items-center justify-between bg-panel sticky bottom-0 z-10">
+    <div className="p-4 sm:p-5 border-t border-line flex items-center justify-between bg-panel sticky bottom-0 z-10">
       {step === "details" ? (
-        <button
-          onClick={onBack}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-app-elevated px-4 text-sm font-black text-app-text cursor-pointer hover:bg-line/25"
-        >
-          <ArrowLeft className="size-4" />
+        <Button type="button" variant="outline" size="sm" onClick={onBack}>
+          <ArrowLeft className="size-4 mr-1.5" />
           Voltar
-        </button>
+        </Button>
+      ) : step === "lead" ? (
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          Cancelar
+        </Button>
       ) : (
         <div />
       )}
 
       {step === "lead" && (
-        <button
-          onClick={onNext}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground"
-        >
+        <Button type="button" variant="default" size="sm" onClick={onNext}>
           Continuar
-          <ArrowRight className="size-4" />
-        </button>
+          <ArrowRight className="size-4 ml-1.5" />
+        </Button>
       )}
 
       {step === "details" && (
-        <button
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
           onClick={onSubmit}
           disabled={submitting}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground disabled:opacity-50"
         >
           {submitting ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin mr-1.5" />
           ) : (
-            <CheckCircle2 className="size-4" />
+            <CheckCircle2 className="size-4 mr-1.5" />
           )}
-          {submitting ? "Salvando..." : "Salvar & Concluir"}
-        </button>
+          {submitting ? "Registrando..." : "Salvar & Concluir"}
+        </Button>
       )}
 
       {step === "success" && (
-        <div className="flex gap-2 w-full justify-center">
-          <button
-            onClick={onPrint}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground flex-1"
-          >
-            <Printer className="size-4" />
-            Visualizar Termo
-          </button>
-          <button
-            onClick={onClose}
-            className="flex min-h-11 items-center justify-center rounded-xl border border-line bg-app-elevated px-4 text-sm font-black text-app-text cursor-pointer hover:bg-line/25"
-          >
-            Concluir
-          </button>
+        <div className="flex gap-2 w-full justify-end">
+          <Button type="button" variant="default" size="sm" onClick={onPrint}>
+            <Printer className="size-4 mr-1.5" />
+            Visualizar e Imprimir Termo
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Fechar
+          </Button>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ProductCrmApi } from "./productCrmApi";
 import {
   DEFAULT_PIPELINES,
@@ -13,13 +13,43 @@ const pipelineLoads = new WeakMap<
   Map<string, Promise<Pipeline[]>>
 >();
 
-export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+// Last successfully loaded pipelines per store, so remounts (e.g. module tab
+// switches) can render immediately and refresh in the background.
+const pipelineCache = new WeakMap<ProductCrmApi, Map<string, Pipeline[]>>();
+
+function readPipelineCache(api: ProductCrmApi, storeId: string) {
+  return pipelineCache.get(api)?.get(storeId);
+}
+
+function writePipelineCache(
+  api: ProductCrmApi,
+  storeId: string,
+  pipelines: Pipeline[],
+) {
+  let byStore = pipelineCache.get(api);
+  if (!byStore) {
+    byStore = new Map<string, Pipeline[]>();
+    pipelineCache.set(api, byStore);
+  }
+  byStore.set(storeId, pipelines);
+}
+
+export function useCrmPipelines(
+  storeId: string,
+  api: ProductCrmApi,
+  enabled = true,
+) {
+  const [pipelines, setPipelines] = useState<Pipeline[]>(() =>
+    enabled ? (readPipelineCache(api, storeId) ?? []) : [],
+  );
+  const hasDataRef = useRef(pipelines.length > 0);
   const [activePipelineId, setActivePipelineIdState] = useState<string>(() =>
     getActivePipelineId(storeId),
   );
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(
+    () => enabled && !hasDataRef.current,
+  );
 
   const activePipeline = useMemo(
     () =>
@@ -39,11 +69,17 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
   );
 
   const loadPipelines = useCallback(async () => {
-    setIsLoading(true);
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
+    if (!hasDataRef.current) setIsLoading(true);
     setError(null);
     try {
       const loaded = await loadOrCreateDefaultPipeline(storeId, api);
+      hasDataRef.current = true;
       setPipelines(loaded);
+      writePipelineCache(api, storeId, loaded);
       const current = getActivePipelineId(storeId);
       const nextActive =
         loaded.find((pipeline) => pipeline.id === current)?.id ??
@@ -56,7 +92,7 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     } finally {
       setIsLoading(false);
     }
-  }, [api, setActivePipelineId, storeId]);
+  }, [api, enabled, setActivePipelineId, storeId]);
 
   useEffect(() => {
     void loadPipelines();
@@ -84,7 +120,14 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
       stages: updated.stages,
     });
     setPipelines((current) =>
-      current.map((pipeline) => (pipeline.id === saved.id ? saved : pipeline)),
+      current.map((pipeline) => {
+        if (pipeline.id === saved.id) return saved;
+        // The backend clears the default flag on sibling pipelines.
+        if (saved.isDefault && pipeline.isDefault) {
+          return { ...pipeline, isDefault: false };
+        }
+        return pipeline;
+      }),
     );
   };
 
@@ -92,8 +135,9 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     await api.deletePipeline(id);
     setPipelines((current) => {
       const next = current.filter((pipeline) => pipeline.id !== id);
-      const fallbackId = next[0]?.id ?? "";
-      if (fallbackId) setActivePipelineId(fallbackId);
+      if (id === getActivePipelineId(storeId) && next[0]) {
+        setActivePipelineId(next[0].id);
+      }
       return next;
     });
     callback?.();
@@ -136,6 +180,8 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     setActivePipelineId,
   };
 }
+
+export type CrmPipelinesState = ReturnType<typeof useCrmPipelines>;
 
 function loadOrCreateDefaultPipeline(
   storeId: string,

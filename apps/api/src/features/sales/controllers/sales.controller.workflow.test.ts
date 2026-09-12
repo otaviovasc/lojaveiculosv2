@@ -151,6 +151,7 @@ function createTestHarness() {
     createUnit({ listingId: "listing_1", status: "available" }),
   );
   const services = createSalesServices({
+    crmSaleOutcomePort: { applyWon: () => Promise.resolve() },
     ports: { salesRepository: createMemorySalesRepository() },
     workflowPorts: vehiclePorts,
   });
@@ -167,6 +168,7 @@ function createTestHarness() {
 function createTestContext() {
   return createServiceContext({
     actor: { id: "user-1", kind: "user" },
+    entitlements: ["sales"],
     permissions: [
       "sale.cancel",
       "sale.close",

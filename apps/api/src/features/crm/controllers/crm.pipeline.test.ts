@@ -4,7 +4,7 @@ import {
   createAuditSpy,
   createTestApp,
   expectApiError,
-} from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.controller.testSupport.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
@@ -140,6 +140,48 @@ describe("CRM pipeline routes", () => {
       status: "won",
     });
     expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.pipeline.lead_move" }),
+    );
+  });
+
+  it("does not move an existing lead when create is reused by phone", async () => {
+    const { audit, record } = createAuditSpy();
+    const app = createTestApp({ audit, permissions });
+    const stageId = await createWonStage(app);
+    const firstResponse = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({
+        buyerName: "Ana",
+        buyerPhone: "11999990000",
+        source: "manual",
+      }),
+      method: "POST",
+    });
+    const first = (await firstResponse.json()) as {
+      id: string;
+      pipelineStageId: string;
+      status: string;
+    };
+
+    const reusedResponse = await app.request("/api/v1/crm/leads", {
+      body: JSON.stringify({
+        buyerName: "Ana",
+        buyerPhone: "11999990000",
+        pipelineStageId: stageId,
+        source: "manual",
+      }),
+      method: "POST",
+    });
+
+    expect(reusedResponse.status).toBe(201);
+    await expect(reusedResponse.json()).resolves.toMatchObject({
+      id: first.id,
+      pipelineStageId: first.pipelineStageId,
+      status: first.status,
+    });
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "crm.lead.reuse" }),
+    );
+    expect(record).not.toHaveBeenCalledWith(
       expect.objectContaining({ action: "crm.pipeline.lead_move" }),
     );
   });

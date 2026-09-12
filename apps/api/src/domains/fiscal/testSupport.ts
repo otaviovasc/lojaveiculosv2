@@ -9,9 +9,13 @@ import type {
   FiscalServiceRecipient,
 } from "./ports/fiscalRepository.js";
 import { FiscalDocumentNotFoundError } from "./domain/fiscalErrors.js";
+import { createFiscalTestAuxiliaryPorts } from "./testSupportConnections.js";
+
+export { createFiscalTestAuxiliaryPorts } from "./testSupportConnections.js";
 
 export function createFiscalTestPorts(): FiscalServicePorts {
   return {
+    ...createFiscalTestAuxiliaryPorts(),
     fiscalProviderGateway: {
       async cancelDocument(input) {
         return {
@@ -26,6 +30,17 @@ export function createFiscalTestPorts(): FiscalServicePorts {
           missingConfiguration: [],
           provider: "spedy",
           webhookConfigured: true,
+        };
+      },
+      async downloadDocumentArtifact(input) {
+        const bytes =
+          input.format === "pdf"
+            ? new TextEncoder().encode("%PDF-1.7 test artifact")
+            : new TextEncoder().encode('<?xml version="1.0"?><nfe />');
+        return {
+          bytes,
+          contentType:
+            input.format === "pdf" ? "application/pdf" : "application/xml",
         };
       },
       async issueDocument(input) {
@@ -114,6 +129,25 @@ function createFiscalTestRepository(): FiscalRepository {
           input.providerDocumentId ?? document.providerDocumentId,
         status: input.status,
       });
+      return document;
+    },
+    async upsertProviderDocument(input) {
+      const existing = documents.find(
+        (item) =>
+          item.providerDocumentId === input.providerDocumentId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (existing) {
+        Object.assign(existing, {
+          accessKey: input.accessKey ?? existing.accessKey,
+          metadata: { ...existing.metadata, ...(input.metadata ?? {}) },
+          status: input.status,
+        });
+        return existing;
+      }
+      const document = toDocument(input);
+      documents.unshift(document);
       return document;
     },
     async updateRecipient(input) {

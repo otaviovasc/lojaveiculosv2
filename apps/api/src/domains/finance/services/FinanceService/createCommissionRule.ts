@@ -9,11 +9,11 @@ import {
   auditFinanceServiceEvent,
   getFinanceRepository,
   logFinanceServiceEvent,
-  requireFinanceScope,
+  requireCommissionScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
-const permission = "finance.create";
+const permission = "commissions.rules.manage";
 
 export type CreateCommissionRuleInput = {
   category: string;
@@ -32,7 +32,7 @@ export async function createCommissionRule(
   ports?: FinanceServicePorts,
 ): Promise<CommissionRule> {
   assertPermission(context, permission);
-  const scope = requireFinanceScope(context);
+  const scope = requireCommissionScope(context);
 
   logFinanceServiceEvent(context, "commission_rule.create.started", {
     category: input.category,

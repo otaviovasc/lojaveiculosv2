@@ -59,4 +59,22 @@ describe("createRuntimeAppOptions", () => {
       }),
     ).toThrow("CLERK_SECRET_KEY must be configured");
   });
+
+  it("fails fast outside local/test when REDIS_URL is missing", () => {
+    expect(() =>
+      createRuntimeAppOptions({
+        APP_ENV: "production",
+        AUDIT_DATABASE_URL: "postgresql://user:pass@localhost:54322/audit",
+        CLERK_AUTHORIZED_PARTIES: "https://app.example.com",
+        CLERK_SECRET_KEY: "sk_test_fake",
+        DATABASE_URL: "postgresql://user:pass@localhost:54321/app",
+        NODE_ENV: "production",
+        R2_ACCESS_KEY_ID: "fake-access-key",
+        R2_BUCKET_NAME: "fake-bucket",
+        R2_ENDPOINT: "https://example.invalid",
+        R2_PUBLIC_BASE_URL: "https://cdn.example.invalid",
+        R2_SECRET_ACCESS_KEY: "fake-secret-key",
+      }),
+    ).toThrow("REDIS_URL must be configured");
+  });
 });

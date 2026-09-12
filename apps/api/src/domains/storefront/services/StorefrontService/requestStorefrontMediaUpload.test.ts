@@ -118,6 +118,22 @@ describe("completeStorefrontMediaUpload", () => {
       ),
     ).rejects.toThrow("Storefront media storage key does not belong");
   });
+
+  it("rejects unprefixed storage keys when running in staging", async () => {
+    await expect(
+      completeStorefrontMediaUpload(
+        createContextWithEnvironment("staging"),
+        {
+          contentType: "image/png",
+          fileName: "fachada.png",
+          sizeBytes: 2048,
+          storageKey:
+            "tenants/tenant_1/stores/store_1/storefront/media/fachada.png",
+        },
+        { repository: createRepository(), storage: createStorage() },
+      ),
+    ).rejects.toThrow("Storefront media storage key does not belong");
+  });
 });
 
 function createContext(audit = { record: vi.fn(async () => undefined) }) {
@@ -126,6 +142,18 @@ function createContext(audit = { record: vi.fn(async () => undefined) }) {
     audit,
     permissions: ["store_public_site.manage"],
     request: { requestId: "req_1" },
+    storeId: "store_1",
+    tenantId: "tenant_1",
+  });
+}
+
+function createContextWithEnvironment(environment: string) {
+  return createServiceContext({
+    actor: { id: "user_1", kind: "user" },
+    audit: { record: vi.fn(async () => undefined) },
+    permissions: ["store_public_site.manage"],
+    request: { requestId: "req_1" },
+    source: { environment, service: "api" },
     storeId: "store_1",
     tenantId: "tenant_1",
   });

@@ -29,7 +29,7 @@ CROSS JOIN (
     ('custom_domain', 1, false, null::integer),
     ('external_api', 0, false, null::integer),
     ('marketplace', 0, false, null::integer),
-    ('nfe', 0, false, null::integer),
+    ('fiscal', 0, false, null::integer),
     ('plate_lookup', 1, false, 300),
     ('simulations', 0, false, null::integer),
     ('subdomain', 1, true, null::integer)

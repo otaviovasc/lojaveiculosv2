@@ -1,8 +1,4 @@
-import type {
-  CrmLeadSource,
-  CrmLeadStatus,
-  LeadActivityType,
-} from "./productCrmTypes";
+import type { CrmLeadSource, CrmLeadStatus } from "./productCrmTypes";
 
 export const statusLabels: Record<CrmLeadStatus, string> = {
   archived: "Arquivado",
@@ -32,6 +28,7 @@ export const listFilterStatuses: Array<CrmLeadStatus | "all"> = [
 export const sourceLabels: Record<CrmLeadSource, string> = {
   crm: "CRM",
   external_api: "API externa",
+  instagram: "Instagram",
   manual: "Manual",
   olx: "OLX",
   other: "Outros",
@@ -44,23 +41,9 @@ export const sourceOptions: Array<CrmLeadSource | "all"> = [
   "manual",
   "public_site",
   "whatsapp",
+  "instagram",
   "olx",
   "external_api",
   "crm",
   "other",
 ];
-
-export const activityTypeLabels: Record<LeadActivityType, string> = {
-  call: "Ligação",
-  email: "E-mail",
-  note: "Nota",
-  status_change: "Status",
-  task: "Tarefa",
-  whatsapp: "WhatsApp",
-};
-
-export const quickTaskOptions = [
-  { hoursFromNow: 2, label: "Hoje" },
-  { hoursFromNow: 24, label: "Amanhã" },
-  { hoursFromNow: 72, label: "Em 3 dias" },
-] as const;

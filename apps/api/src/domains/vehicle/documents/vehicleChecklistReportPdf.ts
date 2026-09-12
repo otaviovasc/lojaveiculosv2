@@ -1,7 +1,4 @@
-import {
-  renderDocumentPdf,
-  renderSharedDocumentPdf,
-} from "../../documents/render/reactPdfDocumentPrimitives.js";
+import { renderDocumentPdf } from "../../documents/render/reactPdfDocumentPrimitives.js";
 import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
 import type { VehicleChecklistOverview } from "../readModels/vehicleChecklistOverview.js";
 import { buildDetailedDocument } from "./vehicleChecklistDetailedReport.js";
@@ -14,9 +11,9 @@ export async function renderVehicleChecklistReportPdf(input: {
   unitReport: boolean;
 }) {
   if (input.unitReport) {
-    return renderSharedDocumentPdf(buildDetailedDocument(input));
+    return renderDocumentPdf(buildDetailedDocument(input));
   }
 
-  // Render high-density fleet table report
+  // A4-landscape fleet table report
   return renderDocumentPdf(buildFleetDocument(input));
 }

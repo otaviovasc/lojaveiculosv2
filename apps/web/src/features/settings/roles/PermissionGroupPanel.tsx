@@ -35,7 +35,7 @@ export function PermissionGroupPanel({
 
           return (
             <article
-              className="flex items-center justify-between gap-4 rounded-lg border border-line bg-app p-3.5 min-h-[68px] transition-colors hover:border-line-strong"
+              className="flex flex-col gap-3 rounded-lg border border-line bg-app p-3.5 min-h-[68px] transition-colors hover:border-line-strong"
               key={permission.key}
             >
               <div className="min-w-0 flex-1">
@@ -48,7 +48,8 @@ export function PermissionGroupPanel({
               </div>
 
               <div
-                className="flex items-center rounded-lg bg-panel p-0.5 border border-line shrink-0"
+                aria-label={`Modo de acesso: ${permission.label}`}
+                className="flex w-full items-center rounded-lg bg-panel p-0.5 border border-line"
                 role="group"
               >
                 {(
@@ -63,10 +64,11 @@ export function PermissionGroupPanel({
                     <button
                       key={option.value}
                       disabled={!editable}
+                      aria-pressed={active}
                       onClick={() => onModeChange(permission.key, option.value)}
                       type="button"
                       className={cx(
-                        "px-2 py-1 text-xs font-black uppercase rounded-md transition-all cursor-pointer",
+                        "min-w-0 flex-1 px-2 py-1 text-xs font-black uppercase rounded-[10px] transition-all cursor-pointer",
                         active
                           ? option.value === "allow"
                             ? "bg-emerald-500 text-white"

@@ -1,4 +1,5 @@
 import type { SessionBootstrap } from "../features/account/apiClient";
+import type { EntitlementKey } from "../features/billing/types";
 import {
   readSessionActiveStore,
   readSessionEffectivePermissions,
@@ -24,19 +25,17 @@ type ModulePermissionRule = {
 
 const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   "auto-entries": gate(["finance.read"], "regras de lançamentos automáticos"),
-  autobot: gate(["automation.read"], "automações assistidas"),
   billing: gate(["billing.manage"], "assinatura e faturamento"),
   checklists: gate(["inventory.checklist_read"], "checklists"),
-  commissions: gate(["finance.read"], "comissões"),
+  commissions: gate(["commissions.read"], "comissões"),
   crm: gate(
-    ["crm.access", "crm.whatsapp.list"],
-    "WhatsApp e atendimento",
+    ["crm.access", "crm.conversations.read"],
+    "conversas e atendimento",
     "any",
   ),
   "custom-pages": gate(["store_public_site.manage"], "páginas da vitrine"),
   customers: gate(["lead.read"], "clientes"),
   documents: gate(["documents.read"], "documentos"),
-  domain: gate(["store_public_site.manage"], "domínio da loja"),
   expenses: gate(["finance.read"], "gastos"),
   fiscal: gate(["fiscal.manage"], "emissão fiscal"),
   inventory: gate(["inventory.read"], "estoque"),
@@ -46,9 +45,14 @@ const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   "public-site": gate(["store_public_site.manage"], "vitrine digital"),
   reports: gate(["analytics.read"], "relatórios"),
   sales: gate(["sale.read"], "vendas"),
-  simulations: gate(["sale.read"], "simulações"),
+  simulations: gate(["financing.simulation.read"], "simulações"),
   settings: gate(
-    ["store_profile.manage", "store_public_site.manage", "users.manage"],
+    [
+      "store_profile.manage",
+      "store_public_site.manage",
+      "users.manage",
+      "crm.conversations.read",
+    ],
     "configurações e permissões",
     "any",
   ),
@@ -74,7 +78,7 @@ export function filterNavigationGroups(
   groups: readonly NavigationGroup[],
   session: SessionBootstrap | null,
 ) {
-  if (!session) return groups;
+  if (!session) return [];
 
   return groups
     .map((group) => ({
@@ -89,17 +93,15 @@ export function getModuleEntitlement(
   session: SessionBootstrap | null,
 ) {
   const item = navigationItem(moduleId);
-  const featureKey = item?.entitlementKey ?? null;
-  if (!featureKey || !session) return { canUse: true, featureKey };
+  const featureKey =
+    item?.entitlementKey ?? routeOnlyEntitlements[moduleId] ?? null;
+  if (!featureKey) return { canUse: true, featureKey };
+  if (!session) return { canUse: false, featureKey };
   const entitlements = readSessionActiveStore(session)?.entitlements;
   return {
-    canUse: !entitlements || entitlements.includes(featureKey),
+    canUse: Boolean(entitlements?.includes(featureKey)),
     featureKey,
   };
-}
-
-export function isActiveStoreOwner(session: SessionBootstrap | null) {
-  return readSessionActiveStore(session)?.role === "owner";
 }
 
 export function isActiveStoreAgencyManaged(session: SessionBootstrap | null) {
@@ -110,14 +112,7 @@ function canShowNavigationItem(
   item: NavigationItem,
   session: SessionBootstrap,
 ) {
-  const store = readSessionActiveStore(session);
-  if (store?.role === "owner") {
-    return item.id !== "billing" || store.billingManagedBy !== "agency";
-  }
-  return (
-    getModulePermission(item.id, session).canView &&
-    hasModuleEntitlement(item, session)
-  );
+  return getModulePermission(item.id, session).canView;
 }
 
 function navigationItem(moduleId: ModuleId) {
@@ -125,6 +120,10 @@ function navigationItem(moduleId: ModuleId) {
     .flatMap((group) => group.items)
     .find((item) => item.id === moduleId);
 }
+
+const routeOnlyEntitlements: Partial<Record<ModuleId, EntitlementKey>> = {
+  "paid-traffic": "analytics",
+};
 
 function gate(
   permissions: readonly string[],
@@ -139,17 +138,10 @@ function hasModulePermissions(
   rule: ModulePermissionRule,
 ) {
   const permissions = readSessionEffectivePermissions(session);
-  if (!permissions) return true;
+  if (!permissions) return false;
   const granted = new Set(permissions);
   const check = (permission: string) => granted.has(permission);
   return rule.mode === "any"
     ? rule.permissions.some(check)
     : rule.permissions.every(check);
-}
-
-function hasModuleEntitlement(item: NavigationItem, session: SessionBootstrap) {
-  if (!item.entitlementKey) return true;
-  const entitlements = readSessionActiveStore(session)?.entitlements;
-  if (!entitlements) return true;
-  return entitlements.includes(item.entitlementKey);
 }

@@ -1,0 +1,466 @@
+/* CRM Conversation Polish Styles */
+.crm-page {
+  background: var(--color-app);
+}
+
+.crm-shell,
+.crm-list {
+  background: var(--color-panel);
+}
+
+.crm-page {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.crm-shell {
+  grid-template-columns: minmax(22rem, 26rem) minmax(26rem, 1fr);
+  max-width: 100%;
+  position: relative;
+}
+
+.crm-shell[data-details-open="true"] {
+  grid-template-columns: minmax(22rem, 26rem) minmax(26rem, 1fr);
+}
+
+.crm-list {
+  height: 100%;
+}
+
+.crm-toolbar {
+  max-height: none;
+  overflow: visible;
+}
+
+.crm-queue-controls,
+.crm-filter-row {
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.crm-session-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.crm-session-heading strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+}
+
+.crm-session-time {
+  color: var(--color-muted);
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.crm-session-tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.crm-chat-header {
+  align-items: center;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  max-width: 100%;
+  min-height: 4rem;
+  padding: 0.625rem 1rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.crm-chat-header-main,
+.crm-chat-identity {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.crm-chat-header-main {
+  flex: 1;
+  gap: 0.625rem;
+}
+
+.crm-chat-identity {
+  flex: 1;
+  gap: 0.75rem;
+}
+
+.crm-chat-title {
+  align-items: center;
+  display: flex;
+  flex: 0 1 auto;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.crm-chat-title .crm-avatar-lg {
+  height: 2.75rem;
+  width: 2.75rem;
+  border-radius: 0.875rem;
+  box-shadow: none;
+}
+
+.crm-chat-title h3 {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.crm-chat-title p {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  max-width: 22rem;
+  color: var(--color-muted);
+}
+
+.crm-chat-channel-pill {
+  align-items: center;
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
+  border-radius: 9999px;
+  color: #059669;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.35rem;
+  min-height: 1.6rem;
+  padding: 0 0.625rem;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .crm-chat-channel-pill,
+.dark .crm-chat-channel-pill {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+.crm-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.crm-header-actions .crm-icon-action,
+.crm-header-actions .crm-action {
+  border-radius: 0.625rem;
+}
+
+.crm-header-actions .crm-action {
+  flex: 0 0 auto;
+  min-height: 2.35rem;
+  padding-inline: 0.75rem;
+}
+
+.crm-header-actions .custom-select {
+  min-width: 9.5rem;
+}
+
+.crm-header-actions > .crm-action:last-child,
+.crm-send-action:not(.crm-audio-action) {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-success-foreground);
+}
+
+.crm-mobile-back {
+  display: none;
+  flex: 0 0 auto;
+}
+
+.crm-messages {
+  background: color-mix(in srgb, var(--color-app) 94%, var(--color-panel));
+  isolation: isolate;
+  padding: 1.25rem clamp(0.75rem, 2vw, 1.75rem);
+  position: relative;
+}
+
+.crm-messages::before {
+  background-image:
+    url("/images/crm-whatsapp-chat-wallpaper.jpg"),
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23154D37' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M12 12h6v2h-6v6h-2v-6H4v-2h6V6h2v6z'/%3E%3Cpath d='M92 92h6v2h-6v6h-2v-6h-6v-2h6v-6h2v6z'/%3E%3Ccircle cx='60' cy='25' r='1.5'/%3E%3Ccircle cx='62' cy='25' r='1.5'/%3E%3Ccircle cx='60' cy='27' r='1.5'/%3E%3Ccircle cx='62' cy='27' r='1.5'/%3E%3Ccircle cx='25' cy='90' r='1.5'/%3E%3Ccircle cx='27' cy='90' r='1.5'/%3E%3Ccircle cx='25' cy='92' r='1.5'/%3E%3Ccircle cx='27' cy='92' r='1.5'/%3E%3Cpath d='M105 20l-10 10m8-10l-10 10m12-8l-10 10' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='100' cy='55' r='7' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='20' cy='55' r='5' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5' fill='none'/%3E%3Cpath d='M55 95l5 10h-10z' fill='none' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5'/%3E%3Cpath d='M50 60c2-2 4-2 6 0s4 2 6 0' fill='none' stroke='%23154D37' stroke-opacity='0.12' stroke-width='1.5' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: repeat;
+  background-size:
+    28rem 28rem,
+    120px 120px;
+  content: "";
+  inset: 0;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+:root[data-theme="dark"] .crm-messages::before,
+.dark .crm-messages::before {
+  filter: invert(1) contrast(1.1);
+  opacity: 0.22;
+}
+
+.crm-message-day {
+  align-self: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 0.25rem 0.875rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-transform: uppercase;
+}
+
+.crm-bubble {
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 85%, transparent);
+  border-radius: 1.125rem;
+  border-top-left-radius: 0.25rem;
+  color: var(--color-text);
+  min-width: 0;
+  width: fit-content;
+  max-width: min(34rem, 84%);
+  padding: 0.75rem 1rem 0.625rem;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+}
+
+.crm-bubble:has(.crm-media),
+.crm-bubble:has(.crm-media-grid) {
+  padding: 0.5rem 0.5rem 0.45rem;
+  max-width: min(26rem, 84%);
+}
+
+.crm-bubble.crm-bubble-media-flush {
+  padding: 3px;
+}
+
+.crm-bubble-out {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 0.25rem;
+}
+
+.crm-bubble-out strong,
+.crm-bubble-out footer,
+.crm-bubble-out .crm-rich-card strong,
+.crm-bubble-out .crm-rich-card small,
+.crm-bubble-out .crm-attachment strong,
+.crm-bubble-out .crm-attachment small {
+  color: inherit;
+}
+
+/* Prompt — WhatsApp header spark (premium, not flat) */
+.crm-prompt-button {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-accent) 14%, var(--color-panel)) 0%,
+    color-mix(in srgb, var(--color-accent) 8%, var(--color-panel)) 100%
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 22%, var(--color-line));
+  color: color-mix(in srgb, var(--color-accent) 78%, var(--color-text));
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.crm-prompt-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 80% at 80% 0%,
+    color-mix(in srgb, var(--color-accent) 18%, transparent),
+    transparent 55%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.crm-prompt-button:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-prompt-button:active {
+  transform: scale(0.97);
+}
+
+/* Header search — WhatsApp slide-over (search in header, not drawer) */
+.crm-header-search-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.5rem 0 0.75rem;
+  background: var(--color-panel);
+  z-index: 5;
+  animation: crmHeaderSearchIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-header-search-overlay input {
+  flex: 1;
+  min-width: 0;
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  height: 2.1rem;
+  padding: 0 0.875rem;
+  outline: none;
+}
+
+.crm-header-search-overlay input:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-line));
+}
+
+.crm-header-search-count {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.crm-header-search-nav:disabled {
+  opacity: 0.42;
+}
+
+.crm-prompt-popover {
+  min-width: 18rem;
+  max-width: 22rem;
+}
+
+.crm-prompt-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.crm-prompt-title {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.crm-prompt-menu button {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 45%, var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 0.65rem;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: 0.55rem;
+  justify-content: flex-start;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.14s ease;
+  width: 100%;
+}
+
+.crm-prompt-menu button:hover {
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-accent) 18%, var(--color-line));
+  transform: translateY(-1px);
+}
+
+.crm-prompt-menu button:active {
+  transform: scale(0.99);
+}
+
+@keyframes crmHeaderSearchIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Context panel */
+.crm-details-panel {
+  background: var(--color-panel);
+  box-shadow: none;
+}
+
+@media (max-width: 1180px) and (min-width: 861px) {
+  .crm-shell {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
+  }
+
+  .crm-shell[data-details-open="true"] {
+    grid-template-columns: minmax(18.75rem, 21rem) minmax(24rem, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .crm-shell {
+    display: block;
+    height: 100%;
+  }
+
+  .crm-mobile-back {
+    display: inline-flex;
+  }
+
+  .crm-chat-header {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .crm-chat-title {
+    max-width: calc(100vw - 4rem);
+  }
+
+  .crm-header-actions {
+    justify-content: flex-start;
+  }
+
+  .crm-messages {
+    padding: 0.75rem 0.625rem;
+  }
+
+  .crm-bubble {
+    max-width: 88%;
+  }
+}

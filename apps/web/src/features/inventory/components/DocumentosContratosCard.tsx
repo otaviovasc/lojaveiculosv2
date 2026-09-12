@@ -25,7 +25,7 @@ export function DocumentosContratosCard({
     <div className="flex w-full flex-col gap-6">
       <section
         aria-labelledby="vehicle-contracts-title"
-        className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+        className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
       >
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export function DocumentosContratosCard({
 
       <section
         aria-labelledby="official-documents-title"
-        className="overflow-hidden rounded-2xl border border-success-strong/20 bg-panel"
+        className="vehicle-detail-card overflow-hidden rounded-2xl border border-success-strong/20 bg-panel"
       >
         <div className="flex flex-col gap-5 p-5 sm:p-6">
           <div className="flex items-start gap-3">

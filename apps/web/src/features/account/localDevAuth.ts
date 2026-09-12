@@ -26,6 +26,13 @@ export const localDevAccounts: readonly LocalDevAccount[] = [
     userId: "clerk_seed_owner",
   },
   {
+    email: "rafael.martins@example.test",
+    name: "Seed Billing Owner",
+    role: "owner",
+    storeSlug: "isolation-store",
+    userId: "clerk_seed_isolation_owner",
+  },
+  {
     email: "supervisor.seed@lojaveiculos.com.br",
     name: "Seed Supervisor",
     role: "supervisor",

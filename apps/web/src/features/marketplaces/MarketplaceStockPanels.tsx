@@ -1,183 +1,258 @@
+import { Clock3, EyeOff, ListChecks, Search, Send, Wrench } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import {
-  Ban,
-  CheckCircle2,
-  ListChecks,
-  RefreshCcw,
-  Send,
-  Trash2,
-} from "lucide-react";
-import { StatCard } from "../../components/ui/stat-card";
-import { getMarketplaceBlockerCopy, providerLabels } from "./marketplaceLabels";
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
+import { providerLabels } from "./marketplaceLabels";
+import { MarketplaceStockVehicleCard } from "./MarketplaceStockVehicleCard";
 import type {
   MarketplaceProvider,
+  MarketplaceStockAccountingStatus,
   MarketplaceStockPlan,
   MarketplaceStockPlanItem,
   MarketplaceStockSyncRunResponse,
 } from "./types";
 
-export function MarketplacePreviewPanel({
+export function MarketplaceStockPanel({
+  lastRun,
   plan,
   provider,
 }: {
+  lastRun: MarketplaceStockSyncRunResponse | null;
   plan: MarketplaceStockPlan | null;
   provider: MarketplaceProvider | null;
 }) {
-  const blockedItems = plan?.items.filter(
-    (item) => item.decision === "blocked",
-  );
-  return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Prévia do estoque</h3>
-        <p>
-          {provider ? providerLabels[provider] : "Selecione um provedor"} antes
-          de enfileirar o lote.
-        </p>
-      </header>
-      {plan ? (
-        <>
-          <div className="marketplace-counts" aria-label="Contagens da prévia">
-            <StatCard
-              icon={ListChecks}
-              label="Total"
-              theme="blue"
-              value={plan.total}
-              variant="cell"
-            />
-            <StatCard
-              icon={Send}
-              label="Publicar"
-              theme="success"
-              value={plan.publish}
-              variant="cell"
-            />
-            <StatCard
-              icon={RefreshCcw}
-              label="Atualizar"
-              theme="indigo"
-              value={plan.update}
-              variant="cell"
-            />
-            <StatCard
-              icon={Trash2}
-              label="Remover"
-              theme="amber"
-              value={plan.unpublish}
-              variant="cell"
-            />
-            <StatCard
-              icon={CheckCircle2}
-              label="Sem ação"
-              theme="default"
-              value={plan.noOp}
-              variant="cell"
-            />
-            <StatCard
-              icon={Ban}
-              label="Bloqueados"
-              theme="amber"
-              value={plan.blocked}
-              variant="cell"
-            />
-          </div>
-          <BlockedListingList items={blockedItems ?? []} />
-        </>
-      ) : (
-        <p>
-          A prévia ainda não foi gerada. Use “Prever estoque” na conta que
-          deseja revisar.
-        </p>
-      )}
-    </section>
-  );
-}
+  const [filter, setFilter] = useState<FilterOption>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
-export function MarketplaceBatchProgress({
-  lastRun,
-}: {
-  lastRun: MarketplaceStockSyncRunResponse | null;
-}) {
+  const description = lastRun
+    ? `${providerLabels[lastRun.provider]} · último lote desta sessão`
+    : provider
+      ? `Prévia do ${providerLabels[provider]} antes de enfileirar o lote.`
+      : "Selecione um provedor antes de enfileirar o lote.";
+
   return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Progresso do lote</h3>
-        <p>
-          {lastRun
-            ? `${providerLabels[lastRun.provider]} · último lote desta sessão`
-            : "Nenhum lote foi enviado nesta sessão."}
-        </p>
-      </header>
-      {lastRun ? (
-        <div className="marketplace-counts" aria-label="Progresso do lote">
-          <StatCard
-            icon={ListChecks}
-            label="Jobs criados"
-            theme="blue"
-            value={lastRun.createdJobs.length}
-            variant="cell"
-          />
-          <StatCard
-            icon={Send}
-            label="Publicar"
-            theme="success"
-            value={lastRun.plan.publish}
-            variant="cell"
-          />
-          <StatCard
-            icon={RefreshCcw}
-            label="Atualizar"
-            theme="indigo"
-            value={lastRun.plan.update}
-            variant="cell"
-          />
-          <StatCard
-            icon={Trash2}
-            label="Remover"
-            theme="amber"
-            value={lastRun.plan.unpublish}
-            variant="cell"
-          />
-          <StatCard
-            icon={Ban}
-            label="Bloqueados"
-            theme="amber"
-            value={lastRun.plan.blocked}
-            variant="cell"
+    <FeatureSection
+      className="marketplace-stock-section"
+      description={description}
+      padding="comfortable"
+      radius="xl"
+      title="Prévia e envios"
+      titleClassName="text-xl md:text-2xl font-black tracking-tight"
+    >
+      {plan ? (
+        <div className="marketplace-stock-panel">
+          <FeatureKpiStrip ariaLabel="Contabilidade completa do estoque">
+            <FeatureKpiCard
+              active={filter === "all"}
+              icon={ListChecks}
+              label="Estoque encontrado"
+              onClick={() => setFilter("all")}
+              tone="blue"
+              value={plan.accounting.found}
+            />
+            <FeatureKpiCard
+              active={filter === "ready"}
+              icon={Send}
+              label="Prontos para publicar"
+              onClick={() => setFilter("ready")}
+              tone="green"
+              value={plan.accounting.ready}
+            />
+            <FeatureKpiCard
+              active={filter === "needs_correction"}
+              icon={Wrench}
+              label="Precisam de correção"
+              onClick={() => setFilter("needs_correction")}
+              tone="pink"
+              value={plan.accounting.needsCorrection}
+            />
+            <FeatureKpiCard
+              active={filter === "excluded"}
+              icon={EyeOff}
+              label="Fora da publicação"
+              onClick={() => setFilter("excluded")}
+              tone="violet"
+              value={plan.accounting.excluded}
+            />
+            <FeatureKpiCard
+              active={filter === "processing"}
+              icon={Clock3}
+              label="Em processamento"
+              onClick={() => setFilter("processing")}
+              tone="blue"
+              value={plan.accounting.processing}
+            />
+            {lastRun ? (
+              <FeatureKpiCard
+                icon={Send}
+                label="Jobs criados"
+                tone="green"
+                value={lastRun.createdJobs.length}
+              />
+            ) : null}
+          </FeatureKpiStrip>
+          <MarketplaceStockItemList
+            filter={filter}
+            items={plan.items}
+            onFilterChange={setFilter}
+            onSearchChange={setSearchTerm}
+            searchTerm={searchTerm}
           />
         </div>
-      ) : null}
-    </section>
+      ) : (
+        <p className="marketplace-stock-panel__empty">
+          A prévia ainda não foi gerada. Use “Gerar prévia” na conta que deseja
+          revisar.
+        </p>
+      )}
+    </FeatureSection>
   );
 }
 
-function BlockedListingList({ items }: { items: MarketplaceStockPlanItem[] }) {
+type FilterOption = "all" | MarketplaceStockAccountingStatus;
+
+function MarketplaceStockItemList({
+  filter,
+  items,
+  onFilterChange,
+  onSearchChange,
+  searchTerm,
+}: {
+  filter: FilterOption;
+  items: MarketplaceStockPlanItem[];
+  onFilterChange: (filter: FilterOption) => void;
+  onSearchChange: (search: string) => void;
+  searchTerm: string;
+}) {
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      if (filter !== "all" && item.accountingStatus !== filter) {
+        return false;
+      }
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      const title = (
+        item.listing.stockLabel ?? item.listing.title
+      ).toLowerCase();
+      const plate = (item.listing.licensePlate ?? "").toLowerCase();
+      const trim = (item.listing.trimName ?? "").toLowerCase();
+      return (
+        title.includes(term) || plate.includes(term) || trim.includes(term)
+      );
+    });
+  }, [items, filter, searchTerm]);
+
+  const readyCount = items.filter((i) => i.accountingStatus === "ready").length;
+  const pendingCount = items.filter(
+    (i) => i.accountingStatus === "needs_correction",
+  ).length;
+  const excludedCount = items.filter(
+    (i) => i.accountingStatus === "excluded",
+  ).length;
+
   return (
-    <section className="marketplace-blocked">
-      <h4>Veículos bloqueados</h4>
-      {items.length ? (
-        <ul>
-          {items.map((item) => (
-            <li key={item.listing.listingId}>
-              <strong>{vehicleLabel(item)}</strong>
-              {item.blockers.map((blocker) => {
-                const copy = getMarketplaceBlockerCopy(blocker);
-                return (
-                  <span key={`${item.listing.listingId}-${blocker.code}`}>
-                    {copy.message}. Próximo passo: {copy.action} Canal:{" "}
-                    {providerLabels[item.provider]}.
-                  </span>
-                );
-              })}
-            </li>
+    <section className="marketplace-stock-items">
+      <div className="marketplace-stock-items__toolbar">
+        <div className="marketplace-stock-items__title-wrap">
+          <h4>Situação de cada veículo</h4>
+          <span className="marketplace-stock-items__count-badge">
+            {filteredItems.length}{" "}
+            {filteredItems.length === 1 ? "veículo" : "veículos"}
+          </span>
+        </div>
+        <div className="marketplace-stock-items__controls">
+          <div className="marketplace-stock-items__search-wrap">
+            <Search
+              aria-hidden="true"
+              className="marketplace-stock-items__search-icon"
+            />
+            <input
+              aria-label="Buscar veículo no lote"
+              className="marketplace-stock-items__search-input"
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Buscar por veículo ou placa..."
+              type="search"
+              value={searchTerm}
+            />
+          </div>
+          <div
+            aria-label="Filtrar por status"
+            className="marketplace-stock-items__filters"
+            role="radiogroup"
+          >
+            <button
+              aria-checked={filter === "all"}
+              className={`marketplace-stock-filter-btn ${filter === "all" ? "is-active" : ""}`}
+              onClick={() => onFilterChange("all")}
+              role="radio"
+              type="button"
+            >
+              Todos ({items.length})
+            </button>
+            <button
+              aria-checked={filter === "ready"}
+              className={`marketplace-stock-filter-btn ${filter === "ready" ? "is-active" : ""}`}
+              onClick={() => onFilterChange("ready")}
+              role="radio"
+              type="button"
+            >
+              Prontos ({readyCount})
+            </button>
+            <button
+              aria-checked={filter === "needs_correction"}
+              className={`marketplace-stock-filter-btn ${filter === "needs_correction" ? "is-active" : ""}`}
+              onClick={() => onFilterChange("needs_correction")}
+              role="radio"
+              type="button"
+            >
+              Pendências ({pendingCount})
+            </button>
+            <button
+              aria-checked={filter === "excluded"}
+              className={`marketplace-stock-filter-btn ${filter === "excluded" ? "is-active" : ""}`}
+              onClick={() => onFilterChange("excluded")}
+              role="radio"
+              type="button"
+            >
+              Fora do lote ({excludedCount})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {filteredItems.length ? (
+        <ul className="marketplace-vehicle-cards-list">
+          {filteredItems.map((item) => (
+            <MarketplaceStockVehicleCard
+              item={item}
+              key={item.listing.listingId}
+            />
           ))}
         </ul>
       ) : (
-        <p>Nenhum veículo bloqueado nesta prévia.</p>
+        <div className="marketplace-stock-items__no-match">
+          <p>
+            {items.length === 0
+              ? "Nenhum veículo foi encontrado nesta prévia."
+              : "Nenhum veículo corresponde ao filtro selecionado."}
+          </p>
+          {searchTerm || filter !== "all" ? (
+            <button
+              className="marketplace-stock-items__reset-btn"
+              onClick={() => {
+                onFilterChange("all");
+                onSearchChange("");
+              }}
+              type="button"
+            >
+              Limpar filtros e busca
+            </button>
+          ) : null}
+        </div>
       )}
     </section>
   );
-}
-
-function vehicleLabel(item: MarketplaceStockPlanItem) {
-  return item.listing.stockLabel ?? item.listing.title;
 }

@@ -77,6 +77,40 @@ unproxied when required.
 7. Run parity checks for stores, users, permissions, inventory, leads,
    documents, billing, integrations, and audit events.
 
+### Fiscal credential key safety
+
+The V1 store migration intentionally does not load
+`FISCAL_CREDENTIAL_ENCRYPTION_KEY` from the repository `.env`. Export the key
+used by the target API runtime before starting a migration that contains an
+active Spedy add-on. This prevents a remote `DATABASE_URL` from being combined
+with a local encryption key.
+
+If a migration wrote a Spedy credential with the wrong key, use the scoped
+repair command. It reads no V1 business records, never logs either key or the
+decrypted credential, updates only the selected store's Spedy ciphertext, and
+records an operator repair in `migration_runs`. It is a rolled-back dry run
+unless `--apply` and the exact store confirmation are provided.
+
+```bash
+pnpm run migration:repair-fiscal-credential -- \
+  --store-id=<v2-store-uuid> \
+  --allow-remote-target
+
+pnpm run migration:repair-fiscal-credential -- \
+  --store-id=<v2-store-uuid> \
+  --allow-remote-target \
+  --apply \
+  --confirm-store-id=<v2-store-uuid>
+```
+
+The command requires `DATABASE_URL`,
+`FISCAL_CREDENTIAL_OLD_ENCRYPTION_KEY`, and
+`FISCAL_CREDENTIAL_ENCRYPTION_KEY` to be explicitly exported. The old key is
+the key that encrypted the affected row; the target key must be the key used by
+the target API runtime. After repair, load the fiscal overview and confirm it
+no longer reports `fiscal.companyApiKeyUnreadable` before attempting any
+official fiscal operation.
+
 ### Legacy storefront banners
 
 Rehearse banner copies with a local V2 product database and the target R2

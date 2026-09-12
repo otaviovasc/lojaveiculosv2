@@ -8,38 +8,49 @@ import { createDocumentsFeature } from "./documents.controller.js";
 describe("documents controller", () => {
   it("routes workspace filters to the documents service", async () => {
     const services = createDocumentServiceStubs({
-      listWorkspace: vi.fn(async (): Promise<readonly LinkedDocument[]> => [
-        {
-          createdAt: new Date("2026-01-01T10:00:00.000Z"),
-          fileName: "contract.pdf",
-          fileSizeBytes: 1024,
-          id: "document_1",
-          kind: "sale_contract",
-          linkRole: "primary",
-          metadata: { origin: "sale" },
-          mimeType: "application/pdf",
-          status: "issued",
-          storageKey: "private/storage/key.pdf",
-          storeId: "store_1",
-          targetId: "sale_1",
-          targetType: "sale",
-          tenantId: "tenant_1",
-          title: "Contrato de venda",
-          updatedAt: new Date("2026-01-01T10:00:00.000Z"),
-          uploadedAt: new Date("2026-01-01T10:00:00.000Z"),
-        },
-      ]),
+      listWorkspace: vi.fn(async () => ({
+        documents: [
+          {
+            createdAt: new Date("2026-01-01T10:00:00.000Z"),
+            fileName: "contract.pdf",
+            fileSizeBytes: 1024,
+            id: "document_1",
+            kind: "sale_contract",
+            linkRole: "primary",
+            metadata: { origin: "sale" },
+            mimeType: "application/pdf",
+            status: "issued",
+            storageKey: "private/storage/key.pdf",
+            storeId: "store_1",
+            targetId: "sale_1",
+            targetType: "sale",
+            tenantId: "tenant_1",
+            title: "Contrato de venda",
+            updatedAt: new Date("2026-01-01T10:00:00.000Z"),
+            uploadedAt: new Date("2026-01-01T10:00:00.000Z"),
+          } satisfies LinkedDocument,
+        ],
+        limit: 50,
+        offset: 25,
+        total: 81,
+      })),
     });
     const app = createDocumentsTestApp(services);
 
     const response = await app.request(
-      "/api/v1/documents?search=contrato&kind=sale_contract&status=issued",
+      "/api/v1/documents?search=contrato&kind=sale_contract&status=issued&origin=manual&scope=general&dateFrom=2026-01-01&dateTo=2026-01-31&limit=50&offset=25",
     );
 
     expect(response.status).toBe(200);
     expect(services.listWorkspace).toHaveBeenCalledWith(expect.any(Object), {
+      dateFrom: "2026-01-01",
+      dateTo: "2026-01-31",
       kind: "sale_contract",
+      limit: 50,
+      offset: 25,
+      origin: "manual",
       search: "contrato",
+      scope: "general",
       status: "issued",
     });
     expect(await response.json()).toEqual({
@@ -69,12 +80,20 @@ describe("documents controller", () => {
           uploadedAt: "2026-01-01T10:00:00.000Z",
         },
       ],
+      limit: 50,
+      offset: 25,
+      total: 81,
     });
   });
 
   it("rejects invalid query filters before calling the service", async () => {
     const services = createDocumentServiceStubs({
-      listWorkspace: vi.fn(async () => []),
+      listWorkspace: vi.fn(async () => ({
+        documents: [],
+        limit: 100,
+        offset: 0,
+        total: 0,
+      })),
     });
     const app = createDocumentsTestApp(services);
 
@@ -93,7 +112,12 @@ function createDocumentServiceStubs(
     download: vi.fn(async () => unexpected("download")),
     listVersions: vi.fn(async () => []),
     listTemplates: vi.fn(async () => []),
-    listWorkspace: vi.fn(async () => []),
+    listWorkspace: vi.fn(async () => ({
+      documents: [],
+      limit: 100,
+      offset: 0,
+      total: 0,
+    })),
     preview: vi.fn(async () => unexpected("preview")),
     recordTemplateSuggestionOutcome: vi.fn(async () => ({
       recordedAt: new Date(),

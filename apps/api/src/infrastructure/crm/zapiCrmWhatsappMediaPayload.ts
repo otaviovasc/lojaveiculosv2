@@ -1,6 +1,6 @@
-import type { CrmWhatsappSendMediaInput } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmMessagingSendMediaInput } from "../../domains/crm/ports/crmMessagingGateway.js";
 
-export function createZapiMediaEndpoint(input: CrmWhatsappSendMediaInput) {
+export function createZapiMediaEndpoint(input: CrmMessagingSendMediaInput) {
   if (input.mediaType === "document") {
     return `/send-document/${documentExtension(input.fileName)}`;
   }
@@ -8,7 +8,7 @@ export function createZapiMediaEndpoint(input: CrmWhatsappSendMediaInput) {
 }
 
 export function createZapiMediaBody(
-  input: CrmWhatsappSendMediaInput,
+  input: CrmMessagingSendMediaInput,
 ): Record<string, unknown> {
   const common = {
     phone: input.phone,
@@ -24,6 +24,7 @@ export function createZapiMediaBody(
         ? {}
         : { async: input.asyncProcessing }),
       audio: input.mediaUrl,
+      waveform: true,
     };
   }
   if (input.mediaType === "video") {

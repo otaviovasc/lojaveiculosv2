@@ -1,6 +1,10 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import type { InternalHealthSnapshot } from "../../../domains/internal/ports/internalMonitoringRepository.js";
+import type {
+  InternalHealthSnapshot,
+  InternalMonitoringQuery,
+} from "../../../domains/internal/ports/internalMonitoringRepository.js";
 import { getInternalHealthSnapshot } from "../../../domains/internal/services/InternalMonitoringService/getInternalHealthSnapshot.js";
+import { getPlatformInternalHealthSnapshot } from "../../../domains/internal/services/InternalMonitoringService/getPlatformInternalHealthSnapshot.js";
 import type { InternalMonitoringServicePorts } from "../../../domains/internal/services/InternalMonitoringService/serviceSupport.js";
 import {
   createDrizzleInternalMonitoringRepository,
@@ -11,7 +15,11 @@ import { createMemoryInternalMonitoringRepository } from "../adapters/memory/int
 export type InternalMonitoringServices = {
   getHealth: (
     context: ServiceContext,
-    input: { limit: number },
+    input: InternalMonitoringQuery,
+  ) => Promise<InternalHealthSnapshot>;
+  getPlatformHealth: (
+    context: ServiceContext,
+    input: InternalMonitoringQuery,
   ) => Promise<InternalHealthSnapshot>;
 };
 
@@ -27,6 +35,8 @@ export function createInternalMonitoringServices(
   return {
     getHealth: (context, input) =>
       getInternalHealthSnapshot(context, input, ports),
+    getPlatformHealth: (context, input) =>
+      getPlatformInternalHealthSnapshot(context, input, ports),
   };
 }
 

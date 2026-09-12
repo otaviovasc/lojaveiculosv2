@@ -8,6 +8,8 @@ import type {
   FinanceEntryType,
   FinanceRecurringEntry,
 } from "./types";
+import type { FinanceVehicleOption } from "./financeVehicleOptions";
+import type { FinanceVehicleOptionsState } from "./useFinanceAccess";
 
 export function FinanceEntryDialogs({
   activeType,
@@ -24,6 +26,8 @@ export function FinanceEntryDialogs({
   onModalClose,
   onSubmit,
   sellerOptions,
+  vehicleOptions,
+  vehicleOptionsState,
 }: {
   activeType: FinanceEntryType;
   api: FinanceApi | null;
@@ -39,6 +43,8 @@ export function FinanceEntryDialogs({
   onModalClose: () => void;
   onSubmit: (draft: FinanceEntryDraft) => Promise<void>;
   sellerOptions: SaleSellerOption[];
+  vehicleOptions: readonly FinanceVehicleOption[];
+  vehicleOptionsState: FinanceVehicleOptionsState;
 }) {
   return (
     <>
@@ -51,6 +57,8 @@ export function FinanceEntryDialogs({
         onSubmit={onSubmit}
         recurringEntry={modalRecurringEntry}
         sellerOptions={sellerOptions}
+        vehicleOptions={vehicleOptions}
+        vehicleOptionsState={vehicleOptionsState}
       />
       <ConfirmDialog
         confirmLabel="Cancelar lançamento"

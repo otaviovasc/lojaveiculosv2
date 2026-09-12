@@ -26,8 +26,9 @@ describe("Drizzle store access repository", () => {
     });
 
     expect(access).toEqual({
+      accessOrigin: "direct_store_membership",
       billingManagedBy: "store_owner",
-      entitlements: ["crm", "subdomain"],
+      entitlements: ["crm", "storefront"],
       overrides: [
         { allowed: true, permission: "inventory.update_price" },
         { allowed: false, permission: "inventory.create" },
@@ -36,6 +37,7 @@ describe("Drizzle store access repository", () => {
       storeId: "store_1",
       tenantId: "tenant_1",
       userId: "user_1",
+      userName: "Otavio Vasconcelos",
     });
     expect(db.queriedTables).toEqual(
       expect.arrayContaining([
@@ -76,42 +78,6 @@ describe("Drizzle store access repository", () => {
     });
 
     expect(access?.billingManagedBy).toBe("agency");
-  });
-
-  it("lets an active agency tenant member manage a tenant store without a store membership", async () => {
-    const rows = createStoreAccessRows({
-      memberships: [],
-      roleTemplates: [
-        { id: "role_salesman", roleKey: "salesman" },
-        { id: "role_agency", roleKey: "agency" },
-      ],
-      tenantMemberships: [
-        {
-          roleTemplateId: "role_agency",
-          status: "active",
-          tenantId: "tenant_1" as never,
-          userId: "user_1" as never,
-        },
-      ],
-    });
-    const repository = createDrizzleStoreAccessRepository(
-      createFakeStoreAccessDb(rows),
-    );
-
-    const access = await repository.findByClerkUserAndStoreSlug({
-      clerkUserId: "clerk_1",
-      storeSlug: "demo",
-    });
-
-    expect(access).toMatchObject({
-      billingManagedBy: "agency",
-      entitlements: ["crm", "subdomain"],
-      overrides: [],
-      role: "agency",
-      storeId: "store_1",
-      tenantId: "tenant_1",
-      userId: "user_1",
-    });
   });
 
   it("returns null when the membership is not active", async () => {
@@ -183,7 +149,7 @@ describe("Drizzle store access repository", () => {
     ).resolves.toBeNull();
   });
 
-  it("excludes trial entitlements after their effective expiry", async () => {
+  it("does not grant access from historical trial entitlements", async () => {
     const rows = createStoreAccessRows({
       entitlements: [
         {
@@ -197,7 +163,7 @@ describe("Drizzle store access repository", () => {
     });
     const repository = createDrizzleStoreAccessRepository(
       createFakeStoreAccessDb(rows),
-      () => new Date("2026-02-01T00:00:00.000Z"),
+      () => new Date("2026-01-15T00:00:00.000Z"),
     );
 
     const access = await repository.findByClerkUserAndStoreSlug({

@@ -188,6 +188,7 @@ function createDistinctItems(): readonly InventoryListingSummary[] {
   return [
     createInventoryListingSummary("listing_low", {
       createdAt: "2026-06-01T00:00:00.000Z",
+      leadsCount: 1,
       mediaCount: 1,
       modelYear: 2022,
       plate: "BBB1B11",
@@ -196,6 +197,7 @@ function createDistinctItems(): readonly InventoryListingSummary[] {
     }),
     createInventoryListingSummary("listing_high", {
       createdAt: "2025-01-01T00:00:00.000Z",
+      leadsCount: 5,
       mediaCount: 5,
       modelYear: 2025,
       plate: "AAA1A11",
@@ -205,6 +207,7 @@ function createDistinctItems(): readonly InventoryListingSummary[] {
     }),
     createInventoryListingSummary("listing_middle", {
       createdAt: "2026-01-01T00:00:00.000Z",
+      leadsCount: 3,
       mediaCount: 3,
       modelYear: 2024,
       plate: "CCC1C11",

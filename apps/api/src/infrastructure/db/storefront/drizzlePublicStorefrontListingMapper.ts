@@ -4,10 +4,17 @@ import type {
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 import type { ListingRow } from "./drizzlePublicStorefrontQueryTypes.js";
 
+/**
+ * Public list cards mirror the compact V1 gallery and intentionally expose at
+ * most 12 media items. The listing-detail contract remains uncapped.
+ */
+export const PUBLIC_LISTING_SUMMARY_MEDIA_LIMIT = 12;
+
 export function toPublicVehicleListing(
   row: ListingRow,
   thumbnailUrl: string | null,
   heroMedia: PublicVehicleMedia | null,
+  media: readonly PublicVehicleMedia[],
 ): PublicVehicleListing {
   return {
     commercialTags: listingCommercialTags(row.listingMetadata),
@@ -20,9 +27,10 @@ export function toPublicVehicleListing(
     heroMedia,
     id: row.listingId,
     manufactureYear: row.manufactureYear,
+    media,
     mileageKm: row.mileageKm,
     modelYear: row.modelYear,
-    priceCents: row.priceCents,
+    priceCents: listingHidesPrice(row.listingMetadata) ? null : row.priceCents,
     slug: assertPublicSlug(row.slug),
     status: "available",
     thumbnailUrl,
@@ -31,6 +39,27 @@ export function toPublicVehicleListing(
     trimName: row.trimName,
     videoUrl: listingVideoUrl(row.listingMetadata),
   };
+}
+
+export function toPublicVehicleListingSummary(
+  row: ListingRow,
+  thumbnailUrl: string | null,
+  heroMedia: PublicVehicleMedia | null,
+  media: readonly PublicVehicleMedia[],
+): PublicVehicleListing {
+  return toPublicVehicleListing(
+    row,
+    thumbnailUrl,
+    heroMedia,
+    media.slice(0, PUBLIC_LISTING_SUMMARY_MEDIA_LIMIT),
+  );
+}
+
+function listingHidesPrice(metadata: unknown) {
+  if (!isRecord(metadata)) return false;
+  if (metadata.hidePrice === true) return true;
+  const legacy = metadata.legacyV1;
+  return isRecord(legacy) && legacy.hide_price === true;
 }
 
 function listingCommercialTags(metadata: unknown): readonly string[] {

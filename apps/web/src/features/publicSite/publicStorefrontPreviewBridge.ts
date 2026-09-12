@@ -30,6 +30,14 @@ export function mergeWebsiteBuilderPreviewPayload(
       ...toRecord(current?.contact),
       ...toRecord(payload.contact),
     },
+    ...(hasOwn(payload, "footer") || current?.footer
+      ? {
+          footer: {
+            ...toRecord(current?.footer),
+            ...toRecord(payload.footer),
+          },
+        }
+      : {}),
     fonts: {
       ...toRecord(current?.fonts),
       ...toRecord(payload.fonts),
@@ -57,6 +65,7 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
     ...data.settings.site.theme,
   };
   assignString(nextTheme, "accentColor", config.accentColor);
+  assignString(nextTheme, "appearanceMode", config.appearanceMode);
   assignString(nextTheme, "backgroundColor", config.backgroundColor);
   assignString(nextTheme, "brandColor", config.brandColor);
   assignString(nextTheme, "headline", config.heroTitle);
@@ -69,14 +78,29 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   assignString(nextTheme, "aboutTitle", config.aboutTitle);
   assignString(nextTheme, "aboutText", config.aboutText);
   assignNullableString(nextTheme, "aboutImageUrl", config.aboutImageUrl);
+  assignString(nextTheme, "aboutButtonText", config.aboutButtonText);
+  assignString(nextTheme, "aboutCuradoriaText", config.aboutCuradoriaText);
+  assignNullableString(nextTheme, "aboutImage2Url", config.aboutImage2Url);
+  assignString(nextTheme, "aboutWhyText", config.aboutWhyText);
+  assignString(nextTheme, "aboutWhyTitle", config.aboutWhyTitle);
 
+  if (config.aboutFeatures) nextTheme.aboutFeatures = config.aboutFeatures;
   if (config.contact) nextTheme.contact = config.contact;
+  if (config.footer) nextTheme.footer = config.footer;
   if (config.fonts) nextTheme.fonts = config.fonts;
   if (config.seo) nextTheme.seo = config.seo;
   if (config.socialLinks) nextTheme.socialLinks = config.socialLinks;
   if (config.testimonials) nextTheme.testimonials = config.testimonials;
   if (config.sections) nextTheme.sections = config.sections;
-  if (config.heroBannerUrls) nextTheme.heroBannerUrls = config.heroBannerUrls;
+  if (config.heroBannerUrls) {
+    nextTheme.heroBannerUrls = config.heroBannerUrls;
+    nextTheme.heroBannerDesktopUrl = config.heroBannerUrls[0] ?? null;
+    nextTheme.banner_pc_url = null;
+  }
+  if (hasOwn(config, "heroBannerMobileUrl")) {
+    nextTheme.heroBannerMobileUrl = config.heroBannerMobileUrl ?? null;
+    nextTheme.banner_mobile_url = null;
+  }
 
   const hasContactEmail = hasOwn(config.contact, "email");
   const hasContactPhone = hasOwn(config.contact, "phone");

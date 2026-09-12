@@ -67,10 +67,6 @@ export function formatBrlCents(valueCents: number | null | undefined) {
   }).format(valueCents / 100);
 }
 
-export function formatLeadOwner(lead: ProductCrmLead) {
-  return lead.assignedUserId ? "Responsável atribuído" : "Sem responsável";
-}
-
 export function hasAssignedLeadOwner(lead: ProductCrmLead) {
   return Boolean(lead.assignedUserId);
 }
@@ -89,4 +85,17 @@ export function readMetadataString(
 ) {
   const value = metadata[key];
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+export function buildLeadStarterPrompts(
+  leadName: string,
+  vehicleTitle?: string | null,
+): string[] {
+  return [
+    `👋 Olá ${leadName}! Vi seu interesse em nossos veículos. Como posso ajudar?`,
+    vehicleTitle
+      ? `🚗 Olá ${leadName}! Posso te passar mais detalhes e fotos do ${vehicleTitle}?`
+      : `🚗 Olá ${leadName}! Posso te passar mais fotos e detalhes dos veículos em destaque?`,
+    `📅 Olá ${leadName}! Gostaria de agendar uma visita na loja ou simular entrada?`,
+  ];
 }

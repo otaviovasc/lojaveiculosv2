@@ -11,6 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { stores, tenants, users } from "./identity.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
@@ -26,8 +27,11 @@ export const documentKind = pgEnum("document_kind", [
   "sale_contract",
   "test_drive",
   "buyer_document",
+  "consignment_contract",
   "internal",
   "other",
+  "warranty_certificate",
+  "buyer_acknowledgment",
 ]);
 
 export const documentStatus = pgEnum("document_status", [
@@ -111,6 +115,12 @@ export const documentLinks = pgTable(
       table.targetId,
       table.linkRole,
     ),
+    uniqueIndex("document_links_finance_entry_receipt_unique")
+      .on(table.tenantId, table.storeId, table.targetId)
+      .where(
+        sql`${table.targetType} = 'finance_entry'
+          and ${table.linkRole} = 'finance_entry_receipt'`,
+      ),
   ],
 );
 

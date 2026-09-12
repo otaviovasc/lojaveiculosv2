@@ -1,11 +1,12 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import { expect } from "vitest";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
-import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
+import type { CrmSaleOutcomePort } from "../../../domains/sales/ports/crmSaleOutcomePort.js";
 import {
   createTestFinanceAutoEntryRepository,
   type TestFinanceAutoEntryRepository,
 } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
+import type { VehicleSaleDocumentKind } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import {
   createInMemoryVehiclePorts,
@@ -19,11 +20,19 @@ import { createSalesServices, type SalesServices } from "./salesServices.js";
 
 const storeId = "store_1";
 const tenantId = "tenant_1";
+const minimalSaleDocumentKinds = [
+  "sale_contract",
+] as const satisfies readonly VehicleSaleDocumentKind[];
+
+interface CompleteDraftOptions {
+  selectedDocumentKinds?: readonly VehicleSaleDocumentKind[];
+}
 
 export function createHarness(
   status: "available" | "reserved",
   salesRepository: SalesRepository = createMemorySalesRepository(),
   crmRepository?: Pick<CrmRepository, "listActivities">,
+  crmSaleOutcomePort: CrmSaleOutcomePort | null = noopCrmSaleOutcomePort,
 ): {
   financeAutoEntryRepository: TestFinanceAutoEntryRepository;
   services: SalesServices;
@@ -41,6 +50,7 @@ export function createHarness(
   vehiclePorts.units.set("unit_1", createUnit(status));
   const financeAutoEntryRepository = createTestFinanceAutoEntryRepository();
   const services = createSalesServices({
+    ...(crmSaleOutcomePort ? { crmSaleOutcomePort } : {}),
     ...(crmRepository ? { crmRepository } : {}),
     financeAutoEntryRepository,
     ports: { salesRepository },
@@ -49,7 +59,13 @@ export function createHarness(
   return { financeAutoEntryRepository, services, vehiclePorts };
 }
 
-export function completeDraft() {
+const noopCrmSaleOutcomePort: CrmSaleOutcomePort = {
+  applyWon: async () => undefined,
+};
+
+export function completeDraft({
+  selectedDocumentKinds = minimalSaleDocumentKinds,
+}: CompleteDraftOptions = {}) {
   return {
     buyerSnapshot: {
       address: "Rua Um, 100",
@@ -61,7 +77,7 @@ export function completeDraft() {
     documentPolicySnapshot: {},
     leadId: "lead_1",
     salePriceCents: 5000000,
-    selectedDocumentKinds: [...vehicleSaleDocumentKinds],
+    selectedDocumentKinds: [...selectedDocumentKinds],
     sellerUserId: "seller_1",
     unitId: "unit_1",
   };
@@ -71,6 +87,7 @@ export function context(permissions: string[], audit?: AuditSink) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     ...(audit ? { audit } : {}),
+    entitlements: ["sales"],
     permissions,
     request: { requestId: "req_1" },
     storeId,

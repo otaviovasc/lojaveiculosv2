@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { AuditSink } from "@lojaveiculosv2/audit";
 import { AuthorizationError } from "../../../../shared/authorization.js";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { PublicStorefrontRepository } from "../../ports/publicStorefrontRepository.js";
@@ -11,11 +12,12 @@ const tenantId = "tenant_1" as TenantId;
 
 describe("listPublicVehicleListings", () => {
   it("resolves store slug, lists public inventory, and audits read", async () => {
-    const audit = { record: vi.fn(async () => undefined) };
+    const recordAudit = vi.fn<AuditSink["record"]>(async () => undefined);
+    const audit = { record: recordAudit };
     const repository = createRepository();
     const result = await listPublicVehicleListings(
       createPublicContext(audit),
-      { limit: 12, storeSlug: "demo" },
+      { limit: 12, offset: 24, storeSlug: "demo" },
       repository,
     );
 
@@ -23,15 +25,18 @@ describe("listPublicVehicleListings", () => {
     expect(result.listings).toHaveLength(1);
     expect(repository.listPublicListings).toHaveBeenCalledWith({
       limit: 12,
+      offset: 24,
       storeId,
       tenantId,
     });
-    expect(audit.record).toHaveBeenCalledWith(
+    expect(recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "public_storefront.listings.list",
         storeId: "store_1",
       }),
     );
+    const [recordedEvent] = recordAudit.mock.calls[0] ?? [];
+    expect(recordedEvent?.metadata).toMatchObject({ limit: 12, offset: 24 });
   });
 
   it("fails closed without public storefront read permission", async () => {
@@ -58,7 +63,9 @@ describe("listPublicVehicleListings", () => {
   });
 });
 
-function createPublicContext(audit = { record: vi.fn(async () => undefined) }) {
+function createPublicContext(
+  audit: AuditSink = { record: vi.fn(async () => undefined) },
+) {
   return createServiceContext({
     audit,
     permissions: ["public_storefront.read"],
@@ -103,6 +110,7 @@ function createRepository(
         heroMedia,
         id: "listing_1",
         manufactureYear: 2022,
+        media: [heroMedia],
         mileageKm: 32000,
         modelYear: 2023,
         priceCents: 12690000,

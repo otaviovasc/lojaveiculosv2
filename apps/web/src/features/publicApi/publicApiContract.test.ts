@@ -36,6 +36,13 @@ describe("Public API generated artifacts", () => {
     );
   });
 
+  it("keeps an inline request and response guide for every runtime route", () => {
+    for (const endpoint of publicApiEndpoints) {
+      expect(endpoint.requestSummary.length).toBeGreaterThan(0);
+      expect(endpoint.responseSummary.trim()).not.toBe("");
+    }
+  });
+
   it("builds executable curl examples against the configured API deployment", () => {
     const createLead = publicApiEndpoints.find(
       (endpoint) => endpoint.operationId === "createExternalApiLead",

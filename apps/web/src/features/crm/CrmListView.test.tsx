@@ -12,9 +12,12 @@ describe("CrmListView", () => {
   it("constrains long mobile customer and stage content", () => {
     render(
       <CrmListView
+        isLoadingMore={false}
         leads={[lead]}
+        onLoadMore={vi.fn(async () => undefined)}
         onMoveLeadPipelineStage={vi.fn(async () => undefined)}
         onSelectLead={vi.fn()}
+        remaining={0}
         stages={[stage]}
         vehicleOptions={[]}
       />,

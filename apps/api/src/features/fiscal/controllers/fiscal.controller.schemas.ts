@@ -3,8 +3,19 @@ import { z } from "zod";
 const metadataSchema = z.record(z.string(), z.unknown());
 const nullableIdSchema = z.string().trim().uuid().nullable().optional();
 
+const recipientAddressSchema = z.object({
+  city: z.string().trim().max(120).optional(),
+  cityCode: z.string().trim().max(10).optional(),
+  complement: z.string().trim().max(191).optional(),
+  district: z.string().trim().max(120).optional(),
+  number: z.string().trim().max(20).optional(),
+  postalCode: z.string().trim().max(12).optional(),
+  state: z.string().trim().max(2).optional(),
+  street: z.string().trim().max(191).optional(),
+});
+
 const recipientBaseSchema = z.object({
-  address: metadataSchema.default({}),
+  address: recipientAddressSchema.default({}),
   defaultServiceTemplateId: nullableIdSchema,
   documentNumber: z.string().trim().min(11).max(32),
   documentType: z.enum(["cnpj", "cpf"]),
@@ -65,11 +76,57 @@ export const issueFiscalDocumentSchema = z.object({
 
 export const cancelFiscalDocumentSchema = z
   .object({
-    reason: z.string().trim().min(5).max(320),
+    reason: z.string().trim().min(15).max(320),
   })
   .strict();
 
 export const syncFiscalDocumentSchema = z.object({}).strict();
+export const spedyWebhookSchema = metadataSchema;
+
+const issuerProfileSchema = z.object({
+  address: z.object({
+    additionalInformation: z.string().trim().max(191).optional(),
+    city: z.object({
+      code: z.number().int().positive(),
+      name: z.string().trim().min(2).max(120),
+      state: z.string().trim().length(2),
+    }),
+    district: z.string().trim().min(1).max(80),
+    number: z.string().trim().min(1).max(20),
+    postalCode: z.string().trim().min(8).max(12),
+    street: z.string().trim().min(1).max(120),
+  }),
+  cityTaxNumber: z.string().trim().max(80).optional(),
+  economicActivities: z
+    .array(
+      z.object({
+        code: z.string().trim().min(4).max(20),
+        type: z.enum(["main", "secondary"]),
+      }),
+    )
+    .optional(),
+  email: z.string().trim().email().max(191).optional(),
+  federalTaxNumber: z.string().trim().min(14).max(18),
+  legalName: z.string().trim().min(2).max(191),
+  name: z.string().trim().min(2).max(191),
+  phone: z.string().trim().max(40).optional(),
+  simplesNacionalTaxRegime: z.string().trim().max(80).optional(),
+  specialTaxRegime: z.string().trim().max(80).optional(),
+  stateTaxNumber: z.string().trim().max(80).optional(),
+  taxRegime: z.string().trim().max(80).optional(),
+});
+
+export const setupFiscalConnectionSchema = z.object({
+  issuerProfile: issuerProfileSchema,
+  taxDefaults: metadataSchema.optional(),
+});
+
+export const confirmFiscalDefaultsSchema = z.object({
+  taxDefaults: metadataSchema.refine(
+    (value) => Object.keys(value).length > 0,
+    "At least one reviewed fiscal default is required.",
+  ),
+});
 
 export const createFiscalRecipientSchema = recipientBaseSchema;
 export const updateFiscalRecipientSchema = recipientBaseSchema.partial();

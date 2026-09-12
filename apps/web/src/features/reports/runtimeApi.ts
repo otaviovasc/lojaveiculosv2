@@ -2,6 +2,7 @@ import type { CreateReportsApiOptions } from "./apiClient";
 import type { ReportsAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -12,7 +13,7 @@ export async function createReportsApiOptions(): Promise<CreateReportsApiOptions
 
   return {
     auth,
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readBaseUrl(),
   };
 }

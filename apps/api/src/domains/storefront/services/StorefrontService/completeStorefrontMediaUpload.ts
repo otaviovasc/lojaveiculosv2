@@ -31,7 +31,11 @@ export async function completeStorefrontMediaUpload(
   assertPermission(context, storefrontMediaPermission);
   validateStorefrontMediaUpload(input);
   const scope = requireStorefrontMediaScope(context);
-  assertStorefrontMediaStorageKey(scope, input.storageKey);
+  assertStorefrontMediaStorageKey(
+    scope,
+    input.storageKey,
+    context.source?.environment,
+  );
   const repository = getStorefrontMediaRepository(ports.repository);
   const storage = getStorefrontMediaStorage(ports.storage);
 

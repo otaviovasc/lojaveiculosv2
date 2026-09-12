@@ -3,6 +3,7 @@ import { LoaderCircle, Search, Sparkles } from "lucide-react";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryFormState } from "../model/formModel";
 import { applyPlateLookupToForm } from "../model/inventoryEnrichment";
+import { resolvePlateCatalogSnapshot } from "../model/plateCatalogResolution";
 import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
 import { InventoryInput } from "./InventoryFormParts";
 import { LookupStatus, type Loadable } from "./InventoryCreateEnrichmentParts";
@@ -38,7 +39,10 @@ export function InventoryCreateEnrichmentPanel({
     setPlateState({ kind: "loading" });
     try {
       const result = await api.lookupPlate({ plate });
-      onSetFormDirect((current) => applyPlateLookupToForm(current, result));
+      const catalog = await resolvePlateCatalogSnapshot(api, result);
+      onSetFormDirect((current) =>
+        applyPlateLookupToForm(current, result, catalog),
+      );
       setPlateState({ kind: "success", value: result });
       onLookupComplete(result);
     } catch (error) {

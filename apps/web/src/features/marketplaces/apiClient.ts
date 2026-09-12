@@ -2,6 +2,7 @@ import { readApiJson } from "../../lib/apiErrors";
 import type {
   CreateMarketplaceSyncJobInput,
   CompleteMarketplaceConnectionInput,
+  CompleteMarketplaceConnectionResult,
   CreateMarketplaceConnectUrlInput,
   MarketplaceAuth,
   MarketplaceConnectUrl,
@@ -20,7 +21,7 @@ import type {
 export type MarketplaceApi = {
   completeConnection: (
     input: CompleteMarketplaceConnectionInput,
-  ) => Promise<MarketplaceOverview["accounts"][number]>;
+  ) => Promise<CompleteMarketplaceConnectionResult>;
   createConnectUrl: (
     input: CreateMarketplaceConnectUrlInput,
   ) => Promise<MarketplaceConnectUrl>;
@@ -33,6 +34,7 @@ export type MarketplaceApi = {
     provider: MarketplaceProvider,
     input: MarketplaceStockSyncPreviewRequest,
   ) => Promise<MarketplaceStockSyncPreviewResponse>;
+  reconcileSyncJob: (jobId: string) => Promise<MarketplaceJob>;
   retrySyncJob: (
     jobId: string,
     input?: MarketplaceSyncJobRetryRequest,
@@ -65,7 +67,7 @@ export function createMarketplaceApi({
         body: JSON.stringify(input),
         headers: createMarketplaceHeaders(auth),
         method: "POST",
-      }).then(readJson<MarketplaceOverview["accounts"][number]>),
+      }).then(readJson<CompleteMarketplaceConnectionResult>),
     createConnectUrl: (input) =>
       fetch(marketplaceRoutes.connectUrl(baseUrl), {
         body: JSON.stringify(input),
@@ -88,6 +90,11 @@ export function createMarketplaceApi({
         headers: createMarketplaceHeaders(auth),
         method: "POST",
       }).then(readJson<MarketplaceStockSyncPreviewResponse>),
+    reconcileSyncJob: (jobId) =>
+      fetch(marketplaceRoutes.reconcileJob(jobId, baseUrl), {
+        headers: createMarketplaceHeaders(auth),
+        method: "POST",
+      }).then(readJson<MarketplaceJob>),
     retrySyncJob: (jobId, input = {}) =>
       fetch(marketplaceRoutes.retryJob(jobId, baseUrl), {
         body: JSON.stringify(input),
@@ -126,6 +133,11 @@ export const marketplaceRoutes = {
     createMarketplaceEndpoint("/marketplaces/oauth/complete", baseUrl),
   overview: (baseUrl?: string) =>
     createMarketplaceEndpoint("/marketplaces/overview", baseUrl),
+  reconcileJob: (jobId: string, baseUrl?: string) =>
+    createMarketplaceEndpoint(
+      `/marketplaces/sync-jobs/${jobId}/reconcile`,
+      baseUrl,
+    ),
   runJob: (jobId: string, baseUrl?: string) =>
     createMarketplaceEndpoint(`/marketplaces/sync-jobs/${jobId}/run`, baseUrl),
   retryJob: (jobId: string, baseUrl?: string) =>

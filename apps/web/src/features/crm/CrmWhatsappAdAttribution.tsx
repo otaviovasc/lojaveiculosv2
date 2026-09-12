@@ -14,10 +14,7 @@ export function CrmWhatsappAdAttribution({
 
   const displayTitle = title ?? source ?? "Conversa iniciada por anuncio";
   return (
-    <section
-      aria-label="Origem do anuncio"
-      className="crm-whatsapp-ad-attribution"
-    >
+    <section aria-label="Origem do anuncio" className="crm-ad-attribution">
       <header>
         <span>
           <Megaphone aria-hidden="true" />

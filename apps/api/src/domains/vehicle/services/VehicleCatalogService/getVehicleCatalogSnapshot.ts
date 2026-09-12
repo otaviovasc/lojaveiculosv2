@@ -18,6 +18,8 @@ import {
 export type GetVehicleCatalogSnapshotInput = {
   brandCode: string;
   modelCode: string;
+  modelFamilyCode?: string;
+  modelFamilyName?: string;
   vehicleType?: VehicleCatalogType;
   yearCode: string;
 };
@@ -39,21 +41,36 @@ export async function getVehicleCatalogSnapshot(
     }),
   );
   const repository = getCatalogRepository(ports);
-  const cachedSnapshot = await repository.getSnapshot({
+  const snapshotIdentity = {
     brandCode: input.brandCode,
     versionCode: input.modelCode,
     vehicleType,
     yearCode: input.yearCode,
-  });
-  const snapshot =
-    cachedSnapshot ??
-    (await getCatalogProvider(ports).getVehicle({
+  };
+  let snapshot = await repository.getSnapshot(snapshotIdentity);
+  if (!snapshot) {
+    const providerResult = await getCatalogProvider(ports).getVehicle({
       brandCode: input.brandCode,
       modelCode: input.modelCode,
       vehicleType,
       yearCode: input.yearCode,
-    }));
-  if (!cachedSnapshot) await repository.upsertSnapshotDetails(snapshot);
+    });
+    const providerSnapshot = {
+      ...providerResult,
+      modelFamilyCode:
+        providerResult.modelFamilyCode ?? input.modelFamilyCode ?? null,
+      modelFamilyName:
+        providerResult.modelFamilyName ?? input.modelFamilyName ?? null,
+    };
+    await repository.upsertSnapshotDetails(providerSnapshot);
+    snapshot =
+      (await repository.getSnapshot(snapshotIdentity)) ?? providerSnapshot;
+  }
+  snapshot = {
+    ...snapshot,
+    modelFamilyCode: snapshot.modelFamilyCode ?? input.modelFamilyCode ?? null,
+    modelFamilyName: snapshot.modelFamilyName ?? input.modelFamilyName ?? null,
+  };
   await context.audit.record({
     action: "vehicle_catalog.snapshot.get",
     actor: context.actor,

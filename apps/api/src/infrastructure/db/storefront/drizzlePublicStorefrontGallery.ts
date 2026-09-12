@@ -77,6 +77,7 @@ async function findUnitsMedia(
     .select({
       altText: vehicleMedia.altText,
       displayOrder: vehicleMedia.displayOrder,
+      id: vehicleMedia.id,
       kind: vehicleMedia.kind,
       unitId: vehicleMedia.unitId,
       url: vehicleMedia.url,
@@ -92,7 +93,7 @@ async function findUnitsMedia(
         isNull(vehicleMedia.deletedAt),
       ),
     )
-    .orderBy(asc(vehicleMedia.displayOrder))
+    .orderBy(asc(vehicleMedia.displayOrder), asc(vehicleMedia.id))
     .limit(48);
 
   return [...rows]
@@ -104,7 +105,9 @@ async function findUnitsMedia(
       if (leftUnitOrder !== rightUnitOrder) {
         return leftUnitOrder - rightUnitOrder;
       }
-      return left.displayOrder - right.displayOrder;
+      const displayOrderDifference = left.displayOrder - right.displayOrder;
+      if (displayOrderDifference !== 0) return displayOrderDifference;
+      return left.id.localeCompare(right.id);
     })
     .map((row) => toPublicVehicleMedia(row, unitById.get(row.unitId)));
 }

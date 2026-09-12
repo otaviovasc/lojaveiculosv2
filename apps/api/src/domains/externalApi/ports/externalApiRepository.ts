@@ -11,6 +11,7 @@ export type ExternalApiClient = {
   createdAt: Date;
   id: string;
   keyPrefixes: readonly string[];
+  lastUsedAt: Date | null;
   name: string;
   scopes: readonly PermissionKey[];
   status: ExternalApiClientStatus;
@@ -53,7 +54,14 @@ export type AuthenticateExternalApiKeyInput = {
 export type ExternalApiIdempotencyReservation =
   | { kind: "conflict"; requestFingerprint: string }
   | { kind: "created" }
-  | { kind: "duplicate"; statusCode: number | null };
+  | { kind: "failed"; statusCode: number | null }
+  | { kind: "in_flight" }
+  | {
+      body: unknown;
+      contentType: string;
+      kind: "replay";
+      statusCode: number;
+    };
 
 export type ReserveExternalApiIdempotencyInput = {
   clientId: string;
@@ -78,6 +86,24 @@ export type RecordExternalApiRequestInput = {
   tenantId: TenantId;
 };
 
+export type CompleteExternalApiIdempotencyInput = {
+  body: unknown;
+  clientId: string;
+  contentType: string;
+  idempotencyKey: string;
+  requestFingerprint: string;
+  responseMs: number;
+  statusCode: number;
+};
+
+export type FailExternalApiIdempotencyInput = {
+  clientId: string;
+  idempotencyKey: string;
+  requestFingerprint: string;
+  responseMs: number;
+  statusCode: number;
+};
+
 export type ExternalApiRepository = {
   authenticateByKeyHash: (
     input: AuthenticateExternalApiKeyInput,
@@ -86,6 +112,9 @@ export type ExternalApiRepository = {
     clientId: string;
     since: Date;
   }) => Promise<number>;
+  completeIdempotencyKey: (
+    input: CompleteExternalApiIdempotencyInput,
+  ) => Promise<boolean>;
   createClient: (
     input: CreateExternalApiClientInput,
   ) => Promise<ExternalApiClient>;
@@ -93,6 +122,9 @@ export type ExternalApiRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<readonly ExternalApiClient[]>;
+  failIdempotencyKey: (
+    input: FailExternalApiIdempotencyInput,
+  ) => Promise<boolean>;
   revokeClient: (
     input: RevokeExternalApiClientInput,
   ) => Promise<ExternalApiClient | null>;

@@ -91,8 +91,19 @@ export async function transitionSaleWithWorkflow(
   }
 
   return transitionSale(context, input, ports, {
-    afterTransition: (sale) =>
-      completeWorkflowForTransition(context, input, sale, ports),
+    afterTransition: async (sale) => {
+      await completeWorkflowForTransition(context, input, sale, ports);
+      if (input.status === "closed" && sale.leadId) {
+        if (!ports.crmSaleOutcomePort) {
+          throw new Error("CRM sale outcome integration is unavailable.");
+        }
+        await ports.crmSaleOutcomePort.applyWon(context, {
+          commandId: `sale:${sale.id}:crm-won`,
+          leadId: sale.leadId,
+          saleId: sale.id,
+        });
+      }
+    },
   });
 }
 

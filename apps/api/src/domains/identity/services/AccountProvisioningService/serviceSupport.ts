@@ -30,11 +30,39 @@ export class AccountProvisioningScopeError extends Error {
   }
 }
 
+export type AccountProvisioningProviderErrorDetails = {
+  clerkTraceId?: string;
+  providerErrorCodes?: readonly string[];
+  providerStatus?: number;
+};
+
 export class AccountProvisioningProviderError extends Error {
-  constructor(message: string) {
+  readonly details?: AccountProvisioningProviderErrorDetails | undefined;
+
+  constructor(
+    message: string,
+    details?: AccountProvisioningProviderErrorDetails,
+  ) {
     super(message);
     this.name = "AccountProvisioningProviderError";
+    this.details = details;
   }
+}
+
+export function providerErrorLogFields(
+  error: unknown,
+): Record<string, unknown> {
+  if (!(error instanceof AccountProvisioningProviderError) || !error.details) {
+    return {};
+  }
+  const { clerkTraceId, providerErrorCodes, providerStatus } = error.details;
+  return {
+    ...(clerkTraceId ? { clerkTraceId } : {}),
+    ...(providerErrorCodes?.length
+      ? { providerErrorCodes: [...providerErrorCodes] }
+      : {}),
+    ...(providerStatus !== undefined ? { providerStatus } : {}),
+  };
 }
 
 export function requireClerkActor(context: ServiceContext): string {

@@ -41,9 +41,7 @@ export function derivePublicStorefrontState(
     return { error: snapshot.error, kind: "error" };
   }
 
-  if (!snapshot.data || snapshot.data.listings.length === 0) {
-    return { data: snapshot.data ?? emptyStorefrontData, kind: "empty" };
-  }
+  if (!snapshot.data) return { data: emptyStorefrontData, kind: "empty" };
 
   return { data: snapshot.data, kind: "ready" };
 }
@@ -64,6 +62,12 @@ const emptyStorefrontData = {
   listings: [],
   settings: {
     contact: {
+      addressCity: null,
+      addressLine1: null,
+      addressLine2: null,
+      addressState: null,
+      addressZipCode: null,
+      businessHours: {},
       city: null,
       contactEmail: null,
       contactPhone: null,

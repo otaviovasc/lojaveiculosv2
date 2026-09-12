@@ -5,14 +5,15 @@ import {
 } from "../../../../shared/serviceContext.js";
 import type { MarketplaceProvider } from "../../ports/marketplaceRepository.js";
 import {
+  marketplaceNow,
   MarketplaceProviderRuntimeError,
+  requireMarketplaceOAuthPorts,
   requireMarketplaceScope,
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
 
 export type CreateMarketplaceConnectUrlInput = {
   provider: MarketplaceProvider;
-  redirectUri: string;
 };
 
 export type MarketplaceConnectUrl = {
@@ -29,16 +30,21 @@ export async function createMarketplaceConnectUrl(
   const scope = requireMarketplaceScope(context);
   const gateway = ports.gatewayRegistry?.getGateway(input.provider);
   if (!gateway) throw new MarketplaceProviderRuntimeError("Gateway missing.");
-
-  const state = JSON.stringify({
+  const oauth = requireMarketplaceOAuthPorts(ports);
+  const now = marketplaceNow(ports);
+  const redirectUri = oauth.redirectUri(input.provider);
+  const transaction = await oauth.stateStore.issue({
+    actorId: context.actor.id,
+    expiresAt: new Date(now.getTime() + 10 * 60_000),
     provider: input.provider,
     requestId: context.requestId,
+    redirectUri,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
   const authorizationUrl = await gateway.createAuthorizationUrl({
-    redirectUri: input.redirectUri,
-    state,
+    redirectUri,
+    state: transaction.state,
   });
 
   context.logger.info(
@@ -52,7 +58,13 @@ export async function createMarketplaceConnectUrl(
     category: "authorization",
     entityId: scope.storeId,
     entityType: "marketplace_account",
-    metadata: { permission: "marketplace.manage", provider: input.provider },
+    metadata: {
+      expiresAt: transaction.expiresAt.toISOString(),
+      permission: "marketplace.manage",
+      provider: input.provider,
+      stateStoredAsHash: true,
+      transactionId: transaction.id,
+    },
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,

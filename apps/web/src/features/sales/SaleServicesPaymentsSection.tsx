@@ -1,8 +1,10 @@
-import { Check, Coins, Plus } from "lucide-react";
+import { AlertTriangle, Check, Coins, Plus } from "lucide-react";
 import { SaleFormSection } from "./SaleWorkspaceForm";
 import { PaymentRow, newPayment } from "./SalePaymentRow";
+import { synchronizeSingleFinancingPayment } from "./salePaymentSync";
 import { paymentPrincipalTotal, reservationSignalPayment } from "./salesModel";
 import { formatCents } from "./saleServicesFormat";
+import { asSnapshotRecord } from "./salesSnapshot";
 import type { UpdateSale } from "./SaleServicesTypes";
 import type { SaleRecord } from "./types";
 
@@ -49,9 +51,11 @@ export function SaleServicesPaymentsSection({
           <div className="sales-progress-bar-container w-full h-2 bg-line rounded-full overflow-hidden">
             <div
               className={
-                balance <= 0
-                  ? "h-full rounded-full transition-all duration-300 bg-success"
-                  : "h-full rounded-full transition-all duration-300 bg-accent"
+                balance < 0
+                  ? "h-full rounded-full transition-all duration-300 bg-warning"
+                  : balance === 0
+                    ? "h-full rounded-full transition-all duration-300 bg-success"
+                    : "h-full rounded-full transition-all duration-300 bg-accent"
               }
               style={{ width: `${progressPercent}%` }}
             />
@@ -59,9 +63,18 @@ export function SaleServicesPaymentsSection({
 
           <div className="flex justify-between items-center text-xs font-bold">
             <span className="text-muted">
-              Total Lançado: {sale.payments.length} parcelas
+              Total lançado: {sale.payments.length}{" "}
+              {sale.payments.length === 1 ? "lançamento" : "lançamentos"}
             </span>
-            {balance <= 0 ? (
+            {balance < 0 ? (
+              <span
+                className="flex items-center gap-1 font-black uppercase tracking-wider text-warning-strong"
+                role="alert"
+              >
+                <AlertTriangle aria-hidden="true" className="size-3" />
+                Excede o preço em {formatCents(Math.abs(balance))}
+              </span>
+            ) : balance === 0 ? (
               <span className="text-success-strong font-black flex items-center gap-1 uppercase tracking-wider">
                 <Check className="size-3" /> Valor Total Coberto
               </span>
@@ -82,20 +95,30 @@ export function SaleServicesPaymentsSection({
                 sale.status === "pending" && payment.id === signalPaymentId
               }
               onChange={(next) =>
-                update((draft) => ({
-                  ...draft,
-                  payments: draft.payments.map((item, itemIndex) =>
-                    itemIndex === index ? next : item,
+                update((draft) =>
+                  synchronizeSingleFinancingPayment(
+                    {
+                      ...draft,
+                      payments: draft.payments.map((item, itemIndex) =>
+                        itemIndex === index ? next : item,
+                      ),
+                    },
+                    asSnapshotRecord(draft.saleSourceSnapshot.financing),
                   ),
-                }))
+                )
               }
               onRemove={() =>
-                update((draft) => ({
-                  ...draft,
-                  payments: draft.payments.filter(
-                    (_, itemIndex) => itemIndex !== index,
+                update((draft) =>
+                  synchronizeSingleFinancingPayment(
+                    {
+                      ...draft,
+                      payments: draft.payments.filter(
+                        (_, itemIndex) => itemIndex !== index,
+                      ),
+                    },
+                    asSnapshotRecord(draft.saleSourceSnapshot.financing),
                   ),
-                }))
+                )
               }
               payment={payment}
             />

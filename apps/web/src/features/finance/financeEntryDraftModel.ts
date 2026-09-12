@@ -24,6 +24,7 @@ export type FinanceEntryDraft = {
   sellerUserId: string;
   status: FinanceEntryStatus;
   type: FinanceEntryType;
+  vehicleUnitId: string;
 };
 
 export const expenseCategories = [
@@ -72,6 +73,7 @@ export function createEntryDraft(type: FinanceEntryType): FinanceEntryDraft {
     sellerUserId: "",
     status: "pending",
     type,
+    vehicleUnitId: "",
   };
 }
 
@@ -87,6 +89,9 @@ export function entryToDraft(entry: FinanceEntry): FinanceEntryDraft {
     paidAt: entry.paidAt ? entry.paidAt.slice(0, 10) : "",
     sellerUserId: entry.sellerUserId ?? "",
     status: entry.status,
+    vehicleUnitId:
+      entry.links?.find((link) => link.targetType === "vehicle_unit")
+        ?.targetId ?? "",
   };
 }
 
@@ -99,7 +104,9 @@ export function toEntryInput(
     documentFile: draft.documentFile,
     documentKind: "finance_receipt",
     dueAt: toIsoDate(draft.dueAt),
-    links: [],
+    links: draft.vehicleUnitId
+      ? [{ targetId: draft.vehicleUnitId, targetType: "vehicle_unit" }]
+      : [],
     metadata: {
       notes: draft.notes.trim(),
       source: "finance_bills_slice",

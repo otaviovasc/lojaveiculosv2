@@ -98,28 +98,19 @@ describe("Drizzle public storefront repository", () => {
 
     const site = await repository.findPublicSiteBySlug("demo");
 
-    expect(site).toEqual({
-      contact: {
-        city: "Sao Paulo",
-        contactEmail: "contato@demo.com.br",
-        contactPhone: null,
-        whatsappPhone: "5511999999999",
-        whatsappUrl: "https://wa.me/5511999999999",
-      },
-      site: {
-        heroImageUrl: "https://cdn.local/hero.jpg",
-        layoutKey: "default",
-        seoDescription: "Estoque selecionado",
-        seoTitle: "Loja Demo",
-        theme: {},
-      },
-      store: {
-        id: "store_1",
-        name: "Loja Demo",
-        publicUrl: "demo.lojaveiculos.com.br",
-        slug: "demo",
-        tenantId: "tenant_1",
-      },
+    expect(site?.site).toEqual({
+      heroImageUrl: "https://cdn.local/hero.jpg",
+      layoutKey: "default",
+      seoDescription: "Estoque selecionado",
+      seoTitle: "Loja Demo",
+      theme: {},
+    });
+    expect(site?.store).toEqual({
+      id: "store_1",
+      name: "Loja Demo",
+      publicUrl: "demo.lojaveiculos.com.br",
+      slug: "demo",
+      tenantId: "tenant_1",
     });
   });
 
@@ -178,6 +169,7 @@ describe("Drizzle public storefront repository", () => {
         {
           altText: "Green front",
           displayOrder: 0,
+          id: "media_green_front",
           kind: "photo",
           unitId: "unit_green",
           url: "https://cdn.local/m3-green-front.jpg",
@@ -185,6 +177,7 @@ describe("Drizzle public storefront repository", () => {
         {
           altText: "Black front",
           displayOrder: 0,
+          id: "media_black_front",
           kind: "photo",
           unitId: "unit_black",
           url: "https://cdn.local/m3-black-front.jpg",

@@ -4,12 +4,10 @@ import { createComplianceFeature } from "../../features/compliance/controllers/c
 import { createDocumentsFeature } from "../../features/documents/controllers/documents.controller.js";
 import { createExternalApiFeature } from "../../features/externalApi/controllers/externalApi.controller.js";
 import { createInternalMonitoringFeature } from "../../features/internal/controllers/internalMonitoring.controller.js";
-import { createMarketplaceFeature } from "../../features/marketplaces/controllers/marketplace.controller.js";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
-import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
-import { createAgencyFeature } from "../../features/agency/controllers/agency.controller.js";
+import { installCredereFinancingRoutes } from "../../features/financing/controllers/installCredereFinancingRoutes.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
@@ -20,8 +18,8 @@ import { createSettingsFeature } from "../../features/settings/controllers/setti
 import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { CreateAppOptions } from "./createAppOptions.js";
-import { createHttpAccountContext } from "./createHttpAccountContext.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
+import { createHttpAccountContextFactory } from "./createHttpAccountContextFactory.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHealthRoutes } from "./installHealthRoutes.js";
@@ -29,7 +27,12 @@ import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { installAutomationRoutes } from "./installAutomationRoutes.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
+import { createPublicOAuthCallbackContextFactory } from "./createPublicOAuthCallbackContext.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
+import { installFiscalRoutes } from "./installFiscalRoutes.js";
+import { installMarketplaceRoutes } from "./installMarketplaceRoutes.js";
+import { createPublicStorefrontFeatureOptions } from "./createAppStorefrontOptions.js";
+import { installAgencyRoutes } from "./installAgencyRoutes.js";
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -50,20 +53,11 @@ export function createApp(options: CreateAppOptions = {}) {
     ...(options.storeAccessRepository
       ? { repository: options.storeAccessRepository }
       : {}),
+    ...(options.logger ? { logger: options.logger } : {}),
   };
-  const storefrontOptions = options.publicStorefrontRepository
-    ? {
-        ...(options.audit ? { audit: options.audit } : {}),
-        ...(options.publicStorefrontCrmRepository
-          ? { crmRepository: options.publicStorefrontCrmRepository }
-          : {}),
-        ...(options.storefrontPageRepository
-          ? { pageRepository: options.storefrontPageRepository }
-          : {}),
-        repository: options.publicStorefrontRepository,
-      }
-    : {};
+  const storefrontOptions = createPublicStorefrontFeatureOptions(options);
   const contextFactory = (c: Context) => createHttpServiceContext(c, ctxConfig);
+  const accountContextFactory = createHttpAccountContextFactory(options);
   app.route("/", docsFeature);
   installHealthRoutes(app, options.readiness);
   installAccountProvisioningRoutes(app, options, contextFactory);
@@ -78,6 +72,7 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.storefrontPageRepository
         ? {
             services: createStorefrontPageServices({
+              publicRepository: options.publicStorefrontRepository,
               repository: options.storefrontPageRepository,
             }),
           }
@@ -127,39 +122,21 @@ export function createApp(options: CreateAppOptions = {}) {
       contextFactory,
       webhookContextFactory: createBillingWebhookContextFactory(options.audit),
       ...(options.billingServices ? { services: options.billingServices } : {}),
+      ...(options.billingWebhookRateLimiter
+        ? { webhookRateLimiter: options.billingWebhookRateLimiter }
+        : {}),
     }),
   );
-  const accountProvisioningServices = options.accountProvisioningServices;
-  if (accountProvisioningServices) {
-    app.route(
-      "/api/v1/agency",
-      createAgencyFeature({
-        accountContextFactory: (context, scope) =>
-          createHttpAccountContext(context, {
-            ...(options.audit ? { audit: options.audit } : {}),
-            ...(options.identityVerifier
-              ? { identityVerifier: options.identityVerifier }
-              : {}),
-            ...(options.clerkUserProfileProvider
-              ? { profileProvider: options.clerkUserProfileProvider }
-              : {}),
-            repository:
-              accountProvisioningServices.accountProvisioningRepository,
-            tenantId: scope.tenantId,
-          }),
-        ...(options.billingServices
-          ? { services: options.billingServices }
-          : {}),
-      }),
-    );
-  }
-  app.route(
-    "/api/v1/fiscal",
-    createFiscalFeature({
-      contextFactory,
-      ...(options.fiscalServices ? { services: options.fiscalServices } : {}),
-    }),
-  );
+  const agencyAccountContextFactory = installAgencyRoutes(app, options);
+  installCredereFinancingRoutes(app, {
+    accountContextFactory: agencyAccountContextFactory,
+    callbackContextFactory: createPublicOAuthCallbackContextFactory(options),
+    contextFactory,
+    ...(options.financingServices
+      ? { services: options.financingServices }
+      : {}),
+  });
+  installFiscalRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/analytics",
     createAnalyticsFeature({
@@ -185,7 +162,9 @@ export function createApp(options: CreateAppOptions = {}) {
       contextFactory,
       runtimeServices: {
         crm: options.crmServices,
+        financing: options.financingServices,
         inventory: options.inventoryListingServices,
+        publicStorefront: options.publicStorefrontRepository,
       },
       ...(options.externalApiServices
         ? { services: options.externalApiServices }
@@ -195,29 +174,31 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/internal",
     createInternalMonitoringFeature({
+      accountContextFactory,
       contextFactory,
       ...(options.internalMonitoringServices
         ? { services: options.internalMonitoringServices }
         : {}),
     }),
   );
-  app.route(
-    "/api/v1/marketplaces",
-    createMarketplaceFeature({
-      contextFactory,
-      ...(options.marketplaceServices
-        ? { services: options.marketplaceServices }
-        : {}),
-    }),
-  );
+  installMarketplaceRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/crm",
     createCrmFeature({
+      accountContextFactory,
       contextFactory,
+      ...(options.crmCoreRepository
+        ? { coreRepository: options.crmCoreRepository }
+        : {}),
       financialProductTransactionRunner:
         options.crmFinancialProductTransactionRunner,
       financeServices: options.financeServices,
+      externalBotManager: options.externalBotManager,
+      ...(options.crmPushPublicConfig
+        ? { pushPublicConfig: options.crmPushPublicConfig }
+        : {}),
       realtimeBroker: options.crmRealtimeBroker,
+      resolveBotEntitlements: options.resolveCrmBotEntitlements,
       webhookContextFactory: createCrmWebhookContextFactory(options.audit),
       ...(options.crmServices ? { services: options.crmServices } : {}),
     }),

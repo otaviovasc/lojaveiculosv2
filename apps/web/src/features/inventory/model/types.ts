@@ -51,6 +51,8 @@ export type {
 export type {
   CreateInventoryCostInput,
   InventoryCostKind,
+  UpdateInventoryCostInput,
+  VoidInventoryCostInput,
 } from "./operationTypes";
 export type {
   CreateVehicleSupplierInput,
@@ -154,6 +156,7 @@ export type InventoryUnit = {
   id: string;
   listingId: string;
   plate: string | null;
+  renavam?: string | null;
   status:
     | "acquired"
     | "available"
@@ -211,6 +214,8 @@ export type InventoryListingDetail = {
 };
 
 export type InventoryListingSummary = {
+  /** Distinct non-archived CRM leads interested in this listing (from the API). */
+  leadsCount: number;
   listing: InventoryListing;
   mediaCount: number;
   primaryMediaUrl: string | null;
@@ -253,6 +258,7 @@ export type CreateInventoryListingInput = {
 export type CreateInventoryUnitInput = {
   colorName?: VehicleColor | null;
   plate?: string | null;
+  renavam?: string | null;
   stockNumber?: string | null;
   vin?: string | null;
 };
@@ -308,6 +314,7 @@ export type UpdateInventoryListingInput = {
 export type UpdateInventoryUnitInput = {
   colorName?: VehicleColor | null;
   plate?: string | null;
+  renavam?: string | null;
   status?: InventoryUnit["status"];
   stockNumber?: string | null;
   vin?: string | null;

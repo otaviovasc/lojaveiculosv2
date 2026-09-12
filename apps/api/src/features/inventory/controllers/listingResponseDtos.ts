@@ -77,6 +77,7 @@ export function toUnitListDto(result: VehicleUnitListResult) {
 
 function toSummaryDto(summary: VehicleListingSummary) {
   return {
+    leadsCount: summary.leadsCount,
     listing: toListingDto(summary.listing),
     mediaCount: summary.mediaCount,
     primaryPublicMediaUrl: summary.primaryPublicMediaUrl,

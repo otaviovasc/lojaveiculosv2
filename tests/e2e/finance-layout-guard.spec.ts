@@ -52,12 +52,7 @@ test.describe("financial workspace layout guardrails", () => {
     await waitForSettledWorkspace(page);
     const mobileActions = pageHeaderActions(page);
     await expectSameRow([mobileActions.nth(0), mobileActions.nth(1)]);
-    const actionToolbar = page.getByRole("toolbar", {
-      name: "Ações da página",
-    });
-    expect(
-      (await locatorBox(mobileActions.nth(2))).width,
-    ).toBeGreaterThanOrEqual((await locatorBox(actionToolbar)).width - 2);
+    await expectSameRow([mobileActions.nth(2), mobileActions.nth(3)]);
     await expectNoClippedText(page, ".feature-stat-card__value");
     await expectMinimumTargets(page.locator(".feature-stat-card"), 44);
     // Mobile keeps the single-column stack: urgency alert above the ledger.
@@ -121,7 +116,7 @@ test.describe("financial workspace layout guardrails", () => {
     await expectViewportSafe(page);
   });
 
-  test("auto entries keeps a 3x2 mobile navigator and content-fit cards", async ({
+  test("auto entries keeps a scrollable mobile navigator and content-fit cards", async ({
     page,
   }) => {
     await openAsOwner(page, "/auto-entries", "desktop");
@@ -144,11 +139,15 @@ test.describe("financial workspace layout guardrails", () => {
     const tabs = page.getByRole("tablist").getByRole("tab");
     const tabBoxes = await boxes(await allLocators(tabs));
     expect(tabBoxes).toHaveLength(6);
-    expect(uniqueRows(tabBoxes)).toHaveLength(2);
-    expect(uniqueRows(tabBoxes).map((row) => row.length)).toEqual([3, 3]);
+    expect(uniqueRows(tabBoxes)).toHaveLength(1);
     expect(
       Math.min(...tabBoxes.map(({ height }) => height)),
     ).toBeGreaterThanOrEqual(44);
+    const tabOverflow = await page.getByRole("tablist").evaluate((tablist) => ({
+      clientWidth: tablist.clientWidth,
+      scrollWidth: tablist.scrollWidth,
+    }));
+    expect(tabOverflow.scrollWidth).toBeGreaterThan(tabOverflow.clientWidth);
     const domainHeading = await locatorBox(
       page.getByRole("heading", { level: 2, name: "Venda concluída" }),
     );
@@ -227,7 +226,7 @@ async function expectSameRow(target: Locator | Locator[]) {
 
 async function expectCardsFitContent(page: Page) {
   const gaps = await page
-    .locator(".auto-entry-domain-card")
+    .locator(".auto-entry-domain-card:has(.auto-entry-domain-card__content)")
     .evaluateAll((cards) =>
       cards.map((card) => {
         const content = card.querySelector<HTMLElement>(

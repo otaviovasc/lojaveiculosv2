@@ -15,6 +15,7 @@ export function commissionRepository(
 export function context(permissions: string[]) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["commissions"],
     permissions,
     request: { requestId: "request_1" },
     storeId: "store_1",

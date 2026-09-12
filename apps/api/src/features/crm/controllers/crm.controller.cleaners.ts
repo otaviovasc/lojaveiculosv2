@@ -1,8 +1,11 @@
+import { CrmRequestValidationError } from "./crm.controller.errors.js";
+import { leadOperationalFilters } from "../../../domains/crm/leadOperationalFilters.js";
 import type { z } from "zod";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import type { CreateCrmPipelineInput } from "../../../domains/crm/services/CrmService/createCrmPipeline.js";
 import type { ListCrmLeadsInput } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
+import type { ListCrmLeadBoardInput } from "../../../domains/crm/services/CrmService/listCrmLeadBoard.js";
 import type { UpdateCrmPipelineInput } from "../../../domains/crm/services/CrmService/updateCrmPipeline.js";
 import type { UpdateCrmLeadInput } from "../../../domains/crm/services/CrmService/updateCrmLead.js";
 import type {
@@ -10,19 +13,45 @@ import type {
   createLeadSchema,
   createPipelineSchema,
   listLeadsQuerySchema,
+  listLeadBoardQuerySchema,
   updatePipelineSchema,
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
+import { decodeCrmLeadCursor } from "./crm.leadCursor.js";
 
 export function cleanListLeadsInput(
   input: z.infer<typeof listLeadsQuerySchema>,
 ): ListCrmLeadsInput {
+  const cursor = decodeCrmLeadCursor(input.cursor);
+  if (cursor && cursor.sortBy !== input.sortBy)
+    throw new CrmRequestValidationError(
+      "Cursor order does not match the requested order.",
+    );
   return {
+    ...leadOperationalFilters(input),
+    ...(input.cursor ? { cursor: decodeCrmLeadCursor(input.cursor)! } : {}),
     ...(input.listingId ? { listingId: input.listingId } : {}),
     limit: input.limit,
     offset: input.offset,
+    ...(input.pipelineId ? { pipelineId: input.pipelineId } : {}),
+    ...(input.pipelineStageId
+      ? { pipelineStageId: input.pipelineStageId }
+      : {}),
     ...(input.search ? { search: input.search } : {}),
     ...(input.source ? { source: input.source } : {}),
+    ...(input.status ? { status: input.status } : {}),
+  };
+}
+
+export function cleanListLeadBoardInput(
+  input: z.infer<typeof listLeadBoardQuerySchema>,
+): ListCrmLeadBoardInput {
+  return {
+    ...leadOperationalFilters(input),
+    pipelineId: input.pipelineId,
+    ...(input.search ? { search: input.search } : {}),
+    ...(input.source ? { source: input.source } : {}),
+    stageLimit: input.stageLimit,
     ...(input.status ? { status: input.status } : {}),
   };
 }
@@ -34,11 +63,15 @@ export function cleanCreateLeadInput(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.pipelineStageId !== undefined
+      ? { pipelineStageId: input.pipelineStageId }
+      : {}),
     source: input.source,
   };
 }
@@ -50,6 +83,7 @@ export function cleanUpdateLeadInput(
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
     ...(input.buyerEmail !== undefined ? { buyerEmail: input.buyerEmail } : {}),
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),

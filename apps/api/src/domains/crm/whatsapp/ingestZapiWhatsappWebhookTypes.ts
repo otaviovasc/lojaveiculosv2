@@ -1,4 +1,7 @@
-import type { WhatsappMessage, WhatsappSession } from "./whatsappModels.js";
+import type {
+  CrmMessage,
+  CrmConversationCycle,
+} from "../ports/crmConversationRepository.js";
 
 export type IngestZapiWhatsappWebhookInput = {
   connectionId: string;
@@ -11,9 +14,9 @@ export type IngestZapiWhatsappWebhookResult =
       reason: "connection_not_found" | "not_processable";
       status: "ignored";
     }
-  | { session: WhatsappSession; status: "captured" }
+  | { conversationCycle: CrmConversationCycle; status: "captured" }
   | {
-      message: WhatsappMessage;
-      session: WhatsappSession;
+      message: CrmMessage;
+      conversationCycle: CrmConversationCycle;
       status: "duplicate" | "stored";
     };

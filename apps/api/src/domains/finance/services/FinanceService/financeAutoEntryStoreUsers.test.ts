@@ -49,6 +49,7 @@ describe("automatic finance entry store users", () => {
 function context() {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["finance"],
     permissions: ["finance.auto_entries.manage", "finance.read"],
     request: { requestId: "request_1" },
     storeId: "store_1",

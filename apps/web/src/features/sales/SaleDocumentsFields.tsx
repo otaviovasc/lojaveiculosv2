@@ -1,6 +1,12 @@
-import { Car, FileSpreadsheet, User } from "lucide-react";
-import type { ReactNode } from "react";
-import { formatBrazilianDocument } from "../../lib/masks";
+import { Car, FileSpreadsheet, LoaderCircle, MapPin, User } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  formatBrazilianDocument,
+  formatBrazilianZipCode,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
+} from "../../lib/masks";
+import { lookupBrazilianZipCode } from "../../lib/cepLookup";
 import { SaleField } from "./SaleWorkspaceForm";
 import type { SaleRecord } from "./types";
 import type { RequiredFieldsPolicy } from "./validation";
@@ -18,6 +24,36 @@ export function BuyerDocumentationFields({
   onChange: (key: string, value: string) => void;
   policy: RequiredFieldsPolicy;
 }) {
+  const [cep, setCep] = useState(String(buyer.postalCode || buyer.cep || ""));
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
+  const handleCepSearch = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setIsSearchingCep(true);
+    setCepError(null);
+    try {
+      const addressData = await lookupBrazilianZipCode(cleanCep);
+      if (addressData) {
+        const formattedZip = formatBrazilianZipCode(cleanCep);
+        onChange("postalCode", formattedZip);
+        onChange("cep", formattedZip);
+        if (addressData.street) onChange("address", addressData.street);
+        if (addressData.neighborhood)
+          onChange("district", addressData.neighborhood);
+        if (addressData.city) onChange("city", addressData.city);
+        if (addressData.state) onChange("state", addressData.state);
+      } else {
+        setCepError("CEP não encontrado");
+      }
+    } catch {
+      setCepError("Erro ao consultar CEP");
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
+
   return (
     <div className="bg-panel border border-line rounded-2xl p-5 shadow-sm flex flex-col gap-4">
       <PanelTitle icon={<User className="size-4.5 text-accent" />}>
@@ -26,6 +62,7 @@ export function BuyerDocumentationFields({
 
       <DocumentInput
         error={errors.buyerDocument}
+        formatter={formatBrazilianDocument}
         label={`CPF / CNPJ ${policy.buyerDocument ? "*" : ""}`}
         onChange={(value) =>
           onChange("document", formatBrazilianDocument(value))
@@ -35,13 +72,57 @@ export function BuyerDocumentationFields({
           String(buyer.document || buyer.cpf || ""),
         )}
       />
-      <DocumentInput
-        error={errors.buyerAddress}
-        label={`Endereço Completo (Rua, nº, Bairro) ${policy.buyerAddress ? "*" : ""}`}
-        onChange={(value) => onChange("address", value)}
-        placeholder="Rua, número, complemento e bairro"
-        value={String(buyer.address || "")}
-      />
+
+      <div className="flex flex-col gap-1">
+        <SaleField label="CEP">
+          <div className="relative flex items-center">
+            <input
+              className="sales-input pr-10"
+              maxLength={9}
+              onBlur={(e) => {
+                void handleCepSearch(e.target.value);
+              }}
+              onChange={(e) => {
+                const formatted = formatBrazilianZipCode(e.target.value);
+                setCep(formatted);
+                if (formatted.replace(/\D/g, "").length === 8) {
+                  void handleCepSearch(formatted);
+                }
+              }}
+              placeholder="00000-000"
+              value={cep}
+            />
+            <div className="absolute right-3 text-muted">
+              {isSearchingCep ? (
+                <LoaderCircle className="size-4 animate-spin text-accent" />
+              ) : (
+                <MapPin className="size-4 text-muted/60" />
+              )}
+            </div>
+          </div>
+          {cepError ? (
+            <span className="text-xs font-bold text-danger mt-1 uppercase">
+              {cepError}
+            </span>
+          ) : null}
+        </SaleField>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <DocumentInput
+          error={errors.buyerAddress}
+          label={`Logradouro / Rua e Número ${policy.buyerAddress ? "*" : ""}`}
+          onChange={(value) => onChange("address", value)}
+          placeholder="Ex: Av. Paulista, 1000, Apto 42"
+          value={String(buyer.address || "")}
+        />
+        <DocumentInput
+          label="Bairro"
+          onChange={(value) => onChange("district", value)}
+          placeholder="Ex: Bela Vista"
+          value={String(buyer.district || buyer.bairro || "")}
+        />
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
@@ -58,7 +139,7 @@ export function BuyerDocumentationFields({
           error={errors.buyerState}
           label={`Estado ${policy.buyerCityState ? "*" : ""}`}
           maxLength={2}
-          onChange={(value) => onChange("state", value)}
+          onChange={(value) => onChange("state", value.toUpperCase())}
           placeholder="UF"
           value={String(buyer.state || "")}
         />
@@ -119,6 +200,7 @@ export function VehicleDocumentationFields({
 
       <DocumentInput
         error={errors.vehicleRenavam}
+        formatter={formatVehicleRenavamInput}
         label={`Renavam ${policy.vehicleRenavam ? "*" : ""}`}
         maxLength={11}
         onChange={(value) => onChange("renavam", value)}
@@ -128,6 +210,7 @@ export function VehicleDocumentationFields({
       <DocumentInput
         className="uppercase"
         error={errors.vehicleChassi}
+        formatter={formatVehicleVinInput}
         label={`Chassi * ${policy.vehicleChassi ? "(Obrigatório)" : "(Opcional)"}`}
         maxLength={17}
         onChange={(value) => onChange("chassi", value)}
@@ -192,6 +275,7 @@ export function VehicleDocumentationFields({
 function DocumentInput({
   className = "",
   error,
+  formatter,
   label,
   maxLength,
   onChange,
@@ -199,29 +283,66 @@ function DocumentInput({
   value,
 }: {
   className?: string;
-  error: string | undefined;
+  error?: string | undefined;
+  formatter?: (value: string) => string;
   label: string;
   maxLength?: number;
   onChange: (value: string) => void;
   placeholder: string;
   value: string;
 }) {
+  const [localValue, setLocalValue] = useState(value);
+  const [touched, setTouched] = useState(false);
+  const isFocusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setLocalValue(value);
+    }
+  }, [value]);
+
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    setTouched(true);
+    const finalVal = formatter ? formatter(localValue) : localValue;
+    setLocalValue(finalVal);
+    if (finalVal !== value) {
+      onChange(finalVal);
+    }
+  };
+
+  const showError = touched && Boolean(error);
+
   return (
     <SaleField label={label}>
       <input
         className={[
           "sales-input",
           className,
-          error ? "border-danger/50 focus:border-danger" : "",
+          showError ? "border-danger/50 focus:border-danger" : "",
         ]
           .filter(Boolean)
           .join(" ")}
         maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
+        onBlur={handleBlur}
+        onChange={(event) => {
+          const nextVal = formatter
+            ? formatter(event.target.value)
+            : event.target.value;
+          setLocalValue(nextVal);
+        }}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
         placeholder={placeholder}
-        value={value}
+        value={localValue}
       />
-      <FieldError error={error} />
+      {showError ? <FieldError error={error} /> : null}
     </SaleField>
   );
 }

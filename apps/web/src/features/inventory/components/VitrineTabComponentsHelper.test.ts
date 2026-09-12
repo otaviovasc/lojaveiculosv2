@@ -65,6 +65,41 @@ describe("createVitrineComponents", () => {
     expect(JSON.stringify(components)).not.toContain("ABC1D23");
     expect(JSON.stringify(components)).not.toContain("9BD00000000000000");
   });
+
+  it("creates the cinematic vehicle-vitrine flow without duplicate page chrome", () => {
+    const components = createVitrineComponents({
+      detail: listingDetail({ media: [] }),
+      primaryUnit: unit(),
+      specs: specs(),
+      storeName: "Loja Demo",
+      storeSlug: "demo",
+      whatsappPhone: "+55 11 99999-0000",
+    });
+
+    expect(components.map((component) => component.type)).toEqual([
+      "marquee",
+      "hero",
+      "vehicle_specs",
+      "gallery",
+      "scroll_zoom",
+      "contact_section",
+      "cta",
+    ]);
+    expect(componentProps(components, "hero")).toMatchObject({
+      pageVariant: "vehicle-vitrine",
+      imageUrl: "/images/storefront/vehicle-photo-pending.webp",
+    });
+    expect(componentProps(components, "gallery")).toMatchObject({
+      images: [
+        expect.objectContaining({
+          url: "/images/storefront/vehicle-photo-pending.webp",
+        }),
+      ],
+    });
+    expect(componentProps(components, "contact_section")).toMatchObject({
+      fields: { email: true, message: true, name: true, phone: true },
+    });
+  });
 });
 
 describe("createVitrinePageSlug", () => {

@@ -80,9 +80,7 @@
   },
   "zapiCredentials": {
     "apiBaseUrlEnv": "CRM_ZAPI_API_BASE_URL",
-    "instanceIdEnv": "CRM_ZAPI_TEST_INSTANCE_ID",
-    "instanceTokenEnv": "CRM_ZAPI_TEST_INSTANCE_TOKEN",
-    "clientTokenEnv": "CRM_ZAPI_TEST_CLIENT_TOKEN",
+    "connectionCredentialsFileEnv": "CRM_ZAPI_CONNECTION_FILE",
     "runRealE2EEnv": "RUN_ZAPI_E2E"
   }
 }

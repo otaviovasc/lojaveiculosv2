@@ -1,5 +1,5 @@
 import { BookOpen, Loader2, PackageSearch } from "lucide-react";
-import type { CrmWhatsappCatalogProduct } from "./crmWhatsappTypes";
+import type { CrmWhatsappCatalogProduct } from "./crmConversationTypes";
 
 export function ProductPicker({
   disabled,
@@ -33,7 +33,7 @@ export function ProductPicker({
         <input
           disabled={disabled || isLoading}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Nome, descricao ou codigo"
+          placeholder="Nome, descrição ou código"
           value={query}
         />
       </label>
@@ -62,7 +62,7 @@ export function FullCatalogFields({
   url: string;
 }) {
   return (
-    <section className="crm-whatsapp-catalog-preview">
+    <section className="crm-catalog-preview">
       <span>
         <BookOpen aria-hidden="true" />
       </span>
@@ -118,16 +118,15 @@ function renderCatalogProducts(input: {
 }) {
   if (input.isLoading) {
     return (
-      <div className="crm-whatsapp-catalog-loading">
+      <div className="crm-catalog-loading">
         <Loader2 className="crm-spin" />
-        Carregando catalogo
+        Carregando catálogo...
       </div>
     );
   }
-  if (input.error)
-    return <p className="crm-whatsapp-action-error">{input.error}</p>;
+  if (input.error) return <p className="crm-action-error">{input.error}</p>;
   return (
-    <div className="crm-whatsapp-catalog-products">
+    <div className="crm-catalog-products">
       {input.products.map((product) => (
         <CatalogProductButton
           key={product.id}
@@ -137,13 +136,13 @@ function renderCatalogProducts(input: {
         />
       ))}
       {!input.products.length ? (
-        <p className="crm-whatsapp-action-error">
-          Nenhum produto encontrado no catalogo.
+        <p className="crm-action-error">
+          Nenhum produto encontrado no catálogo.
         </p>
       ) : null}
       {input.hasMore ? (
         <button
-          className="crm-whatsapp-catalog-load-more"
+          className="crm-catalog-load-more cursor-pointer"
           disabled={input.disabled || input.isLoadingMore}
           onClick={() => void input.onLoadMore()}
           type="button"
@@ -168,18 +167,18 @@ function CatalogProductButton({
     <button
       aria-label={`Enviar produto ${product.name}`}
       aria-pressed={selected}
-      className="crm-whatsapp-catalog-product"
+      className="crm-catalog-product cursor-pointer"
       onClick={() => onSelect(product.id)}
       type="button"
     >
-      <span className="crm-whatsapp-catalog-thumb">
+      <span className="crm-catalog-thumb">
         {product.images[0] ? (
           <img alt="" src={product.images[0]} />
         ) : (
           <PackageSearch aria-hidden="true" />
         )}
       </span>
-      <span className="crm-whatsapp-catalog-copy">
+      <span className="crm-catalog-copy">
         <span>
           <strong>{product.name}</strong>
           {product.availability ? (
@@ -206,19 +205,19 @@ function formatProductMeta(product: CrmWhatsappCatalogProduct) {
       product.quantity !== null && product.quantity !== undefined
         ? `${product.quantity} un.`
         : null,
-      product.retailerId ? `Cod. ${product.retailerId}` : null,
+      product.retailerId ? `Cód. ${product.retailerId}` : null,
     ]
       .filter(Boolean)
-      .join(" · ") || "Produto do catalogo"
+      .join(" · ") || "Produto do catálogo"
   );
 }
 
 function formatAvailability(value: string) {
   const labels: Record<string, string> = {
-    available: "Disponivel",
-    in_stock: "Disponivel",
+    available: "Disponível",
+    in_stock: "Disponível",
     out_of_stock: "Sem estoque",
-    preorder: "Pre-venda",
+    preorder: "Pré-venda",
   };
   return labels[value.toLocaleLowerCase("pt-BR")] ?? value;
 }

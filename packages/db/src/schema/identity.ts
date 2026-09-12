@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   boolean,
   jsonb,
@@ -62,6 +63,7 @@ export const stores = pgTable(
   },
   (table) => [
     index("stores_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("stores_id_tenant_unique").on(table.id, table.tenantId),
     uniqueIndex("stores_public_slug_unique").on(table.publicSlug),
   ],
 );
@@ -71,7 +73,7 @@ export const users = pgTable(
   {
     ...lifecycleColumns,
     ...softDeleteColumns,
-    clerkUserId: varchar("clerk_user_id", { length: 191 }).notNull(),
+    clerkUserId: varchar("clerk_user_id", { length: 191 }),
     email: varchar("email", { length: 254 }).notNull(),
     name: text("name"),
     tenantId: uuid("tenant_id").references(() => tenants.id),
@@ -134,8 +136,18 @@ export const storeMemberships = pgTable(
       .references(() => users.id),
   },
   (table) => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "store_memberships_store_tenant_fk",
+    }),
     index("store_memberships_role_template_id_idx").on(table.roleTemplateId),
     index("store_memberships_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("store_memberships_tenant_store_user_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.userId,
+    ),
     uniqueIndex("store_memberships_store_user_unique").on(
       table.storeId,
       table.userId,

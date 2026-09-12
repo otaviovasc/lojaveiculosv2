@@ -1,0 +1,170 @@
+/* Secondary header commands collapse into this explicit menu on narrow panes. */
+.crm-header-more-actions {
+  display: none;
+}
+
+.crm-header-more-menu {
+  display: grid;
+  gap: 0.125rem;
+  min-width: min(15rem, calc(100vw - 1.5rem));
+}
+
+.crm-header-more-menu > :is(button, a) {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.crm-header-more-menu > :is(button, a):is(:hover, :focus-visible) {
+  background: var(--color-app);
+}
+
+.crm-header-more-menu > :is(button, a) > svg {
+  color: var(--color-muted);
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}
+
+@media (max-width: 860px) {
+  .crm-page:has(
+      .crm-shell:is([data-mobile-pane="chat"], [data-mobile-pane="context"])
+    )
+    .crm-scope-nav {
+    display: none;
+  }
+
+  .crm-shell {
+    display: block;
+    height: 100%;
+  }
+
+  .crm-shell[data-mobile-pane="list"] .crm-chat,
+  .crm-shell[data-mobile-pane="list"] .crm-details-panel,
+  .crm-shell[data-mobile-pane="chat"] .crm-list,
+  .crm-shell[data-mobile-pane="chat"] .crm-details-panel,
+  .crm-shell[data-mobile-pane="context"] .crm-list,
+  .crm-shell[data-mobile-pane="context"] .crm-chat {
+    display: none;
+  }
+
+  .crm-list,
+  .crm-chat,
+  .crm-details-panel {
+    height: 100%;
+  }
+
+  .crm-details-panel {
+    border-left: 0;
+    box-shadow: none;
+    position: relative !important;
+    transform: none !important;
+    width: 100% !important;
+  }
+
+  .crm-details-overlay {
+    display: none;
+  }
+
+  .crm-shell .crm-details-header [data-mobile-only="true"] {
+    display: inline-flex;
+  }
+
+  .crm-session-list {
+    flex: 1;
+    max-height: none;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .crm-mobile-back {
+    display: inline-flex;
+  }
+
+  .crm-chat-header {
+    align-items: center;
+    gap: 0.375rem;
+    grid-template-columns: minmax(8.5rem, 1fr) minmax(0, 14rem);
+    padding: 0.375rem 0.5rem;
+  }
+
+  .crm-chat-header-main {
+    width: 100%;
+  }
+
+  .crm-chat-channel-pill,
+  .crm-chat-identity > .crm-tag-row {
+    display: none;
+  }
+
+  .crm-chat-title {
+    max-width: calc(100vw - 4rem);
+  }
+
+  .crm-header-actions {
+    justify-content: flex-start;
+    max-width: none;
+    padding-bottom: 0.125rem;
+    width: auto;
+  }
+
+  .crm-header-actions .crm-header-action-secondary {
+    display: none;
+  }
+
+  .crm-header-actions .crm-header-action-secondary-anchor {
+    display: none;
+  }
+
+  .crm-header-actions .crm-header-action-group-secondary {
+    display: none;
+  }
+
+  .crm-header-actions .crm-header-more-actions {
+    display: inline-flex;
+  }
+
+  .crm-header-actions .crm-action {
+    height: 2.5rem;
+    justify-content: center;
+    padding: 0;
+    width: 2.5rem;
+  }
+
+  .crm-header-actions .crm-action-label {
+    display: none;
+  }
+
+  .crm-header-actions .custom-select {
+    flex: 0 0 8rem;
+    min-width: 8rem;
+  }
+
+  .crm-header-actions .custom-select-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .crm-messages {
+    padding: 0.75rem 0.625rem;
+  }
+
+  .crm-bubble {
+    max-width: 88%;
+  }
+
+  .crm-composer {
+    padding-inline: 0.375rem;
+  }
+}

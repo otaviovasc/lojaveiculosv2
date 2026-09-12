@@ -107,6 +107,36 @@ describe("InventoryListPage", () => {
       "Veiculo sold",
     ]);
   });
+
+  it("renders table loading skeleton when in list view mode", () => {
+    localStorage.setItem("lojaveiculosv2:inventory_view_preference", "list");
+    const api = {
+      listListings: vi.fn(() => new Promise(() => {})),
+    } as unknown as InventoryApi;
+
+    render(<InventoryListPage api={api} />);
+
+    const tableSkeleton = screen.getByRole("status", {
+      name: "Carregando veículos",
+    });
+    expect(tableSkeleton).toBeInTheDocument();
+    expect(tableSkeleton.tagName.toLowerCase()).toBe("table");
+  });
+
+  it("renders grid loading skeleton when in cards view mode", () => {
+    localStorage.setItem("lojaveiculosv2:inventory_view_preference", "cards");
+    const api = {
+      listListings: vi.fn(() => new Promise(() => {})),
+    } as unknown as InventoryApi;
+
+    render(<InventoryListPage api={api} />);
+
+    const gridSkeleton = screen.getByRole("status", {
+      name: "Carregando veículos",
+    });
+    expect(gridSkeleton).toBeInTheDocument();
+    expect(gridSkeleton.tagName.toLowerCase()).toBe("div");
+  });
 });
 
 function createInventoryApiStub() {
@@ -148,6 +178,7 @@ function summary(
   overrides: { priceCents?: number } = {},
 ): InventoryListingSummary {
   return {
+    leadsCount: 0,
     listing: {
       catalog: null,
       commercialTags: [],

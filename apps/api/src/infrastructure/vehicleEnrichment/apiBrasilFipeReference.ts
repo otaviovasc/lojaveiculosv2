@@ -1,41 +1,86 @@
 import type { InventoryPlateFipeReference } from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
 
 export function pickFipeReference(
-  root: Record<string, unknown>,
-  envelope: Record<string, unknown>,
-  data: Record<string, unknown>,
-  extra: Record<string, unknown>,
+  ...payloads: readonly unknown[]
 ): InventoryPlateFipeReference | null {
-  const fipeValue = data.fipe ?? extra.fipe ?? envelope.fipe ?? root.fipe;
-  const fipeRoot = asRecord(fipeValue);
-  const rawItems = Array.isArray(fipeValue)
-    ? fipeValue
-    : Array.isArray(fipeRoot?.dados)
-      ? fipeRoot.dados
-      : fipeRoot
-        ? [fipeRoot]
-        : Array.isArray(data.fipes)
-          ? data.fipes
-          : [];
-  const items = rawItems.flatMap((item) => {
-    const record = asRecord(item);
-    return record ? [record] : [];
-  });
-  const best = items.sort((a, b) => scoreOf(b) - scoreOf(a))[0];
-  if (!best) return null;
+  return pickFipeReferences(...payloads)[0] ?? null;
+}
 
-  const priceLabel = findString([best], ["texto_valor", "valor", "preco"]);
+export function pickFipeReferences(
+  ...payloads: readonly unknown[]
+): InventoryPlateFipeReference[] {
+  const items = payloads
+    .flatMap((payload) => extractFipeItems(payload))
+    .sort(compareFipeItems);
+  const references = items.map(toFipeReference);
+  return references.filter(
+    (reference, index) =>
+      references.findIndex(
+        (candidate) =>
+          fipeReferenceKey(candidate) === fipeReferenceKey(reference),
+      ) === index,
+  );
+}
+
+function toFipeReference(
+  best: Record<string, unknown>,
+): InventoryPlateFipeReference {
   return {
     brandName: findString([best], ["texto_marca", "marca"]),
     code: findString([best], ["codigo_fipe", "codigoFipe"]),
     fuel: findString([best], ["combustivel"]),
     modelName: findString([best], ["texto_modelo", "modelo"]),
     modelYear: findNumber([best], ["ano_modelo", "anoModelo"]),
-    priceCents: parseCurrencyCents(priceLabel),
-    priceLabel,
-    referenceMonth: findString([best], ["mes_referencia", "referencia"]),
+    priceCents: parseCurrencyCents(
+      readFirst(best, ["texto_valor", "valor", "preco"]),
+    ),
+    priceLabel: findString([best], ["texto_valor", "valor_formatado", "preco"]),
+    referenceMonth: findString(
+      [best],
+      ["mes_referencia", "mesReferencia", "referencia"],
+    ),
     score: findNumber([best], ["score"]),
   };
+}
+
+function extractFipeItems(
+  value: unknown,
+  depth = 0,
+): Record<string, unknown>[] {
+  if (depth > 5) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extractFipeItems(item, depth + 1));
+  }
+  const record = asRecord(value);
+  if (!record) return [];
+  if (readFirst(record, ["codigo_fipe", "codigoFipe"]) !== undefined) {
+    return [record];
+  }
+  return ["data", "dados", "fipe", "fipes"].flatMap((key) =>
+    extractFipeItems(readCaseInsensitive(record, key), depth + 1),
+  );
+}
+
+function compareFipeItems(
+  left: Record<string, unknown>,
+  right: Record<string, unknown>,
+) {
+  const principalDifference =
+    Number(isPrincipal(right)) - Number(isPrincipal(left));
+  return principalDifference || scoreOf(right) - scoreOf(left);
+}
+
+function isPrincipal(record: Record<string, unknown>) {
+  return readFirst(record, ["principal"]) === true;
+}
+
+function fipeReferenceKey(reference: InventoryPlateFipeReference) {
+  return [
+    reference.code,
+    reference.modelYear,
+    reference.fuel?.toLowerCase() ?? null,
+    reference.modelName?.toLowerCase() ?? null,
+  ].join("|");
 }
 
 function findString(
@@ -63,8 +108,13 @@ function findNumber(
   return Number.isFinite(number) ? number : null;
 }
 
-function parseCurrencyCents(value: string | null): number | null {
-  if (!value) return null;
+function parseCurrencyCents(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value >= 0
+      ? Math.round(value * 100)
+      : null;
+  }
+  if (typeof value !== "string" || !value.trim()) return null;
   const normalized = value
     .replace(/[^\d,.-]/g, "")
     .replace(/\./g, "")
@@ -75,6 +125,14 @@ function parseCurrencyCents(value: string | null): number | null {
   return Number.isFinite(amount) && amount >= 0
     ? Math.round(amount * 100)
     : null;
+}
+
+function readFirst(record: Record<string, unknown>, keys: readonly string[]) {
+  for (const key of keys) {
+    const value = readCaseInsensitive(record, key);
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
 }
 
 function readCaseInsensitive(record: Record<string, unknown>, key: string) {

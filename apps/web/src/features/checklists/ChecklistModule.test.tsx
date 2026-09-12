@@ -146,7 +146,7 @@ describe("ChecklistModule", () => {
       screen.getByRole("textbox", {
         name: "Buscar veículos nos checklists",
       }),
-      "x",
+      "xy",
     );
     await waitFor(() =>
       expect(api.listChecklistOverview).toHaveBeenCalledTimes(2),

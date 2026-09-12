@@ -1,10 +1,9 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lte, or } from "drizzle-orm";
 import {
   addons,
   payments,
   storeEntitlements,
   storeEntitlementEvents,
-  stores,
   subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type {
@@ -18,6 +17,7 @@ import type {
 import { createChargeableItem } from "../../../domains/billing/readModels/billingChargePreviewModel.js";
 import { isEffectiveEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { listActiveBillingStores } from "./drizzleBillingStoreDirectory.js";
 
 export async function listEntitlementEvents(
   db: DrizzleBillingClient,
@@ -55,11 +55,7 @@ export async function listAllocations(
   subscription: BillingSubscription | null,
 ): Promise<BillingStoreAllocation[]> {
   const [storeRows, itemRows, entitlementRows] = await Promise.all([
-    db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, input.tenantId))
-      .limit(50),
+    listActiveBillingStores(db, input.tenantId),
     subscription ? listSubscriptionItems(db, subscription.id) : [],
     db
       .select()
@@ -146,18 +142,13 @@ export async function listChargeables(
 
   const [itemRows, storeRows, addonRows] = await Promise.all([
     listSubscriptionItems(db, subscription.id),
-    db
-      .select()
-      .from(stores)
-      .where(eq(stores.tenantId, input.tenantId))
-      .limit(100),
+    listActiveBillingStores(db, input.tenantId),
     db.select().from(addons).limit(100),
   ]);
   const storesById = new Map(storeRows.map((store) => [store.id, store]));
   const plansById = new Map(billingPlans.map((plan) => [plan.id, plan]));
   const addonsById = new Map(addonRows.map((addon) => [addon.id, addon]));
-  const isFirstBilling =
-    subscription.status === "trialing" || subscription.status === "expired";
+  const isFirstBilling = subscription.status === "expired";
 
   return itemRows.map((item) => {
     const itemType = item.itemType;
@@ -186,10 +177,20 @@ function listSubscriptionItems(
   db: DrizzleBillingClient,
   subscriptionId: string,
 ) {
+  const now = new Date();
   return db
     .select()
     .from(subscriptionItems)
-    .where(eq(subscriptionItems.subscriptionId, subscriptionId))
+    .where(
+      and(
+        eq(subscriptionItems.subscriptionId, subscriptionId),
+        or(
+          isNull(subscriptionItems.startsAt),
+          lte(subscriptionItems.startsAt, now),
+        ),
+        or(isNull(subscriptionItems.endsAt), gt(subscriptionItems.endsAt, now)),
+      ),
+    )
     .limit(200);
 }
 

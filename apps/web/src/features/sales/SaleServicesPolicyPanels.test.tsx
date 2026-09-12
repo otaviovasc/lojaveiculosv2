@@ -107,6 +107,59 @@ describe("sale service policy panels", () => {
     );
   });
 
+  it("offers R0 as the explicit no-commission financing classification", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <FinancingPanel
+        financing={{ rank: "R1" }}
+        onChange={onChange}
+        paymentSyncState="single"
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "sincronizados automaticamente",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Classificação do financiamento" }),
+    );
+    await user.click(screen.getByRole("option", { name: "R0 — sem comissão" }));
+
+    expect(onChange).toHaveBeenCalledWith("financing", "rank", "R0");
+  });
+
+  it("warns instead of overwriting multiple financing payments", () => {
+    render(
+      <FinancingPanel
+        financing={{ rank: "R1" }}
+        onChange={vi.fn()}
+        paymentSyncState="multiple"
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "mais de um pagamento de financiamento",
+    );
+  });
+
+  it("does not claim a loaded mismatched financing line is synchronized", () => {
+    render(
+      <FinancingPanel
+        financing={{ rank: "R1" }}
+        onChange={vi.fn()}
+        paymentSyncState="single_mismatch"
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "têm dados diferentes",
+    );
+    expect(screen.getByRole("status")).not.toHaveTextContent(
+      "sincronizados automaticamente",
+    );
+  });
+
   it("accepts the applied insurance commission with a decimal comma", () => {
     const onChange = vi.fn();
     const { container } = render(

@@ -1,13 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import { InventoryMediaWorkspace } from "./InventoryMediaWorkspace";
 import { InventoryEditPanel } from "./InventoryEditPanel";
 import { TechnicalSpecsPanel } from "./InventoryDetailWorkspaceParts";
-import type {
-  initialObservacoes,
-  initialOpcionais,
-} from "./InventoryDetailWorkspaceMocks";
 
 type Specs = {
   bodyType: string;
@@ -22,37 +18,36 @@ type Specs = {
   vin: string;
 };
 
-type ToggleOption = (typeof initialOpcionais)[number];
-type ToggleObservation = (typeof initialObservacoes)[number];
-
 export function InventoryDetailGeneralTab({
   api,
   detail,
+  isEditRequested = false,
   initialUnitId,
   notasInternas,
-  observacoes,
   onUpdated,
   onSaveNotasInternas,
   onEditSaved,
-  onToggleObservacao,
-  onToggleOpcional,
-  opcionais,
+  onEditRequestHandled,
   specs,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  isEditRequested?: boolean;
   initialUnitId?: string | null;
   notasInternas: string;
-  observacoes: ToggleObservation[];
   onUpdated: (detail: InventoryListingDetail) => void;
   onSaveNotasInternas: (notes: string) => void;
   onEditSaved?: () => void;
-  onToggleObservacao: (id: string) => void;
-  onToggleOpcional: (id: string) => void;
-  opcionais: ToggleOption[];
+  onEditRequestHandled?: () => void;
   specs: Specs;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditRequested) return;
+    setIsEditing(true);
+    onEditRequestHandled?.();
+  }, [isEditRequested, onEditRequestHandled]);
 
   if (isEditing) {
     return (
@@ -86,10 +81,6 @@ export function InventoryDetailGeneralTab({
           <TechnicalSpecsPanel
             specs={specs}
             onEditSpecs={() => setIsEditing(true)}
-            opcionais={opcionais}
-            onToggleOpcional={onToggleOpcional}
-            observacoes={observacoes}
-            onToggleObservacao={onToggleObservacao}
             notasInternas={notasInternas}
             onSaveNotasInternas={onSaveNotasInternas}
           />

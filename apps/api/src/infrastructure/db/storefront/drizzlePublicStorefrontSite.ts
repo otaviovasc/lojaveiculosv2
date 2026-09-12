@@ -5,7 +5,7 @@ import {
   stores,
 } from "@lojaveiculosv2/db";
 import type {
-  PublicStorefrontContact,
+  PublicStorefrontSettingsContact,
   PublicStorefrontSite,
   PublicStorefrontSiteSnapshot,
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
@@ -21,11 +21,17 @@ export async function findPublicSiteBySlug(
   const [row] = await db
     .select({
       addressCity: storeProfiles.addressCity,
+      addressLine1: storeProfiles.addressLine1,
+      addressLine2: storeProfiles.addressLine2,
+      addressState: storeProfiles.addressState,
+      addressZipCode: storeProfiles.addressZipCode,
+      businessHours: storeProfiles.businessHours,
       contactEmail: storeProfiles.contactEmail,
       contactPhone: storeProfiles.contactPhone,
       customDomain: storePublicSiteSettings.customDomain,
       heroImageUrl: storePublicSiteSettings.heroImageUrl,
       layoutKey: storePublicSiteSettings.layoutKey,
+      logoImageUrl: storeProfiles.logoImageUrl,
       name: stores.tradingName,
       seoDescription: storePublicSiteSettings.seoDescription,
       seoTitle: storePublicSiteSettings.seoTitle,
@@ -82,9 +88,15 @@ function toPublicSiteSnapshot(
   };
 }
 
-function toContact(row: PublicSiteRow): PublicStorefrontContact {
+function toContact(row: PublicSiteRow): PublicStorefrontSettingsContact {
   const whatsappPhone = row.whatsappPhone ?? null;
   return {
+    addressCity: row.addressCity,
+    addressLine1: row.addressLine1,
+    addressLine2: row.addressLine2,
+    addressState: row.addressState,
+    addressZipCode: row.addressZipCode,
+    businessHours: toRecord(row.businessHours),
     city: row.addressCity,
     contactEmail: row.contactEmail,
     contactPhone: row.contactPhone,
@@ -99,7 +111,10 @@ function toSite(row: PublicSiteRow): PublicStorefrontSite {
     layoutKey: row.layoutKey,
     seoDescription: row.seoDescription,
     seoTitle: row.seoTitle,
-    theme: toRecord(row.theme),
+    theme: {
+      ...toRecord(row.theme),
+      ...(row.logoImageUrl ? { logoUrl: row.logoImageUrl } : {}),
+    },
   };
 }
 

@@ -4,6 +4,7 @@ import type {
   SafeAuditMetadata,
 } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
+import { assertEntitlement } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -17,6 +18,7 @@ import type {
 } from "../../ports/financeRepository.js";
 import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
 import type { CommissionWorkspaceRepository } from "../../ports/commissionWorkspaceRepository.js";
+import type { FinanceStoreIdentityReader } from "../../ports/financeStoreIdentityReader.js";
 import type { FinanceServicePorts } from "./types.js";
 export type { FinanceServicePorts } from "./types.js";
 
@@ -91,6 +93,12 @@ export function getObjectStorage(
   return requirePort(ports?.objectStorage, "objectStorage");
 }
 
+export function getFinanceStoreIdentityReader(
+  ports: FinanceServicePorts | undefined,
+): FinanceStoreIdentityReader {
+  return requirePort(ports?.storeIdentityReader, "storeIdentityReader");
+}
+
 export async function findScopedFinanceEntry(
   context: ServiceContext,
   repository: FinanceRepository,
@@ -123,13 +131,29 @@ export async function findScopedFinanceRecurringEntry(
   return recurringEntry;
 }
 
-export function requireFinanceScope(context: ServiceContext): {
+export function requireFinanceScope(
+  context: ServiceContext,
+  entitlement: "finance" | "sales" = "finance",
+): {
   storeId: string;
   tenantId: string;
 } {
   if (!context.storeId || !context.tenantId) {
     throw new Error("Finance service requires tenant and store scope.");
   }
+  assertEntitlement(context, entitlement);
+
+  return { storeId: context.storeId, tenantId: context.tenantId };
+}
+
+export function requireCommissionScope(context: ServiceContext): {
+  storeId: string;
+  tenantId: string;
+} {
+  if (!context.storeId || !context.tenantId) {
+    throw new Error("Commission service requires tenant and store scope.");
+  }
+  assertEntitlement(context, "commissions");
 
   return { storeId: context.storeId, tenantId: context.tenantId };
 }

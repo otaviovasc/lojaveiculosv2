@@ -56,6 +56,13 @@ describe("sales controller cleaners", () => {
     expect(
       saleDraftSchema.safeParse({
         saleSourceSnapshot: {
+          financing: { rank: "R0" },
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      saleDraftSchema.safeParse({
+        saleSourceSnapshot: {
           financing: { rank: "R6" },
         },
       }).success,

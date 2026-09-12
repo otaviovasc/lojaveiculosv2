@@ -12,6 +12,7 @@ import { findListingGallery } from "./drizzlePublicStorefrontGallery.js";
 import {
   PublicStorefrontDataInvariantError,
   toPublicVehicleListing,
+  toPublicVehicleListingSummary,
 } from "./drizzlePublicStorefrontListingMapper.js";
 import type { DrizzlePublicStorefrontClient } from "./drizzlePublicStorefrontQueryTypes.js";
 import { findPublicSiteBySlug } from "./drizzlePublicStorefrontSite.js";
@@ -59,60 +60,10 @@ export function createDrizzlePublicStorefrontRepository(
         : null;
     },
 
-    async findPublicListingDetail(input) {
-      const [listing] = await db
-        .select({
-          listingMetadata: vehicleListings.metadata,
-          condition: vehicleListings.condition,
-          description: vehicleListings.description,
-          doors: vehicleListings.doors,
-          engineAspiration: vehicleListings.engineAspiration,
-          engineDisplacement: vehicleListings.engineDisplacement,
-          featuredUntil: vehicleListings.featuredUntil,
-          fuelType: vehicleListings.fuelType,
-          listingId: vehicleListings.id,
-          manufactureYear: vehicleListings.manufactureYear,
-          mileageKm: vehicleListings.mileageKm,
-          modelYear: vehicleListings.modelYear,
-          priceCents: vehicleListings.askingPriceCents,
-          slug: vehicleListings.publicSlug,
-          title: vehicleListings.title,
-          transmission: vehicleListings.transmission,
-          trimName: vehicleListings.trimName,
-        })
-        .from(vehicleListings)
-        .where(
-          and(
-            eq(vehicleListings.publicSlug, input.listingSlug),
-            eq(vehicleListings.storeId, input.storeId),
-            eq(vehicleListings.tenantId, input.tenantId),
-            eq(vehicleListings.status, "published"),
-            eq(vehicleListings.isVisibleOnPublicSite, true),
-            eq(vehicleListings.isDeleted, false),
-            isNotNull(vehicleListings.publicSlug),
-            isNull(vehicleListings.deletedAt),
-          ),
-        )
-        .limit(1);
-
-      if (!listing) return null;
-
-      const gallery = await findListingGallery(db, {
-        listingId: listing.listingId,
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      });
-
-      return {
-        ...toPublicVehicleListing(
-          listing,
-          gallery.thumbnailUrl,
-          gallery.heroMedia,
-        ),
-        media: gallery.defaultMedia,
-        mediaGroups: gallery.mediaGroups,
-      } satisfies PublicVehicleListingDetail;
-    },
+    findPublicListingDetail: (input) =>
+      findPublicListingDetail(db, input, "slug"),
+    findPublicListingDetailById: (input) =>
+      findPublicListingDetail(db, input, "id"),
 
     async listPublicListings(input) {
       const rows = await db
@@ -152,8 +103,13 @@ export function createDrizzlePublicStorefrontRepository(
             sql`case when ${vehicleListings.featuredUntil} > now() then 1 else 0 end`,
           ),
           desc(vehicleListings.featuredUntil),
+          desc(
+            sql`case when ${vehicleListings.metadata}->>'legacyFeatured' = 'true' then 1 else 0 end`,
+          ),
           desc(vehicleListings.createdAt),
+          desc(vehicleListings.id),
         )
+        .offset(input.offset ?? 0)
         .limit(input.limit);
 
       return Promise.all(
@@ -163,15 +119,80 @@ export function createDrizzlePublicStorefrontRepository(
             storeId: input.storeId,
             tenantId: input.tenantId,
           });
-          return toPublicVehicleListing(
+          return toPublicVehicleListingSummary(
             row,
             gallery.thumbnailUrl,
             gallery.heroMedia,
+            gallery.defaultMedia,
           );
         }),
       );
     },
   };
+}
+
+async function findPublicListingDetail(
+  db: DrizzlePublicStorefrontClient,
+  input: {
+    listingId?: string;
+    listingSlug?: string;
+    storeId: string;
+    tenantId: string;
+  },
+  lookup: "id" | "slug",
+): Promise<PublicVehicleListingDetail | null> {
+  const [listing] = await db
+    .select({
+      listingMetadata: vehicleListings.metadata,
+      condition: vehicleListings.condition,
+      description: vehicleListings.description,
+      doors: vehicleListings.doors,
+      engineAspiration: vehicleListings.engineAspiration,
+      engineDisplacement: vehicleListings.engineDisplacement,
+      featuredUntil: vehicleListings.featuredUntil,
+      fuelType: vehicleListings.fuelType,
+      listingId: vehicleListings.id,
+      manufactureYear: vehicleListings.manufactureYear,
+      mileageKm: vehicleListings.mileageKm,
+      modelYear: vehicleListings.modelYear,
+      priceCents: vehicleListings.askingPriceCents,
+      slug: vehicleListings.publicSlug,
+      title: vehicleListings.title,
+      transmission: vehicleListings.transmission,
+      trimName: vehicleListings.trimName,
+    })
+    .from(vehicleListings)
+    .where(
+      and(
+        lookup === "id"
+          ? eq(vehicleListings.id, input.listingId ?? "")
+          : eq(vehicleListings.publicSlug, input.listingSlug ?? ""),
+        eq(vehicleListings.storeId, input.storeId),
+        eq(vehicleListings.tenantId, input.tenantId),
+        eq(vehicleListings.status, "published"),
+        eq(vehicleListings.isVisibleOnPublicSite, true),
+        eq(vehicleListings.isDeleted, false),
+        isNotNull(vehicleListings.publicSlug),
+        isNull(vehicleListings.deletedAt),
+      ),
+    )
+    .limit(1);
+  if (!listing) return null;
+
+  const gallery = await findListingGallery(db, {
+    listingId: listing.listingId,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
+  return {
+    ...toPublicVehicleListing(
+      listing,
+      gallery.thumbnailUrl,
+      gallery.heroMedia,
+      gallery.defaultMedia,
+    ),
+    mediaGroups: gallery.mediaGroups,
+  } satisfies PublicVehicleListingDetail;
 }
 
 function createPublicStoreLookupCondition(storeLookupKey: string) {

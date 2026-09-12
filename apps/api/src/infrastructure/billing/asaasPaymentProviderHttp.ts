@@ -3,7 +3,7 @@ import { getAsaasProviderStatus } from "./asaasPaymentProviderConfig.js";
 export type AsaasClient = {
   checkoutBaseUrl: string;
   request: (
-    method: "GET" | "POST" | "PUT",
+    method: "DELETE" | "GET" | "POST" | "PUT",
     path: string,
     options?: {
       body?: Record<string, unknown>;

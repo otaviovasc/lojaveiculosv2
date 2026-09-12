@@ -26,6 +26,7 @@ const permission = "inventory.update_unit";
 export type UpdateVehicleUnitInput = {
   colorName?: VehicleColor | null;
   plate?: string | null;
+  renavam?: string | null;
   status?: VehicleUnitStatus;
   stockNumber?: string | null;
   unitId: string;
@@ -100,6 +101,7 @@ async function saveUnitIfCurrent(
       ...unit,
       ...(input.colorName !== undefined ? { colorName: input.colorName } : {}),
       ...(input.plate !== undefined ? { plate: input.plate } : {}),
+      ...(input.renavam !== undefined ? { renavam: input.renavam } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.stockNumber !== undefined
         ? { stockNumber: input.stockNumber }
@@ -124,6 +126,7 @@ function createUnitChanges(
   return [
     changeFor("unit.colorName", unit.colorName, input.colorName),
     changeFor("unit.plate", unit.plate, input.plate),
+    changeFor("unit.renavam", unit.renavam ?? null, input.renavam),
     changeFor("unit.stockNumber", unit.stockNumber, input.stockNumber),
     changeFor("unit.vin", unit.vin, input.vin),
     changeFor("unit.status", unit.status, input.status),

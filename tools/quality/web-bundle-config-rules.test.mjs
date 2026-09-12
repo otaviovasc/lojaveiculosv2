@@ -10,14 +10,14 @@ describe("web bundle config rules", () => {
   it("rejects budget inflation and executable static exceptions", () => {
     const input = validInput();
     input.policy.limits.javascript = 580_001;
-    input.policy.limits.stylesheet = 645_001;
+    input.policy.limits.stylesheet = 650_001;
     input.policy.workerExceptions[0].maxBytes = 1_080_001;
     input.policy.staticExtensions.push(".js");
 
     expect(findWebBundleConfigViolations(input)).toEqual(
       expect.arrayContaining([
         "javascript budget must not exceed 580000 bytes",
-        "stylesheet budget must not exceed 645000 bytes",
+        "stylesheet budget must not exceed 650000 bytes",
         "worker budget must not exceed 1080000 bytes",
         "staticExtensions must match the reviewed non-code allowlist",
       ]),

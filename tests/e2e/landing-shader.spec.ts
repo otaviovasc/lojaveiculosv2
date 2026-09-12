@@ -14,7 +14,7 @@ test.describe("public landing shader", () => {
     await page.goto("/");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Loja Veiculos" }),
+      page.getByRole("heading", { level: 1, name: "Loja Veículos" }),
     ).toBeVisible();
 
     const shader = page.getByTestId("landing-hero-shader");

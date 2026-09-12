@@ -10,6 +10,7 @@ import type {
 } from "../../ports/marketplaceRepository.js";
 import type { MarketplacePublishInput } from "../../ports/marketplaceProviderGateway.js";
 import { createTestMarketplaceRepository } from "../../testSupportMarketplaceRepository.js";
+import { readyListing } from "../../testSupportMarketplaceStockPlan.js";
 import { createMarketplaceSyncJob } from "./createMarketplaceSyncJob.js";
 import { runMarketplaceSyncJob } from "./runMarketplaceSyncJob.js";
 import { upsertMarketplaceAccount } from "./upsertMarketplaceAccount.js";
@@ -33,11 +34,14 @@ describe("runMarketplaceSyncJob", () => {
     ],
   ] as const)("fails before provider IO for %s", async (_, patch, message) => {
     const context = createMarketplaceContext();
-    const { calls, ports } = createPorts(projection(patch));
+    const { calls, ports } = createPorts(readyListing(patch));
     await upsertMarketplaceAccount(
       context,
       {
-        config: { credentials: { accessToken: "token_1" } },
+        config: {
+          connection: { scope: "autoupload" },
+          credentials: { accessToken: "token_1" },
+        },
         provider: "olx",
         status: "active",
       },
@@ -70,7 +74,10 @@ describe("runMarketplaceSyncJob", () => {
     await upsertMarketplaceAccount(
       context,
       {
-        config: { credentials: { accessToken: "token_1" } },
+        config: {
+          connection: { scope: "autoupload" },
+          credentials: { accessToken: "token_1" },
+        },
         provider: "olx",
         status: "active",
       },
@@ -85,8 +92,16 @@ describe("runMarketplaceSyncJob", () => {
       },
       ports,
     );
+    await ports.marketplaceRepository.markJobRunning({
+      dispatchLeaseExpiresAt: new Date("2026-01-01T00:01:00.000Z"),
+      dispatchLeaseOwner: "publisher",
+      jobId: publishedJob.id,
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+    });
     await ports.marketplaceRepository.markJobCompleted({
       completedAt: new Date("2026-01-01T00:00:00.000Z"),
+      dispatchLeaseOwner: "publisher",
       externalId: "provider_listing_1",
       jobId: publishedJob.id,
       listingId: "listing_1",
@@ -161,6 +176,7 @@ function createPorts(listing: MarketplaceListingProjection | null) {
                   providerStatus: "active",
                 },
               },
+              operationToken: null,
               providerStatus: "active",
             };
           },
@@ -171,54 +187,6 @@ function createPorts(listing: MarketplaceListingProjection | null) {
         findListingProjection: async () => listing,
       } satisfies MarketplaceRepository,
     },
-  };
-}
-
-function projection(
-  patch: Partial<MarketplaceListingProjection> = {},
-): MarketplaceListingProjection {
-  return {
-    catalog: {
-      brandCode: "21",
-      brandName: "BMW",
-      fipeCode: "001267-0",
-      fuel: "Gasolina",
-      modelCode: "4828",
-      modelName: "M3 Competition M",
-      modelYear: 2024,
-      referenceMonth: "julho de 2026",
-      source: "fipe",
-      vehicleType: "cars",
-      yearCode: "2024-1",
-      yearName: "2024 Gasolina",
-    },
-    condition: "used",
-    contactPhone: "5511999999999",
-    description: "Anuncio de teste para integracao.",
-    doors: 4,
-    fuelType: "gasoline",
-    isVisibleOnPublicSite: true,
-    licensePlate: "ABC1D23",
-    listingId: "listing_1",
-    locationZipCode: "01310-100",
-    mediaUrls: ["https://cdn.local/vehicle-front.jpg"],
-    mileageKm: 12000,
-    modelYear: 2024,
-    priceCents: 10000000,
-    publicSlug: "veiculo-de-teste",
-    selectedMedia: [
-      {
-        altText: "Frente do veiculo",
-        url: "https://cdn.local/vehicle-front.jpg",
-      },
-    ],
-    selectedUnitId: "unit_memory_1",
-    status: "published",
-    stockLabel: "LV-001",
-    title: "Veiculo de teste",
-    trimName: "Competition M",
-    vehicleType: "cars",
-    ...patch,
   };
 }
 

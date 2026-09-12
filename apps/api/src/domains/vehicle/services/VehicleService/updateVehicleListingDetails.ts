@@ -17,6 +17,7 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { assertCompleteFipeCatalogIdentity } from "../../catalog/vehicleCatalogIdentity.js";
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 import { recordListingOperationsLedger } from "../../operations/recordListingOperationsLedger.js";
 import { createListingChanges } from "../../vehicleListingChanges.js";
@@ -49,6 +50,7 @@ export async function updateVehicleListingDetails(
 ): Promise<VehicleListing> {
   const requiredPermissions = requiredPermissionsForInput(input);
   assertListingEditPermissions(context, requiredPermissions);
+  assertCompleteFipeCatalogIdentity(input.catalog);
   assertGenericListingStatusAllowed(input.status);
   const repository = getListingRepository(ports);
   const listing = await findScopedListing(context, repository, input.listingId);

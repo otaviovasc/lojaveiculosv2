@@ -13,6 +13,8 @@ import type {
   UpdateInventoryChecklistInput,
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
+  UpdateInventoryCostInput,
+  VoidInventoryCostInput,
 } from "../model/types";
 import type {
   InventoryPlateLookupResponse,
@@ -87,6 +89,7 @@ export function createInventoryApi({
       {
         colorName: input.colorName,
         plate: input.plate,
+        renavam: input.renavam,
         stockNumber: input.stockNumber,
         vin: input.vin,
       },
@@ -100,6 +103,32 @@ export function createInventoryApi({
       description: input.description,
       kind: input.kind,
     });
+
+  const updateCost = (
+    unitId: string,
+    costId: string,
+    input: UpdateInventoryCostInput,
+  ) =>
+    sendJson<InventoryListingDetail>(
+      inventoryRoutes.cost(unitId, costId, baseUrl),
+      {
+        amountCents: input.amountCents,
+        costDate: input.costDate,
+        description: input.description,
+        kind: input.kind,
+      },
+      "PATCH",
+    );
+
+  const voidCost = (
+    unitId: string,
+    costId: string,
+    input: VoidInventoryCostInput,
+  ) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.voidCost(unitId, costId, baseUrl),
+      { reason: input.reason },
+    );
 
   const createChecklist = (
     unitId: string,
@@ -198,6 +227,15 @@ export function createInventoryApi({
       .then(readJson<{ events: InventoryAuditEvent[] }>)
       .then((payload) => payload.events);
 
+  const publishListing = (
+    listingId: string,
+    input: { publicSlug?: string | null; reason?: string | null } = {},
+  ) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.publishListing(listingId, baseUrl),
+      input,
+    );
+
   const listChecklists = (unitId: string) =>
     fetch(inventoryRoutes.checklists(unitId, baseUrl), {
       headers: createInventoryHeaders(auth),
@@ -263,6 +301,7 @@ export function createInventoryApi({
       {
         colorName: input.colorName,
         plate: input.plate,
+        renavam: input.renavam,
         status: input.status,
         stockNumber: input.stockNumber,
         vin: input.vin,
@@ -287,6 +326,8 @@ export function createInventoryApi({
 
   return {
     addCost,
+    updateCost,
+    voidCost,
     analyzeResale,
     analyzeListingResale,
     attachUnit,
@@ -337,6 +378,7 @@ export function createInventoryApi({
     listChecklistOverview,
     listListingAuditEvents,
     listListings,
+    publishListing,
     ...mediaApi,
     releaseReservation,
     reserveUnit,

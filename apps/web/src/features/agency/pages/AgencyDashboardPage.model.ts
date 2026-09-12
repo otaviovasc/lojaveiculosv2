@@ -7,7 +7,8 @@ export interface AgencyStore {
   subdominio: string;
   plano: string;
   status_assinatura: string;
-  plan_end_date: string;
+  plan_end_date: string | null;
+  is_permanent_plan: boolean;
   asaas_customer_id: string | null;
   data_criacao: string;
   settings?: {
@@ -28,15 +29,36 @@ export type AgencyStatusFilter =
   "all" | "active" | "expiring" | "expired" | "inactive";
 
 export function getPlanStatus(store: AgencyStore) {
+  const isActive = store.status_assinatura.toUpperCase() === "ATIVA";
+  if (!isActive) {
+    return {
+      label: "Inativo",
+      icon: AlertOctagon,
+      classes: "badge-inactive",
+    };
+  }
+  if (store.is_permanent_plan) {
+    return {
+      label: "Ativo permanente",
+      icon: CheckCircle2,
+      classes: "badge-active",
+    };
+  }
+  if (!store.plan_end_date) {
+    return {
+      label: "Renovação a confirmar",
+      icon: Clock,
+      classes: "badge-expiring",
+    };
+  }
   const endDate = new Date(store.plan_end_date);
   const now = new Date();
   const isExpired = endDate.getTime() <= now.getTime();
-  const isActive = store.status_assinatura.toUpperCase() === "ATIVA";
   const daysLeft = Math.ceil(
     (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
   );
 
-  if (!isActive || (isExpired && daysLeft <= -7)) {
+  if (isExpired && daysLeft <= -7) {
     return {
       label: "Inativo",
       icon: AlertOctagon,
@@ -72,8 +94,10 @@ export function mapAgencyOverviewToStores(data: AgencyTenantOverview) {
         ? "ATIVA"
         : "INATIVA",
       plan_end_date:
-        data.subscription?.currentPeriodEnd ??
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        store.planCode === "free"
+          ? null
+          : (data.subscription?.currentPeriodEnd ?? null),
+      is_permanent_plan: store.planCode === "free",
       asaas_customer_id: null,
       data_criacao: store.createdAt,
       settings: {
@@ -87,5 +111,5 @@ export function mapAgencyOverviewToStores(data: AgencyTenantOverview) {
 }
 
 function isActiveSubscription(status: string | null) {
-  return status === "active" || status === "trialing";
+  return status === "active";
 }

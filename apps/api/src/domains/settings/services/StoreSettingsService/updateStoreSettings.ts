@@ -90,7 +90,7 @@ function assertRequiredAccess(
   }
 
   if (input.identity?.publicSlug || input.publicSite?.isPublished === true) {
-    assertEntitlement(context as StoreScopedServiceContext, "subdomain");
+    assertEntitlement(context as StoreScopedServiceContext, "storefront");
   }
 
   if (input.publicSite?.customDomain) {

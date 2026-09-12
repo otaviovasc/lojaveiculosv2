@@ -1,0 +1,361 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CrmCampaignBuilder } from "./CrmCampaignBuilder";
+import { CampaignModeBar } from "./CrmCampaignModeBar";
+import { CrmCampaignOverview } from "./CrmCampaignOverview";
+import { CampaignStats } from "./CrmCampaignsPageParts";
+import {
+  buildCampaignInput,
+  type CrmCampaignsPageProps,
+} from "./CrmCampaignsPageSupport";
+import { useCrmCampaignAudience } from "./useCrmCampaignAudience";
+import { useCrmCampaignReview } from "./useCrmCampaignReview";
+import {
+  normalizeCampaignImageMimeType,
+  readCampaignImageAsBase64,
+  validateCampaignImageCaption,
+} from "./crmCampaignMedia";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import type { CrmCampaign, CrmCampaignDetail } from "./crmCampaignTypes";
+
+export function CrmCampaignsPage({
+  campaignConnectionKey,
+  canCancel,
+  canCreate,
+  canRead,
+  canUseImage = false,
+  initialCampaigns,
+  onCancelCampaign,
+  onCreateCampaign,
+  onGetCampaign,
+  onListCampaigns,
+  onListLeads,
+  onListRecipientSessions,
+  onPauseCampaign,
+  onResumeCampaign,
+  conversationCycles,
+  stageOptions,
+}: CrmCampaignsPageProps) {
+  const [csvInput, setCsvInput] = useState("");
+  const [campaigns, setCampaigns] = useState<CrmCampaign[]>(
+    initialCampaigns ?? [],
+  );
+  const hasCampaignsDataRef = useRef(initialCampaigns !== undefined);
+  const campaignScopeKey = JSON.stringify([
+    campaignConnectionKey ?? null,
+    canUseImage,
+  ]);
+  const campaignScopeRef = useRef(campaignScopeKey);
+  campaignScopeRef.current = campaignScopeKey;
+  const campaignRequestTokenRef = useRef(0);
+  const [mode, setMode] = useState<"create" | "overview">("overview");
+  const [campaignDetail, setCampaignDetail] =
+    useState<CrmCampaignDetail | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
+    null,
+  );
+  const [campaignName, setCampaignName] = useState("Nova campanha");
+  const [startAt, setStartAt] = useState("");
+  const [intervalMinutes, setIntervalMinutes] = useState(2);
+  const [initialStageId, setInitialStageId] = useState("none");
+  const [replyStageId, setReplyStageId] = useState("none");
+  const [secondaryContent, setSecondaryContent] = useState("");
+  const [secondaryDelayMinutes, setSecondaryDelayMinutes] = useState(60);
+  const [text, setText] = useState("Ola {nome}, tudo bem?");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<string | null>(null);
+  const audience = useCrmCampaignAudience({
+    canRead,
+    initialSessions: conversationCycles,
+    ...(onListLeads ? { onListLeads } : {}),
+    ...(onListRecipientSessions
+      ? { onListSessions: onListRecipientSessions }
+      : {}),
+  });
+  const review = useCrmCampaignReview({
+    campaignName,
+    canCreate,
+    csvInput,
+    filteredSessions: audience.filteredSessions,
+    isSaving,
+    conversationCycles: audience.conversationCycles,
+    startAt,
+    text,
+  });
+  const imageCaptionError = imageFile
+    ? validateCampaignImageCaption(text, review.validRecipients)
+    : null;
+  const imageValidationError = imageError ?? imageCaptionError;
+
+  useEffect(() => {
+    campaignRequestTokenRef.current += 1;
+    setImageFile(null);
+    setImageError(null);
+    setIsSaving(false);
+    return () => {
+      campaignRequestTokenRef.current += 1;
+    };
+  }, [campaignScopeKey]);
+
+  const loadCampaigns = useCallback(async () => {
+    if (!canRead) return;
+    if (!hasCampaignsDataRef.current) setIsLoading(true);
+    try {
+      const nextCampaigns = await onListCampaigns();
+      setCampaignError(null);
+      hasCampaignsDataRef.current = true;
+      setCampaigns(nextCampaigns);
+      setSelectedCampaignId(
+        (current) => current ?? nextCampaigns[0]?.id ?? null,
+      );
+    } catch (caught) {
+      setCampaignError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível carregar as campanhas.",
+        ),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [canRead, onListCampaigns]);
+
+  useEffect(() => {
+    void loadCampaigns();
+  }, [loadCampaigns]);
+
+  const loadCampaignDetail = useCallback(async () => {
+    if (!canRead || !selectedCampaignId) {
+      setCampaignDetail(null);
+      return;
+    }
+    setIsLoadingDetail(true);
+    try {
+      setCampaignDetail(await onGetCampaign(selectedCampaignId));
+      setCampaignError(null);
+    } catch (caught) {
+      setCampaignError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível carregar os detalhes da campanha.",
+        ),
+      );
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  }, [canRead, onGetCampaign, selectedCampaignId]);
+
+  useEffect(() => {
+    void loadCampaignDetail();
+  }, [loadCampaignDetail]);
+
+  const reloadCampaignViews = useCallback(async () => {
+    await loadCampaigns();
+    await loadCampaignDetail();
+  }, [loadCampaignDetail, loadCampaigns]);
+
+  const launch = async () => {
+    if (!review.canLaunch || imageValidationError) return;
+    const firstDate = new Date(startAt);
+    if (Number.isNaN(firstDate.getTime()) || firstDate <= new Date()) {
+      setLocalError("Escolha uma data futura para iniciar a campanha.");
+      return;
+    }
+    const requestToken = ++campaignRequestTokenRef.current;
+    const requestScope = campaignScopeKey;
+    const isCurrentRequest = () =>
+      requestToken === campaignRequestTokenRef.current &&
+      requestScope === campaignScopeRef.current;
+    setIsSaving(true);
+    setLocalError(null);
+    setLastResult(null);
+    let campaign: CrmCampaign | null = null;
+    let mediaBase64: string | undefined;
+    if (imageFile) {
+      try {
+        mediaBase64 = await readCampaignImageAsBase64(imageFile);
+      } catch (caught) {
+        if (!isCurrentRequest()) return;
+        setLocalError(
+          formatApiErrorDisplay(
+            caught,
+            "Não foi possível preparar a imagem da campanha.",
+          ),
+        );
+        setIsSaving(false);
+        return;
+      }
+    }
+    if (!isCurrentRequest()) return;
+    try {
+      campaign = await onCreateCampaign(
+        buildCampaignInput({
+          campaignName,
+          firstDate,
+          initialStageId,
+          intervalMinutes,
+          ...(mediaBase64
+            ? {
+                mediaBase64,
+                mediaFileName: imageFile?.name ?? null,
+                mediaType: imageFile
+                  ? normalizeCampaignImageMimeType(imageFile.type)
+                  : null,
+              }
+            : {}),
+          replyStageId,
+          secondaryContent,
+          secondaryDelayMinutes,
+          text,
+          validRecipients: review.validRecipients,
+        }),
+      );
+    } catch (caught) {
+      if (!isCurrentRequest()) return;
+      const errorMessage = formatApiErrorDisplay(
+        caught,
+        "Não foi possível criar a campanha.",
+      );
+      setCampaignError(errorMessage);
+      setLocalError(errorMessage);
+    }
+    if (!isCurrentRequest()) return;
+    setIsSaving(false);
+    if (campaign) {
+      setCampaignError(null);
+      setLastResult(`${campaign.totalRecipients} destinatario(s) agendado(s).`);
+      setCampaignName("Nova campanha");
+      setCsvInput("");
+      setInitialStageId("none");
+      setIntervalMinutes(2);
+      setReplyStageId("none");
+      review.resetReview();
+      setSecondaryContent("");
+      setSecondaryDelayMinutes(60);
+      setImageFile(null);
+      setImageError(null);
+      setSelectedCampaignId(campaign.id);
+      setStartAt("");
+      setText("Ola {nome}, tudo bem?");
+      await loadCampaigns();
+      if (!isCurrentRequest()) return;
+      setMode("overview");
+    }
+  };
+
+  return (
+    <section className="crm-section">
+      <div className="crm-campaigns-page">
+        <CampaignModeBar
+          campaignCount={campaigns.length}
+          canCreate={canCreate}
+          lastResult={lastResult}
+          mode={mode}
+          onCreate={() => {
+            setLastResult(null);
+            setLocalError(null);
+            setMode("create");
+          }}
+        />
+        {mode === "overview" ? (
+          <>
+            <CampaignStats campaigns={campaigns} />
+            <CrmCampaignOverview
+              campaignDetail={campaignDetail}
+              campaignError={campaignError}
+              campaigns={campaigns}
+              canManage={canCancel}
+              isLoading={isLoading}
+              isLoadingDetail={isLoadingDetail}
+              onCancelCampaign={onCancelCampaign}
+              onPauseCampaign={onPauseCampaign}
+              onReload={reloadCampaignViews}
+              onMutationError={(caught) =>
+                setCampaignError(
+                  formatApiErrorDisplay(
+                    caught,
+                    "Não foi possível atualizar a campanha.",
+                  ),
+                )
+              }
+              onRetryCampaigns={reloadCampaignViews}
+              onResumeCampaign={onResumeCampaign}
+              onSelectCampaign={setSelectedCampaignId}
+              selectedCampaignId={selectedCampaignId}
+              conversationCycles={audience.conversationCycles}
+              stageOptions={stageOptions}
+            />
+          </>
+        ) : (
+          <CrmCampaignBuilder
+            audienceSource={audience.audienceSource}
+            campaignName={campaignName}
+            canUseImage={canUseImage}
+            canCreate={canCreate}
+            canLaunch={review.canLaunch && !imageValidationError}
+            csvInput={csvInput}
+            effectiveSelectedIds={review.effectiveSelectedIds}
+            filteredSessions={audience.filteredSessions}
+            initialStageId={initialStageId}
+            intervalMinutes={intervalMinutes}
+            isAudienceLoading={audience.isLoading}
+            isSaving={isSaving}
+            lastResult={lastResult}
+            leadFilters={audience.leadFilters}
+            imageError={imageValidationError}
+            imageFile={imageFile}
+            localError={localError ?? audience.error}
+            matchedCsvSessionCount={review.matchedCsvSessionCount}
+            matchedLeadCount={audience.matchedLeadCount}
+            onAudienceSourceChange={audience.setAudienceSource}
+            onCancel={() => setMode("overview")}
+            onCampaignNameChange={setCampaignName}
+            onCsvInputChange={setCsvInput}
+            onImageError={setImageError}
+            onImageRemove={() => {
+              campaignRequestTokenRef.current += 1;
+              setImageFile(null);
+              setImageError(null);
+            }}
+            onImageSelect={(file) => {
+              campaignRequestTokenRef.current += 1;
+              setImageFile(file);
+              setImageError(null);
+            }}
+            onInitialStageChange={setInitialStageId}
+            onIntervalMinutesChange={setIntervalMinutes}
+            onLeadFiltersChange={audience.setLeadFilters}
+            onLaunch={() => void launch()}
+            onQueryChange={audience.setQuery}
+            onReplyStageChange={setReplyStageId}
+            onReviewNameChange={review.updateReviewRowName}
+            onReviewRowToggle={review.toggleReviewRow}
+            onSecondaryContentChange={setSecondaryContent}
+            onSecondaryDelayMinutesChange={setSecondaryDelayMinutes}
+            onSelectVisible={review.selectVisibleSessions}
+            onStartAtChange={setStartAt}
+            onTextChange={setText}
+            onToggleSession={review.toggleSession}
+            preview={review.preview}
+            query={audience.query}
+            replyStageId={replyStageId}
+            reviewRows={review.reviewRows}
+            reviewSummary={review.reviewSummary}
+            secondaryContent={secondaryContent}
+            secondaryDelayMinutes={secondaryDelayMinutes}
+            selectedCount={review.validRecipients.length}
+            stageOptions={stageOptions}
+            startAt={startAt}
+            text={text}
+            withoutSessionCount={audience.withoutSessionCount}
+          />
+        )}
+      </div>
+    </section>
+  );
+}

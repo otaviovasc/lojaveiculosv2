@@ -105,11 +105,53 @@ describe("inventory create submit", () => {
     expect(api.attachUnit).toHaveBeenCalledTimes(3);
     expect(vi.mocked(api.attachUnit).mock.calls.map((call) => call[1])).toEqual(
       [
-        { colorName: "white", plate: null, stockNumber: null, vin: null },
-        { colorName: "white", plate: null, stockNumber: null, vin: null },
-        { colorName: "black", plate: null, stockNumber: null, vin: null },
+        {
+          colorName: "white",
+          plate: null,
+          renavam: null,
+          stockNumber: null,
+          vin: null,
+        },
+        {
+          colorName: "white",
+          plate: null,
+          renavam: null,
+          stockNumber: null,
+          vin: null,
+        },
+        {
+          colorName: "black",
+          plate: null,
+          renavam: null,
+          stockNumber: null,
+          vin: null,
+        },
       ],
     );
+  });
+
+  it("persists chassis and Renavam on the created vehicle unit", async () => {
+    const api = createSubmitApi();
+
+    await submitInventoryCreateFlow({
+      api,
+      form: {
+        ...createForm(),
+        mileageKm: "12000",
+        renavam: "12345678901",
+        vin: "9BWZZZ377VT004251",
+      },
+      media: [],
+      onProgress: vi.fn(),
+    });
+
+    expect(api.attachUnit).toHaveBeenCalledWith("listing_1", {
+      colorName: "white",
+      plate: null,
+      renavam: "12345678901",
+      stockNumber: null,
+      vin: "9BWZZZ377VT004251",
+    });
   });
 
   it("returns a saved-record state when media attach fails after create", async () => {
@@ -341,6 +383,7 @@ function unitRecord(
     id: "unit_1",
     listingId: "listing_1",
     plate: "ABC1D23",
+    renavam: null,
     status: "available",
     stockNumber: null,
     storeId: "store_1",

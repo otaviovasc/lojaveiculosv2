@@ -1,4 +1,5 @@
 import type { CrmRealtimePublisher } from "../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmOlxWebhookSecurity } from "../../domains/crm/ports/crmOlxWebhookSecurity.js";
 import type { CrmFinancialProductTransactionRunner } from "../../features/crm/controllers/crmFinancialProducts.js";
 import {
   createDrizzleFinancePorts,
@@ -17,6 +18,7 @@ export function createRuntimeCrmFinancialProductTransactionRunner(
   env: Record<string, string | undefined>,
   realtimePublisher?: CrmRealtimePublisher,
   objectStorage?: ObjectStorage | null,
+  olxWebhookSecurity?: CrmOlxWebhookSecurity,
 ): CrmFinancialProductTransactionRunner {
   return createClientTransactionRunner(
     db as TransactionCapableClient,
@@ -26,6 +28,7 @@ export function createRuntimeCrmFinancialProductTransactionRunner(
         env,
         realtimePublisher,
         objectStorage,
+        olxWebhookSecurity,
       );
       const financePorts = createDrizzleFinancePorts(
         client as DrizzleFinanceClient,

@@ -29,6 +29,30 @@ vi.mock("react-router-dom", async (importOriginal) => {
   };
 });
 
+function renderOnboardingPage() {
+  return render(
+    <ReactRouterDom.MemoryRouter>
+      <AccountSessionProvider
+        session={{
+          defaultStore: null,
+          needsOnboarding: true,
+          platformAdmin: false,
+          stores: [],
+          tenantMemberships: [],
+          user: {
+            clerkUserId: "user_1",
+            email: "owner@example.com",
+            id: "user_1",
+            name: "Owner",
+          },
+        }}
+      >
+        <OwnerOnboardingPage />
+      </AccountSessionProvider>
+    </ReactRouterDom.MemoryRouter>,
+  );
+}
+
 describe("OwnerOnboardingPage", () => {
   afterEach(() => {
     cleanup();
@@ -36,6 +60,42 @@ describe("OwnerOnboardingPage", () => {
     mocks.createOwnerStore.mockReset();
     mocks.createRuntimeAccountApi.mockReset();
     mocks.navigate.mockReset();
+  });
+
+  it("renders clean Portuguese product copy without AI/SaaS fluff", () => {
+    renderOnboardingPage();
+
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Criar sua primeira loja" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Nova loja")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Informe os dados da sua loja para iniciar a operação/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Sua loja pronta para operar")).toBeInTheDocument();
+    expect(screen.getByText("Gestão de estoque")).toBeInTheDocument();
+    expect(screen.getByText("Atendimento e CRM")).toBeInTheDocument();
+
+    // Verify AI-slop terms are absent
+    expect(screen.queryByText("Conta owner")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/permissões e auditoria/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Acesso protegido")).not.toBeInTheDocument();
+  });
+
+  it("shows validation error on empty form submission", async () => {
+    const user = userEvent.setup();
+    renderOnboardingPage();
+
+    await user.click(screen.getByRole("button", { name: "Criar loja" }));
+
+    expect(screen.getByText("Revise os campos marcados.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Informe o nome comercial com pelo menos 2 caracteres."),
+    ).toBeInTheDocument();
+    expect(mocks.createOwnerStore).not.toHaveBeenCalled();
   });
 
   it("refreshes the Clerk session bootstrap after creating the first store", async () => {
@@ -52,27 +112,7 @@ describe("OwnerOnboardingPage", () => {
       createOwnerStore: mocks.createOwnerStore,
     });
 
-    render(
-      <ReactRouterDom.MemoryRouter>
-        <AccountSessionProvider
-          session={{
-            defaultStore: null,
-            needsOnboarding: true,
-            platformAdmin: false,
-            stores: [],
-            tenantMemberships: [],
-            user: {
-              clerkUserId: "user_1",
-              email: "owner@example.com",
-              id: "user_1",
-              name: "Owner",
-            },
-          }}
-        >
-          <OwnerOnboardingPage />
-        </AccountSessionProvider>
-      </ReactRouterDom.MemoryRouter>,
-    );
+    renderOnboardingPage();
 
     await user.type(screen.getByLabelText("Nome comercial"), "Otavio Veiculos");
     await user.click(screen.getByRole("button", { name: "Criar loja" }));

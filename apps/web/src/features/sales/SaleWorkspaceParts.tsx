@@ -115,6 +115,8 @@ function formatDocumentKindLabel(kind: string): string {
       return "Recibo de Venda";
     case "delivery_term":
       return "Termo de Entrega";
+    case "buyer_acknowledgment":
+      return "Termo de recebimento";
     case "power_of_attorney":
       return "Procuração";
     default:

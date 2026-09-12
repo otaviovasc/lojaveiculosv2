@@ -2,6 +2,8 @@ node_modules/
 .claude/
 .pnpm-store/
 .worktrees/
+.codebase-memory/
+otavio-ai-workflow.md
 /reports/
 .terraform/
 dist/
@@ -12,9 +14,12 @@ build/
 *.tsbuildinfo
 *.log
 coverage/
+.vitest-reports/
+.vitest-attachments/
 .DS_Store
 playwright-report/
 test-results/
+.tmp-test/
 *.dump
 *.sql
 !docker/postgres/seed/*.sql

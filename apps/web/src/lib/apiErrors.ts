@@ -5,6 +5,11 @@ export type ApiErrorPayload = {
   requestId?: unknown;
 };
 
+export type ApiErrorRecovery = {
+  kind: "configure" | "refresh" | "retry";
+  label: string;
+};
+
 export class AppApiError extends Error {
   readonly code?: string;
   readonly details?: unknown;
@@ -82,6 +87,38 @@ export function formatApiErrorDisplay(error: unknown, fallback: string) {
     : display.message;
 }
 
+export function getApiErrorRecovery(error: unknown): ApiErrorRecovery | null {
+  if (!(error instanceof AppApiError)) return null;
+  const code = error.code ?? "";
+
+  if (
+    code === "CRM_MESSAGING_PROVIDER_AUTH_FAILED" ||
+    code === "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE" ||
+    code === "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS" ||
+    code === "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE" ||
+    code.includes("CONFIGURATION") ||
+    code.includes("CONNECTION_SETUP")
+  ) {
+    return { kind: "configure", label: "Ver conexão" };
+  }
+  if (
+    code === "CRM_WHATSAPP_VALIDATION_ERROR" ||
+    code === "CRM_WHATSAPP_SESSION_REVISION_CONFLICT" ||
+    code === "CRM_WHATSAPP_NOT_FOUND"
+  ) {
+    return { kind: "refresh", label: "Atualizar conversas" };
+  }
+  if (
+    error.status === 429 ||
+    error.status >= 500 ||
+    code.endsWith("_PROVIDER_UNAVAILABLE") ||
+    code.endsWith("_PROVIDER_RATE_LIMITED")
+  ) {
+    return { kind: "retry", label: "Tentar novamente" };
+  }
+  return null;
+}
+
 async function createApiError(
   response: Response,
   options: { endpoint?: string; feature?: string },
@@ -124,6 +161,16 @@ function readString(value: unknown) {
   return trimmed || undefined;
 }
 
+function readConnectionProvider(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const provider = (value as { provider?: unknown }).provider;
+  return provider === "zapi" || provider === "meta_cloud" || provider === "olx"
+    ? provider
+    : null;
+}
+
 function codeForStatus(status: number) {
   if (status === 400) return "REQUEST_VALIDATION_ERROR";
   if (status === 401) return "HTTP_AUTHENTICATION_REQUIRED";
@@ -137,6 +184,7 @@ function codeForStatus(status: number) {
 
 function friendlyMessage(input: {
   code?: string;
+  details?: unknown;
   message: string;
   status: number;
 }) {
@@ -153,7 +201,69 @@ function friendlyMessage(input: {
       return "Seu usuario nao tem permissao para realizar esta acao.";
     case "REQUEST_VALIDATION_ERROR":
     case "VEHICLE_VALIDATION_ERROR":
-      return "Revise os campos informados e tente novamente.";
+      return (
+        withFieldDetail(input.details) ??
+        "Revise os campos informados e tente novamente."
+      );
+    case "BILLING_CUSTOMER_DATA_INCOMPLETE":
+      return "Faltam alguns dados de cobrança da loja. Complete abaixo para continuar.";
+    case "CRM_WHATSAPP_VALIDATION_ERROR":
+      return "A solicitação do atendimento está incompleta ou desatualizada. Atualize as conversas e tente novamente.";
+    case "CRM_EXTERNAL_BOT_INTEGRATION_INCOMPLETE":
+      return "Para ativar o bot, configure a Webhook URL (HTTPS público) e o segredo com no mínimo 32 caracteres antes de salvar.";
+    case "CRM_EXTERNAL_BOT_INTEGRATION_INVALID":
+      return "Configuração do bot inválida: a Webhook URL deve ser HTTPS público sem usuário e senha, e o segredo/token deve ter no mínimo 32 caracteres.";
+    case "CRM_WHATSAPP_SESSION_REVISION_CONFLICT":
+      return "Esta conversa foi alterada em outro atendimento. Atualize as conversas antes de repetir a ação.";
+    case "CRM_WHATSAPP_NOT_FOUND":
+      return "Esta conversa não está mais disponível. Atualize a lista e selecione outro atendimento.";
+    case "CRM_MESSAGING_PROVIDER_AUTH_FAILED":
+      return "As credenciais da instância UAZAPI não são mais válidas. Atualize as credenciais da conexão para voltar a receber e enviar mensagens.";
+    case "CRM_MESSAGING_PROVIDER_CAPABILITY_UNAVAILABLE":
+      return "A conexão atual não oferece esta ação. Verifique a configuração do canal.";
+    case "CRM_CONNECTION_SETUP_PAIRING_DISCONNECT_REQUIRED":
+      return "Esta instância ainda está conectada a um aparelho. Desconecte o aparelho atual antes de gerar outro QR Code ou código.";
+    case "CRM_CONNECTION_SETUP_PAIRING_PHONE_INVALID":
+      return "Informe um número brasileiro válido com DDD e número completo. Exemplo: +55 (11) 99999-9999. Nenhum código foi solicitado.";
+    case "CRM_WHATSAPP_CONNECTION_PROVIDER_ALREADY_EXISTS": {
+      const provider = readConnectionProvider(input.details);
+      if (provider === "zapi") {
+        return "Já existe uma conexão Z-API para esta loja. Abra a conexão existente e use Reparar conexão; nenhuma nova credencial foi salva.";
+      }
+      if (provider === "meta_cloud") {
+        return "Já existe uma conexão oficial para esta loja. Abra a conexão existente para revisar ou reautorizar o canal.";
+      }
+      if (provider === "olx") {
+        return "Já existe uma conexão OLX Chat para esta loja. Abra a conexão existente para revisar a autorização.";
+      }
+      return "Já existe uma conexão para este canal. Abra a conexão existente para revisar a configuração.";
+    }
+    case "CRM_ZAPI_CONNECTION_REPAIR_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme as novas credenciais da mesma instância para continuar.";
+    case "CRM_ZAPI_CONNECTION_REPLACEMENT_REQUIRED":
+      return "A conexão Z-API foi encontrada. Confirme a troca para a nova instância para continuar.";
+    case "CRM_ZAPI_CREDENTIAL_PARTIAL_STATE":
+      return "As credenciais Z-API ficaram incompletas. Abra a conexão existente, use Reparar conexão e informe novamente o ID e o token da mesma instância.";
+    case "CRM_ZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":
+      return "O ID informado pertence a outra instância Z-API. Para trocar a instância sem perder o histórico, acione o suporte.";
+    case "CRM_ZAPI_CREDENTIAL_VERIFICATION_FAILED":
+      return "A Z-API não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token e tente novamente.";
+    case "CRM_UAZAPI_CREDENTIAL_VERIFICATION_FAILED":
+      return "A UAZAPI não confirmou as novas credenciais. As credenciais anteriores foram mantidas; confira o ID e o token da instância e tente novamente.";
+    case "CRM_UAZAPI_IDENTITY_REPLACEMENT_REQUIRES_SUPPORT":
+      return "O ID informado pertence a outra instância UAZAPI. Use a troca de instância abaixo para apontar a conexão para a nova instância; o histórico do CRM será preservado.";
+    case "CRM_UAZAPI_REPLACEMENT_NOT_FOUND":
+      return "A troca de instância não está mais disponível. Atualize a tela e tente novamente.";
+    case "CRM_UAZAPI_REPLACEMENT_REVISION_CONFLICT":
+      return "A conexão foi alterada em outra sessão. Atualize a tela antes de trocar a instância.";
+    case "CRM_UAZAPI_CONNECTION_REVISION_CONFLICT":
+      return "A conexão foi alterada em outra sessão. Atualize a tela e informe as credenciais novamente.";
+    case "CRM_WHATSAPP_CONNECTION_LIMIT_REACHED":
+      return "Limite de conexões WhatsApp ativas atingido. Arquive uma conexão existente antes de criar outra; nenhuma nova conexão foi criada.";
+    case "CRM_WHATSAPP_PROVIDER_RATE_LIMITED":
+      return "O WhatsApp limitou as solicitações por alguns instantes. Aguarde e tente novamente.";
+    case "CRM_WHATSAPP_GATEWAY_ERROR":
+      return "A conexão com o WhatsApp falhou temporariamente. Verifique o canal e tente novamente.";
     case "INVENTORY_ENRICHMENT_PROVIDER_ERROR":
       return "Nao foi possivel consultar o servico de enriquecimento agora. Tente novamente em instantes.";
     case "RATE_LIMIT":
@@ -161,6 +271,18 @@ function friendlyMessage(input: {
       return "Muitas tentativas em sequencia. Aguarde um instante e tente novamente.";
     case "INTERNAL_SERVER_ERROR":
       return "Erro interno do servidor. Tente novamente em instantes.";
+    case "VEHICLE_UNIT_IDENTIFIER_CONFLICT":
+      return "Já existe um veículo nesta loja com a mesma placa, estoque ou chassi.";
+    case "DOCUMENT_POLICY_ERROR":
+      return "O documento não pôde ser vinculado a esta unidade. Atualize a tela e tente novamente.";
+    case "FISCAL_ARTIFACT_UNAVAILABLE":
+      return "O arquivo fiscal oficial ainda não está disponível. Atualize o status da nota e tente novamente.";
+    case "INVENTORY_STORAGE_SCOPE_ERROR":
+      return "O arquivo não pôde ser vinculado ao veículo. Atualize a tela e tente novamente.";
+    case "CRM_PIPELINE_DUPLICATE_NAME":
+      return "Ja existe uma pipeline com esse nome.";
+    case "CRM_PIPELINE_NO_OPEN_STAGE":
+      return "A pipeline padrao precisa de pelo menos uma etapa aberta.";
     case undefined:
     default:
       if (
@@ -168,7 +290,10 @@ function friendlyMessage(input: {
         code.endsWith("_VALIDATION_ERROR") ||
         code.includes("VALIDATION")
       ) {
-        return "Revise os campos informados e tente novamente.";
+        return (
+          withFieldDetail(input.details) ??
+          "Revise os campos informados e tente novamente."
+        );
       }
       if (
         code.endsWith("_PROVIDER_UNAVAILABLE") ||
@@ -197,4 +322,35 @@ function friendlyMessage(input: {
       }
       return input.message;
   }
+}
+
+const crmFieldLabels: Record<string, string> = {
+  apiToken: "Token da API de ações",
+  buyerEmail: "E-mail",
+  buyerName: "Nome",
+  buyerPhone: "Telefone",
+  listingId: "Anuncio",
+  name: "Nome",
+  pipelineStageId: "Etapa",
+  stages: "Etapas",
+  webhookSecret: "Segredo do webhook",
+  webhookUrl: "Webhook URL",
+};
+
+function withFieldDetail(details: unknown) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) {
+    return null;
+  }
+  const fields = (details as { fields?: unknown }).fields;
+  if (!Array.isArray(fields) || !fields.length) return null;
+  const first = fields[0] as { message?: unknown; path?: unknown };
+  const message = readString(first?.message);
+  if (!message) return null;
+  const path = readString(first?.path);
+  const leaf = path
+    ?.split(".")
+    .filter((segment) => !/^\d+$/.test(segment))
+    .pop();
+  const label = (leaf && crmFieldLabels[leaf]) || leaf || "campo";
+  return `Campo "${label}": ${message}`;
 }

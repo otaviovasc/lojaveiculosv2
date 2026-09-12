@@ -1,140 +1,210 @@
-import type { SharedPdfDocument } from "../../documents/render/reactPdfDocumentPrimitives.js";
+import React from "react";
+import {
+  DocumentPdfPage,
+  DocumentPdfRoot,
+  DocumentPdfText as Text,
+  DocumentPdfView as View,
+  PdfLogoOrName,
+  formatPdfDate,
+  formatPdfDateTime,
+} from "../../documents/render/reactPdfDocumentPrimitives.js";
 import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
+import type { VehicleChecklistItem } from "../ports/vehicleChecklistRepository.js";
 import type {
   VehicleChecklistOverview,
   VehicleChecklistOverviewItem,
-  VehicleChecklistOverviewStatus,
 } from "../readModels/vehicleChecklistOverview.js";
+import { checklistStyles } from "./vehicleChecklistReportStyles.js";
 
+const e = React.createElement;
+const s = checklistStyles;
+
+/** V1-style per-vehicle checklist report (portrait A4). */
 export function buildDetailedDocument(input: {
   branding?: VehicleStoreBranding | undefined;
   overview: VehicleChecklistOverview;
   scopeLabel: string;
   unitReport: boolean;
-}): SharedPdfDocument {
+}) {
   const storeName = input.branding?.name ?? "Loja Veículos";
-  const title = input.unitReport
-    ? "Checklist do veículo"
-    : "Relatório geral de checklists";
-  return {
-    brand: {
-      contactLine: resolveContactLine(input.branding),
-      logoText: initials(storeName),
-      storeDocument: input.branding?.document ?? undefined,
-      storeName,
+  const generatedAt = input.overview.generatedAt;
+  const item = input.overview.items[0];
+
+  return e(
+    DocumentPdfRoot,
+    {
+      author: storeName,
+      creator: "Loja Veículos OS",
+      language: "pt-BR",
+      producer: "Loja Veículos OS",
+      subject: "Checklist do veículo",
+      title: "Checklist do Veículo",
     },
-    clauses: [],
-    fields: [
-      {
-        fields: [
-          {
-            label: "Veículos",
-            value: String(input.overview.summary.unitCount),
-          },
-          {
-            label: "Checklists",
-            value: String(input.overview.summary.checklistCount),
-          },
-          {
-            label: "Conclusão real",
-            value: `${input.overview.summary.progressPercent}%`,
-          },
-          {
-            label: "Itens pendentes",
-            value: String(input.overview.summary.pendingItemCount),
-          },
-          {
-            label: "Itens reprovados",
-            value: String(input.overview.summary.failedItemCount),
-          },
-          {
-            label: "Sem checklist",
-            value: String(input.overview.summary.missingChecklistUnitCount),
-          },
-        ],
-        title: "Resumo operacional",
-      },
-      ...input.overview.items.flatMap((item) =>
-        itemSections(item, input.unitReport),
+    e(
+      DocumentPdfPage,
+      { size: "A4", style: s.page },
+      e(
+        View,
+        { style: s.header },
+        e(
+          View,
+          { style: s.logoBox },
+          e(PdfLogoOrName, {
+            logoUrl: input.branding?.logoUrl ?? undefined,
+            storeName,
+          }),
+        ),
+        e(Text, { style: s.title }, "Checklist do Veículo"),
+        e(
+          View,
+          { style: { flexDirection: "row", gap: 10 } },
+          e(Text, { style: s.subtitle }, storeName),
+          e(Text, { style: s.subtitle }, "•"),
+          e(Text, { style: s.subtitle }, formatPdfDate(generatedAt)),
+        ),
       ),
-    ],
-    intro: `Escopo: ${input.scopeLabel}. Gerado em ${formatDateTime(
-      input.overview.generatedAt,
-    )}. Itens dispensados contam como resolvidos e permanecem identificados.`,
-    signatures: [],
-    subtitle: input.unitReport
-      ? vehicleIdentification(input.overview.items[0])
-      : `${input.overview.summary.unitCount} veículos no recorte selecionado`,
-    title,
-  };
-}
-
-function itemSections(item: VehicleChecklistOverviewItem, detailed: boolean) {
-  const overview = {
-    fields: [
-      { label: "Identificação", value: vehicleIdentification(item) },
-      { label: "Estoque", value: unitStatusLabel(item.unit.status) },
-      { label: "Situação", value: overviewStatusLabel(item.status) },
-      {
-        label: "Progresso",
-        value: `${item.metrics.resolvedItemCount}/${item.metrics.itemCount} (${item.metrics.progressPercent}%)`,
-      },
-      { label: "Pendentes", value: String(item.metrics.pendingItemCount) },
-      { label: "Reprovados", value: String(item.metrics.failedItemCount) },
-      { label: "Atualizado em", value: formatDateTime(item.updatedAt) },
-    ],
-    title: item.listing.title,
-  };
-  if (!detailed) return [overview];
-  return [
-    overview,
-    ...item.checklists.map((checklist) => ({
-      fields: checklist.items.map((checklistItem) => ({
-        label: checklistItem.label,
-        value: [
-          itemStatusLabel(checklistItem.status),
-          checklistItem.notes?.trim() || null,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-      })),
-      title: checklist.name,
-    })),
-  ];
-}
-
-function vehicleIdentification(item: VehicleChecklistOverviewItem | undefined) {
-  if (!item) return "Nenhum veículo encontrado";
-  const year = [item.listing.manufactureYear, item.listing.modelYear]
-    .filter(Boolean)
-    .join("/");
-  return [
-    item.listing.title,
-    year || null,
-    item.unit.plate ? `Placa ${item.unit.plate}` : null,
-    item.unit.stockNumber ? `Estoque ${item.unit.stockNumber}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
-export function resolveContactLine(branding: VehicleStoreBranding | undefined) {
-  return (
-    (branding?.contactLine ??
-      [branding?.phone, branding?.email, branding?.address]
-        .filter(Boolean)
-        .join(" · ")) ||
-    undefined
+      item ? renderVehicleSection(item) : null,
+      item ? renderInspectionSection(item) : null,
+      e(
+        View,
+        { style: s.section, wrap: false },
+        e(Text, { style: s.sectionTitle }, "Observações Adicionais"),
+        e(
+          View,
+          { style: s.notesBox },
+          e(
+            Text,
+            null,
+            item
+              ? collectNotes(item)
+              : "Nenhuma observação registrada para este veículo.",
+          ),
+        ),
+      ),
+      e(
+        Text,
+        { style: s.footer },
+        `Documento gerado pelo sistema em ${formatPdfDateTime(generatedAt)}`,
+      ),
+    ),
   );
 }
 
-export function initials(value: string) {
-  return value
-    .split(/\s+/)
+function renderVehicleSection(item: VehicleChecklistOverviewItem) {
+  const year = [item.listing.manufactureYear, item.listing.modelYear]
     .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toLocaleUpperCase("pt-BR"))
-    .join("");
+    .join("/");
+  const rows: [string, string][] = [
+    ["Veículo", item.listing.title],
+    ["Ano Fabricação / Modelo", year || "-"],
+    [
+      "Cor / Placa",
+      `${item.unit.colorName || "-"}  •  ${item.unit.plate || "-"}`,
+    ],
+    ["Chassi", item.unit.vin || "-"],
+  ];
+  return e(
+    View,
+    { style: s.section },
+    e(Text, { style: s.sectionTitle }, "Dados do veículo"),
+    e(
+      View,
+      { style: s.infoGrid },
+      ...rows.map(([label, value], index) =>
+        e(
+          View,
+          {
+            key: label,
+            style: [s.row, ...(index === rows.length - 1 ? [s.lastRow] : [])],
+          },
+          e(Text, { style: s.label }, label),
+          e(Text, { style: s.value }, value),
+        ),
+      ),
+    ),
+  );
+}
+
+function renderInspectionSection(item: VehicleChecklistOverviewItem) {
+  const percent = item.metrics.progressPercent;
+  const items = item.checklists.flatMap((checklist) => checklist.items);
+  return e(
+    View,
+    { style: s.section },
+    e(
+      View,
+      {
+        style: {
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        },
+      },
+      e(
+        Text,
+        { style: [s.sectionTitle, { marginBottom: 0 }] },
+        checklistTitle(item),
+      ),
+      e(Text, { style: s.completionText }, `${percent}% Concluído`),
+    ),
+    e(
+      View,
+      { style: s.progressBarContainer },
+      e(View, { style: [s.progressBarFill, { width: `${percent}%` }] }),
+    ),
+    e(
+      View,
+      { style: [s.infoGrid, { backgroundColor: "#ffffff", marginTop: 12 }] },
+      ...items.map((checklistItem, index) =>
+        e(
+          View,
+          {
+            key: `${checklistItem.id}-${index}`,
+            style: [
+              s.checklistItem,
+              ...(index === items.length - 1 ? [s.lastRow] : []),
+            ],
+          },
+          e(Text, { style: s.checklistLabel }, checklistItem.label),
+          e(
+            Text,
+            { style: [s.statusBadge, badgeStyle(checklistItem)] },
+            badgeLabel(checklistItem),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+function checklistTitle(item: VehicleChecklistOverviewItem) {
+  return item.checklists[0]?.name || "Inspeção e Documentação";
+}
+
+function badgeLabel(item: VehicleChecklistItem) {
+  return {
+    failed: "Reprovado",
+    passed: "OK",
+    pending: "Pendente",
+    waived: "Dispensado",
+  }[item.status];
+}
+
+function badgeStyle(item: VehicleChecklistItem) {
+  if (item.status === "passed") return s.statusYes;
+  if (item.status === "waived") return s.statusNeutral;
+  return s.statusNo;
+}
+
+function collectNotes(item: VehicleChecklistOverviewItem) {
+  const notes = item.checklists
+    .flatMap((checklist) => checklist.items)
+    .map((checklistItem) => checklistItem.notes?.trim())
+    .filter((note): note is string => Boolean(note));
+  return notes.length
+    ? notes.join("\n")
+    : "Nenhuma observação registrada para este veículo.";
 }
 
 export function formatDateTime(value: Date) {
@@ -143,26 +213,6 @@ export function formatDateTime(value: Date) {
     timeStyle: "short",
     timeZone: "America/Sao_Paulo",
   }).format(value);
-}
-
-function overviewStatusLabel(status: VehicleChecklistOverviewStatus) {
-  return {
-    failed: "Com reprovação",
-    in_progress: "Em andamento",
-    missing: "Sem checklist",
-    passed: "Concluído",
-    pending: "Pendente",
-    waived: "Dispensado",
-  }[status];
-}
-
-function itemStatusLabel(status: "failed" | "passed" | "pending" | "waived") {
-  return {
-    failed: "Reprovado",
-    passed: "Aprovado",
-    pending: "Pendente",
-    waived: "Dispensado",
-  }[status];
 }
 
 export function unitStatusLabel(

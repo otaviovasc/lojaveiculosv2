@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { FiscalArtifactUnavailableError } from "../../../domains/fiscal/ports/fiscalProviderGateway.js";
 import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
@@ -13,7 +14,9 @@ import {
   FiscalScopeError,
 } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
 import {
+  FiscalDocumentCancellationNotAllowedError,
   FiscalDocumentNotFoundError,
+  FiscalDocumentRepeatNotAllowedError,
   FiscalRecipientNotFoundError,
   FiscalTemplateNotFoundError,
   FiscalValidationError,
@@ -122,7 +125,34 @@ function handleFiscalError(context: Context, error: unknown) {
       status: 409,
     });
   }
-  if (error instanceof HttpContextAuthenticationError) {
+  if (error instanceof FiscalArtifactUnavailableError) {
+    return jsonApiError(context, {
+      code: "FISCAL_ARTIFACT_UNAVAILABLE",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof FiscalDocumentCancellationNotAllowedError) {
+    return jsonApiError(context, {
+      code: "FISCAL_CANCELLATION_NOT_ALLOWED",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (error instanceof FiscalDocumentRepeatNotAllowedError) {
+    return jsonApiError(context, {
+      code: "FISCAL_REPEAT_NOT_ALLOWED",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
+  if (
+    error instanceof HttpContextAuthenticationError ||
+    (error instanceof Error && error.name === "SpedyWebhookTokenError")
+  ) {
     return jsonApiError(context, {
       code: "HTTP_AUTHENTICATION_REQUIRED",
       error,
@@ -141,11 +171,41 @@ function handleFiscalError(context: Context, error: unknown) {
       status: 403,
     });
   }
+  if (
+    error instanceof Error &&
+    (error.name === "FiscalDefaultsValidationError" ||
+      error.name === "SpedyWebhookValidationError")
+  ) {
+    const missingFields =
+      "missingFields" in error && Array.isArray(error.missingFields)
+        ? error.missingFields
+        : undefined;
+    return jsonApiError(context, {
+      code: "FISCAL_VALIDATION_FAILED",
+      ...(missingFields ? { details: { missingFields } } : {}),
+      error,
+      message: error.message,
+      status: 400,
+    });
+  }
+  if (
+    error instanceof Error &&
+    (error.name === "FiscalCompanyApiKeyUnavailableError" ||
+      error.name === "FiscalConnectionNotConfiguredError" ||
+      error.name === "FiscalProviderNotReadyError")
+  ) {
+    return jsonApiError(context, {
+      code: "FISCAL_CONNECTION_NOT_READY",
+      error,
+      message: error.message,
+      status: 409,
+    });
+  }
   if (isFiscalProviderRuntimeError(error)) {
     return jsonApiError(context, {
       code: "FISCAL_PROVIDER_UNAVAILABLE",
       error,
-      message: error.message,
+      message: "Fiscal provider is temporarily unavailable.",
       status: 503,
     });
   }
@@ -161,11 +221,12 @@ function isFiscalProviderRuntimeError(error: unknown): error is Error {
   return (
     error instanceof Error &&
     (error.name === "SpedyGatewayConfigurationError" ||
-      error.name === "SpedyGatewayHttpError")
+      error.name === "SpedyGatewayHttpError" ||
+      error.name === "SpedyInvalidResponseError")
   );
 }
 
-class FiscalRequestValidationError extends Error {
+export class FiscalRequestValidationError extends Error {
   constructor(
     message: string,
     readonly details?: Record<string, unknown>,

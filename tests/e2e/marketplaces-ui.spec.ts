@@ -17,6 +17,10 @@ test("reviews and queues each marketplace through its own contract", async ({
 
   await expect(page.getByText("Catálogo e anúncio por item")).toBeVisible();
   await expect(page.getByText("Autoupload de classificados")).toBeVisible();
+  await page
+    .locator('.marketplace-card[data-provider="olx"]')
+    .getByText("Requisitos do canal")
+    .click();
   await expect(page.getByText("Telefone e CEP da loja")).toBeVisible();
 
   await page
@@ -24,7 +28,7 @@ test("reviews and queues each marketplace through its own contract", async ({
     .click();
   await expect(page.getByText("Prévia do Mercado Livre pronta.")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Prévia do estoque" }),
+    page.getByRole("heading", { name: "Prévia e envios" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Enviar ao Mercado Livre" }).click();

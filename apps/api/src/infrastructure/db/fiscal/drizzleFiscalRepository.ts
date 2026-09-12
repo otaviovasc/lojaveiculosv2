@@ -6,6 +6,7 @@ import {
   createDocumentSnapshot,
   getDocument,
   getOverview,
+  upsertProviderDocument,
   updateDocumentStatus,
 } from "./drizzleFiscalDocumentOperations.js";
 import {
@@ -36,6 +37,7 @@ export function createDrizzleFiscalRepository(
     getTemplate: (input) => getTemplate(db, input),
     listRecipients: (input) => listRecipients(db, input),
     listTemplates: (input) => listTemplates(db, input),
+    upsertProviderDocument: (input) => upsertProviderDocument(db, input),
     updateDocumentStatus: (input) => updateDocumentStatus(db, input),
     updateRecipient: (input) => updateRecipient(db, input),
     updateTemplate: (input) => updateTemplate(db, input),

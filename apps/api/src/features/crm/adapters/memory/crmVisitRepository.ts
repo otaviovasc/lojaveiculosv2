@@ -19,12 +19,14 @@ export function createMemoryCrmVisitRepository(
         createdAt: now,
         id: crypto.randomUUID(),
         leadId: input.leadId,
+        listingId: input.listingId ?? null,
         notes: input.notes ?? null,
         scheduledAt: input.scheduledAt,
         status: input.status ?? "scheduled",
         storeId: input.storeId,
         tenantId: input.tenantId,
         updatedAt: now,
+        vehicleTitle: input.vehicleTitle ?? null,
       };
       visits.push(visit);
       return visit;
@@ -74,6 +76,8 @@ function applyVisitUpdate(visit: CrmLeadVisit, input: UpdateLeadVisitInput) {
     visit.assignedUserId = input.assignedUserId;
   }
   if (input.notes !== undefined) visit.notes = input.notes;
+  if (input.listingId !== undefined) visit.listingId = input.listingId;
   if (input.scheduledAt !== undefined) visit.scheduledAt = input.scheduledAt;
   if (input.status !== undefined) visit.status = input.status;
+  if (input.vehicleTitle !== undefined) visit.vehicleTitle = input.vehicleTitle;
 }

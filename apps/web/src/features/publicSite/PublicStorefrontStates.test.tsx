@@ -2,10 +2,11 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
 import { AppApiError } from "../../lib/apiErrors";
 import type { PublicStorefrontApi } from "./apiClient";
+import { publicStorefrontPreview } from "./fixtures";
 import { PublicCustomPageRoute } from "./PublicCustomPageRoute";
 import { PublicStorefrontPage } from "./PublicStorefrontPage";
 import {
@@ -14,7 +15,36 @@ import {
 } from "./PublicStorefrontPageSupport";
 import { derivePublicStorefrontState } from "./state";
 
-afterEach(cleanup);
+type ClerkWindow = Window & {
+  Clerk?: { session: null; status: "ready" };
+};
+
+beforeEach(() => {
+  (window as ClerkWindow).Clerk = { session: null, status: "ready" };
+});
+
+afterEach(() => {
+  cleanup();
+  delete (window as ClerkWindow).Clerk;
+});
+
+vi.mock("./PublicStorefront", () => ({
+  PublicStorefront: ({
+    data,
+  }: {
+    data: {
+      listings: readonly unknown[];
+      settings: { site: { layoutKey: string } };
+    };
+  }) => (
+    <div
+      data-layout-key={data.settings.site.layoutKey}
+      data-testid="public-storefront"
+    >
+      {data.listings.length}
+    </div>
+  ),
+}));
 
 describe("derivePublicStorefrontState", () => {
   it("maps API 404 failures to a dedicated not-found state", () => {
@@ -43,6 +73,35 @@ describe("derivePublicStorefrontState", () => {
 });
 
 describe("PublicStorefrontPage states", () => {
+  it("renders the published landing page when its inventory is empty", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: [],
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId("public-storefront")).toHaveTextContent(
+      "0",
+    );
+  });
+
   it("shows a friendly not-found page when the store does not exist", async () => {
     const api = {
       getCustomPage: vi.fn(),
@@ -51,6 +110,7 @@ describe("PublicStorefrontPage states", () => {
         Promise.reject(new AppApiError({ message: "missing", status: 404 })),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(
@@ -77,6 +137,83 @@ describe("PublicStorefrontPage states", () => {
       screen.getByRole("link", { name: /Voltar para o início/ }),
     ).toHaveAttribute("href", "/");
   });
+
+  it("keeps the storefront rendered when switching templates in editor preview mode", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: publicStorefrontPreview.listings,
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo?editor=1&template=quadra"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const storefront = await screen.findByTestId("public-storefront");
+    expect(storefront).toBeInTheDocument();
+    expect(storefront).toHaveAttribute("data-layout-key", "quadra");
+    expect(
+      screen.queryByText("Vitrine temporariamente indisponível"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("updates template via postMessage update without falling into error state", async () => {
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: async () => publicStorefrontPreview.settings,
+      listListings: async () => ({
+        listings: publicStorefrontPreview.listings,
+        store: publicStorefrontPreview.store,
+      }),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    render(
+      <MemoryRouter initialEntries={["/demo?editor=1&template=aurora"]}>
+        <Routes>
+          <Route
+            element={<PublicStorefrontPage api={api} />}
+            path="/:storeSlug"
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const storefront = await screen.findByTestId("public-storefront");
+    expect(storefront).toHaveAttribute("data-layout-key", "aurora");
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { payload: { templateId: "quadra" }, type: "editor:update" },
+        origin: window.location.origin,
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("public-storefront")).toHaveAttribute(
+        "data-layout-key",
+        "quadra",
+      );
+    });
+    expect(
+      screen.queryByText("Vitrine temporariamente indisponível"),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("PublicCustomPageRoute states", () => {
@@ -88,6 +225,7 @@ describe("PublicCustomPageRoute states", () => {
       getSettings: vi.fn(),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(
@@ -120,6 +258,7 @@ describe("PublicCustomPageRoute states", () => {
       getSettings: vi.fn(),
       listListings: vi.fn(),
       submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
     } satisfies PublicStorefrontApi;
 
     render(

@@ -94,7 +94,7 @@ export function DocumentosChecklistCard({
   return (
     <section
       aria-busy={isSaving}
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+      className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
     >
       <div className="flex items-center justify-between border-b border-line pb-3">
         <div className="flex items-center gap-1.5">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createSettingsApi } from "../features/settings/apiClient";
 import { createSettingsApiOptions } from "../features/settings/runtimeApi";
 import type { StoreSettingsSnapshot } from "../features/settings/types";
+import type { AppTheme } from "./theme";
 import {
   applyTenantAdminFavicon,
   createTenantAdminBrand,
@@ -19,8 +20,10 @@ export type TenantAdminBrandState =
 
 export function useTenantAdminBrand({
   fallbackStoreLabel,
+  theme = "light",
 }: {
   fallbackStoreLabel: string;
+  theme?: AppTheme;
 }): TenantAdminBrandState & { style: TenantAdminBrandStyle | undefined } {
   const [state, setState] = useState<TenantAdminBrandState>({
     kind: "loading",
@@ -81,9 +84,26 @@ export function useTenantAdminBrand({
   }, [brand]);
 
   const style = useMemo(
-    () => (brand ? createTenantAdminBrandStyle(brand) : undefined),
-    [brand],
+    () =>
+      brand
+        ? createTenantAdminBrandStyle(brand, { dark: theme === "dark" })
+        : undefined,
+    [brand, theme],
   );
+
+  useEffect(() => {
+    if (typeof document === "undefined" || !style) return;
+    const root = document.documentElement;
+    const entries = Object.entries(style);
+    for (const [property, value] of entries) {
+      root.style.setProperty(property, value);
+    }
+    return () => {
+      for (const [property] of entries) {
+        root.style.removeProperty(property);
+      }
+    };
+  }, [style]);
 
   return {
     ...state,

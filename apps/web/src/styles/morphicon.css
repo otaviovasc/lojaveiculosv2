@@ -1,0 +1,70 @@
+/* Morphicon SVG Animation Styles */
+.morphicon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  overflow: visible;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.15s ease;
+}
+
+/* Play ↔ Pause Morph */
+.morphicon-play-pause path {
+  transition:
+    d 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.25s ease;
+}
+
+.morphicon-play-pause.is-active .morph-path-left {
+  transform: translateX(0);
+}
+
+.morphicon-play-pause.is-active .morph-path-right {
+  transform: translateX(0);
+}
+
+/* Check ↔ Cross Morph */
+.morphicon-check-cross line {
+  transition:
+    x1 0.25s ease,
+    y1 0.25s ease,
+    x2 0.25s ease,
+    y2 0.25s ease,
+    stroke 0.2s ease;
+}
+
+/* Search ↔ Close Morph */
+.morphicon-search-close circle,
+.morphicon-search-close line {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Mail Read ↔ Unread Morph */
+.morphicon-mail path {
+  transition: d 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Volume ↔ Mute Morph */
+.morphicon-volume path,
+.morphicon-volume line {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* Check animation */
+.morphicon-check polyline {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: morphicon-check-draw 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes morphicon-check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

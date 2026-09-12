@@ -1,5 +1,6 @@
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../../account/runtimeAuth";
@@ -9,7 +10,7 @@ export async function createRuntimeAgencyBillingApi(): Promise<AgencyApi> {
   const token = await readClerkToken();
   return createAgencyApi({
     auth: createRuntimeActorAuth(token),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readRuntimeApiBaseUrl(),
   });
 }

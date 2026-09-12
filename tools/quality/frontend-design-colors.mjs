@@ -66,6 +66,15 @@ export const approvedBaseColors = [
   [245, 158, 11], // amber-500 #f59e0b
   [118, 91, 0], // accessible amber text on light surfaces #765b00
   [234, 209, 110], // accessible amber text on dark surfaces #ead16e
+  [6, 95, 70], // emerald-800 #065f46 (CRM active emerald hover)
+  [185, 28, 28], // red-700 #b91c1c (CRM active red)
+  [157, 23, 77], // pink-800 #9d174d (CRM active instagram)
+  [88, 28, 135], // purple-900 #581c87 (CRM active olx)
+  [248, 113, 113], // red-400 #f87171 (CRM active red dark)
+  [244, 114, 182], // pink-400 #f472b6 (CRM active instagram dark)
+  [192, 132, 252], // purple-400 #c084fc (CRM active olx dark)
+  [239, 68, 68], // red-500 #ef4444 (tag urgent)
+  [6, 182, 212], // cyan-500 #06b6d4 (tag info)
 ];
 
 function hexToRgb(hex) {

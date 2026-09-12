@@ -13,10 +13,15 @@ describe("nfeVehiclePayload", () => {
         brand: "Marca",
         chassis: "9bwtest1234567890",
         condition: "new",
+        cylinderCapacity: "1998",
+        engineNumber: "ENG-123",
         fuelType: "02",
+        grossWeight: "1850.5",
         id: "vehicle_1",
         model: "Modelo",
         modelYear: 2026,
+        netWeight: 1520,
+        power: "150",
       },
     });
 
@@ -25,7 +30,16 @@ describe("nfeVehiclePayload", () => {
         cfop: 5102,
         code: "vehicle_1",
         ncm: "87032310",
-        specificProduct: { vehicle: { chassis: "9BWTEST1234567890" } },
+        specificProduct: {
+          vehicle: {
+            chassis: "9BWTEST1234567890",
+            cylinderCapacity: "1998",
+            engineNumber: "ENG-123",
+            grossWeight: 1850.5,
+            netWeight: 1520,
+            power: "150",
+          },
+        },
       },
       receiver: { federalTaxNumber: "12345678909" },
     });

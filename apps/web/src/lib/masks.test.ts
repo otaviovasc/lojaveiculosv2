@@ -9,6 +9,10 @@ import {
   formatBrazilianWhatsappPhone,
   formatBrazilianZipCode,
   formatCurrencyValue,
+  formatVehicleMileageInput,
+  formatVehiclePlateInput,
+  formatVehicleRenavamInput,
+  formatVehicleVinInput,
   normalizeBrazilianPhoneDigits,
   parseCurrencyInput,
 } from "./masks";
@@ -47,6 +51,23 @@ describe("currency input helpers", () => {
   );
 });
 
+describe("vehicle input masks", () => {
+  it("normalizes identifiers shared by inventory, sales and fiscal forms", () => {
+    expect(formatVehiclePlateInput("abc-1d23 extra")).toBe("ABC1D23");
+    expect(formatVehicleVinInput("9bw zzZ-377-vt004251")).toBe(
+      "9BWZZZ377VT004251",
+    );
+    expect(formatVehicleRenavamInput("001.234.567-89 extra")).toBe(
+      "00123456789",
+    );
+  });
+
+  it("formats mileage without retaining pasted units", () => {
+    expect(formatVehicleMileageInput("32.500 km")).toBe("32.500");
+    expect(formatVehicleMileageInput("km")).toBe("");
+  });
+});
+
 describe("Brazilian contact masks", () => {
   it.each([
     ["12345678901", "123.456.789-01"],
@@ -67,6 +88,7 @@ describe("Brazilian contact masks", () => {
   it.each([
     ["11987654321", "11987654321"],
     ["119876543219999", "11987654321"],
+    ["559876543219", "9876543219"],
     ["551132345678", "1132345678"],
     ["+5511", "11"],
     ["55987654321", "55987654321"],
@@ -79,6 +101,7 @@ describe("Brazilian contact masks", () => {
     ["11987654321", "(11) 98765-4321"],
     ["551132345678", "(11) 3234-5678"],
     ["55987654321", "(55) 98765-4321"],
+    ["559876543219", "(98) 7654-3219"],
     ["119876543219999", "(11) 98765-4321"],
   ])("formats phone %j", (input, expected) => {
     expect(formatBrazilianPhone(input)).toBe(expected);
@@ -193,6 +216,40 @@ describe("Brazilian contact masks", () => {
 
     expect(input.value).toBe("+55 (11) 9");
     expect(selection).toEqual({ start: 9, end: 9 });
+  });
+
+  it("skips punctuation while recalculating a masked caret", () => {
+    const selection = { start: -1, end: -1 };
+    const input = {
+      value: "123.4",
+      selectionStart: 5,
+      selectionEnd: 5,
+      setSelectionRange(start: number, end: number) {
+        selection.start = start;
+        selection.end = end;
+      },
+    };
+
+    applyInputMask(input, formatBrazilianCpf);
+
+    expect(selection).toEqual({ start: 5, end: 5 });
+  });
+
+  it("moves a caret past punctuation when it ends before a separator", () => {
+    const selection = { start: -1, end: -1 };
+    const input = {
+      value: "123.4",
+      selectionStart: 3,
+      selectionEnd: 3,
+      setSelectionRange(start: number, end: number) {
+        selection.start = start;
+        selection.end = end;
+      },
+    };
+
+    applyInputMask(input, formatBrazilianCpf);
+
+    expect(selection).toEqual({ start: 4, end: 4 });
   });
 
   it.each([

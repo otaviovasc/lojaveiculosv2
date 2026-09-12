@@ -4,7 +4,11 @@ import {
   type SalePaymentMethod,
 } from "@lojaveiculosv2/shared";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { formatCents, parseCurrencyInput } from "./salesModel";
+import {
+  formatCents,
+  formatPaymentMethodLabel,
+  parseCurrencyInput,
+} from "./salesModel";
 import {
   changePaymentMethod,
   SalePaymentMethodFields,
@@ -60,8 +64,8 @@ export function PaymentRow({
             onChange={(method) =>
               onChange(changePaymentMethod(payment, method))
             }
-            options={salePaymentMethods.map((method) => ({
-              label: formatPaymentMethod(method),
+            options={paymentMethodsForRow(payment.method).map((method) => ({
+              label: formatPaymentMethodLabel(method),
               value: method,
             }))}
             value={payment.method}
@@ -121,12 +125,20 @@ export function newPayment(
   };
 }
 
-function localDateInputValue(): string {
-  const date = new Date();
+export function localDateInputValue(
+  date: Pick<Date, "getDate" | "getFullYear" | "getMonth"> = new Date(),
+): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function paymentMethodsForRow(
+  currentMethod: SalePaymentMethod,
+): readonly SalePaymentMethod[] {
+  if (currentMethod === "trade_in") return salePaymentMethods;
+  return salePaymentMethods.filter((method) => method !== "trade_in");
 }
 
 function MoneyInput({
@@ -148,27 +160,6 @@ function MoneyInput({
       />
     </label>
   );
-}
-
-function formatPaymentMethod(method: SalePaymentMethod): string {
-  switch (method) {
-    case "pix":
-      return "PIX";
-    case "transfer":
-      return "Transferência (TED/DOC)";
-    case "cash":
-      return "Dinheiro em Espécie";
-    case "financing":
-      return "Financiamento Bancário";
-    case "credit_card":
-      return "Cartão de Crédito";
-    case "boleto":
-      return "Boleto Bancário";
-    case "letter_of_credit":
-      return "Carta de Crédito (Consórcio)";
-    case "trade_in":
-      return "Veículo na Troca (Trade-in)";
-  }
 }
 
 type PaymentRowProps = {

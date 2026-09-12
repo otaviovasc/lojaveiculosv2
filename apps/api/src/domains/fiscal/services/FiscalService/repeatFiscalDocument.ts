@@ -4,7 +4,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import { FiscalDocumentNotFoundError } from "../../domain/fiscalErrors.js";
+import {
+  FiscalDocumentNotFoundError,
+  FiscalDocumentRepeatNotAllowedError,
+} from "../../domain/fiscalErrors.js";
 import type { FiscalDocument } from "../../ports/fiscalRepository.js";
 import {
   requireFiscalScope,
@@ -29,6 +32,14 @@ export async function repeatFiscalDocument(
     tenantId: scope.tenantId,
   });
   if (!source) throw new FiscalDocumentNotFoundError(input.documentId);
+  if (source.status !== "authorized" && source.status !== "issued") {
+    await auditRepeat(context, scope, "failed", {
+      documentId: source.id,
+      reason: "source_status_not_repeatable",
+      status: source.status,
+    });
+    throw new FiscalDocumentRepeatNotAllowedError(source.status);
+  }
 
   context.logger.info(
     "fiscal.document.repeat.started",
@@ -86,7 +97,6 @@ function createRepeatMetadata(source: FiscalDocument) {
     repeatedFromDocumentId: source.id,
     repeatRequiresReview: true,
     sourceDocumentStatus: source.status,
-    sourceProviderDocumentId: source.providerDocumentId,
     sourceTemplateVersion: source.templateVersion,
   };
 }

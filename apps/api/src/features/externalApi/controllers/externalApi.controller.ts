@@ -55,6 +55,7 @@ export function createExternalApiFeature(
       const input = await parseJson(context, createExternalApiClientSchema);
       const serviceContext = await createUserContext(context, contextFactory);
       const result = await services.createClient(serviceContext, input);
+      context.header("Cache-Control", "no-store");
       return context.json(result, 201);
     }),
   );

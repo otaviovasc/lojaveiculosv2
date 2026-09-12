@@ -67,6 +67,7 @@ export function createTenantAdminBrand(
 
 export function createTenantAdminBrandStyle(
   brand: TenantAdminBrand,
+  options: { dark?: boolean } = {},
 ): TenantAdminBrandStyle {
   if (
     !brand.accentColor ||
@@ -79,8 +80,14 @@ export function createTenantAdminBrandStyle(
   return {
     "--background-image-gradient-brand": `linear-gradient(135deg, ${brand.accentColor}, ${brand.accentColorStrong})`,
     "--color-accent": brand.accentColor,
+    "--color-accent-contrast":
+      brand.accentColorForeground ?? "var(--color-accent-contrast)",
     "--color-accent-foreground":
       brand.accentColorForeground ?? "var(--color-accent-foreground)",
+    "--color-accent-readable": createAccentReadableColor(
+      brand.accentColor,
+      Boolean(options.dark),
+    ),
     "--color-accent-soft": brand.accentColorSoft,
     "--color-accent-soft-foreground":
       brand.accentColorSoftForeground ?? "var(--color-accent-soft-foreground)",
@@ -90,6 +97,8 @@ export function createTenantAdminBrandStyle(
       "var(--color-accent-strong-foreground)",
     "--color-brand": brand.accentColor,
     "--color-brand-dark": brand.accentColorStrong,
+    "--color-ring": brand.accentColor,
+    "--shadow-focus": `0 0 0 3px color-mix(in srgb, ${brand.accentColor} 26%, transparent)`,
   };
 }
 
@@ -162,6 +171,27 @@ function createReadableTextColor(color: string) {
   return darkContrast >= lightContrast
     ? rgbToHex([21, 21, 21])
     : rgbToHex([255, 255, 255]);
+}
+
+function createAccentReadableColor(color: string, dark: boolean) {
+  const target = dark ? [255, 255, 255] : [0, 0, 0];
+  const background = dark ? [21, 21, 21] : [255, 255, 255];
+  const rgb = hexToRgb(color);
+  for (let step = 0; step <= 20; step += 1) {
+    const mixed = mixRgb(rgb, target, step / 20);
+    if (contrastRatio(mixed, background) >= 4.5) return rgbToHex(mixed);
+  }
+  return rgbToHex(target);
+}
+
+function contrastRatio(a: readonly number[], b: readonly number[]) {
+  const luminanceA = relativeLuminance(a);
+  const luminanceB = relativeLuminance(b);
+  const [high, low] =
+    luminanceA >= luminanceB
+      ? [luminanceA, luminanceB]
+      : [luminanceB, luminanceA];
+  return (high + 0.05) / (low + 0.05);
 }
 
 function hexToRgb(color: string): [number, number, number] {

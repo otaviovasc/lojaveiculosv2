@@ -62,6 +62,8 @@ export const inventoryRoutes = {
     input: CatalogInput & {
       brandCode: string;
       modelCode: string;
+      modelFamilyCode?: string;
+      modelFamilyName?: string;
       yearCode: string;
     },
     baseUrl?: string,
@@ -73,6 +75,10 @@ export const inventoryRoutes = {
     const params = catalogParams(input);
     params.set("brandCode", input.brandCode);
     params.set("modelCode", input.modelCode);
+    if (input.modelFamilyCode)
+      params.set("modelFamilyCode", input.modelFamilyCode);
+    if (input.modelFamilyName)
+      params.set("modelFamilyName", input.modelFamilyName);
     params.set("yearCode", input.yearCode);
     return `${endpoint}?${params.toString()}`;
   },
@@ -99,6 +105,11 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}/audit-events`,
       baseUrl,
     ),
+  publishListing: (listingId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/publish`,
+      baseUrl,
+    ),
   listingResaleAnalysis: (listingId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/listings/${encodeURIComponent(listingId)}/resale-analysis`,
@@ -120,6 +131,16 @@ export const inventoryRoutes = {
   costs: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/units/${encodeURIComponent(unitId)}/costs`,
+      baseUrl,
+    ),
+  cost: (unitId: string, costId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/costs/${encodeURIComponent(costId)}`,
+      baseUrl,
+    ),
+  voidCost: (unitId: string, costId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/costs/${encodeURIComponent(costId)}/void`,
       baseUrl,
     ),
   checklists: (unitId: string, baseUrl?: string) =>

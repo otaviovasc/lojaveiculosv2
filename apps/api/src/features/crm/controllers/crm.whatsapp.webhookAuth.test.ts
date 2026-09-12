@@ -1,118 +1,83 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
-import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
-
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
-const connectionId = "24000000-0000-4000-8000-000000000101";
-const originalEnv = {
-  APP_ENV: process.env.APP_ENV,
-  CRM_ZAPI_WEBHOOK_TOKEN: process.env.CRM_ZAPI_WEBHOOK_TOKEN,
-  LOCAL_AUTH_BYPASS: process.env.LOCAL_AUTH_BYPASS,
-  NODE_ENV: process.env.NODE_ENV,
-};
+import type { AuditSink } from "@lojaveiculosv2/audit";
+import { describe, expect, it, vi } from "vitest";
+import {
+  connectionA,
+  connectionB,
+  createWebhookAuthApp,
+  postReceived,
+  storeId,
+  tenantId,
+} from "./crm.whatsapp.webhookAuth.testSupport.js";
 
 describe("CRM WhatsApp webhook authentication", () => {
-  beforeEach(() => {
-    process.env.LOCAL_AUTH_BYPASS = "true";
-    delete process.env.CRM_ZAPI_WEBHOOK_TOKEN;
-  });
-
-  afterEach(() => {
-    restoreEnv("APP_ENV", originalEnv.APP_ENV);
-    restoreEnv("CRM_ZAPI_WEBHOOK_TOKEN", originalEnv.CRM_ZAPI_WEBHOOK_TOKEN);
-    restoreEnv("LOCAL_AUTH_BYPASS", originalEnv.LOCAL_AUTH_BYPASS);
-    restoreEnv("NODE_ENV", originalEnv.NODE_ENV);
-  });
-
-  it("allows unsigned ZAPI webhooks only in local development", async () => {
-    process.env.APP_ENV = "local";
+  it("requires the secret sealed for the addressed connection", async () => {
     const app = createWebhookAuthApp();
 
-    const response = await postReceived(app);
-
-    expect(response.status).toBe(201);
+    expect((await postReceived(app, connectionA)).status).toBe(403);
+    expect((await postReceived(app, connectionA, "wrong-secret")).status).toBe(
+      403,
+    );
   });
 
-  it("rejects unsigned ZAPI webhooks outside local development", async () => {
-    process.env.APP_ENV = "production";
+  it("binds the token-authenticated connection scope before ingestion", async () => {
+    const auditRecord = vi.fn<AuditSink["record"]>(async () => undefined);
+    const audit = { record: auditRecord };
+    const app = createWebhookAuthApp(["crm"], audit);
+
+    expect((await postReceived(app, connectionA, "secret-a")).status).toBe(201);
+    const authorizationAudits = auditRecord.mock.calls
+      .map(([event]) => event)
+      .filter(
+        (event) => event.action === "crm.provider.zapi.webhook.authorize",
+      );
+    expect(authorizationAudits).toMatchObject([
+      { outcome: "attempted" },
+      { outcome: "succeeded", storeId, tenantId },
+    ]);
+  });
+
+  it("rejects a valid secret from another store connection", async () => {
     const app = createWebhookAuthApp();
 
-    const response = await postReceived(app);
+    const forged = await postReceived(app, connectionB, "secret-a");
+
+    expect(forged.status).toBe(403);
+    await expect(forged.json()).resolves.toMatchObject({
+      code: "AUTHORIZATION_DENIED",
+      message: "Invalid CRM WhatsApp webhook token.",
+    });
+  });
+
+  it("fails closed when the authenticated store lacks crm", async () => {
+    const auditRecord = vi.fn<AuditSink["record"]>(async () => undefined);
+    const audit = { record: auditRecord };
+    const app = createWebhookAuthApp([], audit);
+
+    const response = await postReceived(app, connectionA, "secret-a");
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toMatchObject({
       code: "AUTHORIZATION_DENIED",
-      message: "CRM WhatsApp webhook token is required.",
+      message: "Invalid CRM WhatsApp webhook token.",
     });
-  });
-
-  it("accepts production ZAPI webhooks with the configured shared token", async () => {
-    process.env.APP_ENV = "production";
-    process.env.CRM_ZAPI_WEBHOOK_TOKEN = "secret-zapi-token";
-    const app = createWebhookAuthApp();
-
-    const response = await postReceived(app, {
-      headers: { "x-crm-webhook-token": "secret-zapi-token" },
+    const authorizationAudits = auditRecord.mock.calls
+      .map(([event]) => event)
+      .filter(
+        (event) => event.action === "crm.provider.zapi.webhook.authorize",
+      );
+    expect(authorizationAudits).toMatchObject([
+      { outcome: "attempted" },
+      {
+        outcome: "failed",
+        storeId,
+        tenantId,
+      },
+    ]);
+    expect(authorizationAudits[1]?.metadata).toMatchObject({
+      reason: "entitlement_missing",
     });
-
-    expect(response.status).toBe(201);
+    expect(authorizationAudits).not.toContainEqual(
+      expect.objectContaining({ outcome: "succeeded" }),
+    );
   });
 });
-
-function createWebhookAuthApp() {
-  return createTestApp({
-    crmConnectionRepository: createMemoryCrmConnectionRepository([
-      createZapiConnection(),
-    ]),
-    crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
-  });
-}
-
-function postReceived(
-  app: ReturnType<typeof createTestApp>,
-  input: { headers?: Record<string, string> } = {},
-) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/received`,
-    {
-      body: JSON.stringify({
-        messageId: `zapi-auth-${Date.now()}`,
-        phone: "5511999999999",
-        senderName: "Ana",
-        text: { message: "Ola" },
-        timestamp: 1783029600,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        ...input.headers,
-      },
-      method: "POST",
-    },
-  );
-}
-
-function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: null,
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-  };
-}
-
-function restoreEnv(name: string, value: string | undefined) {
-  if (value === undefined) delete process.env[name];
-  else process.env[name] = value;
-}

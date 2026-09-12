@@ -15,28 +15,41 @@ describe("PublicApiModule", () => {
     render(<PublicApiModule api={api} />);
 
     await waitFor(() => expect(api.listClients).toHaveBeenCalledOnce());
-    expect(screen.getByText("/api/v1/external-api/docs")).toBeVisible();
-    expect(screen.getByText("/api/v1/external-api/llms.txt")).toBeVisible();
-    expect(screen.getByText("/api/v1/external-api/manifest")).toBeVisible();
-    expect(screen.getByText("/api/v1/external-api/ai-tools")).toBeVisible();
+    expect(screen.getByText(/\/api\/v1\/external-api\/docs$/)).toBeVisible();
+    expect(
+      screen.getAllByText(/\/api\/v1\/external-api\/llms\.txt$/).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/\/api\/v1\/external-api\/manifest$/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/\/api\/v1\/external-api\/ai-tools$/),
+    ).toBeVisible();
     expect(screen.getByText("Integra Zapier")).toBeVisible();
+    expect(screen.getByText(/Último uso/)).toBeVisible();
     expect(screen.queryByText("api_client_1")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /DMS de estoque/ }));
+    await user.click(
+      screen.getByRole("button", { name: /Catálogo de estoque/ }),
+    );
     await user.click(screen.getByRole("button", { name: "Criar chave" }));
 
     const createInput = api.createClient.mock.calls.at(0)?.[0];
-    expect(createInput?.name).toBe("DMS de estoque");
-    expect(createInput?.scopes).toEqual(
-      expect.arrayContaining([
-        "inventory.create",
-        "inventory.media_update",
-        "inventory.read",
-        "inventory.update_price",
-        "inventory.update_status",
-      ]),
-    );
+    expect(createInput?.name).toBe("Catálogo de estoque");
+    expect(createInput?.scopes).toEqual(["inventory.read"]);
     expect(await screen.findByText("lv2_created_secret")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /exibido somente uma vez/,
+    );
+    expect(
+      screen.getByRole("region", {
+        name: "Nova chave da API, exibida somente uma vez",
+      }),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: "Ocultar nova chave da API" }),
+    );
+    expect(screen.queryByText("lv2_created_secret")).not.toBeInTheDocument();
   });
 });
 
@@ -45,6 +58,7 @@ function createApiStub(): PublicApiStub {
     createdAt: "2026-01-01T00:00:00.000Z",
     id: "api_client_1",
     keyPrefixes: ["lv2_abcd1234"],
+    lastUsedAt: "2026-01-02T15:30:00.000Z",
     name: "Integra Zapier",
     scopes: ["inventory.read", "lead.create"],
     status: "active",

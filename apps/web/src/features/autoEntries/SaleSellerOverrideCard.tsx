@@ -19,11 +19,13 @@ import {
   buildTiming,
   type AutoEntryTimingDraft,
 } from "./AutoEntryTimingFields";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import {
   findRule,
   parseRatePpm,
   ruleMoneyInput,
   ruleRateInput,
+  sellerName,
   toMutation,
   validMoney,
 } from "./domainModel";
@@ -34,22 +36,48 @@ type CalculationKind = "fixed" | "rate";
 
 export function SaleSellerOverrideCard({
   canManage,
+  initialSellerUserId,
   isSaving,
   onSave,
   rules,
   sellers,
-}: AutoEntryDomainPanelProps) {
-  const [sellerUserId, setSellerUserId] = useState("");
+}: AutoEntryDomainPanelProps & { initialSellerUserId?: string }) {
+  const [sellerUserId, setSellerUserId] = useState(initialSellerUserId ?? "");
+
+  useEffect(() => {
+    if (initialSellerUserId) {
+      setSellerUserId(initialSellerUserId);
+    }
+  }, [initialSellerUserId]);
+
   const existing = useMemo(
     () => findRule(rules, "sale.standard_commission", sellerUserId),
     [rules, sellerUserId],
   );
-  const [kind, setKind] = useState<CalculationKind>("fixed");
-  const [value, setValue] = useState("");
-  const [timing, setTiming] = useState<AutoEntryTimingDraft>({
-    kind: "same_day",
-    value: "",
-  });
+  const overriddenSellers = useMemo(
+    () =>
+      rules.filter(
+        (rule) =>
+          rule.ruleKey === "sale.standard_commission" &&
+          rule.sellerUserId !== null &&
+          rule.status === "active",
+      ),
+    [rules],
+  );
+  // Initial drafts must match the derived baseline below; otherwise the card
+  // transiently reports unsaved changes on mount and the workspace blocks tab
+  // switches behind the discard-confirmation dialog before any user edit.
+  const [kind, setKind] = useState<CalculationKind>(() =>
+    existing?.calculation.kind === "fixed" ? "fixed" : "rate",
+  );
+  const [value, setValue] = useState(() =>
+    existing?.calculation.kind === "fixed"
+      ? ruleMoneyInput(existing)
+      : ruleRateInput(existing),
+  );
+  const [timing, setTiming] = useState<AutoEntryTimingDraft>(() =>
+    timingDraft(existing?.timing),
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +89,24 @@ export function SaleSellerOverrideCard({
     );
     setTiming(timingDraft(existing?.timing));
   }, [existing]);
+
+  const isDirty = useMemo(() => {
+    const storedKind: CalculationKind =
+      existing?.calculation.kind === "fixed" ? "fixed" : "rate";
+    const storedValue = existing
+      ? existing.calculation.kind === "fixed"
+        ? ruleMoneyInput(existing)
+        : ruleRateInput(existing)
+      : "";
+    const storedTiming = timingDraft(existing?.timing);
+    return (
+      kind !== storedKind ||
+      value !== storedValue ||
+      timing.kind !== storedTiming.kind ||
+      timing.value !== storedTiming.value
+    );
+  }, [existing, kind, timing, value]);
+  useAutoEntryDirty("vehicle_sale_closed", isDirty);
 
   const save = () => {
     const parsedValue =
@@ -106,6 +152,21 @@ export function SaleSellerOverrideCard({
         sellers={sellers}
         value={sellerUserId}
       />
+      {overriddenSellers.length > 0 ? (
+        <p className="ae-override-indicator">
+          <span className="ae-override-indicator__count">
+            {overriddenSellers.length}
+          </span>
+          <span>
+            com exceção ativa:{" "}
+            <strong className="text-app-text">
+              {overriddenSellers
+                .map((rule) => sellerName(sellers, rule.sellerUserId))
+                .join(", ")}
+            </strong>
+          </span>
+        </p>
+      ) : null}
       <AutoEntryValueOrigin active={Boolean(existing)} />
       <FeatureFieldGroup>
         <FeatureField label="Modelo de cálculo">
@@ -120,7 +181,9 @@ export function SaleSellerOverrideCard({
           />
         </FeatureField>
         <FeatureField
-          label={kind === "fixed" ? "Valor (R$)" : "Percentual (%)"}
+          label={
+            kind === "fixed" ? "Valor de comissão (R$)" : "Taxa de comissão (%)"
+          }
         >
           <FeatureInput
             inputMode="decimal"
@@ -134,6 +197,7 @@ export function SaleSellerOverrideCard({
       <AutoEntryInlineError message={error} />
       <AutoEntrySaveAction
         canManage={canManage}
+        isDirty={isDirty}
         isSaving={isSaving}
         onClick={save}
       />

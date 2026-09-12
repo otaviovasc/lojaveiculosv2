@@ -2,8 +2,15 @@ import type {
   MarketplacePublishInput,
   MarketplacePublishResult,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
-import { createProviderListingPayload } from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
+import {
+  assertOlxProviderListingId,
+  createProviderListingPayload,
+} from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
 import { assertOlxContract } from "./httpMarketplaceProviderGatewayAuth.js";
+import {
+  fetchOlx,
+  readBoundedOlxRecord,
+} from "./httpMarketplaceProviderGatewayOlxRequest.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
   baseUrl,
@@ -23,17 +30,24 @@ export async function runOlxAutouploadSync(
     input.jobType === "listing_unpublish"
       ? {
           attributes: { categoryId: "autoupload" },
-          body: { id: input.externalId, operation: "delete" },
+          body: {
+            id: assertOlxProviderListingId(input.externalId ?? ""),
+            operation: "delete",
+          },
           mediaUrls: [],
           title: input.externalId ?? "OLX listing",
         }
       : createProviderListingPayload({
+          ...(input.externalId !== undefined
+            ? { externalId: input.externalId }
+            : {}),
           listing: requireListing(input),
           provider: options.provider,
           settings: input.metadata,
         });
 
-  const response = await fetchImpl(
+  const response = await fetchOlx(
+    fetchImpl,
     `${baseUrl(options)}${listingPath(options)}`,
     {
       body: JSON.stringify({
@@ -47,23 +61,17 @@ export async function runOlxAutouploadSync(
       method: "PUT",
     },
   );
-  const responsePayload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const responsePayload = await readBoundedOlxRecord(response);
   if (!response.ok) {
     throw providerHttpError(options.provider, response, responsePayload);
   }
-  assertOlxImportAccepted(
+  const operationToken = assertOlxImportAccepted(
     responsePayload,
     input.externalId ?? payload.body.id,
     input.jobType,
   );
   const externalId = readString(payload.body.id) ?? input.externalId ?? null;
-  const providerStatus =
-    readString(responsePayload.statusMessage) ??
-    readString(responsePayload.status) ??
-    "accepted";
+  const providerStatus = "submitted";
   return {
     externalId,
     metadata: {
@@ -74,6 +82,7 @@ export async function runOlxAutouploadSync(
         providerStatus,
       },
     },
+    operationToken,
     providerStatus,
   };
 }
@@ -87,8 +96,9 @@ function assertOlxImportAccepted(
   responsePayload: Record<string, unknown>,
   externalId: unknown,
   jobType: MarketplacePublishInput["jobType"],
-) {
+): string {
   const statusCode = readNumber(responsePayload.statusCode);
+  const operationToken = readString(responsePayload.token);
   const error = findOlxAdError(responsePayload.errors, externalId);
   if (error && isMissingOlxListing(error) && jobType === "listing_unpublish") {
     throw new MarketplaceProviderGatewayError(
@@ -108,8 +118,37 @@ function assertOlxImportAccepted(
       olxDetails(statusCode, externalId),
     );
   }
-  if (statusCode === null || statusCode >= 0) return;
-  if (statusCode === -6 || statusCode === -7 || statusCode === -8) {
+  if (statusCode === 0 && operationToken) {
+    return operationToken;
+  }
+  if (statusCode === 0) {
+    throw new MarketplaceProviderGatewayError(
+      "MARKETPLACE_PROVIDER_UNAVAILABLE",
+      "Marketplace provider accepted an import without reconciliation evidence.",
+      "olx",
+      503,
+      olxDetails(statusCode, externalId),
+    );
+  }
+  if (statusCode === -8) {
+    throw new MarketplaceProviderGatewayError(
+      "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED",
+      "Marketplace account inventory limit blocked this operation.",
+      "olx",
+      403,
+      olxDetails(statusCode, externalId),
+    );
+  }
+  if (statusCode === -2) {
+    throw new MarketplaceProviderGatewayError(
+      "MARKETPLACE_PROVIDER_RATE_LIMITED",
+      "Marketplace provider rate limit was reached.",
+      "olx",
+      429,
+      olxDetails(statusCode, externalId),
+    );
+  }
+  if (statusCode === -6 || statusCode === -7) {
     throw new MarketplaceProviderGatewayError(
       "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED",
       "Marketplace account requirement blocked this operation.",
@@ -118,7 +157,7 @@ function assertOlxImportAccepted(
       olxDetails(statusCode, externalId),
     );
   }
-  if (statusCode === -4) {
+  if (statusCode === -3 || statusCode === -4) {
     throw new MarketplaceProviderGatewayError(
       "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
       "Marketplace provider rejected the listing payload.",

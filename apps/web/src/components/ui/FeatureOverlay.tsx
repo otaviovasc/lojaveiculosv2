@@ -9,6 +9,7 @@ export function FeatureDialog({
   className,
   description,
   footer,
+  hideHeading = false,
   icon,
   isOpen,
   onClose,
@@ -18,6 +19,7 @@ export function FeatureDialog({
   className?: string;
   description?: ReactNode;
   footer?: ReactNode;
+  hideHeading?: boolean;
   icon?: ReactNode;
   isOpen: boolean;
   onClose: () => void;
@@ -45,17 +47,28 @@ export function FeatureDialog({
         role="dialog"
         tabIndex={-1}
       >
-        <div className="feature-dialog__header">
-          <div className="feature-dialog__heading">
-            {icon ? (
-              <span aria-hidden="true" className="feature-dialog__icon">
-                {icon}
-              </span>
-            ) : null}
-            <h3 className="feature-dialog__title" id={titleId}>
+        <div
+          className={cx(
+            "feature-dialog__header",
+            hideHeading ? "feature-dialog__header--close-only" : undefined,
+          )}
+        >
+          {hideHeading ? (
+            <h3 className="sr-only" id={titleId}>
               {title}
             </h3>
-          </div>
+          ) : (
+            <div className="feature-dialog__heading">
+              {icon ? (
+                <span aria-hidden="true" className="feature-dialog__icon">
+                  {icon}
+                </span>
+              ) : null}
+              <h3 className="feature-dialog__title" id={titleId}>
+                {title}
+              </h3>
+            </div>
+          )}
           <button
             aria-label="Fechar"
             className="feature-dialog__close"

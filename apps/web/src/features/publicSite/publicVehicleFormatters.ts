@@ -35,11 +35,11 @@ export function formatPublicVehicleMileage(mileageKm: number | null) {
 export function formatPublicVehicleFuel(value: string | null) {
   const labels: Record<string, string> = {
     diesel: "Diesel",
-    electric: "Eletrico",
+    electric: "Elétrico",
     ethanol: "Etanol",
     flex: "Flex",
     gasoline: "Gasolina",
-    hybrid: "Hibrido",
+    hybrid: "Híbrido",
     other: "Outro",
   };
   return value ? (labels[value] ?? value) : "-";
@@ -48,7 +48,7 @@ export function formatPublicVehicleFuel(value: string | null) {
 export function formatPublicVehicleTransmission(value: string | null) {
   const labels: Record<string, string> = {
     automated: "Automatizado",
-    automatic: "Automatico",
+    automatic: "Automático",
     cvt: "CVT",
     manual: "Manual",
     other: "Outro",

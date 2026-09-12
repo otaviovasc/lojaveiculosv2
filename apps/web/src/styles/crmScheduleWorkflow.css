@@ -1,0 +1,215 @@
+/* CRM Schedules Creation Workflow - Visitas Parity System */
+
+.crm-schedule-workflow {
+  --crm-workflow-step-count: 3;
+}
+
+.crm-schedule-step-layout {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 48rem;
+  width: 100%;
+}
+
+.crm-schedule-field {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.45rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.crm-schedule-field input,
+.crm-schedule-field textarea,
+.crm-schedule-field .crm-select {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+  min-height: 2.75rem;
+  outline: none;
+  padding: 0.75rem 1rem;
+  text-transform: none;
+  width: 100%;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-schedule-field input:focus,
+.crm-schedule-field textarea:focus,
+.crm-schedule-field .crm-select:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.crm-schedule-field textarea {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.crm-schedule-selection {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  display: flex;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.crm-schedule-selection > svg {
+  color: #059669;
+  height: 1.35rem;
+  width: 1.35rem;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .crm-schedule-selection > svg,
+.dark .crm-schedule-selection > svg {
+  color: #34d399;
+}
+
+.crm-schedule-selection span,
+.crm-schedule-selection strong,
+.crm-schedule-selection small {
+  display: block;
+  min-width: 0;
+}
+
+.crm-schedule-selection strong {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.crm-schedule-selection small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+/* WhatsApp Realistic Bubble Card */
+.crm-schedule-review-card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.125rem;
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.04);
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.crm-schedule-review-header {
+  align-items: center;
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+}
+
+.crm-schedule-review-header strong {
+  color: var(--color-text);
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.crm-schedule-review-header span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+}
+
+.crm-schedule-whatsapp-bubble {
+  align-self: flex-end;
+  background: color-mix(in srgb, #10b981 16%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
+  border-radius: 1rem 1rem 0.25rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: grid;
+  gap: 0.4rem;
+  max-width: min(32rem, 90%);
+  padding: 0.85rem 1rem;
+  position: relative;
+}
+
+:root[data-theme="dark"] .crm-schedule-whatsapp-bubble,
+.dark .crm-schedule-whatsapp-bubble {
+  background: color-mix(in srgb, #065f46 35%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 25%, transparent);
+}
+
+.crm-schedule-whatsapp-bubble p {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.crm-schedule-whatsapp-time {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+.crm-schedule-whatsapp-time svg {
+  color: #0081fb;
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.crm-schedule-character-count {
+  color: var(--color-muted);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  margin-top: -0.5rem;
+  text-align: right;
+}
+
+.crm-schedule-error,
+.crm-schedule-success {
+  border-radius: 0.75rem;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.crm-schedule-error {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #ef4444 35%, var(--color-line));
+  color: #dc2626;
+}
+
+:root[data-theme="dark"] .crm-schedule-error,
+.dark .crm-schedule-error {
+  color: #f87171;
+}
+
+.crm-schedule-success {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, #10b981 35%, var(--color-line));
+  color: #059669;
+}
+
+:root[data-theme="dark"] .crm-schedule-success,
+.dark .crm-schedule-success {
+  color: #34d399;
+}

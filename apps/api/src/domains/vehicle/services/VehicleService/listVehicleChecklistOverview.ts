@@ -6,6 +6,7 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { assertVehicleChecklistAccess } from "./checklistAccess.js";
 import {
   loadVehicleChecklistOverview,
   type VehicleChecklistOverviewInput,
@@ -19,6 +20,7 @@ export async function listVehicleChecklistOverview(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleChecklistOverview> {
   assertPermission(context, permission);
+  assertVehicleChecklistAccess(context);
   const overview = await loadVehicleChecklistOverview(context, input, ports);
   const metadata = {
     itemCount: overview.summary.itemCount,

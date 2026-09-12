@@ -162,6 +162,7 @@ describe("finance transaction composition", () => {
 function context() {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    entitlements: ["commissions", "finance"],
     permissions: [
       "finance.attach_document",
       "finance.auto_entries.manage",

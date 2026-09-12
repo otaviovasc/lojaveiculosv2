@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { crmPipelineStages, crmPipelines } from "@lojaveiculosv2/db";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import { CrmPipelineDuplicateNameError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
@@ -12,6 +12,7 @@ import {
   insertStages,
   replaceStages,
 } from "./drizzleCrmPipelineStageWrites.js";
+import { defaultCrmPipelineStages } from "./defaultCrmPipelineStages.js";
 
 export const activeCrmPipelineNameConstraint =
   "crm_pipelines_store_name_active_unique";
@@ -64,6 +65,43 @@ export function createDrizzleCrmPipelineRepository(
           ),
         );
       return true;
+    },
+    async ensureDefaultPipeline(input) {
+      await db.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`${input.tenantId}:${input.storeId}:crm-default-pipeline`}))`,
+      );
+      const rows = await db
+        .select()
+        .from(crmPipelines)
+        .where(scopedPipeline(input))
+        .orderBy(asc(crmPipelines.createdAt));
+      const selected = rows.find((pipeline) => pipeline.isDefault);
+      if (selected) {
+        return readPipeline(db, {
+          ...input,
+          pipelineId: selected.id,
+        }).then(requirePipeline);
+      }
+      const [pipeline] = await db
+        .insert(crmPipelines)
+        .values({
+          description: "Pipeline criada automaticamente para novos leads.",
+          isDefault: true,
+          name: "Pipeline padrão",
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+        })
+        .returning();
+      if (!pipeline)
+        throw new Error("Drizzle adapter did not return pipeline.");
+      await insertStages(db, pipeline.id, {
+        ...input,
+        stages: defaultCrmPipelineStages,
+      });
+      return readPipeline(db, {
+        ...input,
+        pipelineId: pipeline.id,
+      }).then(requirePipeline);
     },
     findPipelineById: (input) => readPipeline(db, input),
     async findPipelineByName(input) {

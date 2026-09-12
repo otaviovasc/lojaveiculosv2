@@ -161,6 +161,7 @@ export function useAutoEntryRules(api: AutoEntryRulesApi) {
   };
 
   return {
+    clearFeedback: () => setFeedback(null),
     deleteRule,
     feedback,
     loadState,

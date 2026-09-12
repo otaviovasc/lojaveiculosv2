@@ -1,11 +1,13 @@
 import {
-  Check,
   ExternalLink,
   Eye,
+  Globe,
   Loader2,
+  Moon,
   Palette,
   Save,
   Smartphone,
+  Sun,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +19,7 @@ import {
   applyWebsiteConfigToSettings,
   createWebsiteConfigFromSettings,
 } from "./WebsiteBuilderModel";
-import { createWebsiteBuilderAccordionItems } from "./WebsiteBuilderDesignItems";
+import { createWebsiteBuilderEditorGroups } from "./WebsiteBuilderDesignItems";
 import {
   WebsiteBuilderPreviewFrame,
   type WebsiteBuilderPreviewFrameHandle,
@@ -34,13 +36,11 @@ export function WebsiteBuilderDesign({
   onDirty,
   onSave,
   settings,
-  statusMessage,
 }: {
   isSaving: boolean;
   onDirty?: () => void;
-  onSave: (input: WebsiteBuilderSaveInput) => Promise<void>;
+  onSave: (input: WebsiteBuilderSaveInput) => Promise<boolean>;
   settings: StoreSettingsSnapshot;
-  statusMessage?: { text: string; type: "error" | "success" } | null;
 }) {
   const initialConfig = useMemo(
     () => createWebsiteConfigFromSettings(settings),
@@ -53,7 +53,9 @@ export function WebsiteBuilderDesign({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [viewportMode, setViewportMode] =
     useState<WebsiteBuilderViewportMode>("desktop");
-  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+  const [mobileTab, setMobileTab] = useState<"edit" | "preview">(
+    readStoredMobileTab,
+  );
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const previewRef = useRef<WebsiteBuilderPreviewFrameHandle>(null);
   const slug = settings.identity.publicSlug;
@@ -75,23 +77,49 @@ export function WebsiteBuilderDesign({
   };
 
   const save = async () => {
-    await onSave({
+    const saved = await onSave({
       config,
       settings: applyWebsiteConfigToSettings(settings, config, templateId),
       templateId,
     });
-    setHasUnsavedChanges(false);
+    if (saved) setHasUnsavedChanges(false);
   };
 
-  const accordionItems = createWebsiteBuilderAccordionItems({
+  const isPublished = settings.publicSite.isPublished;
+  const togglePublish = async () => {
+    const nextSettings = applyWebsiteConfigToSettings(
+      settings,
+      config,
+      templateId,
+    );
+    const saved = await onSave({
+      config,
+      settings: {
+        ...nextSettings,
+        publicSite: {
+          ...nextSettings.publicSite,
+          isPublished: !isPublished,
+        },
+      },
+      templateId,
+    });
+    if (saved) setHasUnsavedChanges(false);
+  };
+
+  const editorGroups = createWebsiteBuilderEditorGroups({
     config,
     setTemplateId,
     templateId,
     updateConfig,
   });
 
+  const handleMobileTabChange = (tab: "edit" | "preview") => {
+    setMobileTab(tab);
+    storeMobileTab(tab);
+  };
+
   return (
-    <div className="website-builder-surface flex h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden text-foreground lg:h-dvh">
+    <div className="website-builder-surface flex h-[calc(100dvh-3.5rem)] w-full flex-col overflow-hidden text-foreground md:h-[calc(100dvh-4rem)] lg:h-dvh">
       <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-card/80 px-4 py-2.5 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
@@ -105,6 +133,46 @@ export function WebsiteBuilderDesign({
 
         <div className="flex items-center gap-2">
           <Button
+            aria-label="Alternar tema da prévia"
+            className="hidden xs:flex"
+            onClick={() =>
+              updateConfig(
+                "appearanceMode",
+                config.appearanceMode === "dark" ? "light" : "dark",
+              )
+            }
+            size="sm"
+            title={`Tema atual: ${config.appearanceMode === "dark" ? "Escuro" : "Claro"}. Clique para alternar.`}
+            type="button"
+            variant="outline"
+          >
+            {config.appearanceMode === "dark" ? (
+              <Moon className="mr-1.5 h-3.5 w-3.5 text-indigo-400" />
+            ) : (
+              <Sun className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+            )}
+            <span className="hidden sm:inline">
+              {config.appearanceMode === "dark" ? "Escuro" : "Claro"}
+            </span>
+          </Button>
+
+          <Button
+            aria-pressed={isPublished}
+            disabled={isSaving}
+            onClick={() => void togglePublish()}
+            size="sm"
+            title={
+              isPublished
+                ? "Vitrine publicada - clique para despublicar"
+                : "Vitrine privada - clique para publicar"
+            }
+            type="button"
+            variant={isPublished ? "outline" : "default"}
+          >
+            <Globe className="mr-1.5 h-3.5 w-3.5" />
+            {isPublished ? "Publicada" : "Publicar"}
+          </Button>
+          <Button
             className="hidden sm:flex"
             size="sm"
             variant="outline"
@@ -116,6 +184,7 @@ export function WebsiteBuilderDesign({
             </a>
           </Button>
           <Button
+            aria-label="Salvar"
             className="relative"
             disabled={isSaving}
             onClick={() => void save()}
@@ -129,18 +198,23 @@ export function WebsiteBuilderDesign({
             )}
             {isSaving ? "Salvando..." : "Salvar"}
             {hasUnsavedChanges && !isSaving ? (
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-card bg-warning" />
+              <span
+                aria-label="Alterações não salvas"
+                className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-card bg-warning"
+              />
             ) : null}
           </Button>
         </div>
       </div>
 
-      {statusMessage ? <WebsiteBuilderStatus message={statusMessage} /> : null}
-      <WebsiteBuilderMobileTabs active={mobileTab} onChange={setMobileTab} />
+      <WebsiteBuilderMobileTabs
+        active={mobileTab}
+        onChange={handleMobileTabChange}
+      />
 
       {showMobilePreview ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
-          <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border/50 bg-card px-4 py-3">
             <span className="text-sm font-semibold">Preview</span>
             <Button
               aria-label="Fechar preview"
@@ -168,11 +242,11 @@ export function WebsiteBuilderDesign({
       <div className="flex flex-1 overflow-hidden">
         <div
           className={cn(
-            "flex w-full flex-col overflow-y-auto border-r border-border/50 bg-card/50 md:flex md:w-[380px] lg:w-[420px]",
+            "flex w-full flex-col overflow-y-auto border-r border-border/50 bg-card md:flex md:w-[380px] lg:w-[420px]",
             mobileTab === "edit" ? "flex" : "hidden",
           )}
         >
-          <WebsiteBuilderEditorPanel items={accordionItems} />
+          <WebsiteBuilderEditorPanel groups={editorGroups} />
         </div>
 
         <div
@@ -207,24 +281,25 @@ export function WebsiteBuilderDesign({
   );
 }
 
-function WebsiteBuilderStatus({
-  message,
-}: {
-  message: { text: string; type: "error" | "success" };
-}) {
-  return (
-    <div
-      className={cn(
-        "mx-4 mt-2 flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium",
-        message.type === "success"
-          ? "bg-success/10 text-success-strong"
-          : "bg-destructive/10 text-destructive",
-      )}
-    >
-      {message.type === "success" ? <Check className="h-3.5 w-3.5" /> : null}
-      {message.text}
-    </div>
-  );
+const MOBILE_TAB_STORAGE_KEY = "lojaveiculos:website-builder-mobile-tab";
+
+function readStoredMobileTab(): "edit" | "preview" {
+  try {
+    return typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem(MOBILE_TAB_STORAGE_KEY) === "preview"
+      ? "preview"
+      : "edit";
+  } catch {
+    return "edit";
+  }
+}
+
+function storeMobileTab(tab: "edit" | "preview") {
+  try {
+    sessionStorage.setItem(MOBILE_TAB_STORAGE_KEY, tab);
+  } catch {
+    // Storage may be unavailable (private mode); tab persistence is optional.
+  }
 }
 
 function WebsiteBuilderMobileTabs({
@@ -235,7 +310,7 @@ function WebsiteBuilderMobileTabs({
   onChange: (tab: "edit" | "preview") => void;
 }) {
   return (
-    <div className="flex shrink-0 border-b border-border/50 md:hidden">
+    <div className="flex shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-sm md:hidden">
       {[
         { icon: Palette, label: "Editar", value: "edit" },
         { icon: Eye, label: "Preview", value: "preview" },
@@ -244,11 +319,12 @@ function WebsiteBuilderMobileTabs({
         const value = item.value as "edit" | "preview";
         return (
           <button
+            aria-pressed={active === value}
             className={cn(
-              "flex flex-1 items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
+              "flex flex-1 items-center justify-center gap-2 border-b-2 py-2.5 text-xs font-semibold transition-colors",
               active === value
-                ? "border-b-2 border-accent-strong text-accent-strong"
-                : "text-muted-foreground",
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-transparent text-muted-foreground",
             )}
             key={item.value}
             onClick={() => onChange(value)}

@@ -1,4 +1,4 @@
-import { Landmark, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Check, Landmark, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { DatePickerField } from "../../components/ui/DatePickerField";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
@@ -6,6 +6,7 @@ import { SaleField } from "./SaleWorkspaceForm";
 import { formatCurrency, parseCurrency } from "./saleServicesFormat";
 import { formatIsoDate, parseIsoDate } from "./salesDateFormat";
 import { SalePercentageInput } from "./SalePercentageInput";
+import type { FinancingPaymentSyncState } from "./salePaymentSync";
 import { snapshotNumber } from "./salesSnapshot";
 import type { ServiceChangeHandler } from "./SaleServicesTypes";
 import type { SnapshotRecord } from "./salesSnapshot";
@@ -14,15 +15,19 @@ import { saleFinancingRanks } from "./types";
 export function FinancingPanel({
   financing,
   onChange,
+  paymentSyncState = "none",
 }: {
   financing: SnapshotRecord;
   onChange: ServiceChangeHandler;
+  paymentSyncState?: FinancingPaymentSyncState;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <PanelHeader icon={<Landmark className="size-4.5 text-accent" />}>
         Dados do Financiamento
       </PanelHeader>
+
+      <FinancingPaymentSyncStatus state={paymentSyncState} />
 
       <SaleField label="Banco / Financeira">
         <input
@@ -49,7 +54,7 @@ export function FinancingPanel({
           className="!min-h-[2.5rem] !h-[2.5rem] !text-xs"
           onChange={(value) => onChange("financing", "rank", value)}
           options={saleFinancingRanks.map((rank) => ({
-            label: rank,
+            label: rank === "R0" ? "R0 — sem comissão" : rank,
             value: rank,
           }))}
           value={String(financing.rank ?? "R1")}
@@ -108,6 +113,68 @@ export function FinancingPanel({
           value={String(financing.status ?? "pending")}
         />
       </SaleField>
+    </div>
+  );
+}
+
+function FinancingPaymentSyncStatus({
+  state,
+}: {
+  state: FinancingPaymentSyncState;
+}) {
+  if (state === "multiple") {
+    return (
+      <div
+        className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-bold text-warning-strong md:col-span-2"
+        role="alert"
+      >
+        <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Há mais de um pagamento de financiamento. Edite valor, banco,
+          classificação e parcelas em cada linha de pagamento; este resumo não
+          sobrescreve lançamentos múltiplos.
+        </span>
+      </div>
+    );
+  }
+
+  if (state === "single_mismatch") {
+    return (
+      <div
+        className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-bold text-warning-strong md:col-span-2"
+        role="status"
+      >
+        <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          O resumo e a linha de financiamento têm dados diferentes. Ao editar
+          qualquer um deles, banco, valor, classificação e parcelas serão
+          reconciliados automaticamente.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-live="polite"
+      className={
+        state === "single"
+          ? "flex items-start gap-2 rounded-xl border border-success/25 bg-success/10 p-3 text-xs font-bold text-success-strong md:col-span-2"
+          : "rounded-xl border border-line bg-app/50 p-3 text-xs font-bold text-muted md:col-span-2"
+      }
+      role="status"
+    >
+      {state === "single" ? (
+        <>
+          <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Resumo e linha de financiamento sincronizados automaticamente:
+            banco, valor, classificação e parcelas usam a mesma base.
+          </span>
+        </>
+      ) : (
+        "Adicione uma linha de pagamento como financiamento para vincular este resumo."
+      )}
     </div>
   );
 }

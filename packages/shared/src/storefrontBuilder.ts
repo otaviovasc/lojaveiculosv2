@@ -107,6 +107,7 @@ export type StorefrontCustomPage = {
   secretToken?: string | null;
   seo?: StorefrontBuilderSeo | null;
   slug: string;
+  sourceListingId?: string | null;
   title: string;
   visible: boolean;
 };

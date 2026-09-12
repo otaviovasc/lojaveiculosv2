@@ -21,7 +21,8 @@ Both files allow:
   - multi-agent lanes `5200` through `5209`
   - high isolated lanes `5290` through `5299`
 - Methods `PUT`, `GET`, and `HEAD`.
-- Upload header `Content-Type`.
+- Upload header `Content-Type` plus AWS checksum headers that may be emitted by
+  the S3-compatible SDK.
 - Exposed headers `ETag` and `Content-Length`.
 
 Cloudflare R2 requires origins to match the browser `Origin` exactly, without
@@ -63,7 +64,8 @@ curl -i -X OPTIONS "$R2_PUBLIC_BASE_URL/some-existing-object" \
 
 The response should include `access-control-allow-origin` matching the origin,
 `access-control-allow-methods` containing `PUT`, and
-`access-control-allow-headers` allowing `content-type`.
+`access-control-allow-headers` allowing `content-type` and any checksum header
+listed in the policy.
 
 If the bucket is behind an R2 custom domain, purge that hostname after changing
 CORS so cached objects do not keep old response headers.

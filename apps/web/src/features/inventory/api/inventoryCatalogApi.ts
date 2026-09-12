@@ -71,6 +71,8 @@ export function createInventoryCatalogApi({
   const getCatalogSnapshot = (input: {
     brandCode: string;
     modelCode: string;
+    modelFamilyCode?: string;
+    modelFamilyName?: string;
     vehicleType?: InventoryCatalogVehicleType;
     yearCode: string;
   }) =>

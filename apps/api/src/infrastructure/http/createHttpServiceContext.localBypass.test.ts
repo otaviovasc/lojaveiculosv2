@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AuditEvent } from "@lojaveiculosv2/audit";
 import type {
   StoreAccessRecord,
   StoreAccessRepository,
@@ -62,6 +63,31 @@ describe("createHttpServiceContext local auth bypass", () => {
     const serviceContext = await createHttpServiceContext(context);
 
     expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
+  });
+
+  it("reuses the generated request identity for public requests", async () => {
+    const audit = {
+      record: vi.fn(async (_event: AuditEvent) => undefined),
+    };
+    const context = await captureContext(
+      new Request("https://api.local/health"),
+    );
+
+    const serviceContext = await createHttpServiceContext(context, { audit });
+
+    await serviceContext.audit.record({
+      action: "health.read",
+      actor: serviceContext.actor,
+      entityId: "health",
+      entityType: "system",
+      requestId: serviceContext.requestId,
+      storeId: serviceContext.storeId,
+      tenantId: serviceContext.tenantId,
+    });
+
+    const [[event]] = audit.record.mock.calls as unknown as [[AuditEvent]];
+    expect(event.requestId).toBe(serviceContext.requestId);
+    expect(event.correlationId).toBe(serviceContext.correlationId);
   });
 });
 

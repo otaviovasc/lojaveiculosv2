@@ -31,6 +31,7 @@ import { settleCommissionEntries } from "../../../domains/finance/services/Finan
 import { createDrizzleFinanceRepository } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import { createDrizzleCommissionWorkspaceRepository } from "../../../infrastructure/db/finance/drizzleCommissionWorkspaceRepository.js";
 import { createDrizzleFinanceAutoEntryRepository } from "../../../infrastructure/db/finance/drizzleFinanceAutoEntryRepository.js";
+import { createDrizzleFinanceStoreIdentityReader } from "../../../infrastructure/db/finance/drizzleFinanceStoreIdentityReader.js";
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
@@ -42,6 +43,7 @@ import {
   createPassthroughTransactionRunner,
   type TransactionRunner,
 } from "../../../shared/transaction.js";
+import { generateFinanceEntryReceiptTransaction } from "./financeReceiptTransaction.js";
 
 export type {
   CreateFinanceServicesOptions,
@@ -96,6 +98,8 @@ export function createFinanceServices(
     getEntry: (context, input) => getFinanceEntryDetail(context, input, ports),
     getEntryDocumentDownload: (context, input) =>
       getFinanceEntryDocumentDownload(context, input, ports),
+    generateEntryReceipt: (context, input) =>
+      generateFinanceEntryReceiptTransaction(context, input, transactionRunner),
     getCommissionWorkspace: (context, input) =>
       getCommissionWorkspace(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
@@ -167,7 +171,10 @@ function resolveFinancePorts(
     documentRepository: createTestDocumentRepository(),
     financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
     financeRepository,
-    objectStorage: createMemoryObjectStorage(),
+    objectStorage: options.objectStorage ?? createMemoryObjectStorage(),
+    ...(options.storeIdentityReader
+      ? { storeIdentityReader: options.storeIdentityReader }
+      : {}),
   };
 }
 
@@ -198,6 +205,7 @@ export function createDrizzleFinancePorts(
     financeAutoEntryRepository:
       createDrizzleFinanceAutoEntryRepository(drizzleClient),
     financeRepository: createDrizzleFinanceRepository(drizzleClient),
+    storeIdentityReader: createDrizzleFinanceStoreIdentityReader(drizzleClient),
     ...(objectStorage ? { objectStorage } : {}),
   };
 }

@@ -63,6 +63,7 @@ function createPublicContext(audit = { record: vi.fn(async () => undefined) }) {
     audit,
     logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     permissions: ["public", "public_storefront.read"],
+    platformAdmin: false,
     requestId: "req_1",
     storeId: null,
     tenantId: null,

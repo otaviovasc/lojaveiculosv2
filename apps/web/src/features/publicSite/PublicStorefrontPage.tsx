@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
+import { readRuntimeApiBaseUrl } from "../account/runtimeAuth";
 import {
   createPublicStorefrontApi,
+  listAllPublicStorefrontListings,
   type PublicStorefrontApi,
 } from "./apiClient";
 import type { PublicListingDetailSnapshot } from "./PublicListingDetailPanel";
@@ -18,22 +20,28 @@ import {
   StorefrontLoadingFrame,
   StorefrontStateFrame,
 } from "./PublicStorefrontPageSupport";
+import { createEditorPreviewStorefrontApi } from "./editorPreviewApi";
 import {
   applyWebsiteBuilderPreviewToStorefrontData,
   mergeWebsiteBuilderPreviewPayload,
   type WebsiteBuilderPreviewConfig,
 } from "./publicStorefrontPreviewBridge";
 
+import { normalizeWebsiteTemplateId } from "./WebsiteBuilderModel";
+
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const { storeSlug } = useParams<{ storeSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditorMode = searchParams.get("editor") === "1";
-  const storefrontApi = useMemo(
-    () =>
+  const templateParam = searchParams.get("template");
+  const storefrontApi = useMemo(() => {
+    const publicApi =
       api ??
-      createPublicStorefrontApi(createPublicStorefrontApiOptions(storeSlug)),
-    [api, storeSlug],
-  );
+      createPublicStorefrontApi(createPublicStorefrontApiOptions(storeSlug));
+    return isEditorMode
+      ? createEditorPreviewStorefrontApi(publicApi)
+      : publicApi;
+  }, [api, isEditorMode, storeSlug]);
   const [retryKey, setRetryKey] = useState(0);
   const [detailRetryKey, setDetailRetryKey] = useState(0);
   const [snapshot, setSnapshot] = useState<PublicStorefrontSnapshot>({
@@ -51,13 +59,11 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     let isActive = true;
     setSnapshot({ isLoading: true });
 
-    storefrontApi
-      .getSettings()
-      .then((settings) =>
-        storefrontApi
-          .listListings({ limit: 12 })
-          .then((data) => ({ ...data, settings })),
-      )
+    Promise.all([
+      storefrontApi.getSettings(),
+      listAllPublicStorefrontListings(storefrontApi),
+    ])
+      .then(([settings, data]) => ({ ...data, settings }))
       .then((data) => {
         if (isActive) setSnapshot({ data, isLoading: false });
       })
@@ -118,14 +124,21 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       return state;
     }
 
+    const effectivePreviewConfig: WebsiteBuilderPreviewConfig = {
+      ...(templateParam
+        ? { templateId: normalizeWebsiteTemplateId(templateParam) }
+        : {}),
+      ...previewConfig,
+    };
+
     return {
       ...state,
       data: applyWebsiteBuilderPreviewToStorefrontData(
         state.data,
-        previewConfig,
+        effectivePreviewConfig,
       ),
     };
-  }, [isEditorMode, previewConfig, state]);
+  }, [isEditorMode, previewConfig, state, templateParam]);
 
   useEffect(() => {
     if (!isEditorMode) setPreviewConfig(null);
@@ -157,7 +170,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     setSearchParams(setListingParam(searchParams, listingSlug));
   };
 
-  if (renderedState.kind === "ready") {
+  if (renderedState.kind === "ready" || renderedState.kind === "empty") {
     return (
       <PublicStorefront
         data={renderedState.data}
@@ -168,27 +181,9 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
         onSubmitListingInterest={(listingSlug, input) =>
           storefrontApi.submitListingInterest(listingSlug, input)
         }
-      />
-    );
-  }
-
-  if (renderedState.kind === "empty") {
-    return (
-      <StorefrontStateFrame
-        action={
-          <Button
-            onClick={() => setRetryKey((current) => current + 1)}
-            type="button"
-            variant="brand"
-          >
-            <RefreshCcw aria-hidden="true" />
-            Verificar novamente
-          </Button>
+        onSubmitStorefrontInterest={(input) =>
+          storefrontApi.submitStorefrontInterest(input)
         }
-        body="Esta loja ainda não publicou veículos na vitrine. Volte em breve para conferir as novidades."
-        illustration={<StatusIllustration variant="empty-lot" />}
-        title="Estoque indisponível"
-        tone="blue"
       />
     );
   }
@@ -262,19 +257,9 @@ function isEditorUpdateMessage(
 }
 
 function createPublicStorefrontApiOptions(storeSlug?: string) {
-  const baseUrl = getPublicStorefrontApiBaseUrl();
-
   return {
-    ...(baseUrl ? { baseUrl } : {}),
     fetch: window.fetch.bind(window),
+    ...readRuntimeApiBaseUrl(),
     ...(storeSlug ? { storeSlug } : {}),
   };
-}
-
-function getPublicStorefrontApiBaseUrl() {
-  const env = import.meta.env as unknown as {
-    VITE_API_BASE_URL?: string;
-  };
-
-  return env.VITE_API_BASE_URL;
 }

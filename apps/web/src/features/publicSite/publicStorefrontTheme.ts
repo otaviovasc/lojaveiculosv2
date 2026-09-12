@@ -129,13 +129,15 @@ export function searchListings(
 
 export function stockEyebrow(type: string) {
   if (type === "search") return "Busca";
-  if (type === "all_properties") return "Todos os veículos";
+  if (type === "all_properties" || type === "grid-compact")
+    return "Todos os veículos";
   return "Destaques";
 }
 
 export function stockTitle(type: string) {
   if (type === "search") return "Encontre por modelo";
-  if (type === "all_properties") return "Estoque completo";
+  if (type === "all_properties" || type === "grid-compact")
+    return "Estoque completo";
   return "Estoque em destaque";
 }
 

@@ -4,7 +4,7 @@ import { StatusPage } from "../../components/ui/StatusPage";
 
 export function PermissionRestrictedPanel({
   children,
-  description = "Essa área exige uma permissão adicional na sua loja.",
+  description = "Sua conta não possui permissão para acessar esta funcionalidade.",
   title = "Acesso restrito",
 }: {
   children?: ReactNode;

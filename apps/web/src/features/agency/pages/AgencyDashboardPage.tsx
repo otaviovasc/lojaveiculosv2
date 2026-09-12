@@ -1,9 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { RefreshCcw } from "lucide-react";
+import {
+  FeatureActionButton,
+  FeaturePageShell,
+} from "../../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import {
   type AgencySort,
   type AgencyStore,
   type AgencyStatusFilter,
+  getPlanStatus,
   mapAgencyOverviewToStores,
 } from "./AgencyDashboardPage.model";
 import {
@@ -11,65 +19,138 @@ import {
   AgencyStatsGrid,
   AgencyStoresCard,
 } from "./AgencyDashboardControls";
-import { AgencyStoresTable } from "./AgencyDashboardStoresTable";
+import {
+  AgencyStoresTable,
+  type AgencyStoreModuleAccess,
+  type AgencyStoreModuleId,
+} from "./AgencyDashboardStoresTable";
 import { createAgencyApi } from "../apiClient";
 import { useAccountSession } from "../../account/accountSession";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
+  AgencyTenantSelector,
+  useAgencyTenantSelection,
+} from "../useAgencyTenantSelection";
+import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../../account/runtimeAuth";
 
 export function AgencyDashboardPage() {
+  const requestGeneration = useRef(0);
   const [stores, setStores] = useState<AgencyStore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<AgencySort>("recent");
   const [statusFilter, setStatusFilter] = useState<AgencyStatusFilter>("all");
   const [planEndDateFrom, setPlanEndDateFrom] = useState("");
   const [planEndDateTo, setPlanEndDateTo] = useState("");
   const session = useAccountSession();
-  const agencyTenant = session.tenantMemberships.find(
-    (membership) =>
-      membership.role === "agency" && membership.status === "active",
-  );
+  const { agencyTenant, agencyTenants, selectAgencyTenant } =
+    useAgencyTenantSelection();
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
+    const generation = ++requestGeneration.current;
     if (!agencyTenant) {
       setStores([]);
       setLoading(false);
       return;
     }
     setLoading(true);
+    setLoadError(null);
+    setStores([]);
     try {
       const token = await readClerkToken();
       const api = createAgencyApi({
         auth: createRuntimeActorAuth(token),
-        fetch: window.fetch.bind(window),
+        fetch: createRuntimeFetch(),
         ...readRuntimeApiBaseUrl(),
       });
       const overview = await api.getOverview(agencyTenant.tenantId);
+      if (generation !== requestGeneration.current) return;
       setStores(mapAgencyOverviewToStores(overview));
     } catch (error) {
-      console.error("Error fetching agency stores:", error);
+      if (generation !== requestGeneration.current) return;
       setStores([]);
+      setLoadError(
+        formatApiErrorDisplay(
+          error,
+          "Não foi possível carregar as lojas da agência.",
+        ),
+      );
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [agencyTenant]);
 
   useEffect(() => {
     void fetchData();
+    return () => {
+      requestGeneration.current += 1;
+    };
   }, [fetchData]);
+
+  const findAgencyOwnedStore = useCallback(
+    (store: AgencyStore) =>
+      session.stores.find(
+        (access) =>
+          access.status === "active" &&
+          access.role === "agency" &&
+          access.tenantId === agencyTenant?.tenantId &&
+          access.storeSlug === store.subdominio,
+      ) ?? null,
+    [agencyTenant?.tenantId, session.stores],
+  );
+
+  const readStoreModuleAccess = useCallback(
+    (
+      store: AgencyStore,
+      moduleId: AgencyStoreModuleId,
+    ): AgencyStoreModuleAccess => {
+      const agencyStore = findAgencyOwnedStore(store);
+      if (!agencyStore) {
+        return {
+          canOpen: false,
+          reason: "Loja indisponível nesta agência.",
+        };
+      }
+      const requirement = storeModuleRequirements[moduleId];
+      if (
+        agencyStore.entitlements &&
+        !agencyStore.entitlements.includes(requirement)
+      ) {
+        return {
+          canOpen: false,
+          reason: "Módulo não contratado para esta loja.",
+        };
+      }
+      return { canOpen: true, reason: null };
+    },
+    [findAgencyOwnedStore],
+  );
 
   const manageStore = useCallback(
     (store: AgencyStore) => {
+      if (!findAgencyOwnedStore(store)) return;
       persistCurrentStoreSlug(store.subdominio, session.user.clerkUserId);
       void navigate("/dashboard");
     },
-    [navigate, session.user.clerkUserId],
+    [findAgencyOwnedStore, navigate, session.user.clerkUserId],
+  );
+
+  const openStoreModule = useCallback(
+    (store: AgencyStore, moduleId: AgencyStoreModuleId) => {
+      if (!readStoreModuleAccess(store, moduleId).canOpen) return;
+      persistCurrentStoreSlug(store.subdominio, session.user.clerkUserId);
+      const moduleHash =
+        moduleId === "crm" ? "/crm?surface=conversations" : `/${moduleId}`;
+      void navigate(`/dashboard#${moduleHash}`);
+    },
+    [navigate, readStoreModuleAccess, session.user.clerkUserId],
   );
 
   const filteredAndSortedStores = stores
@@ -85,32 +166,62 @@ export function AgencyDashboardPage() {
       if (!matchesSearch) return false;
 
       if (statusFilter !== "all") {
-        const endDate = new Date(store.plan_end_date);
         const now = new Date();
-        const isExpired = endDate.getTime() <= now.getTime();
+        const endDate = store.plan_end_date
+          ? new Date(store.plan_end_date)
+          : null;
+        const isExpired = endDate ? endDate.getTime() <= now.getTime() : false;
         const isActiveStatus =
           store.status_assinatura.toUpperCase() === "ATIVA";
-        const daysLeft = Math.ceil(
-          (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
-        );
+        const daysLeft = endDate
+          ? Math.ceil(
+              (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+            )
+          : null;
 
         switch (statusFilter) {
           case "active":
-            if (!isActiveStatus || isExpired || daysLeft <= 5) return false;
+            if (
+              !isActiveStatus ||
+              (!store.is_permanent_plan &&
+                (!endDate || isExpired || (daysLeft ?? 0) <= 5))
+            )
+              return false;
             break;
           case "expiring":
-            if (!isActiveStatus || daysLeft <= 0 || daysLeft > 5) return false;
+            if (
+              !isActiveStatus ||
+              store.is_permanent_plan ||
+              daysLeft === null ||
+              daysLeft <= 0 ||
+              daysLeft > 5
+            )
+              return false;
             break;
           case "expired":
-            if (!isActiveStatus || !isExpired || daysLeft <= -7) return false;
+            if (
+              !isActiveStatus ||
+              store.is_permanent_plan ||
+              !isExpired ||
+              daysLeft === null ||
+              daysLeft <= -7
+            )
+              return false;
             break;
           case "inactive":
-            if (isActiveStatus && (!isExpired || daysLeft > -7)) return false;
+            if (
+              isActiveStatus &&
+              (store.is_permanent_plan ||
+                !isExpired ||
+                (daysLeft !== null && daysLeft > -7))
+            )
+              return false;
             break;
         }
       }
 
       if (planEndDateFrom || planEndDateTo) {
+        if (!store.plan_end_date) return false;
         const planDate = new Date(store.plan_end_date);
         if (planEndDateFrom && planDate < new Date(planEndDateFrom))
           return false;
@@ -123,17 +234,11 @@ export function AgencyDashboardPage() {
       switch (sortBy) {
         case "status": {
           const getStatusPriority = (store: AgencyStore) => {
-            const endDate = new Date(store.plan_end_date);
-            const now = new Date();
-            const isExpired = endDate.getTime() <= now.getTime();
-            const isActive = store.status_assinatura.toUpperCase() === "ATIVA";
-            const daysLeft = Math.ceil(
-              (endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
-            );
-
-            if (!isActive || (isExpired && daysLeft <= -7)) return 3;
-            if (isExpired) return 2;
-            if (daysLeft <= 5) return 1;
+            const label = getPlanStatus(store).label;
+            if (label === "Inativo") return 3;
+            if (label === "Expirou") return 2;
+            if (label === "Vence em breve" || label === "Renovação a confirmar")
+              return 1;
             return 0;
           };
           return getStatusPriority(a) - getStatusPriority(b);
@@ -159,37 +264,87 @@ export function AgencyDashboardPage() {
     });
 
   return (
-    <div className="content-frame animate-fade-in">
-      <AgencyDashboardHeader
-        onCreate={() => void navigate("/agency/admin/create-store")}
+    <FeaturePageShell
+      className="agency-dashboard-shell relative animate-fade-in"
+      variant="content"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-1/4 top-0 hidden h-[300px] w-[500px] rounded-full bg-accent-strong/15 blur-[120px] lg:block"
       />
-      <AgencyStatsGrid stores={stores} />
-      <AgencyStoresCard
-        filteredCount={filteredAndSortedStores.length}
-        onPlanEndDateFromChange={setPlanEndDateFrom}
-        onPlanEndDateToChange={setPlanEndDateTo}
-        onSearchTermChange={setSearchTerm}
-        onSortByChange={setSortBy}
-        onStatusFilterChange={setStatusFilter}
-        planEndDateFrom={planEndDateFrom}
-        planEndDateTo={planEndDateTo}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        statusFilter={statusFilter}
-      >
-        <AgencyStoresTable
-          loading={loading}
-          navigate={navigate}
-          onClearFilters={() => {
-            setSearchTerm("");
-            setStatusFilter("all");
-            setPlanEndDateFrom("");
-            setPlanEndDateTo("");
-          }}
-          onManageStore={manageStore}
-          stores={filteredAndSortedStores}
+      <div className="relative z-10 space-y-6">
+        <AgencyDashboardHeader
+          agencySelector={
+            <AgencyTenantSelector
+              agencyTenant={agencyTenant}
+              agencyTenants={agencyTenants}
+              onChange={selectAgencyTenant}
+            />
+          }
+          storeCount={stores.length}
+          onCreate={() => void navigate("/agency/admin/create-store")}
         />
-      </AgencyStoresCard>
-    </div>
+        {loadError ? (
+          <FeatureAlert
+            action={
+              <FeatureActionButton
+                icon={RefreshCcw}
+                label="Tentar novamente"
+                onClick={() => void fetchData()}
+              />
+            }
+            title="Rede de lojas indisponível"
+            tone="danger"
+          >
+            {loadError}
+          </FeatureAlert>
+        ) : null}
+        <AgencyStatsGrid loading={loading} stores={stores} />
+        <AgencyStoresCard
+          filteredCount={loading ? null : filteredAndSortedStores.length}
+          onPlanEndDateFromChange={setPlanEndDateFrom}
+          onPlanEndDateToChange={setPlanEndDateTo}
+          onSearchTermChange={setSearchTerm}
+          onSortByChange={setSortBy}
+          onStatusFilterChange={setStatusFilter}
+          planEndDateFrom={planEndDateFrom}
+          planEndDateTo={planEndDateTo}
+          searchTerm={searchTerm}
+          sortBy={sortBy}
+          statusFilter={statusFilter}
+        >
+          <AgencyStoresTable
+            hasActiveFilters={
+              searchTerm !== "" ||
+              statusFilter !== "all" ||
+              planEndDateFrom !== "" ||
+              planEndDateTo !== ""
+            }
+            loading={loading}
+            navigate={navigate}
+            onClearFilters={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setPlanEndDateFrom("");
+              setPlanEndDateTo("");
+            }}
+            onManageStore={manageStore}
+            onOpenStoreModule={openStoreModule}
+            readStoreModuleAccess={readStoreModuleAccess}
+            stores={filteredAndSortedStores}
+          />
+        </AgencyStoresCard>
+      </div>
+    </FeaturePageShell>
   );
 }
+
+export const storeModuleRequirements: Record<
+  AgencyStoreModuleId,
+  "crm" | "external_api" | "financing" | "fiscal"
+> = {
+  crm: "crm",
+  fiscal: "fiscal",
+  "public-api": "external_api",
+  simulations: "financing",
+};

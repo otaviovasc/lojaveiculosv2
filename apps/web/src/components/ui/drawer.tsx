@@ -3,8 +3,13 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  activateModalLayer,
+  focusDialogTarget,
+  trapDialogFocus,
+} from "./dialog-accessibility";
 
 interface DrawerProps {
   isOpen: boolean;
@@ -27,20 +32,44 @@ export function Drawer({
   footer,
 }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
+  const titleId = useId();
+  const descriptionId = useId();
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Close on Escape
+  // Escape key & focus management with modal layering
   useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const layer = activateModalLayer();
+    const cancelFocus = focusDialogTarget(
+      () => drawerRef.current,
+      () => closeButtonRef.current,
+    );
+
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape" || !layer.isTopLayer()) return;
+      e.preventDefault();
+      onCloseRef.current();
     };
+
     window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+    return () => {
+      cancelFocus();
+      window.removeEventListener("keydown", handleEscape);
+      layer.release();
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isOpen]);
 
   // Lock scroll when open
   useEffect(() => {
@@ -69,7 +98,13 @@ export function Drawer({
 
           {/* Modal / Drawer Wrapper */}
           <motion.div
+            aria-describedby={description ? descriptionId : undefined}
+            aria-labelledby={title ? titleId : undefined}
+            aria-modal="true"
             ref={drawerRef}
+            role="dialog"
+            tabIndex={-1}
+            onKeyDown={(event) => trapDialogFocus(event, drawerRef.current)}
             initial={{ y: "100%", opacity: 1 }}
             animate={{
               y: 0,
@@ -84,7 +119,7 @@ export function Drawer({
             exit={{ y: "100%", opacity: 0 }}
             className={cn(
               // Common styles
-              "relative bg-card shadow-2xl flex flex-col",
+              "relative bg-card shadow-2xl flex flex-col outline-none",
               // Mobile specific (Drawer)
               "w-full rounded-t-[2.5rem] border-t border-border/50 max-h-[92dvh] overflow-hidden",
               // Desktop specific (Modal)
@@ -100,18 +135,27 @@ export function Drawer({
               <div className="flex items-start justify-between mb-8 shrink-0">
                 <div className="space-y-1">
                   {title && (
-                    <h2 className="text-2xl font-bold font-display tracking-tight text-foreground leading-tight">
+                    <h2
+                      id={titleId}
+                      className="text-2xl font-bold font-display tracking-tight text-foreground leading-tight"
+                    >
                       {title}
                     </h2>
                   )}
                   {description && (
-                    <div className="text-muted-foreground text-sm font-medium">
+                    <div
+                      id={descriptionId}
+                      className="text-muted-foreground text-sm font-medium"
+                    >
                       {description}
                     </div>
                   )}
                 </div>
                 <button
+                  aria-label="Fechar"
+                  ref={closeButtonRef}
                   onClick={onClose}
+                  type="button"
                   className="rounded-full p-2.5 text-muted-foreground/60 transition-all hover:bg-secondary hover:text-foreground active:scale-90"
                 >
                   <X className="size-6" />
@@ -128,7 +172,8 @@ export function Drawer({
                 {footer ?? (
                   <button
                     onClick={onClose}
-                    className="flex-1 bg-primary text-primary-foreground font-bold py-4 rounded-2xl transition-all active:scale-95"
+                    type="button"
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-4 rounded-2xl transition-all active:scale-95 cursor-pointer hover:bg-primary/90"
                   >
                     Concluído
                   </button>

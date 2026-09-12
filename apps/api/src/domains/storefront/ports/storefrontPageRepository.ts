@@ -1,4 +1,5 @@
 import type {
+  StorefrontBuilderComponent,
   StorefrontBuilderConfig,
   StorefrontBuilderVehicle,
   StorefrontCustomPage,
@@ -44,6 +45,7 @@ export type PublicStorefrontCustomPageSnapshot = {
   config: StorefrontBuilderConfig;
   contact: PublicStorefrontContact;
   page: StorefrontCustomPage;
+  sourceListingId?: string | null;
   sitePublished: boolean;
   store: PublicStorefrontPublicStore & {
     id: StoreId;
@@ -52,7 +54,20 @@ export type PublicStorefrontCustomPageSnapshot = {
   vehicles: readonly StorefrontBuilderVehicle[];
 };
 
+export type VehicleVitrinePageWrite = {
+  components: StorefrontBuilderComponent[];
+  description: string;
+  listingId: string;
+  slug: string;
+  title: string;
+  visible: boolean;
+};
+
 export type StorefrontPageRepository = {
+  createOrReuseVehicleVitrine?: (
+    scope: StorefrontPageScope,
+    input: VehicleVitrinePageWrite,
+  ) => Promise<StorefrontCustomPage>;
   createCustomPage: (
     scope: StorefrontPageScope,
     input: StorefrontPageCreateInput & {

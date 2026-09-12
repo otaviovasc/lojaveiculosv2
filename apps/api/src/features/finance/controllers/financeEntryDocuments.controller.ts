@@ -13,6 +13,16 @@ export function registerFinanceEntryDocumentRoutes(
   createContext: (context: Context) => Promise<ServiceContext>,
   contentFetcher?: DocumentContentFetcher,
 ): void {
+  financeFeature.post("/entries/:entryId/receipt", async (context) =>
+    handleFinance(context, async () => {
+      const serviceContext = await createContext(context);
+      const receipt = await services.generateEntryReceipt(serviceContext, {
+        entryId: context.req.param("entryId"),
+      });
+      return context.json(receipt);
+    }),
+  );
+
   financeFeature.get(
     "/entries/:entryId/documents/:documentId/download",
     async (context) =>

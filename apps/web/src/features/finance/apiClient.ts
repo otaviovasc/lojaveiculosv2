@@ -12,6 +12,7 @@ import type {
   FinanceEntryDetail,
   FinanceEntryList,
   FinanceEntryBundle,
+  GenerateFinanceEntryReceiptResult,
   FinanceRecurringEntry,
   FinanceEntryType,
   UpdateFinanceEntryInput,
@@ -48,6 +49,9 @@ export type FinanceApi = {
     input: CreateFinanceRecurringEntryInput,
   ) => Promise<FinanceRecurringEntry>;
   getEntryDetail: (entryId: string) => Promise<FinanceEntryDetail>;
+  generateEntryReceipt: (
+    entryId: string,
+  ) => Promise<GenerateFinanceEntryReceiptResult>;
   getCommissionWorkspace: (input: {
     from: string;
     to: string;
@@ -215,6 +219,11 @@ export function createFinanceApi({
       fetch(financeRoutes.entry(entryId, baseUrl), {
         headers: createFinanceHeaders(auth),
       }).then(readJson<FinanceEntryDetail>),
+    generateEntryReceipt: (entryId) =>
+      postJson<GenerateFinanceEntryReceiptResult>(
+        financeRoutes.entryReceipt(entryId, baseUrl),
+        {},
+      ),
     getCommissionWorkspace: (input) =>
       fetch(financeRoutes.commissionWorkspace(baseUrl, input), {
         headers: createFinanceHeaders(auth),

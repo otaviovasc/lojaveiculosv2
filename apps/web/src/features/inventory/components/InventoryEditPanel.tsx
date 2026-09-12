@@ -79,7 +79,7 @@ export function InventoryEditPanel({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel salvar o estoque.",
+          "Não foi possível salvar o estoque.",
         ),
       });
     }
@@ -95,7 +95,7 @@ export function InventoryEditPanel({
           <InventoryBadge>
             {inventoryStatusLabels[detail.listing.status]}
           </InventoryBadge>
-          <InventoryBadge tone="blue">{mediaCount} midias</InventoryBadge>
+          <InventoryBadge tone="blue">{mediaCount} mídias</InventoryBadge>
           {primaryUnit ? (
             <InventoryBadge tone="blue">
               {primaryUnit.stockNumber ?? primaryUnit.plate ?? "Unidade"}
@@ -103,7 +103,7 @@ export function InventoryEditPanel({
           ) : null}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6">
           <EditListingFields api={api} form={form} onChange={setForm} />
           <EditUnitFields form={form} onChange={setForm} unit={primaryUnit} />
         </div>
@@ -139,19 +139,27 @@ export function InventoryEditPanel({
 
 function SaveStatus({ state }: { state: SaveState }) {
   if (state.kind === "error") {
-    return <p className="text-sm font-black text-danger">{state.message}</p>;
+    return (
+      <p aria-live="polite" className="text-sm font-black text-danger">
+        {state.message}
+      </p>
+    );
   }
 
   if (state.kind === "saved") {
     return (
-      <p className="text-sm font-black text-accent-strong">
-        Alteracoes salvas.
+      <p aria-live="polite" className="text-sm font-black text-accent-strong">
+        Alterações salvas.
       </p>
     );
   }
 
   if (state.kind === "saving") {
-    return <p className="text-sm font-black text-muted">Salvando.</p>;
+    return (
+      <p aria-live="polite" className="text-sm font-black text-muted">
+        Salvando…
+      </p>
+    );
   }
 
   return (

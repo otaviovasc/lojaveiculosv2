@@ -9,10 +9,16 @@ import postgres from "postgres";
 import { splitVehicleCatalogName } from "../domains/vehicle/catalog/catalogNameNormalization.js";
 import { loadLocalEnv } from "../infrastructure/config/loadLocalEnv.js";
 import { slugify } from "../infrastructure/db/vehicleCatalog/drizzleVehicleCatalogSupport.js";
+import { createConsoleServiceLogger } from "../shared/serviceLogger.js";
 
 loadLocalEnv();
 
 const dryRun = process.env.FIPE_CATALOG_NORMALIZE_DRY_RUN === "true";
+const logger = createConsoleServiceLogger({
+  component: "job.normalize-vehicle-catalog",
+  environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+  service: "api",
+});
 
 async function main(): Promise<void> {
   const dbClient = postgres(requireEnv("DATABASE_URL"), { max: 1 });
@@ -65,16 +71,14 @@ async function main(): Promise<void> {
     }
 
     const inactiveFamilies = dryRun ? 0 : await deactivateEmptyFamilies(db);
-    console.log(
-      JSON.stringify({
-        dryRun,
-        familiesCreated,
-        familiesReused,
-        inactiveFamilies,
-        versionsChanged,
-        versionsSeen: versions.length,
-      }),
-    );
+    logger.info("job.vehicle_catalog_normalize.completed", {
+      dryRun,
+      familiesCreated,
+      familiesReused,
+      inactiveFamilies,
+      versionsChanged,
+      versionsSeen: versions.length,
+    });
   } finally {
     await dbClient.end();
   }
@@ -158,4 +162,10 @@ function requireEnv(name: string): string {
   return value;
 }
 
-void main();
+void main().catch((error) => {
+  logger.error("job.vehicle_catalog_normalize.failed", {
+    errorMessage: error instanceof Error ? error.message : String(error),
+    errorName: error instanceof Error ? error.name : "Error",
+  });
+  process.exitCode = 1;
+});

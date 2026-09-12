@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  buildLeadContactPatch,
   createTaskActivityInput,
   deriveLeadStats,
   filterLeads,
   formatRelativeDate,
-  groupLeadsByStatus,
   readTaskMetadata,
 } from "./crmPipelineModels";
 import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
@@ -35,33 +33,6 @@ afterEach(() => {
 });
 
 describe("CRM pipeline models", () => {
-  it("omits an unchanged phone from a contact patch", () => {
-    expect(
-      buildLeadContactPatch(
-        { buyerPhone: "11999990000" },
-        { buyerName: "Ana", buyerPhone: "(11) 99999-0000" },
-      ),
-    ).toEqual({ buyerName: "Ana" });
-    expect(
-      buildLeadContactPatch(
-        { buyerPhone: "11999990000" },
-        { buyerName: "Ana" },
-      ),
-    ).toEqual({ buyerName: "Ana" });
-  });
-
-  it("normalizes only a changed phone in a contact patch", () => {
-    expect(
-      buildLeadContactPatch(
-        { buyerPhone: "11999990000" },
-        { buyerPhone: "+55 (21) 98888-7777" },
-      ),
-    ).toEqual({ buyerPhone: "21988887777" });
-    expect(
-      buildLeadContactPatch({ buyerPhone: "11999990000" }, { buyerPhone: "" }),
-    ).toEqual({ buyerPhone: null });
-  });
-
   it("filters leads by search, source, and status", () => {
     const wonLead: ProductCrmLead = {
       ...lead,
@@ -77,17 +48,6 @@ describe("CRM pipeline models", () => {
         status: "new",
       }),
     ).toEqual([lead]);
-  });
-
-  it("groups leads by V2 pipeline status", () => {
-    const grouped = groupLeadsByStatus([
-      lead,
-      { ...lead, id: "lead-2", status: "contacted" },
-    ]);
-
-    expect(grouped.new).toHaveLength(1);
-    expect(grouped.contacted).toHaveLength(1);
-    expect(grouped.won).toHaveLength(0);
   });
 
   it("creates and reads V2 task activity metadata", () => {

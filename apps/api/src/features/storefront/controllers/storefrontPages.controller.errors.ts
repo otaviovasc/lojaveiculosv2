@@ -3,6 +3,7 @@ import {
   StorefrontPageNotFoundError,
   StorefrontPageRepositoryError,
   StorefrontPageScopeError,
+  StorefrontVehicleVitrineSourceNotFoundError,
 } from "../../../domains/storefront/services/StorefrontService/serviceSupport.js";
 import {
   HttpContextAuthenticationError,
@@ -54,6 +55,14 @@ export async function handleStorefrontPages(
         error,
         message: error.message,
         status: 404,
+      });
+    }
+    if (error instanceof StorefrontVehicleVitrineSourceNotFoundError) {
+      return jsonApiError(context, {
+        code: "STOREFRONT_VITRINE_SOURCE_NOT_PUBLIC",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
     if (error instanceof StorefrontPageRepositoryError) {

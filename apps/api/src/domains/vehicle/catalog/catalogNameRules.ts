@@ -1,36 +1,11 @@
+import { compoundModelBadgeFamiliesAToM } from "./catalogNameCompoundBadges.js";
+import { compoundModelBadgeFamiliesNToZ } from "./catalogNameCompoundBadgesNToZ.js";
+import { compoundNamedFamilies } from "./catalogNameCompoundFamilies.js";
+
 export const compoundFamilies = [
-  "c3 picasso",
-  "c4 lounge",
-  "c4 pallas",
-  "c4 picasso",
-  "c4 cactus",
-  "corolla cross",
-  "grand c4 picasso",
-  "grand caravan",
-  "grand cherokee",
-  "grand siena",
-  "ix 3",
-  "land cruiser",
-  "mustang mach-e",
-  "onix sedan plus",
-  "pt cruiser",
-  "q6 e-tron",
-  "q8 e-tron",
-  "range rover",
-  "range r. velar",
-  "rs e-tron",
-  "rs q3",
-  "rs q8",
-  "serie 3",
-  "serie 4",
-  "serie 5",
-  "serie 7",
-  "song pro",
-  "série 3",
-  "série 4",
-  "série 5",
-  "série 7",
-  "xsara picasso",
+  ...compoundNamedFamilies,
+  ...compoundModelBadgeFamiliesAToM,
+  ...compoundModelBadgeFamiliesNToZ,
 ];
 
 const markerTokenGroups = [

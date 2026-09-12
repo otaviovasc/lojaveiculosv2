@@ -173,36 +173,28 @@
 }
 
 .addon-btn-whatsapp {
-  background: linear-gradient(
-    135deg,
-    var(--color-green-start) 0%,
-    var(--color-green-end) 100%
-  );
-  border-color: #047857;
+  background: var(--color-green-start);
+  border-color: var(--color-success-strong);
   color: var(--color-inverse);
 }
 
 .addon-btn-nfe {
-  background: linear-gradient(
-    135deg,
-    var(--color-blue-start) 0%,
-    var(--color-blue-end) 100%
-  );
-  border-color: #1e40af;
+  background: var(--color-blue-start);
+  border-color: var(--color-blue-end);
   color: var(--color-inverse);
 }
 
 /* Resource carousel backgrounds */
 .dashboard-resource-api {
-  background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
+  background: var(--color-blue-start);
 }
 
 .dashboard-resource-marketing {
-  background: linear-gradient(90deg, var(--color-green-end) 0%, #065f46 100%);
+  background: var(--color-green-end);
 }
 
 .dashboard-resource-design {
-  background: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%);
+  background: var(--color-finance);
 }
 
 /* Carousel controls - Pill style indicators */
@@ -266,7 +258,14 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar::after {
+    animation: none;
   }
 }

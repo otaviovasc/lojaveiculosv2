@@ -5,6 +5,7 @@ import {
   transmissionOptions,
 } from "../model/formModel";
 import type { InventoryEditState } from "../model/inventoryEditModel";
+import { formatInventoryMileageInput } from "../model/inventoryInputFormatting";
 import {
   InventoryField,
   InventoryInput,
@@ -23,23 +24,22 @@ export function InventoryEditTechnicalFields({
       <InventoryField label="Quilometragem">
         <InventoryInput
           inputMode="numeric"
-          min={0}
           onChange={(event) =>
-            onChange({ ...form, mileageKm: event.target.value })
+            onChange({
+              ...form,
+              mileageKm: formatInventoryMileageInput(event.target.value),
+            })
           }
-          type="number"
-          value={form.mileageKm}
-        />
-      </InventoryField>
-      <InventoryField label="Ano do modelo">
-        <InventoryInput
-          inputMode="numeric"
-          min={0}
-          onChange={(event) =>
-            onChange({ ...form, modelYear: event.target.value })
+          placeholder="Ex: 32.500"
+          value={
+            form.mileageKm
+              ? form.mileageKm.includes(".")
+                ? form.mileageKm
+                : Number(form.mileageKm.replace(/\D/g, "")).toLocaleString(
+                    "pt-BR",
+                  )
+              : ""
           }
-          type="number"
-          value={form.modelYear}
         />
       </InventoryField>
       <InventoryField label="Combustível">
@@ -49,7 +49,7 @@ export function InventoryEditTechnicalFields({
           value={form.fuelType}
         />
       </InventoryField>
-      <InventoryField label="Transmissão">
+      <InventoryField label="Câmbio">
         <InventorySelect
           onChange={(transmission) => onChange({ ...form, transmission })}
           options={[
@@ -88,6 +88,7 @@ export function InventoryEditTechnicalFields({
           inputMode="numeric"
           min={0}
           onChange={(event) => onChange({ ...form, doors: event.target.value })}
+          placeholder="Ex: 4"
           type="number"
           value={form.doors}
         />

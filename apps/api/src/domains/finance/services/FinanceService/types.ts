@@ -2,6 +2,7 @@ import type { DocumentRepository } from "../../../documents/ports/documentReposi
 import type { FinanceRepository } from "../../ports/financeRepository.js";
 import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
 import type { CommissionWorkspaceRepository } from "../../ports/commissionWorkspaceRepository.js";
+import type { FinanceStoreIdentityReader } from "../../ports/financeStoreIdentityReader.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 
 export type FinanceServicePorts = {
@@ -10,4 +11,5 @@ export type FinanceServicePorts = {
   financeAutoEntryRepository: FinanceAutoEntryRepository;
   financeRepository: FinanceRepository;
   objectStorage?: ObjectStorage;
+  storeIdentityReader?: FinanceStoreIdentityReader;
 };

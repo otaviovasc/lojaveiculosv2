@@ -17,7 +17,7 @@ export function CrmSurfaceTabs({
       className="crm-surface-tabs"
       onChange={onChange}
       options={[
-        { label: "WhatsApp", value: "whatsapp" },
+        { label: "WhatsApp", value: "conversations" },
         { label: "Clientes", value: "leads" },
       ]}
       value={activeSurface}

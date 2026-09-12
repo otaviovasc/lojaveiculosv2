@@ -15,16 +15,31 @@ export type LeadSource =
   | "external_api"
   | "manual"
   | "olx"
+  | "instagram"
   | "whatsapp"
   | "other";
 
 export type LeadActivityType =
-  "note" | "call" | "whatsapp" | "email" | "status_change" | "task";
+  "note" | "call" | "message" | "email" | "status_change" | "task";
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
+export type CrmLeadOperationalFilters = {
+  assignee?: string;
+  sources?: readonly LeadSource[];
+  listingId?: string;
+  responseState?: "responded" | "no_response";
+  inactiveDays?: number;
+  humanAttendanceState?: "waiting_human" | "in_human_service";
+  sortBy?: "created_at" | "next_task";
+};
+
 export type CrmLead = {
+  responseState?: "responded" | "no_response";
+  humanAttendanceState?: "waiting_human" | "in_human_service" | null;
+  nextTask?: { id: string; title: string; dueAt: string } | null;
   assignedUserId: UserId | null;
+  birthDate?: string | null;
   buyerEmail: string | null;
   buyerName: string | null;
   buyerPhone: string | null;
@@ -63,18 +78,31 @@ export type CrmLeadActivity = {
 
 export type CreateCrmLeadInput = {
   assignedUserId?: UserId | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string;
+  pipelineStageId?: string;
   source: LeadSource;
   storeId: StoreId;
   tenantId: TenantId;
 };
 
+export type CreateIdempotentCrmLeadInput = CreateCrmLeadInput & {
+  sourceIdentityKey: string;
+};
+
+export type CreateIdempotentCrmLeadResult = {
+  created: boolean;
+  lead: CrmLead;
+};
+
 export type UpdateCrmLeadInput = {
   assignedUserId?: UserId | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -110,15 +138,40 @@ export type CreateIdempotentLeadActivityResult = {
   created: boolean;
 };
 
-export type ListCrmLeadsInput = {
+export type ListCrmLeadsInput = CrmLeadOperationalFilters & {
+  cursor?: CrmLeadCursor;
   listingId?: string;
   limit: number;
   offset?: number;
+  pipelineId?: string;
+  pipelineStageId?: string;
   search?: string;
   source?: LeadSource;
   status?: LeadStatus;
   storeId: StoreId;
   tenantId: TenantId;
+};
+
+export type CrmLeadCursor = {
+  sortBy?: "created_at" | "next_task";
+  sortAt?: Date | null;
+  id: string;
+  updatedAt: Date;
+};
+
+export type CountCrmLeadsInput = Omit<
+  ListCrmLeadsInput,
+  "cursor" | "limit" | "offset"
+>;
+
+export type ListCrmLeadBoardInput = CountCrmLeadsInput & {
+  stageLimit: number;
+};
+
+export type CrmLeadBoardStage = {
+  items: readonly CrmLead[];
+  pipelineStageId: string;
+  total: number;
 };
 
 export type ListLeadActivitiesInput = {
@@ -134,13 +187,22 @@ export type CrmRepository = {
     input: CreateIdempotentLeadActivityInput,
   ) => Promise<CreateIdempotentLeadActivityResult>;
   createLead: (input: CreateCrmLeadInput) => Promise<CrmLead>;
+  createLeadIdempotently: (
+    input: CreateIdempotentCrmLeadInput,
+  ) => Promise<CreateIdempotentCrmLeadResult>;
   findLeadById: (input: {
     leadId: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;
+  findLeadByEmail: (input: {
+    buyerEmail: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmLead | null>;
   findLeadByPhone: (input: {
     buyerPhone: string;
+    includeClosed?: boolean;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;
@@ -154,9 +216,13 @@ export type CrmRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<number>;
+  countLeads: (input: CountCrmLeadsInput) => Promise<number>;
   listActivities: (
     input: ListLeadActivitiesInput,
   ) => Promise<readonly CrmLeadActivity[]>;
+  listLeadBoard: (
+    input: ListCrmLeadBoardInput,
+  ) => Promise<readonly CrmLeadBoardStage[]>;
   listLeads: (input: ListCrmLeadsInput) => Promise<readonly CrmLead[]>;
   updateLead: (input: UpdateCrmLeadInput) => Promise<CrmLead>;
 };

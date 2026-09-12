@@ -37,9 +37,15 @@ describe("InsuranceRulesPanel", () => {
     expect(screen.getByText("R$ 250,00")).toBeVisible();
     expect(screen.getByText("R$ 37,50")).toBeVisible();
 
-    await user.click(
-      screen.getByRole("button", { name: "Salvar configuração" }),
-    );
+    const saveButton = screen.getByRole("button", {
+      name: "Salvar configuração",
+    });
+    expect(saveButton).toBeDisabled();
+    const sellerRate = screen.getByLabelText("Comissão do vendedor (%)");
+    await user.clear(sellerRate);
+    await user.type(sellerRate, "0,8");
+    expect(saveButton).toBeEnabled();
+    await user.click(saveButton);
 
     await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
     const mutations = onSave.mock.calls[0]?.[0];
@@ -52,6 +58,9 @@ describe("InsuranceRulesPanel", () => {
       },
     });
     expect(mutations?.[1]?.ruleId).toBe("insurance_seller");
+    expect(mutations?.[1]?.input.metadata).toMatchObject({
+      policy: { product: "insurance", sellerRatePpm: 8_000 },
+    });
   });
 });
 

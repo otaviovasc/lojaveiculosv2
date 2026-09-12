@@ -18,29 +18,58 @@ export type WebsiteBuilderTestimonial = {
   role: string;
 };
 
+export type WebsiteBuilderAboutFeature = {
+  description: string;
+  title: string;
+};
+
 export type WebsiteBuilderHeroMediaSource = "auto" | "banners" | "vehicles";
+export type WebsiteBuilderAppearanceMode = "both" | "dark" | "light";
 
 export type WebsiteBuilderConfig = {
+  aboutButtonText?: string | null;
+  aboutCuradoriaText?: string | null;
+  aboutFeatures: WebsiteBuilderAboutFeature[];
+  aboutImage2Url?: string | null;
   aboutImageUrl?: string | null;
   aboutText?: string | null;
   aboutTitle?: string | null;
+  aboutWhyText?: string | null;
+  aboutWhyTitle?: string | null;
   accentColor: string;
+  appearanceMode: WebsiteBuilderAppearanceMode;
   backgroundColor: string;
   brandColor: string;
   contact: {
     address?: string | null;
+    businessHours?: string | null;
+    description1?: string | null;
+    description2?: string | null;
     email?: string | null;
+    mapEmbedUrl?: string | null;
     phone?: string | null;
+    phone2?: string | null;
+    phone2Label?: string | null;
+    phone3?: string | null;
+    phone3Label?: string | null;
+    phoneLabel?: string | null;
+    showMap: boolean;
+    title?: string | null;
   };
   corretorCreci?: string | null;
   corretorName?: string | null;
   corretorPhotoUrl?: string | null;
   faviconUrl?: string | null;
+  footer: {
+    cnpj?: string | null;
+    extraInfo?: string | null;
+  };
   fonts: {
     body?: string;
     heading?: string;
   };
   heroBannerUrls: string[];
+  heroBannerMobileUrl?: string | null;
   heroImageUrl?: string | null;
   heroMediaSource: WebsiteBuilderHeroMediaSource;
   heroSubtitle?: string | null;

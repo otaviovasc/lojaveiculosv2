@@ -6,6 +6,7 @@ import type {
   PublicStorefrontLeadResult,
   PublicStorefrontListingDetailData,
   PublicStorefrontSettingsData,
+  PublicVehicleListing,
 } from "./types";
 
 export type PublicStorefrontApi = {
@@ -24,10 +25,14 @@ export type PublicStorefrontApi = {
     listingSlug: string,
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
+  submitStorefrontInterest: (
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export type PublicStorefrontQuery = {
   limit?: number;
+  offset?: number;
 };
 
 export type CreatePublicStorefrontApiOptions = {
@@ -76,6 +81,12 @@ export function createPublicStorefrontApi({
         headers: { ...headers, "Content-Type": "application/json" },
         method: "POST",
       }).then(readJson<PublicStorefrontLeadResult>),
+    submitStorefrontInterest: (input) =>
+      fetch(publicStorefrontRoutes.lead(baseUrl), {
+        body: JSON.stringify(input),
+        headers: { ...headers, "Content-Type": "application/json" },
+        method: "POST",
+      }).then(readJson<PublicStorefrontLeadResult>),
   };
 }
 
@@ -95,6 +106,8 @@ export const publicStorefrontRoutes = {
       `/public/storefront/listings/${encodeURIComponent(listingSlug)}/leads`,
       baseUrl,
     ),
+  lead: (baseUrl?: string) =>
+    createPublicStorefrontEndpoint("/public/storefront/leads", baseUrl),
   listings: (baseUrl?: string) =>
     createPublicStorefrontEndpoint("/public/storefront/listings", baseUrl),
   settings: (baseUrl?: string) =>
@@ -107,8 +120,42 @@ export function createPublicStorefrontQuery(query: PublicStorefrontQuery = {}) {
   if (query.limit !== undefined) {
     params.set("limit", String(query.limit));
   }
+  if (query.offset !== undefined) {
+    params.set("offset", String(query.offset));
+  }
 
   return params;
+}
+
+export async function listAllPublicStorefrontListings(
+  api: PublicStorefrontApi,
+): Promise<PublicStorefrontData> {
+  const listings: PublicVehicleListing[] = [];
+  const seenSlugs = new Set<string>();
+  let offset = 0;
+
+  while (true) {
+    const page = await api.listListings({
+      limit: PUBLIC_STOREFRONT_PAGE_SIZE,
+      offset,
+    });
+    const previousListingCount = listings.length;
+    for (const listing of page.listings) {
+      if (seenSlugs.has(listing.slug)) continue;
+      seenSlugs.add(listing.slug);
+      listings.push(listing);
+    }
+
+    if (page.listings.length > 0 && listings.length === previousListingCount) {
+      throw new Error("Public storefront pagination made no progress.");
+    }
+
+    if (page.listings.length < PUBLIC_STOREFRONT_PAGE_SIZE) {
+      return { ...page, listings };
+    }
+
+    offset += page.listings.length;
+  }
 }
 
 function createPreviewTokenQuery(token?: string | null) {
@@ -142,3 +189,5 @@ function withQuery(route: string, params: URLSearchParams[]) {
 
   return query ? `${route}?${query}` : route;
 }
+
+const PUBLIC_STOREFRONT_PAGE_SIZE = 48;

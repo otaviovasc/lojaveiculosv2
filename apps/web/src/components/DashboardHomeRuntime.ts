@@ -6,7 +6,11 @@ import { createAnalyticsApiOptions } from "../features/analytics/runtimeApi";
 
 export function createRuntimeAnalyticsApi(): AnalyticsApi {
   return {
-    getDashboard: async () =>
-      createAnalyticsApi(await createAnalyticsApiOptions()).getDashboard(),
+    getDashboard: async (period) =>
+      createAnalyticsApi(await createAnalyticsApiOptions()).getDashboard(
+        period,
+      ),
+    getHomeDashboard: async () =>
+      createAnalyticsApi(await createAnalyticsApiOptions()).getHomeDashboard(),
   };
 }

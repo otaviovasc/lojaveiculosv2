@@ -1,6 +1,7 @@
 import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, RoleKey } from "@lojaveiculosv2/shared";
 import {
+  createContextualAuditSink,
   createNoopAuditSink,
   createPolicyAwareAuditSink,
 } from "./auditSink.js";
@@ -45,9 +46,11 @@ export type ServiceContext = {
   auditFailureTier?: AuditFailureTier;
   billingManagedBy?: BillingManagedBy;
   correlationId?: string;
+  entitlements?: readonly string[];
   logger: ServiceLogger;
   membershipRole?: RoleKey;
   permissions: string[];
+  readonly platformAdmin: boolean;
   request?: ServiceRequestContext;
   requestId: string;
   source?: ServiceContextSource;
@@ -65,6 +68,7 @@ export type CreateServiceContextInput = {
   actor?: ServiceActor;
   audit?: AuditSink;
   auditFailureTier?: AuditFailureTier;
+  entitlements?: readonly EntitlementKey[];
   logger?: ServiceLogger;
   billingManagedBy?: BillingManagedBy;
   membershipRole?: RoleKey;
@@ -84,12 +88,48 @@ export {
 export function createServiceContext(
   input: CreateServiceContextInput,
 ): ServiceContext {
-  const logger = input.logger ?? createNoopServiceLogger();
+  const actor = input.actor ?? { id: "public", kind: "public" };
+  const request = {
+    ...input.request,
+    correlationId: input.request.correlationId ?? input.request.requestId,
+  };
+  const baseLogger = input.logger ?? createNoopServiceLogger();
+  const logger =
+    baseLogger.child?.({
+      actorExternalId: input.actor?.externalId ?? null,
+      actorId: input.actor?.id ?? "public",
+      actorKind: input.actor?.kind ?? "public",
+      billingManagedBy: input.billingManagedBy ?? null,
+      causationId: request.causationId ?? null,
+      correlationId: request.correlationId,
+      idempotencyKey: request.idempotencyKey ?? null,
+      membershipRole: input.membershipRole ?? null,
+      requestId: request.requestId,
+      requestMethod: request.method ?? null,
+      requestPath: request.path ?? null,
+      service: input.source?.service ?? null,
+      storeId: input.storeId ?? null,
+      tenantId: input.tenantId ?? null,
+      ...(input.source?.component ? { component: input.source.component } : {}),
+      ...(input.source?.environment
+        ? { environment: input.source.environment }
+        : {}),
+      ...(input.source?.region ? { region: input.source.region } : {}),
+      ...(input.source?.version ? { version: input.source.version } : {}),
+    }) ?? baseLogger;
 
   return {
-    actor: input.actor ?? { id: "public", kind: "public" },
+    actor,
     audit: createPolicyAwareAuditSink({
-      sink: input.audit ?? createNoopAuditSink(),
+      sink: createContextualAuditSink({
+        actor,
+        correlationId: request.correlationId,
+        request,
+        sink: input.audit ?? createNoopAuditSink(),
+        ...(input.source ? { source: input.source } : {}),
+        storeId: input.storeId ?? null,
+        tenantId: input.tenantId ?? null,
+      }),
       logger,
       ...(input.auditFailureTier
         ? { defaultPolicy: input.auditFailureTier }
@@ -99,18 +139,18 @@ export function createServiceContext(
     ...(input.billingManagedBy
       ? { billingManagedBy: input.billingManagedBy }
       : {}),
+    ...(input.entitlements ? { entitlements: [...input.entitlements] } : {}),
     ...(input.membershipRole ? { membershipRole: input.membershipRole } : {}),
     permissions: [...(input.permissions ?? [])],
-    request: input.request,
-    requestId: input.request.requestId,
+    platformAdmin: false,
+    request,
+    requestId: request.requestId,
     storeId: input.storeId ?? null,
     tenantId: input.tenantId ?? null,
     ...(input.auditFailureTier
       ? { auditFailureTier: input.auditFailureTier }
       : {}),
-    ...(input.request.correlationId
-      ? { correlationId: input.request.correlationId }
-      : {}),
+    correlationId: request.correlationId,
     ...(input.source ? { source: input.source } : {}),
   };
 }
@@ -120,15 +160,28 @@ export function createServiceLogMetadata(
   metadata: ServiceLogMetadata = {},
 ): ServiceLogMetadata {
   return {
+    ...metadata,
     actorExternalId: context.actor.externalId ?? null,
     actorId: context.actor.id,
     actorKind: context.actor.kind,
     billingManagedBy: context.billingManagedBy ?? null,
+    causationId: context.request?.causationId ?? null,
     correlationId: context.correlationId ?? null,
+    idempotencyKey: context.request?.idempotencyKey ?? null,
     membershipRole: context.membershipRole ?? null,
     requestId: context.requestId,
+    requestMethod: context.request?.method ?? null,
+    requestPath: context.request?.path ?? null,
+    service: context.source?.service ?? null,
     storeId: context.storeId,
     tenantId: context.tenantId,
-    ...metadata,
+    ...(context.source?.component
+      ? { component: context.source.component }
+      : {}),
+    ...(context.source?.environment
+      ? { environment: context.source.environment }
+      : {}),
+    ...(context.source?.region ? { region: context.source.region } : {}),
+    ...(context.source?.version ? { version: context.source.version } : {}),
   };
 }

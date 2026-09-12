@@ -5,14 +5,17 @@ import {
   MessageSquareQuote,
   Palette,
   Phone,
+  Search,
+  SunMoon,
   Sparkles,
+  Store,
   Type,
-  User,
 } from "lucide-react";
-import type { WebsiteBuilderAccordionItem } from "./WebsiteBuilderEditorPanel";
+import type { WebsiteBuilderEditorGroups } from "./WebsiteBuilderEditorPanel";
 import {
   WebsiteBuilderAboutPanel,
   WebsiteBuilderContactPanel,
+  WebsiteBuilderSeoPanel,
   WebsiteBuilderTestimonialsPanel,
 } from "./WebsiteBuilderPanelsContent";
 import {
@@ -22,13 +25,14 @@ import {
   WebsiteBuilderTypographyPanel,
 } from "./WebsiteBuilderPanelsPrimary";
 import { WebsiteBuilderColorsSection } from "./WebsiteBuilderColorsSection";
+import { WebsiteBuilderAppearancePanel } from "./WebsiteBuilderAppearancePanel";
 import { WebsiteBuilderSectionsManager } from "./WebsiteBuilderSectionsManager";
 import type {
   WebsiteBuilderConfig,
   WebsiteBuilderTemplateId,
 } from "./WebsiteBuilderTypes";
 
-export function createWebsiteBuilderAccordionItems({
+export function createWebsiteBuilderEditorGroups({
   config,
   setTemplateId,
   templateId,
@@ -41,97 +45,130 @@ export function createWebsiteBuilderAccordionItems({
     key: K,
     value: WebsiteBuilderConfig[K],
   ) => void;
-}): WebsiteBuilderAccordionItem[] {
-  return [
-    {
-      children: (
-        <WebsiteBuilderTemplatePanel
-          onChange={(value) => {
-            setTemplateId(value);
-            updateConfig("templateId", value);
-          }}
-          templateId={templateId}
-        />
-      ),
-      icon: Sparkles,
-      id: "template",
-      title: "Modelo do Site",
-    },
-    {
-      children: (
-        <WebsiteBuilderBrandPanel config={config} updateConfig={updateConfig} />
-      ),
-      icon: User,
-      id: "brand",
-      title: "Marca e Profissional",
-    },
-    {
-      children: (
-        <WebsiteBuilderColorsSection config={config} onUpdate={updateConfig} />
-      ),
-      icon: Palette,
-      id: "colors",
-      title: "Identidade Visual",
-    },
-    {
-      children: (
-        <WebsiteBuilderTypographyPanel
-          config={config}
-          updateConfig={updateConfig}
-        />
-      ),
-      icon: Type,
-      id: "typography",
-      title: "Tipografia",
-    },
-    {
-      children: (
-        <WebsiteBuilderHeroPanel config={config} updateConfig={updateConfig} />
-      ),
-      icon: Home,
-      id: "hero",
-      title: "Capa do Site (Hero)",
-    },
-    {
-      children: (
-        <WebsiteBuilderAboutPanel config={config} updateConfig={updateConfig} />
-      ),
-      icon: Info,
-      id: "about",
-      title: "Seção Sobre",
-    },
-    {
-      children: (
-        <WebsiteBuilderContactPanel
-          config={config}
-          updateConfig={updateConfig}
-        />
-      ),
-      icon: Phone,
-      id: "contact",
-      title: "Contato e Redes Sociais",
-    },
-    {
-      children: (
-        <WebsiteBuilderTestimonialsPanel
-          config={config}
-          updateConfig={updateConfig}
-        />
-      ),
-      icon: MessageSquareQuote,
-      id: "testimonials",
-      title: "Depoimentos",
-    },
-    {
-      children: (
-        <WebsiteBuilderSectionsManager
-          onUpdate={(sections) => updateConfig("sections", sections)}
-          sections={config.sections}
-        />
-      ),
-      icon: Layers,
-      id: "sections",
-      title: "Secoes do Site",
-    },
-  ];
+}): WebsiteBuilderEditorGroups {
+  return {
+    checklist: [
+      {
+        children: (
+          <WebsiteBuilderTemplatePanel
+            onChange={(value) => {
+              setTemplateId(value);
+              updateConfig("templateId", value);
+            }}
+            templateId={templateId}
+          />
+        ),
+        icon: Sparkles,
+        id: "template",
+        title: "Modelo do Site",
+      },
+      {
+        children: (
+          <WebsiteBuilderBrandPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Store,
+        id: "brand",
+        title: "Marca",
+      },
+      {
+        children: (
+          <WebsiteBuilderColorsSection
+            config={config}
+            onUpdate={updateConfig}
+          />
+        ),
+        icon: Palette,
+        id: "colors",
+        title: "Cores",
+      },
+      {
+        children: (
+          <WebsiteBuilderTypographyPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Type,
+        id: "typography",
+        title: "Tipografia",
+      },
+      {
+        children: (
+          <WebsiteBuilderAppearancePanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: SunMoon,
+        id: "appearance",
+        title: "Aparência",
+      },
+      {
+        children: (
+          <WebsiteBuilderHeroPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Home,
+        id: "hero",
+        title: "Capa",
+      },
+      {
+        children: (
+          <WebsiteBuilderSectionsManager
+            onUpdate={(sections) => updateConfig("sections", sections)}
+            sections={config.sections}
+          />
+        ),
+        icon: Layers,
+        id: "sections",
+        title: "Seções do Site",
+      },
+      {
+        children: (
+          <WebsiteBuilderAboutPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Info,
+        id: "about",
+        title: "Sobre",
+      },
+      {
+        children: (
+          <WebsiteBuilderTestimonialsPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: MessageSquareQuote,
+        id: "testimonials",
+        title: "Depoimentos",
+      },
+      {
+        children: (
+          <WebsiteBuilderContactPanel
+            config={config}
+            updateConfig={updateConfig}
+          />
+        ),
+        icon: Phone,
+        id: "contact",
+        title: "Contato",
+      },
+      {
+        children: (
+          <WebsiteBuilderSeoPanel config={config} updateConfig={updateConfig} />
+        ),
+        icon: Search,
+        id: "seo",
+        title: "SEO",
+      },
+    ],
+  };
 }

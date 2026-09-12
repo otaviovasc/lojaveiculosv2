@@ -43,6 +43,9 @@ import { useFinanceAccess } from "./useFinanceAccess";
 export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   const {
     canCreate,
+    canManageCommissionRules,
+    canReadCommissions,
+    canSettleCommissions,
     canUpdate,
     sellerOptions: teamSellers,
   } = useFinanceAccess(Boolean(api));
@@ -110,7 +113,12 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   }, [api]);
 
   useEffect(() => {
-    if (!runtimeApi) return;
+    if (!runtimeApi || !canReadCommissions) {
+      setIsLoading(false);
+      setSnapshot(emptyCommissionSnapshot());
+      setRules([]);
+      return;
+    }
     if (!workspaceRange) {
       setIsLoading(false);
       setSnapshot(emptyCommissionSnapshot());
@@ -146,7 +154,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     return () => {
       isCurrentRequest = false;
     };
-  }, [refreshToken, runtimeApi, workspaceRange]);
+  }, [canReadCommissions, refreshToken, runtimeApi, workspaceRange]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
 
@@ -168,7 +176,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   };
 
   const paySellerEntries = async (paidAt: string) => {
-    if (!runtimeApi || !paySeller) return;
+    if (!runtimeApi || !paySeller || !canSettleCommissions) return;
     await payCommissionSeller(
       {
         api: runtimeApi,
@@ -212,7 +220,14 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           exportFinanceCsv(workspace.filteredEntries, "commission")
         }
       />
-      <CommissionAccessNotice canManage={canCreate || canUpdate} />
+      <CommissionAccessNotice
+        canManage={
+          canCreate ||
+          canUpdate ||
+          canManageCommissionRules ||
+          canSettleCommissions
+        }
+      />
       <CommissionSummaryCards summary={workspace.summary} />
       <CommissionFiltersPanel
         filters={filters}
@@ -227,6 +242,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
       {workspace.sellers.length ? (
         <CommissionSellerList
           canCreate={canCreate}
+          canSettle={canSettleCommissions}
           canUpdate={canUpdate}
           filters={filters}
           isPayingSellerId={payingSellerId}
@@ -249,7 +265,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         <CommissionEmptyState hasFilters={hasFilters} isLoading={isLoading} />
       )}
       <CommissionRulesPanel
-        canCreate={canCreate}
+        canCreate={canManageCommissionRules}
         items={rules}
         onCreate={async (input) => {
           if (!runtimeApi) throw new Error("Finance API unavailable");
@@ -257,7 +273,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           refresh();
         }}
       />
-      {paySeller ? (
+      {paySeller && canSettleCommissions ? (
         <ConfirmCommissionPayDialog
           filters={filters}
           isLoading={payingSellerId === paySeller.sellerId}

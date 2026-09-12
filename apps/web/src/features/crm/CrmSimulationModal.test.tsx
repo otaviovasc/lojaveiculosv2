@@ -17,7 +17,9 @@ describe("CrmSimulationModal", () => {
     renderModal({ onSaveSimulation });
 
     expect(
-      screen.getByRole("dialog", { name: "Simular financiamento" }),
+      screen.getByRole("dialog", {
+        name: "Estimativa interna de financiamento",
+      }),
     ).toBeInTheDocument();
     const downpayment = screen.getByLabelText("Valor da Entrada (R$)");
     await user.clear(downpayment);

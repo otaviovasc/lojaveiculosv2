@@ -10,7 +10,7 @@ import {
   idealSellPriceCents,
   recommendedAcquisitionCents,
 } from "../model/inventoryPricing";
-import { InventoryField, InventoryInput } from "./InventoryFormParts";
+import { InventoryCurrencyInput, InventoryField } from "./InventoryFormParts";
 
 export function InventoryCreateCostsSection({
   form,
@@ -33,13 +33,13 @@ export function InventoryCreateCostsSection({
             Custos e Precificação
           </h3>
           <p className="text-xs font-bold text-muted">
-            Defina o valor de aquisição (custo) e o valor anunciado. As
-            sugestões FIPE ficam ocultas até você pedir.
+            Defina a aquisição (custo) e a venda anunciada. As sugestões FIPE
+            ficam ocultas até você pedir.
           </p>
         </div>
         <button
           aria-pressed={showSuggestions}
-          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-accent-soft/30 bg-accent-soft px-3 text-xs font-black text-accent-soft-foreground transition-colors hover:bg-accent-soft/70 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-accent-strong/40 bg-accent-soft px-3.5 text-xs font-black text-accent-strong transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto cursor-pointer"
           disabled={!hasFipeReference}
           onClick={() => setShowSuggestions((current) => !current)}
           type="button"
@@ -67,19 +67,17 @@ export function InventoryCreateCostsSection({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Valor de aquisição" required>
-          <InventoryInput
-            inputMode="decimal"
-            onChange={onChange("acquisitionPrice")}
-            placeholder="R$ 0,00"
+        <InventoryField label="Aquisição" required>
+          <InventoryCurrencyInput
+            onValueChange={(value) => onChange("acquisitionPrice")(value)}
+            placeholder="0,00"
             value={form.acquisitionPrice}
           />
         </InventoryField>
-        <InventoryField label="Valor de venda anunciado" required>
-          <InventoryInput
-            inputMode="decimal"
-            onChange={onChange("price")}
-            placeholder="R$ 0,00"
+        <InventoryField label="Venda anunciada" required>
+          <InventoryCurrencyInput
+            onValueChange={(value) => onChange("price")(value)}
+            placeholder="0,00"
             value={form.price}
           />
         </InventoryField>

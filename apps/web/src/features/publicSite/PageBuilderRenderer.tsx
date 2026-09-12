@@ -46,10 +46,15 @@ import {
   PageChromeHeader,
 } from "./PageBuilderChrome";
 import type { BuilderRenderContext } from "./pageBuilderRenderTypes";
-import { componentArrayProp } from "./pageBuilderRenderUtils";
+import { componentArrayProp, textProp } from "./pageBuilderRenderUtils";
 import { fontStack, StorefrontFontLinks } from "./storefrontFonts";
 import { blockLabel } from "./builderBlockCatalog";
 import { readableTextColorForBackground } from "./publicStorefrontTheme";
+import { VehicleVitrineMobileDock } from "./VehicleVitrineComponents";
+import {
+  extractCommercialCondition,
+  hasVitrineContact,
+} from "./vehicleVitrineContent";
 
 type PageBuilderRendererProps = {
   config: StorefrontBuilderConfig;
@@ -79,11 +84,18 @@ export function PageBuilderRenderer({
   const pageFont = page.fontFamily ?? config.fonts.body;
   const headingFont = config.fonts.heading;
   const blockFonts = collectPageBuilderFonts(page.components);
+  const pageVariant = page.components.some(
+    (component) =>
+      component.visible && component.props.pageVariant === "vehicle-vitrine",
+  )
+    ? "vehicle-vitrine"
+    : undefined;
   const pageStyle: CSSProperties & Record<`--${string}`, string> = {
     ...createPageBackgroundStyle(pageBackground, background),
     "--color-accent": accent,
     "--color-accent-soft": `color-mix(in oklab, ${accent} 12%, transparent)`,
     "--color-inverse": readableTextColorForBackground(accent),
+    "--color-accent-foreground": readableTextColorForBackground(accent),
     "--page-builder-heading-font": fontStack(headingFont),
     fontFamily: fontStack(pageFont),
   };
@@ -112,8 +124,14 @@ export function PageBuilderRenderer({
     </div>
   );
 
+  const allComponents = componentArrayProp(page.components).filter(
+    (component) => component.visible,
+  );
+  const isVehicleVitrine = pageVariant === "vehicle-vitrine";
+
   const context: BuilderRenderContext = {
     accent,
+    allComponents,
     config,
     pageSlug: page.slug,
     preview,
@@ -122,11 +140,30 @@ export function PageBuilderRenderer({
     vehicles,
   };
 
+  const heroComponent = allComponents.find(
+    (c) => c.type === "hero" && c.props.pageVariant === "vehicle-vitrine",
+  );
+  const vehicleTitle =
+    textProp(heroComponent?.props?.title) ?? page.title ?? "Veículo";
+  const { commercialCondition } = extractCommercialCondition(
+    textProp(heroComponent?.props?.subtitle),
+  );
+  const ctaUrl = textProp(heroComponent?.props?.ctaUrl) ?? "#contato";
+  const ctaLabel =
+    textProp(heroComponent?.props?.ctaLabel) ?? "Falar com a loja";
+
   return (
     <>
       <StorefrontFontLinks fonts={[pageFont, headingFont, ...blockFonts]} />
       <main
-        className="public-light-surface page-builder-renderer min-h-screen text-app-text"
+        className={cn(
+          "public-light-surface page-builder-renderer min-h-screen text-app-text",
+          isVehicleVitrine &&
+            !preview &&
+            hasVitrineContact(allComponents) &&
+            "vehicle-vitrine-with-dock",
+        )}
+        data-page-variant={pageVariant}
         style={pageStyle}
       >
         <PageBackgroundLayer background={pageBackground} />
@@ -154,6 +191,14 @@ export function PageBuilderRenderer({
             {...(storeSlug ? { storeSlug } : {})}
           />
         ) : null}
+        {isVehicleVitrine && !preview && hasVitrineContact(allComponents) && (
+          <VehicleVitrineMobileDock
+            ctaLabel={ctaLabel}
+            ctaUrl={ctaUrl}
+            priceOrCondition={commercialCondition}
+            title={vehicleTitle}
+          />
+        )}
       </main>
     </>
   );
@@ -194,8 +239,15 @@ function BuilderBlockFrame({
   }, [component.id, onSelect, preview]);
 
   if (!preview || !onSelect) {
-    if (!style) return children;
-    return <div style={style}>{children}</div>;
+    return (
+      <div
+        className={style ? undefined : "contents"}
+        data-page-builder-block={component.type}
+        style={style ?? undefined}
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -209,6 +261,7 @@ function BuilderBlockFrame({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       )}
       data-builder-block-id={component.id}
+      data-page-builder-block={component.type}
       data-selected={selected ? "true" : undefined}
       onClickCapture={(event) => {
         event.preventDefault();

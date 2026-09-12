@@ -29,13 +29,13 @@ describe("resolveSessionDestination", () => {
     ).toBe("/onboarding");
   });
 
-  it("sends platform admins to the internal admin area", () => {
+  it("sends platform admins to the observability command center", () => {
     expect(
       resolveSessionDestination({
         ...baseBootstrap,
         platformAdmin: true,
       }),
-    ).toBe("/platform/admin");
+    ).toBe("/platform/observability");
   });
 
   it("sends store users to the store app", () => {
@@ -73,7 +73,7 @@ describe("resolveSessionDestination", () => {
     ).toBe("/agency/admin");
   });
 
-  it("does not treat owner tenant memberships as agency access", () => {
+  it("does not invent an onboarding destination for an account without active access", () => {
     const bootstrap = {
       ...baseBootstrap,
       tenantMemberships: [
@@ -88,6 +88,26 @@ describe("resolveSessionDestination", () => {
     };
 
     expect(hasActiveAgencyMembership(bootstrap)).toBe(false);
-    expect(resolveSessionDestination(bootstrap)).toBe("/onboarding");
+    expect(resolveSessionDestination(bootstrap)).toBeNull();
+  });
+
+  it("sends a directly managed active store to the store app", () => {
+    expect(
+      resolveSessionDestination({
+        ...baseBootstrap,
+        stores: [
+          {
+            effectivePermissions: [],
+            role: "supervisor",
+            status: "active",
+            storeId: "store-id",
+            storeName: "Auto Prime",
+            storeSlug: "auto-prime",
+            tenantId: "tenant-id",
+            tenantName: "Auto Prime",
+          },
+        ],
+      }),
+    ).toBe("/dashboard");
   });
 });

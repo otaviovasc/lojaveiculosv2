@@ -1,0 +1,418 @@
+/* CRM-only channel inventory and official setup. */
+
+.crm-setup-card {
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.crm-setup-card-heading {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.crm-setup-card-heading > span {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.crm-setup-card-heading h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 650;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.crm-setup-card-heading p,
+.crm-setup-intro {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-channel-identity {
+  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  gap: 0.35rem 1rem;
+  margin-top: 0.2rem;
+}
+
+.crm-channel-identity > span {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.crm-channel-identity small {
+  color: var(--color-text);
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.crm-channel-olx-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.crm-channel-operation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.crm-channel-operation {
+  align-items: start;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  min-width: 0;
+  transition: all 0.15s ease;
+}
+
+.crm-channel-operation > svg {
+  color: var(--color-muted);
+  height: 0.95rem;
+  width: 0.95rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.crm-channel-operation > span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-channel-operation strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.crm-channel-operation-state {
+  border-radius: 9999px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.crm-channel-operation[data-state="active"] .crm-channel-operation-state {
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  color: #059669;
+}
+
+:root[data-theme="dark"]
+  .crm-channel-operation[data-state="active"]
+  .crm-channel-operation-state,
+.dark .crm-channel-operation[data-state="active"] .crm-channel-operation-state {
+  color: #34d399;
+}
+
+.crm-channel-operation[data-state="degraded"] .crm-channel-operation-state,
+.crm-channel-operation[data-state="pending"] .crm-channel-operation-state {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #d97706;
+}
+
+.crm-channel-operation[data-state="failed"] .crm-channel-operation-state {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #dc2626;
+}
+
+.crm-channel-operation[data-state="not_connected"] .crm-channel-operation-state,
+.crm-channel-operation[data-state="indeterminate"]
+  .crm-channel-operation-state {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-channel-operation small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  display: block;
+}
+
+.crm-channel-scope-list,
+.crm-channel-indeterminate,
+.crm-channel-oauth-error {
+  border-left: 2px solid var(--color-warning);
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  gap: 0.2rem;
+  line-height: 1.4;
+  margin-top: 0.45rem;
+  padding-left: 0.7rem;
+}
+
+.crm-channel-scope-list strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.crm-channel-indeterminate {
+  border-color: var(--color-muted);
+}
+
+.crm-channel-oauth-error {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.crm-channel-oauth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.crm-channel-oauth-action {
+  align-items: center;
+  background: #6e0ad6;
+  border: 1px solid #6e0ad6;
+  border-radius: 0.625rem;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  box-shadow: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-channel-oauth-action:hover:not(:disabled) {
+  background: #5808ab;
+  border-color: #5808ab;
+  transform: translateY(-1px);
+}
+
+.crm-channel-oauth-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.crm-channel-support-link {
+  color: var(--color-accent-strong);
+  justify-self: end;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.crm-channel-chevron {
+  color: var(--color-muted);
+  height: 1rem;
+  justify-self: end;
+  width: 1rem;
+}
+
+.crm-channel-empty {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 0.9rem 0.25rem;
+}
+
+.crm-setup-card {
+  border-block: 1px solid var(--color-line);
+  display: grid;
+  gap: 1rem;
+  max-width: 54rem;
+  padding-block: 1rem;
+}
+
+.crm-setup-rail {
+  border-block: 1px solid var(--color-line);
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.7fr) minmax(12rem, 1.2fr) minmax(
+      12rem,
+      1.2fr
+    );
+  margin: 0;
+}
+
+.crm-setup-rail > div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem;
+}
+
+.crm-setup-rail > div + div {
+  border-left: 1px solid var(--color-line);
+}
+
+.crm-setup-rail dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.crm-setup-rail dd {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.crm-setup-rail [data-kind="state"] dd {
+  color: var(--color-warning-strong, var(--color-accent-strong));
+}
+
+.crm-official-stage {
+  border-left: 2px solid var(--color-warning);
+  display: grid;
+  gap: 0.65rem;
+  justify-items: start;
+  padding: 0.35rem 0 0.35rem 0.85rem;
+}
+
+.crm-official-stage[data-state="senders"] {
+  border-color: var(--color-success);
+}
+
+.crm-official-stage-label {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  margin: 0;
+}
+
+.crm-official-stage-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 450;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-official-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.crm-official-senders {
+  border: 0;
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.crm-official-senders legend {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.crm-official-error,
+.crm-setup-notice {
+  border-left: 2px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+}
+
+.crm-official-error {
+  align-items: start;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  display: flex;
+  gap: 0.6rem;
+}
+
+.crm-official-error svg {
+  flex: 0 0 auto;
+  height: 1rem;
+  margin-top: 0.1rem;
+  width: 1rem;
+}
+
+@media (max-width: 640px) {
+  .crm-channel-directory-heading h2,
+  .crm-setup-card-heading h2 {
+    font-size: var(--font-size-md);
+  }
+
+  .crm-connection-admin .crm-channel-row {
+    gap: 0.7rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.85rem 0.1rem;
+  }
+
+  .crm-channel-chevron,
+  .crm-channel-support-link {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .crm-channel-olx-card .crm-channel-oauth-actions {
+    gap: var(--app-space-sm);
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .crm-channel-olx-card .crm-channel-oauth-action {
+    max-width: 100%;
+    white-space: normal;
+    width: 100%;
+  }
+
+  .crm-connection-admin .crm-channel-identity {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .crm-setup-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-setup-rail > div + div {
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .crm-official-stage-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .crm-official-stage-actions .crm-action {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-channel-row {
+    transition: none;
+  }
+}

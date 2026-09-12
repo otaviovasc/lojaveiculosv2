@@ -2,11 +2,10 @@ import { StaticMeshGradient } from "@paper-design/shaders-react";
 import { useEffect, useState } from "react";
 
 const SHADER_COLOR_TOKENS = [
+  "--color-app",
+  "--color-panel",
   "--color-accent",
-  "--color-blue-start",
-  "--color-green-start",
-  "--color-warning",
-  "--color-primary",
+  "--color-app-elevated",
 ] as const;
 
 const SHADER_CONTEXT: WebGLContextAttributes = {
@@ -68,19 +67,19 @@ export function LandingHeroShader() {
           className="landing-hero-shader-canvas"
           colors={colors}
           fit="cover"
-          grainMixer={0}
-          grainOverlay={0}
+          grainMixer={0.12}
+          grainOverlay={0.08}
           maxPixelCount={480_000}
           minPixelRatio={1}
-          mixing={0.88}
-          positions={24}
-          rotation={8}
-          scale={1.16}
+          mixing={0.65}
+          positions={16}
+          rotation={4}
+          scale={1.05}
           speed={0}
-          waveX={0.18}
-          waveXShift={0.42}
-          waveY={0.08}
-          waveYShift={0.64}
+          waveX={0.08}
+          waveXShift={0.2}
+          waveY={0.04}
+          waveYShift={0.3}
           webGlContextAttributes={SHADER_CONTEXT}
         />
       ) : null}

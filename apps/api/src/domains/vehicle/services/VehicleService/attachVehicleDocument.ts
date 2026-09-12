@@ -1,5 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 import type {
   VehicleDocument,
   VehicleDocumentKind,
@@ -38,7 +42,12 @@ export async function attachVehicleDocument(
 ): Promise<VehicleDocument> {
   assertPermission(context, permission);
   const target = await resolveDocumentTarget(context, input, ports);
-  assertStorageScope(context, target.unit.id, input.storageKey);
+  assertStorageScope(
+    context,
+    target.unit.id,
+    input.storageKey,
+    context.source?.environment,
+  );
 
   logVehicleServiceEvent(context, "vehicle_document.attach.started", {
     documentKind: input.kind,
@@ -144,6 +153,7 @@ function assertStorageScope(
   context: ServiceContext,
   unitId: string,
   storageKey: string,
+  environment?: string,
 ) {
   if (!context.tenantId || !context.storeId) {
     throw new Error(
@@ -152,7 +162,14 @@ function assertStorageScope(
   }
 
   const prefix = `tenants/${context.tenantId}/stores/${context.storeId}/units/${unitId}/`;
-  if (!storageKey.startsWith(prefix)) {
+  const scopedStorageKey = stripStorageEnvironmentPrefix(
+    storageKey,
+    environment,
+  );
+  if (
+    !isStorageKeyInEnvironment(storageKey, environment) ||
+    !scopedStorageKey.startsWith(prefix)
+  ) {
     throw new VehicleDocumentStorageScopeError();
   }
 }

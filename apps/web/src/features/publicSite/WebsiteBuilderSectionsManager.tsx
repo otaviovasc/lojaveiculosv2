@@ -29,6 +29,7 @@ export function WebsiteBuilderSectionsManager({
   sections: WebsiteBuilderSection[];
 }) {
   const sorted = [...sections].sort((a, b) => a.order - b.order);
+  const visibleCount = sorted.filter((s) => s.visible).length;
 
   const toggleVisibility = (id: string) => {
     onUpdate(
@@ -36,6 +37,10 @@ export function WebsiteBuilderSectionsManager({
         section.id === id ? { ...section, visible: !section.visible } : section,
       ),
     );
+  };
+
+  const setAllVisibility = (visible: boolean) => {
+    onUpdate(sections.map((section) => ({ ...section, visible })));
   };
 
   const moveSection = (index: number, direction: -1 | 1) => {
@@ -50,22 +55,33 @@ export function WebsiteBuilderSectionsManager({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Ordem e Visibilidade
-        </Label>
-        <p className="text-xs text-muted-foreground">
-          Reordene com os botões e oculte seções que não deseja exibir.
-        </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ordem e Visibilidade
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {visibleCount} de {sorted.length} seções visíveis
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            className="text-xs font-semibold text-primary hover:underline"
+            onClick={() => setAllVisibility(true)}
+            type="button"
+          >
+            Exibir todas
+          </button>
+        </div>
       </div>
       <div className="space-y-2">
         {sorted.map((section, index) => (
           <div
             className={cn(
-              "flex items-center gap-3 rounded-xl border px-4 py-3 transition-all",
+              "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-all",
               section.visible
-                ? "border-border/60 bg-card shadow-sm"
-                : "border-border/40 bg-muted/20 opacity-70",
+                ? "border-border/40 bg-card/60"
+                : "border-border/30 bg-muted/20 opacity-60",
             )}
             key={section.id}
           >

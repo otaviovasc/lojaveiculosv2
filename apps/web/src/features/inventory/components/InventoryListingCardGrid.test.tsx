@@ -34,21 +34,22 @@ describe("InventoryListingCardGrid", () => {
       "h-full",
       "w-full",
       "object-cover",
-      "group-hover:blur-[2px]",
+      "group-hover:scale-105",
     );
     expect(image.parentElement).toHaveClass("aspect-[4/3]", "w-full");
     expect(hoverOverlay).not.toHaveClass("backdrop-blur-[2px]");
     expect(photoGradients).toHaveLength(2);
     expect(photoGradients?.[0]).toHaveClass(
-      "bg-gradient-to-t",
-      "from-black/50",
-      "to-white/10",
+      "bg-gradient-to-b",
+      "from-black/40",
     );
-    expect(photoGradients?.[1]).toHaveClass(
-      "bg-gradient-to-br",
-      "from-accent/20",
-      "mix-blend-soft-light",
-    );
+    expect(photoGradients?.[1]).toHaveClass("bg-accent");
+
+    expect(screen.getByText("Toyota Corolla")).toBeInTheDocument();
+    expect(screen.getByText("XEI")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Toyota - Corolla - XEI"),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the post workflow without selecting the vehicle card", () => {

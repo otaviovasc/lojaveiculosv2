@@ -15,7 +15,10 @@ import {
   CrmScopeError,
   CrmVisitNotFoundError,
   CrmVisitSessionMismatchError,
+  CrmVisitVehicleNotFoundError,
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { CrmPipelineNoOpenStageError } from "../../../domains/crm/crmServiceDomainErrors.js";
+import { CrmLeadLinkedSessionError } from "../../../domains/crm/services/CrmService/setCrmLeadArchived.js";
 
 export async function handleCrm(
   context: Context,
@@ -26,7 +29,13 @@ export async function handleCrm(
 
 function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   if (error instanceof CrmRequestValidationError) {
-    return apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400);
+    return {
+      ...apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400),
+      ...(error.details ? { details: error.details } : {}),
+    };
+  }
+  if (error instanceof CrmPipelineNoOpenStageError) {
+    return apiErrorInput(error, "CRM_PIPELINE_NO_OPEN_STAGE", 409);
   }
   if (error instanceof FinanceAutoEntryEvaluationError) {
     return apiErrorInput(error, "CRM_FINANCIAL_PRODUCT_VALIDATION_ERROR", 400);
@@ -36,6 +45,9 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   }
   if (error instanceof CrmLeadNotFoundError) {
     return apiErrorInput(error, "CRM_LEAD_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmLeadLinkedSessionError) {
+    return apiErrorInput(error, "CRM_LEAD_LINKED_SESSION", 409);
   }
   if (error instanceof CrmPipelineNotFoundError) {
     return apiErrorInput(error, "CRM_PIPELINE_NOT_FOUND", 404);
@@ -55,6 +67,9 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   if (error instanceof CrmVisitSessionMismatchError) {
     return apiErrorInput(error, "CRM_VISIT_SESSION_MISMATCH", 409);
   }
+  if (error instanceof CrmVisitVehicleNotFoundError) {
+    return apiErrorInput(error, "CRM_VISIT_VEHICLE_NOT_FOUND", 404);
+  }
   if (error instanceof CrmScopeError) {
     return apiErrorInput(error, "CRM_SCOPE_ERROR", 400);
   }
@@ -62,8 +77,15 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
 }
 
 export class CrmRequestValidationError extends Error {
-  constructor(message: string) {
+  readonly details?:
+    { fields: { path: string; message: string }[] } | undefined;
+
+  constructor(
+    message: string,
+    details?: { fields: { path: string; message: string }[] },
+  ) {
     super(message);
     this.name = "CrmRequestValidationError";
+    this.details = details;
   }
 }

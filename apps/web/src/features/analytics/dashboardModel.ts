@@ -1,37 +1,37 @@
-import { Banknote, Bot, Target, TrendingUp } from "lucide-react";
+import { Banknote, MessageCircle, Target, TrendingUp } from "lucide-react";
 import type { AnalyticsDashboard, DashboardStatViewModel } from "./types";
 
 const statTones = ["green", "blue", "violet", "pink"] as const;
-const statIcons = [Banknote, Target, TrendingUp, Bot] as const;
+const statIcons = [Banknote, Target, TrendingUp, MessageCircle] as const;
 
 export const fallbackDashboardStats: DashboardStatViewModel[] = [
   {
-    deltaLabel: "aguardando dados",
+    deltaLabel: "—",
     icon: Banknote,
     label: "Faturamento",
     tone: "green",
-    value: "R$ 0",
+    value: "—",
   },
   {
-    deltaLabel: "ticket de vendas",
+    deltaLabel: "—",
     icon: Target,
-    label: "Ticket medio",
+    label: "Ticket médio",
     tone: "blue",
-    value: "R$ 0",
+    value: "—",
   },
   {
-    deltaLabel: "funil ativo",
+    deltaLabel: "—",
     icon: TrendingUp,
-    label: "Conversao",
+    label: "Conversão",
     tone: "violet",
-    value: "0%",
+    value: "—",
   },
   {
-    deltaLabel: "origem WhatsApp",
-    icon: Bot,
-    label: "Leads IA",
+    deltaLabel: "—",
+    icon: MessageCircle,
+    label: "Leads WhatsApp",
     tone: "pink",
-    value: "0",
+    value: "—",
   },
 ];
 
@@ -39,29 +39,41 @@ export function createDashboardStats(
   dashboard: AnalyticsDashboard | null,
 ): DashboardStatViewModel[] {
   if (!dashboard) return fallbackDashboardStats;
+  const canReadFinance =
+    dashboard.financialAvailability.status === "available" &&
+    dashboard.revenue.closedSalesCents !== null;
   const conversion = calculateConversionRate(dashboard);
   const whatsapp = dashboard.leadSources.find((source) =>
     source.key.toLowerCase().includes("whatsapp"),
   );
   const defaults = [
     {
-      deltaLabel: dashboard.kpis[0]?.deltaLabel ?? "periodo atual",
+      deltaLabel: canReadFinance
+        ? (dashboard.kpis[0]?.deltaLabel ?? "período atual")
+        : "Acesso financeiro restrito",
       label: "Faturamento",
-      value: money(dashboard.revenue.closedSalesCents),
+      value: canReadFinance
+        ? money(dashboard.revenue.closedSalesCents ?? 0)
+        : "—",
     },
     {
-      deltaLabel: `${dashboard.inventory.soldListings} vendas fechadas`,
-      label: "Ticket medio",
-      value: money(averageTicketCents(dashboard)),
+      deltaLabel: canReadFinance
+        ? `${dashboard.sales.closedCount} vendas fechadas`
+        : "Acesso financeiro restrito",
+      label: "Ticket médio",
+      value:
+        canReadFinance && dashboard.sales.avgTicketCents !== null
+          ? money(dashboard.sales.avgTicketCents)
+          : "—",
     },
     {
       deltaLabel: `${wonLeads(dashboard)} ganhos no funil`,
-      label: "Conversao",
+      label: "Conversão",
       value: `${conversion}%`,
     },
     {
       deltaLabel: "origem WhatsApp",
-      label: "Leads IA",
+      label: "Leads WhatsApp",
       value: String(whatsapp?.value ?? 0),
     },
   ];
@@ -92,19 +104,18 @@ export function updatedAtLabel(dashboard: AnalyticsDashboard | null) {
 
 export function inventoryRotationLabel(dashboard: AnalyticsDashboard | null) {
   if (!dashboard) return "Sem leitura de estoque";
-  return `${dashboard.inventory.availableListings}/${dashboard.inventory.totalListings} disponiveis`;
+  return `${dashboard.inventory.availableListings}/${dashboard.inventory.totalListings} disponíveis`;
 }
 
 export function receivablesLabel(dashboard: AnalyticsDashboard | null) {
-  if (!dashboard) return "Recebiveis indisponiveis";
+  if (!dashboard) return "Recebíveis indisponíveis";
+  if (
+    dashboard.financialAvailability.status !== "available" ||
+    dashboard.revenue.openReceivablesCents === null
+  ) {
+    return "Recebíveis restritos";
+  }
   return `${money(dashboard.revenue.openReceivablesCents)} em aberto`;
-}
-
-function averageTicketCents(dashboard: AnalyticsDashboard) {
-  if (dashboard.inventory.soldListings <= 0) return 0;
-  return Math.round(
-    dashboard.revenue.closedSalesCents / dashboard.inventory.soldListings,
-  );
 }
 
 function calculateConversionRate(dashboard: AnalyticsDashboard) {

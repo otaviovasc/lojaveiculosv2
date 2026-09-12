@@ -1,5 +1,9 @@
 import type { RefObject } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import {
+  isSaleUnitConflict,
+  saleUnitConflictMessage,
+} from "./salesModuleSupport";
 import { toDraftInput } from "./salesModel";
 import type { SaleRecord } from "./types";
 
@@ -63,6 +67,7 @@ export function serializeSaleDraft(sale: SaleRecord) {
 }
 
 export function saleSaveErrorMessage(error: unknown) {
+  if (isSaleUnitConflict(error)) return saleUnitConflictMessage();
   return formatApiErrorDisplay(error, "Não foi possível salvar a venda.");
 }
 

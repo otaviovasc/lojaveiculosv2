@@ -5,8 +5,17 @@ import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi"
 import type { InventoryListingSummary } from "../inventory/model/types";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
+import { getRoleLabel } from "../settings/settingsLabels";
 import type { RoleKey, StoreMemberOptionView } from "../settings/types";
 import type { ProductCrmLead } from "../crm/productCrmTypes";
+
+export type CreateSaleLeadInput = {
+  buyerEmail: string | null;
+  buyerName: string;
+  buyerPhone: string | null;
+  listingId: string | null;
+  saleId: string;
+};
 
 export type SaleLeadOption = {
   buyerEmail: string | null;
@@ -29,10 +38,12 @@ export type SaleUnitOption = {
   unitLabel: string;
   primaryMediaUrl: string | null;
   plate: string | null;
+  renavam: string | null;
   colorName: string | null;
   manufactureYear: number | null;
   modelYear: number | null;
   mileageKm: number | null;
+  vin: string | null;
 };
 
 export type SaleSellerOption = {
@@ -119,6 +130,24 @@ export async function loadSellerOptions(seed: SaleSellerOption | null = null) {
   }
 }
 
+export async function createSaleLead(
+  input: CreateSaleLeadInput,
+): Promise<SaleLeadOption> {
+  const api = createProductCrmApi(await createProductCrmApiOptions());
+  const lead = await api.createLead({
+    buyerEmail: input.buyerEmail,
+    buyerName: input.buyerName,
+    buyerPhone: input.buyerPhone,
+    listingId: input.listingId,
+    metadata: {
+      origin: "sale_workspace",
+      saleId: input.saleId,
+    },
+    source: "manual",
+  });
+  return toLeadOption(lead);
+}
+
 function fulfilledOrEmpty<T>(
   result: PromiseSettledResult<readonly T[]>,
 ): readonly T[] {
@@ -176,10 +205,12 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
         unitLabel,
         primaryMediaUrl: item.primaryMediaUrl ?? null,
         plate: unit.plate || item.listing.plate || null,
+        renavam: unit.renavam ?? null,
         colorName: unit.colorName ?? null,
         manufactureYear: item.listing.manufactureYear ?? null,
         modelYear: item.listing.modelYear ?? null,
         mileageKm: item.listing.mileageKm ?? null,
+        vin: unit.vin ?? null,
       };
     });
 }
@@ -212,7 +243,7 @@ function mergeSellerOptions(
 }
 
 function roleLabel(role: RoleKey) {
-  return roleLabels[role];
+  return getRoleLabel(role);
 }
 
 function toRoleKey(role: string | null | undefined): RoleKey {
@@ -220,20 +251,17 @@ function toRoleKey(role: string | null | undefined): RoleKey {
 }
 
 function isRoleKey(role: string | null | undefined): role is RoleKey {
-  return (
-    typeof role === "string" &&
-    Object.prototype.hasOwnProperty.call(roleLabels, role)
-  );
+  return typeof role === "string" && roleKeys.has(role as RoleKey);
 }
 
-const roleLabels: Record<RoleKey, string> = {
-  admin: "Admin",
-  agency: "Agencia",
-  investor: "Investidor",
-  owner: "Proprietario",
-  salesman: "Vendedor",
-  supervisor: "Supervisor",
-};
+const roleKeys = new Set<RoleKey>([
+  "admin",
+  "agency",
+  "investor",
+  "owner",
+  "salesman",
+  "supervisor",
+]);
 
 function formatCents(value: number | null) {
   if (!value) return null;

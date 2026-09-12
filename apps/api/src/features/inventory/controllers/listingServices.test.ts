@@ -114,6 +114,28 @@ describe("inventory listing services factory", () => {
     expect(result.listing.priceCents).toBe(12000000);
   });
 
+  it("preserves commercial tags and video through transactional input cleaning", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const services = createInventoryListingServices({ ports });
+
+    const result = await services.updateListingDetails(
+      createContext([
+        "inventory.update_commercial_tags",
+        "inventory.update_video",
+      ]),
+      {
+        commercialTags: ["Baixa quilometragem", "Revisado"],
+        listingId: "listing_1",
+        videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
+      },
+    );
+
+    expect(result.listing).toMatchObject({
+      commercialTags: ["Baixa quilometragem", "Revisado"],
+      videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
+    });
+  });
+
   it("returns edited unit detail under the unit write permission", async () => {
     const ports = createInMemoryVehiclePorts([createListing()]);
     const services = createInventoryListingServices({ ports });

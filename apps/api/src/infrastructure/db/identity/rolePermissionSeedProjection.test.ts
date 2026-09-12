@@ -41,5 +41,16 @@ describe("role permission seed projection", () => {
         .soft(projected.get(role)?.sort(), role)
         .toEqual([...permissions].sort());
     }
+
+    const projectedPermissions = [...projected.values()].flat();
+    expect(projectedPermissions).not.toContain(
+      "crm.whatsapp.connection.manage",
+    );
+    expect(projectedPermissions).toEqual(
+      expect.arrayContaining([
+        "crm.messaging.connection.setup",
+        "crm.messaging.connection.pair",
+      ]),
+    );
   });
 });

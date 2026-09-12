@@ -83,13 +83,108 @@ export function createSeedMediaObjectStore(config) {
         }),
       );
     },
+
+    async uploadRemoteObject(row) {
+      const response = await fetchRemoteImage(row.sourceUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Could not download seeded vehicle image ${row.sourceUrl}: HTTP ${response.status}.`,
+        );
+      }
+
+      const contentType =
+        response.headers.get("content-type")?.split(";", 1)[0].trim() ?? "";
+      if (!contentType.startsWith("image/")) {
+        throw new Error(
+          `Seeded vehicle image ${row.sourceUrl} returned an invalid content type: ${contentType || "missing"}.`,
+        );
+      }
+      const body = Buffer.from(await response.arrayBuffer());
+      if (body.length === 0) {
+        throw new Error(`Seeded vehicle image ${row.sourceUrl} was empty.`);
+      }
+
+      await client.send(
+        new PutObjectCommand({
+          Body: body,
+          Bucket: config.bucketName,
+          CacheControl: "public, max-age=300",
+          ContentType: contentType,
+          Key: row.targetKey,
+          Metadata: {
+            fixture: "local-product-seed",
+            mediaid: String(row.mediaId),
+            sourcepage: row.sourcePage ?? row.sourceUrl,
+            sourcelicense: row.sourceLicense ?? "unspecified",
+            sourceurl: row.sourceUrl,
+          },
+        }),
+      );
+
+      return { contentType, sizeBytes: body.byteLength };
+    },
   };
 }
 
+async function fetchRemoteImage(url) {
+  let lastError;
+  for (const candidate of [
+    url,
+    createCommonsFilePathFallback(url),
+    `https://images.weserv.nl/?url=${encodeURIComponent(url)}`,
+  ].filter(Boolean)) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch(candidate, {
+          headers: {
+            Accept: "image/avif,image/webp,image/jpeg,image/png,image/*;q=0.8",
+            "User-Agent":
+              "Mozilla/5.0 (compatible; LojaVeiculosV2 local seed media/1.0)",
+          },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (response.ok) {
+          return response;
+        }
+        lastError = new Error(`HTTP ${response.status}`);
+        if (response.status === 404) break;
+        if (response.status !== 429 && response.status < 500) return response;
+      } catch (error) {
+        lastError = error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
+  }
+  throw new Error(
+    `Could not download seeded vehicle image ${url}: ${lastError?.message ?? "unknown error"}.`,
+  );
+}
+
+function createCommonsFilePathFallback(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "upload.wikimedia.org") return null;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const thumbIndex = parts.indexOf("thumb");
+    const fileName = decodeURIComponent(
+      thumbIndex >= 0 ? parts[thumbIndex + 3] : parts.at(-1),
+    );
+    if (!fileName) return null;
+    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}?width=1600`;
+  } catch {
+    return null;
+  }
+}
+
 export function isExpectedSeedMediaObject(object, row) {
+  const sourceMetadata = object.metadata?.sourceurl;
+  const sourceMatches =
+    Boolean(row.sourceUrl) && sourceMetadata === row.sourceUrl;
   return Boolean(
     object.exists &&
-    object.contentLength === row.sizeBytes &&
+    (sourceMatches ||
+      (!row.sourceUrl &&
+        (!row.sizeBytes || object.contentLength === row.sizeBytes))) &&
     object.contentType?.startsWith(row.contentType),
   );
 }

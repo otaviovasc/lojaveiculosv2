@@ -1,30 +1,38 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
+import type { CrmQueueVisibility } from "./crmConversationRepository.js";
 import type {
-  WhatsappMessage,
-  WhatsappSession,
-} from "../whatsapp/whatsappModels.js";
+  CrmMessage,
+  CrmConversationCycle,
+} from "../ports/crmConversationRepository.js";
+
+export type CrmPresencePayload = {
+  phone: string;
+  state: "available" | "composing" | "paused" | "unavailable";
+};
 
 export type CrmRealtimeEvent =
   | {
       connectionId: string;
-      message: WhatsappMessage;
-      session: WhatsappSession;
+      message: CrmMessage;
+      conversationCycle: CrmConversationCycle;
       storeId: StoreId;
       tenantId: TenantId;
       type: "message";
     }
   | {
       connectionId: string;
-      session: WhatsappSession;
+      revokedUserId?: UserId;
+      conversationCycle: CrmConversationCycle;
       storeId: StoreId;
       tenantId: TenantId;
-      type: "session";
+      type: "conversationCycle";
     }
   | {
+      assignedUserId: UserId | null;
       connectionId: string;
       lastCustomerReadAt?: string;
       messageId: string;
-      sessionId: string;
+      cycleId: string;
       status: string;
       storeId: StoreId;
       tenantId: TenantId;
@@ -39,8 +47,10 @@ export type CrmRealtimeEvent =
       type: "connection_status";
     }
   | {
+      assignedUserId: UserId | null;
       connectionId: string;
-      payload: Record<string, unknown>;
+      cycleId: string;
+      payload: CrmPresencePayload;
       storeId: StoreId;
       tenantId: TenantId;
       type: "presence";
@@ -59,6 +69,7 @@ export type CrmRealtimeEventEnvelope = {
 export type CrmRealtimeSubscription = {
   connectionId?: string | null;
   onEvent: (event: CrmRealtimeEventEnvelope) => void;
+  queueVisibility: CrmQueueVisibility;
   storeId: StoreId;
   tenantId: TenantId;
 };
@@ -66,6 +77,7 @@ export type CrmRealtimeSubscription = {
 export type CrmRealtimeReplayInput = {
   connectionId?: string | null;
   limit?: number;
+  queueVisibility: CrmQueueVisibility;
   sinceEventId?: string | null;
   storeId: StoreId;
   tenantId: TenantId;
@@ -74,6 +86,7 @@ export type CrmRealtimeReplayInput = {
 export type CrmRealtimeTicket = {
   connectionId?: string | null;
   expiresAt: Date;
+  queueVisibility: CrmQueueVisibility;
   sinceEventId?: string | null;
   storeId: StoreId;
   tenantId: TenantId;

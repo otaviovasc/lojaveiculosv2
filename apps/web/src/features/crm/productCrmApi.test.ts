@@ -2,6 +2,32 @@ import { describe, expect, it } from "vitest";
 import { createProductCrmApi } from "./productCrmApi";
 
 describe("createProductCrmApi", () => {
+  it("sends birthDate on create and update, including an explicit null clear", async () => {
+    const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input: String(input) });
+      return new Response(JSON.stringify({ id: "lead-1", birthDate: null }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createProductCrmApi({ baseUrl: "/api/v1", fetch: fakeFetch });
+
+    await api.createLead({
+      birthDate: "1990-05-15",
+      buyerName: "Ana",
+      source: "manual",
+    });
+    await api.updateLead("lead-1", { birthDate: null });
+
+    expect(JSON.parse(String(calls[0]?.init?.body))).toMatchObject({
+      birthDate: "1990-05-15",
+    });
+    expect(JSON.parse(String(calls[1]?.init?.body))).toEqual({
+      birthDate: null,
+    });
+  });
+
   it("serializes server-side lead filters", async () => {
     const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
     const fakeFetch: typeof fetch = async (input, init) => {
@@ -30,6 +56,60 @@ describe("createProductCrmApi", () => {
       input:
         "/api/v1/crm/leads?listingId=11111111-1111-4111-8111-111111111111&limit=100&offset=200&search=Ana&source=olx&status=contacted",
     });
+  });
+
+  it("serializes stage cursor pagination and keeps page metadata", async () => {
+    const calls: string[] = [];
+    const fakeFetch: typeof fetch = async (input) => {
+      calls.push(String(input));
+      return new Response(
+        JSON.stringify({ leads: [], nextCursor: "next-page", total: 42 }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+    const api = createProductCrmApi({ baseUrl: "/api/v1", fetch: fakeFetch });
+
+    const page = await api.listLeadPage({
+      cursor: "current-page",
+      limit: 20,
+      pipelineId: "11111111-1111-4111-8111-111111111111",
+      pipelineStageId: "22222222-2222-4222-8222-222222222222",
+      search: "hidden customer",
+    });
+
+    expect(calls[0]).toBe(
+      "/api/v1/crm/leads?cursor=current-page&limit=20&pipelineId=11111111-1111-4111-8111-111111111111&pipelineStageId=22222222-2222-4222-8222-222222222222&search=hidden+customer",
+    );
+    expect(page).toEqual({
+      leads: [],
+      nextCursor: "next-page",
+      total: 42,
+    });
+  });
+
+  it("loads all lead-board stages through one endpoint", async () => {
+    const calls: string[] = [];
+    const fakeFetch: typeof fetch = async (input) => {
+      calls.push(String(input));
+      return new Response(JSON.stringify({ stages: [] }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createProductCrmApi({ baseUrl: "/api/v1", fetch: fakeFetch });
+
+    await api.listLeadBoard({
+      pipelineId: "11111111-1111-4111-8111-111111111111",
+      search: "Ana",
+      stageLimit: 20,
+    });
+
+    expect(calls).toEqual([
+      "/api/v1/crm/leads/board?pipelineId=11111111-1111-4111-8111-111111111111&search=Ana&stageLimit=20",
+    ]);
   });
 
   it("posts V2 task activity metadata to lead activities endpoint", async () => {

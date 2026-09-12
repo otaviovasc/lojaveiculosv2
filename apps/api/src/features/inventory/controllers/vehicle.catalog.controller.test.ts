@@ -20,7 +20,7 @@ describe("inventory catalog controller", () => {
       "/api/v1/inventory/catalog/brands/21/versions/4828/years?vehicleType=cars",
     );
     const snapshotResponse = await app.request(
-      "/api/v1/inventory/catalog/snapshot?vehicleType=cars&brandCode=21&modelCode=4828&yearCode=2024-1",
+      "/api/v1/inventory/catalog/snapshot?vehicleType=cars&brandCode=21&modelCode=4828&modelFamilyCode=toro&modelFamilyName=Toro&yearCode=2024-1",
     );
     const historyResponse = await app.request(
       "/api/v1/inventory/catalog/fipe/001267-0/years/2024-1/history?vehicleType=cars",
@@ -28,6 +28,8 @@ describe("inventory catalog controller", () => {
 
     await expect(snapshotResponse.json()).resolves.toMatchObject({
       brandName: "Fiat",
+      modelFamilyCode: "toro",
+      modelFamilyName: "Toro",
       modelName: "Toro Volcano",
       priceCents: 12690000,
       source: "fipe",
@@ -49,6 +51,8 @@ describe("inventory catalog controller", () => {
       {
         brandCode: "21",
         modelCode: "4828",
+        modelFamilyCode: "toro",
+        modelFamilyName: "Toro",
         vehicleType: "cars",
         yearCode: "2024-1",
       },

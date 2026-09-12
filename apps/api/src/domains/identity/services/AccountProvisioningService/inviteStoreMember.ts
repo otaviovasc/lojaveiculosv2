@@ -10,6 +10,7 @@ import {
   assertAssignableStoreInviteRole,
   assertStoreInviteRoleAllowedByActor,
   auditInvitationSendFailure,
+  providerErrorLogFields,
   type AccountProvisioningPorts,
 } from "./serviceSupport.js";
 
@@ -32,10 +33,12 @@ export async function inviteStoreMember(
   }
   assertAssignableStoreInviteRole(input.role);
   const actorStoreRole =
-    await ports.accountProvisioningRepository.findActiveStoreRole({
-      storeId: context.storeId as never,
-      userId: context.actor.id as never,
-    });
+    context.membershipRole === "agency"
+      ? "agency"
+      : await ports.accountProvisioningRepository.findActiveStoreRole({
+          storeId: context.storeId as never,
+          userId: context.actor.id as never,
+        });
   assertStoreInviteRoleAllowedByActor(actorStoreRole, input.role);
   await ports.quotaGuard?.assertAvailable({
     quotaKey: "seller",
@@ -59,8 +62,9 @@ export async function inviteStoreMember(
       storeId: context.storeId as never,
       tenantId: context.tenantId as never,
     });
+  let sent: Awaited<ReturnType<typeof ports.invitationSender.send>>;
   try {
-    const sent = await ports.invitationSender.send({
+    sent = await ports.invitationSender.send({
       email: invitation.email,
       invitationId: invitation.id,
       metadata: {
@@ -98,14 +102,25 @@ export async function inviteStoreMember(
       createServiceLogMetadata(context, {
         errorName: error instanceof Error ? error.name : "UnknownError",
         invitationId: invitation.id,
+        ...providerErrorLogFields(error),
       }),
     );
     return {
       ...invitation,
+      acceptUrl: null,
+      emailDeliveryStatus: "failed" as const,
       status: "send_failed" as const,
     };
   }
 
+  context.logger.info(
+    "identity.store_invitation.delivery_requested",
+    createServiceLogMetadata(context, {
+      invitationId: invitation.id,
+      provider: "clerk",
+      providerInvitationId: sent.clerkInvitationId ?? null,
+    }),
+  );
   await context.audit.record({
     action: "identity.store_invitation.create",
     actor: context.actor,
@@ -114,18 +129,23 @@ export async function inviteStoreMember(
     entityId: invitation.id,
     entityType: "identity_invitation",
     metadata: {
+      emailDeliveryStatus: "requested",
+      provider: "clerk",
       role: invitation.role,
       storeId: invitation.storeId,
     },
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: context.storeId,
-    summary: "Created store member invitation",
+    summary:
+      "Created store member invitation and requested Clerk email delivery",
     tenantId: context.tenantId,
   });
 
   return {
     ...invitation,
+    acceptUrl: sent.acceptUrl ?? null,
+    emailDeliveryStatus: "requested" as const,
     status: "sent" as const,
   };
 }

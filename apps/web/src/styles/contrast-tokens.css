@@ -16,6 +16,11 @@
   --color-finance-readable: var(--color-finance);
   --color-dark-control-surface: #2a2424;
   --color-dark-control-surface-hover: #4a4444;
+  --color-crm-active-emerald: #065f46;
+  --color-crm-active-red: #b91c1c;
+  --color-crm-active-blue: #1d4ed8;
+  --color-crm-active-instagram: #9d174d;
+  --color-crm-active-olx: #581c87;
 }
 
 :root[data-theme="dark"] {
@@ -31,6 +36,11 @@
   --color-danger-soft-foreground: #f4efee;
   --color-info-soft-foreground: #f4efee;
   --color-finance-readable: #a78bfa;
+  --color-crm-active-emerald: #34d399;
+  --color-crm-active-red: #f87171;
+  --color-crm-active-blue: #60a5fa;
+  --color-crm-active-instagram: #f472b6;
+  --color-crm-active-olx: #c084fc;
 }
 
 @theme {

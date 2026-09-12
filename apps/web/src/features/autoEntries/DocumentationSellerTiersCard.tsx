@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
   AutoEntryDomainCard,
   AutoEntryInlineError,
@@ -10,7 +11,8 @@ import {
   AutoEntrySellerField,
   AutoEntryValueOrigin,
 } from "./AutoEntryDomainPrimitives";
-import { familyRules, toMutation } from "./domainModel";
+import { familyRules, toMutation, validMoney } from "./domainModel";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
 import {
   documentationTierDrafts,
@@ -44,6 +46,51 @@ export function DocumentationSellerTiersCard({
       setTiers(stored.length > 0 ? stored : [...documentationTierSuggestions]),
     [stored],
   );
+  const isDirty = useMemo(() => {
+    const baseline = stored.length > 0 ? stored : documentationTierSuggestions;
+    return (
+      tiers.length !== baseline.length ||
+      tiers.some(
+        (tier, index) =>
+          tier.amount !== baseline[index]!.amount ||
+          tier.max !== baseline[index]!.max ||
+          tier.min !== baseline[index]!.min,
+      )
+    );
+  }, [stored, tiers]);
+  useAutoEntryDirty("transfer_documentation_charged", isDirty);
+  // Indexes whose minimum falls inside the previous (lower) tier's range.
+  const overlappingIndexes = useMemo(() => {
+    const parsed = tiers
+      .map((tier, index) => ({
+        index,
+        maxCents: tier.max.trim() ? validMoney(tier.max) : null,
+        minCents: validMoney(tier.min),
+      }))
+      .filter(
+        (
+          tier,
+        ): tier is {
+          index: number;
+          maxCents: number | null;
+          minCents: number;
+        } => tier.minCents !== null,
+      )
+      .sort((left, right) => left.minCents - right.minCents);
+    const overlaps = new Set<number>();
+    let previousMax: number | null = null;
+    for (const tier of parsed) {
+      if (previousMax !== null && tier.minCents <= previousMax) {
+        overlaps.add(tier.index);
+      }
+      if (tier.maxCents === null) {
+        previousMax = Number.POSITIVE_INFINITY;
+      } else if (previousMax === null || tier.maxCents > previousMax) {
+        previousMax = tier.maxCents;
+      }
+    }
+    return overlaps;
+  }, [tiers]);
 
   const save = () => {
     if (!sellerUserId) {
@@ -95,8 +142,9 @@ export function DocumentationSellerTiersCard({
       <div className="grid gap-3">
         {tiers.map((tier, index) => (
           <TierRow
-            key={tier.current?.id ?? index}
             index={index}
+            isOverlapping={overlappingIndexes.has(index)}
+            key={tier.current?.id ?? index}
             onChange={(next) =>
               setTiers(
                 tiers.map((item, itemIndex) =>
@@ -125,6 +173,7 @@ export function DocumentationSellerTiersCard({
       <AutoEntryInlineError message={error} />
       <AutoEntrySaveAction
         canManage={canManage}
+        isDirty={isDirty}
         isSaving={isSaving}
         onClick={save}
       />
@@ -134,11 +183,13 @@ export function DocumentationSellerTiersCard({
 
 function TierRow({
   index,
+  isOverlapping,
   onChange,
   onRemove,
   tier,
 }: {
   index: number;
+  isOverlapping: boolean;
   onChange: (tier: DocumentationTierDraft) => void;
   onRemove: () => void;
   tier: DocumentationTierDraft;
@@ -148,48 +199,59 @@ function TierRow({
       ? ["650,00", "749,99", "25,00"]
       : ["750,00", "Sem limite", "40,00"];
   return (
-    <div className="ae-rule-item grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
-      <TierInput
-        label="Mínimo (R$)"
-        onChange={(min) => onChange({ ...tier, min })}
-        placeholder={defaults[0]!}
-        value={tier.min}
-      />
-      <TierInput
-        label="Máximo (R$)"
-        onChange={(max) => onChange({ ...tier, max })}
-        placeholder={defaults[1]!}
-        value={tier.max}
-      />
-      <TierInput
-        label="Comissão (R$)"
-        onChange={(amount) => onChange({ ...tier, amount })}
-        placeholder={defaults[2]!}
-        value={tier.amount}
-      />
-      <FeatureActionButton
-        icon={Trash2}
-        label={`Remover faixa ${index + 1}`}
-        onClick={onRemove}
-      />
+    <div className="ae-rule-item grid gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="ae-tier-row__label">Faixa {index + 1}</span>
+        <FeatureRowAction
+          ariaLabel={`Remover faixa ${index + 1}`}
+          icon={Trash2}
+          iconClassName="text-danger"
+          onClick={onRemove}
+          tooltip="Remover faixa"
+        />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <TierInput
+          error={isOverlapping ? "Sobrepõe a faixa anterior" : undefined}
+          label="Mínimo (R$)"
+          onChange={(min) => onChange({ ...tier, min })}
+          placeholder={defaults[0]!}
+          value={tier.min}
+        />
+        <TierInput
+          label="Máximo (R$)"
+          onChange={(max) => onChange({ ...tier, max })}
+          placeholder={defaults[1]!}
+          value={tier.max}
+        />
+        <TierInput
+          label="Comissão (R$)"
+          onChange={(amount) => onChange({ ...tier, amount })}
+          placeholder={defaults[2]!}
+          value={tier.amount}
+        />
+      </div>
     </div>
   );
 }
 
 function TierInput({
+  error,
   label,
   onChange,
   placeholder,
   value,
 }: {
+  error?: string | undefined;
   label: string;
   onChange: (value: string) => void;
   placeholder: string;
   value: string;
 }) {
   return (
-    <FeatureField label={label}>
+    <FeatureField error={error} label={label}>
       <FeatureInput
+        className={error ? "ae-tier-input--overlap" : undefined}
         inputMode="decimal"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

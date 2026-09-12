@@ -30,6 +30,7 @@ import { formatCurrency } from "./financeBillsFormat";
 
 export function CommissionSellerList({
   canCreate = true,
+  canSettle = false,
   canUpdate = true,
   filters,
   isPayingSellerId,
@@ -41,6 +42,7 @@ export function CommissionSellerList({
   sellers,
 }: {
   canCreate?: boolean;
+  canSettle?: boolean;
   canUpdate?: boolean;
   filters: CommissionFilters;
   isPayingSellerId: string | null;
@@ -56,6 +58,7 @@ export function CommissionSellerList({
       {sellers.map((seller) => (
         <SellerCard
           canCreate={canCreate}
+          canSettle={canSettle}
           canUpdate={canUpdate}
           filters={filters}
           isPaying={isPayingSellerId === seller.sellerId}
@@ -74,6 +77,7 @@ export function CommissionSellerList({
 
 function SellerCard({
   canCreate,
+  canSettle,
   canUpdate,
   filters,
   isPaying,
@@ -85,6 +89,7 @@ function SellerCard({
   seller,
 }: {
   canCreate: boolean;
+  canSettle: boolean;
   canUpdate: boolean;
   filters: CommissionFilters;
   isPaying: boolean;
@@ -98,7 +103,7 @@ function SellerCard({
   const [expanded, setExpanded] = useState(true);
   const payableEntries = pendingSellerEntries(seller, filters);
   const canPay =
-    canUpdate && seller.sellerId !== "unassigned" && payableEntries.length > 0;
+    canSettle && seller.sellerId !== "unassigned" && payableEntries.length > 0;
   return (
     <article className="commission-seller-card overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]">
       <div className="border-b border-line p-4">
@@ -154,7 +159,7 @@ function SellerCard({
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {canUpdate && canPay ? (
+          {canPay ? (
             <button
               aria-busy={isPaying}
               className="commission-seller-action flex min-h-11 items-center gap-2 rounded-lg bg-accent px-3 text-xs font-black text-accent-foreground disabled:opacity-60"
@@ -176,7 +181,7 @@ function SellerCard({
               Bônus
             </button>
           ) : null}
-          {canUpdate && !canPay ? (
+          {canSettle && !canPay ? (
             <span className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-app px-3 text-xs font-black text-accent-strong">
               {seller.blockedCount > 0 ? (
                 <AlertTriangle aria-hidden="true" className="size-4" />

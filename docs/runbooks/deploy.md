@@ -7,16 +7,21 @@
 3. From the feature branch, run `pnpm run release:staging`. This runs
    `release:verify`, merges the branch into `staging`, and pushes it.
 4. Pushing `staging` triggers the Railway staging auto-deploy (GitHub source,
-   branch `staging`) for the API, web, and CRM schedule worker services.
+   branch `staging`) for the API, web, CRM schedule worker, CRM retention
+   worker, and billing reconciliation worker services.
 5. Wait for the staging API and web deployments to reach `SUCCESS`, then
-   verify the first CRM worker cron execution exits successfully.
+   verify the first CRM schedule and retention worker cron executions exit
+   successfully. Retention must report `dryRun: true`.
 6. Run `pnpm run release:smoke:staging` and test the flows on staging.
 7. Run `pnpm run release:promote` to open the `staging` -> `main` release PR.
    The `main-source-guard` check only allows PRs into `main` from `staging`.
-8. Merge the release PR. The push to `main` triggers the Railway production
-   auto-deploy (GitHub source, branch `main`).
+   Production is not provisioned yet, so this step currently only keeps `main`
+   as the accepted baseline and deploys nothing.
+8. Once production is provisioned, merge the release PR. The push to `main`
+   triggers the Railway production auto-deploy (GitHub source, branch `main`).
 9. Wait for API and web production deployments to reach `SUCCESS`, then
-   verify the first CRM worker cron execution exits successfully.
+   verify the first CRM schedule and retention worker cron executions exit
+   successfully.
 10. Run `pnpm run release:smoke:production`.
 11. Watch Railway logs, HTTP metrics, and Sentry for the release window.
 
@@ -34,16 +39,37 @@ as a break-glass path when the GitHub auto-deploy is unhealthy.
 - Wait for CI stays disabled; quality gates run locally via the pre-commit and
   pre-push hooks, and staging is verified before promotion.
 - API build: `pnpm --filter @lojaveiculosv2/api build`.
-- API start: `pnpm run db:migrate:deploy && pnpm --filter @lojaveiculosv2/api start`.
+- API start: `pnpm run db:migrate:deploy && pnpm run billing:catalog:reconcile && pnpm --filter @lojaveiculosv2/api start`.
+  The catalog step is idempotent and must complete before the API serves
+  requests. It fails closed on an edited deployed version, database drift, a
+  future publication date, or unavailable required audit storage.
+- API deployment overlap is `0` seconds. Railway stops the old API revision
+  before catalog activation in the new revision, preventing old and new
+  binaries from serving different catalog contracts at the same time. Accept
+  the brief deploy interruption until catalog activation moves to a dedicated
+  release phase.
 - API healthcheck: `/ready`.
 - Web build: `pnpm --filter @lojaveiculosv2/web build`.
 - Web start: `pnpm --filter @lojaveiculosv2/web start`.
 - Web healthcheck: `/health`.
 - CRM schedule worker build: `pnpm --filter @lojaveiculosv2/api build`.
-- CRM schedule worker start: `pnpm run crm:whatsapp:schedule:process`.
+- CRM schedule worker start: `pnpm run crm:schedule:process`.
 - CRM schedule worker cron: `*/5 * * * *` UTC. It must close database, audit,
   Redis, and storage clients and exit; an active prior run causes Railway to
   skip the next occurrence.
+- Billing reconciliation worker build: `pnpm --filter @lojaveiculosv2/api build`.
+- Billing reconciliation worker start: `pnpm run billing:asaas:reconcile`.
+- Billing reconciliation worker cron: `*/5 * * * *` UTC with restart policy
+  `NEVER`. It must not run provider reconciliation as a build or deploy hook.
+- Billing product-event delivery is not currently provisioned as a Railway
+  service. The durable outbox remains available for a future reviewed analytics
+  sink and is independent from billing activation.
+- CRM retention worker build: `pnpm --filter @lojaveiculosv2/api build`.
+- CRM retention worker start: `pnpm run crm:retention:process`.
+- CRM retention worker cron: `17 * * * *` UTC with restart policy `NEVER`.
+  Keep `CRM_RETENTION_DRY_RUN=true` for the first staging release; follow the
+  [CRM retention runbook](crm-retention.md) before reviewing any destructive
+  enablement.
 - Configure the worker with the API's Clerk, R2, Z-API, product DB, audit DB,
   and Redis runtime variables before enabling live sends.
 - Keep the full monorepo as build context because both apps import workspace
@@ -70,18 +96,53 @@ Also verify:
 - Railway deployment is active.
 - No new 5xx burst in HTTP logs.
 - No crash loop in deployment logs.
+- The API log reports `billing.catalog.activated` for a new version or
+  `billing.catalog.reconcile_noop` for an already reconciled version. Confirm
+  the expected catalog version and checksum; do not bypass a catalog failure by
+  removing the startup step.
 - Redis is reachable from the API and CRM realtime reconnect/replay succeeds.
 - The CRM schedule worker's most recent cron execution succeeded and no due
   schedule backlog is growing.
+- The billing reconciliation worker's most recent cron execution succeeded and
+  no queued or retryable billing reconciliation backlog is growing.
+- The billing reconciliation worker reports
+  `pendingReconciliationCount`, `oldestPendingReconciliationAgeSeconds`,
+  `reconciliationFailedHireCount`, `missingContractCount`,
+  `replayedProviderEvents`, and `freeFallbacks` in its completed log. Treat
+  `alert.billing_reconciliation.attention_required`, any missing contract, any
+  failed hire, or a pending-event age above 900 seconds as a release blocker
+  until the sanitized provider evidence is reconciled.
+- On staging, complete the Asaas sandbox acceptance matrix for Essencial,
+  Operação, Gestão, and an approved Escala quote. Confirm that checkout return
+  data is only a polling hint, that a checkout event without a subscription ID
+  remains pending activation, and that confirmed/received payment evidence
+  binds the real provider identifiers and activates the plan atomically. Test
+  duplicate and out-of-order events and verify access after the first due-date
+  boundary before promoting the release.
+- Check the billing product-event outbox separately from the audit trail. Its
+  idempotent rows are the durable analytics handoff; `pending` rows require a
+  delivery/replay plan and do not prove that an analytics destination received
+  the event.
+- Product-event delivery is deferred in staging. Do not claim analytics
+  delivery; pending outbox rows are expected and do not block Asaas lifecycle
+  acceptance while no collector is configured.
+- The CRM retention worker's most recent cron execution succeeded, reports
+  `dryRun: true`, and has no blocked or failed store scopes.
 - Sentry release has no new high-frequency exception.
 - Critical public storefront route loads.
+
+If catalog activation fails, keep the API unavailable and correct the catalog
+definition or database drift. Do not edit a deployed catalog or manually point
+back to a superseded version. Publish a new immutable version when a commercial
+rollback is required; contracted subscription-item prices remain unchanged.
 
 ## Cost Controls
 
 - Keep one replica per persistent app service until measured load requires more.
-- Keep one Redis service and one short-lived CRM cron worker per persistent
-  environment. Do not add permanent consumers or extra cron services without a
-  measured backlog or reliability requirement.
+- Keep one Redis service and the required short-lived CRM, retention, and
+  billing reconciliation cron workers per persistent environment. Do not add
+  permanent consumers or other cron services without a measured backlog or
+  reliability requirement.
 - Keep PR environments and Railway buckets disabled by default.
 - Upload only the app services included in the verified release; pushes to the
   environment branch redeploy all app services, so batch changes into one

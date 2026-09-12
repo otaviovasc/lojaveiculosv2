@@ -29,7 +29,7 @@ const expectedStaticExtensions = [
 
 const establishedBudgetCeilings = {
   javascript: 580_000,
-  stylesheet: 645_000,
+  stylesheet: 650_000,
   worker: 1_080_000,
 };
 

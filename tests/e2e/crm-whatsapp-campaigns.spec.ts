@@ -16,7 +16,7 @@ test.describe("CRM WhatsApp campaigns", () => {
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
 
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await expect(
       page.getByRole("tab", { name: /Agendar mensagem/ }),
     ).toBeVisible();

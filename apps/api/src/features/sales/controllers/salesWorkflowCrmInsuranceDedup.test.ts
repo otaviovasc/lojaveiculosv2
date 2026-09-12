@@ -88,5 +88,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function crmContext(permissions: string[]) {
-  return Object.assign(context(permissions), { entitlements: ["crm"] });
+  return Object.assign(context(permissions), {
+    entitlements: ["crm", "finance", "sales"],
+  });
 }

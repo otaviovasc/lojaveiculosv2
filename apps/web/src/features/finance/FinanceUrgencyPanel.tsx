@@ -2,8 +2,10 @@ import {
   AlertTriangle,
   CalendarClock,
   CalendarDays,
+  ChevronUp,
   Pencil,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { cx } from "../../components/ui/featureShared";
@@ -12,6 +14,7 @@ import { formatCurrency, formatDate } from "./financeBillsFormat";
 import type { FinanceEntry } from "./types";
 
 const VISIBLE_ROWS = 3;
+const EXPAND_BATCH = 10;
 
 export function FinanceUrgencyPanel({
   entries,
@@ -22,11 +25,16 @@ export function FinanceUrgencyPanel({
   onEdit: (entry: FinanceEntry) => void;
   onViewAll: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_ROWS + EXPAND_BATCH);
+
   const urgent = urgentFinanceEntries(entries);
   if (urgent.top.length === 0) return null;
   const hasOverdue = urgent.overdue.length > 0;
   const focus = hasOverdue ? urgent.overdue : urgent.upcoming;
-  const rows = urgent.top.slice(0, VISIBLE_ROWS);
+  const rows = expanded
+    ? focus.slice(0, visibleCount)
+    : urgent.top.slice(0, VISIBLE_ROWS);
   const remaining = focus.length - rows.length;
 
   return (
@@ -66,18 +74,79 @@ export function FinanceUrgencyPanel({
         </button>
       </header>
 
-      <div className="finance-urgency-alert__rows">
+      <div
+        className={cx(
+          "finance-urgency-alert__rows",
+          expanded && "max-h-[22rem] overflow-y-auto",
+        )}
+      >
         {rows.map((entry) => (
           <UrgencyRow entry={entry} key={entry.id} onEdit={onEdit} />
         ))}
+        {expanded && remaining > 0 ? (
+          <UrgencyLoadMore
+            onLoadMore={() => setVisibleCount((count) => count + EXPAND_BATCH)}
+          />
+        ) : null}
       </div>
 
-      {remaining > 0 ? (
-        <p className="finance-urgency-alert__footer">
-          +{remaining} outra(s) conta(s) para acompanhar
-        </p>
+      {remaining > 0 || expanded ? (
+        <button
+          aria-expanded={expanded}
+          className="finance-urgency-alert__footer w-full cursor-pointer transition-colors hover:text-app-text"
+          onClick={() => {
+            setExpanded((current) => !current);
+            setVisibleCount(VISIBLE_ROWS + EXPAND_BATCH);
+          }}
+          type="button"
+        >
+          {expanded ? (
+            <span className="inline-flex items-center gap-1">
+              <ChevronUp aria-hidden="true" className="size-3.5" />
+              Mostrar menos
+            </span>
+          ) : (
+            `+${remaining} outra(s) conta(s) para acompanhar — ver todas`
+          )}
+        </button>
       ) : null}
     </section>
+  );
+}
+
+function UrgencyLoadMore({ onLoadMore }: { onLoadMore: () => void }) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onLoadMoreRef.current();
+        }
+      },
+      {
+        root: sentinel.closest(".finance-urgency-alert__rows"),
+        rootMargin: "80px",
+      },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="px-4 py-2 text-center" ref={sentinelRef}>
+      <button
+        className="text-xs font-black text-muted transition-colors hover:text-accent cursor-pointer"
+        onClick={onLoadMore}
+        type="button"
+      >
+        Carregar mais...
+      </button>
+    </div>
   );
 }
 

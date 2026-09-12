@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { createPublicStorefrontApi, publicStorefrontRoutes } from "./apiClient";
+import { describe, expect, it, vi } from "vitest";
+import {
+  createPublicStorefrontApi,
+  listAllPublicStorefrontListings,
+  publicStorefrontRoutes,
+  type PublicStorefrontApi,
+  type PublicStorefrontQuery,
+} from "./apiClient";
 import { publicStorefrontPreview } from "./fixtures";
 
 type FetchCall = {
@@ -22,14 +28,77 @@ describe("createPublicStorefrontApi", () => {
       fetch: fakeFetch,
     });
 
-    const result = await api.listListings({ limit: 6 });
+    const result = await api.listListings({ limit: 6, offset: 12 });
 
     expect(result.store.slug).toBe("demo");
     expect(calls[0]).toMatchObject({
       input:
-        "https://demo.lojaveiculos.com.br/api/v1/public/storefront/listings?limit=6",
+        "https://demo.lojaveiculos.com.br/api/v1/public/storefront/listings?limit=6&offset=12",
       init: { method: "GET" },
     });
+  });
+
+  it("loads every public listing in pages of 48", async () => {
+    const firstListing = publicStorefrontPreview.listings[0]!;
+    const listings = Array.from({ length: 97 }, (_, index) => ({
+      ...firstListing,
+      slug: `vehicle-${index}`,
+    }));
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: vi.fn(),
+      listListings: vi.fn(async (query: PublicStorefrontQuery = {}) => ({
+        listings: listings.slice(
+          query.offset ?? 0,
+          (query.offset ?? 0) + (query.limit ?? 24),
+        ),
+        store: publicStorefrontPreview.store,
+      })),
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    const result = await listAllPublicStorefrontListings(api);
+
+    expect(result.listings).toHaveLength(97);
+    expect(api.listListings).toHaveBeenNthCalledWith(1, {
+      limit: 48,
+      offset: 0,
+    });
+    expect(api.listListings).toHaveBeenNthCalledWith(2, {
+      limit: 48,
+      offset: 48,
+    });
+    expect(api.listListings).toHaveBeenNthCalledWith(3, {
+      limit: 48,
+      offset: 96,
+    });
+  });
+
+  it("fails fast when a full page repeats without new listings", async () => {
+    const firstListing = publicStorefrontPreview.listings[0]!;
+    const listings = Array.from({ length: 48 }, (_, index) => ({
+      ...firstListing,
+      slug: `vehicle-${index}`,
+    }));
+    const listListings = vi.fn(async () => ({
+      listings,
+      store: publicStorefrontPreview.store,
+    }));
+    const api = {
+      getCustomPage: vi.fn(),
+      getListing: vi.fn(),
+      getSettings: vi.fn(),
+      listListings,
+      submitListingInterest: vi.fn(),
+      submitStorefrontInterest: vi.fn(),
+    } satisfies PublicStorefrontApi;
+
+    await expect(listAllPublicStorefrontListings(api)).rejects.toThrow(
+      "Public storefront pagination made no progress.",
+    );
+    expect(listListings).toHaveBeenCalledTimes(2);
   });
 
   it("fails on non-2xx responses", async () => {
@@ -132,7 +201,9 @@ describe("createPublicStorefrontApi", () => {
       buyerEmail: "ana@example.com",
       buyerName: "Ana Cliente",
       buyerPhone: "11999999999",
+      formStartedAt: 1_700_000_000_000,
       message: "Tenho interesse.",
+      website: "",
     });
 
     expect(result.lead.id).toBe("lead_1");
@@ -144,7 +215,49 @@ describe("createPublicStorefrontApi", () => {
           buyerEmail: "ana@example.com",
           buyerName: "Ana Cliente",
           buyerPhone: "11999999999",
+          formStartedAt: 1_700_000_000_000,
           message: "Tenho interesse.",
+          website: "",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    });
+  });
+
+  it("submits landing-page interest without a listing", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(
+        JSON.stringify({
+          deduplicated: false,
+          lead: { id: "lead_2", source: "public_site", status: "new" },
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 201 },
+      );
+    };
+    const api = createPublicStorefrontApi({ fetch: fakeFetch });
+
+    await api.submitStorefrontInterest({
+      buyerEmail: "ana@example.com",
+      buyerName: "Ana Cliente",
+      buyerPhone: "11999999999",
+      formStartedAt: 1_700_000_000_000,
+      message: "Quero conhecer a loja.",
+      website: "",
+    });
+
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/public/storefront/leads",
+      init: {
+        body: JSON.stringify({
+          buyerEmail: "ana@example.com",
+          buyerName: "Ana Cliente",
+          buyerPhone: "11999999999",
+          formStartedAt: 1_700_000_000_000,
+          message: "Quero conhecer a loja.",
+          website: "",
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -160,6 +273,12 @@ describe("createPublicStorefrontApi", () => {
       ),
     ).toBe(
       "https://demo/api/v1/public/storefront/listings/civic%20touring/leads",
+    );
+  });
+
+  it("builds landing-page lead routes", () => {
+    expect(publicStorefrontRoutes.lead("https://demo/api/v1/")).toBe(
+      "https://demo/api/v1/public/storefront/leads",
     );
   });
 

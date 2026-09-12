@@ -1,5 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 import type {
   VehicleMedia,
   VehicleMediaKind,
@@ -44,7 +48,14 @@ export async function createVehicleMedia(
   );
   const expectedPrefix = createStoragePrefix(context, unit.id);
 
-  if (!input.storageKey.startsWith(expectedPrefix)) {
+  const scopedStorageKey = stripStorageEnvironmentPrefix(
+    input.storageKey,
+    context.source?.environment,
+  );
+  if (
+    !isStorageKeyInEnvironment(input.storageKey, context.source?.environment) ||
+    !scopedStorageKey.startsWith(expectedPrefix)
+  ) {
     throw new VehicleMediaStorageScopeError();
   }
 

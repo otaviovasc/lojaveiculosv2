@@ -19,21 +19,36 @@ export type CrmLeadSource =
   | "external_api"
   | "manual"
   | "olx"
+  | "instagram"
   | "whatsapp"
   | "other";
 
+export type CrmLeadResponseState = "responded" | "no_response";
+
+export type CrmLeadHumanAttendanceState = "waiting_human" | "in_human_service";
+
+export type CrmLeadNextTask = {
+  dueAt: string;
+  id: string;
+  title: string;
+};
+
 export type ProductCrmLead = {
   assignedUserId: string | null;
+  birthDate?: string | null;
   buyerEmail: string | null;
   buyerName: string | null;
   buyerPhone: string | null;
   createdAt: string;
+  humanAttendanceState?: CrmLeadHumanAttendanceState | null;
   id: string;
   lastInteractionAt: string | null;
   listingId: string | null;
   metadata: Record<string, unknown>;
+  nextTask?: CrmLeadNextTask | null;
   pipelineId: string | null;
   pipelineStageId: string | null;
+  responseState?: CrmLeadResponseState | null;
   source: CrmLeadSource;
   status: CrmLeadStatus;
   storeId: string;
@@ -64,16 +79,19 @@ export type ProductCrmLeadActivity = {
 };
 
 export type CreateProductCrmLeadInput = {
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineStageId?: string;
   source: CrmLeadSource;
 };
 
 export type UpdateProductCrmLeadInput = {
   assignedUserId?: string | null;
+  birthDate?: string | null;
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;

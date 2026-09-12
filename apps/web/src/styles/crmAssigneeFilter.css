@@ -1,0 +1,112 @@
+/* CRM Assignee / Team Filter Popover */
+
+.crm-assignee-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.625rem;
+  color: var(--color-text);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1.25rem 2.25rem minmax(0, 1fr) auto;
+  min-height: 3.5rem;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.crm-assignee-option:hover,
+.crm-assignee-option[aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.crm-assignee-check {
+  align-items: center;
+  background: var(--color-panel);
+  border: 2px solid var(--color-line);
+  border-radius: 0.375rem;
+  color: transparent;
+  display: inline-flex;
+  height: 1.25rem;
+  justify-content: center;
+  width: 1.25rem;
+  transition: all 0.15s ease;
+}
+
+.crm-assignee-option[aria-selected="true"] .crm-assignee-check {
+  background: #047857;
+  border-color: #047857;
+  color: #ffffff;
+}
+
+.crm-assignee-check svg {
+  height: 0.85rem;
+  width: 0.85rem;
+  stroke-width: 3;
+}
+
+.crm-assignee-avatar {
+  align-items: center;
+  background: color-mix(in srgb, #10b981 14%, var(--color-app));
+  border-radius: 9999px;
+  color: #059669;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+:root[data-theme="dark"] .crm-assignee-avatar,
+.dark .crm-assignee-avatar {
+  color: #34d399;
+}
+
+.crm-assignee-avatar svg {
+  height: 1.1rem;
+  width: 1.1rem;
+}
+
+.crm-assignee-copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.crm-assignee-copy strong,
+.crm-assignee-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-assignee-copy strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+}
+
+.crm-assignee-copy small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.crm-assignee-count {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  height: 1.35rem;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+}

@@ -1,3 +1,4 @@
+import { DEFAULT_STOREFRONT_VEHICLE_IMAGE } from "@lojaveiculosv2/shared";
 import type { InventoryListingDetail, InventoryUnit } from "../model/types";
 import { slugifyCustomPage } from "../../publicSite/customPageUtils";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
@@ -41,7 +42,22 @@ export function createVitrineComponents({
     ? unitPublicPhotos
     : publicPhotos;
   const cover = vitrinePhotos[0];
-  const coverUrl = cover?.url ?? "";
+  const coverUrl = cover?.url ?? DEFAULT_STOREFRONT_VEHICLE_IMAGE;
+  const galleryImages = vitrinePhotos.length
+    ? vitrinePhotos.map((photo, index) => ({
+        alt: photo.altText || `${listing.title} - foto ${index + 1}`,
+        caption: "",
+        id: photo.id || `photo_${index}`,
+        url: photo.url,
+      }))
+    : [
+        {
+          alt: `${listing.title}: foto em preparação`,
+          caption: "",
+          id: "photo_pending",
+          url: DEFAULT_STOREFRONT_VEHICLE_IMAGE,
+        },
+      ];
 
   const formattedWhatsapp = whatsappPhone.replace(/[^0-9]/g, "");
   const whatsappUrl = formattedWhatsapp
@@ -50,19 +66,21 @@ export function createVitrineComponents({
           listing.priceCents ? formatPrice(listing.priceCents) : "Sob Consulta"
         } e gostaria de mais informações.`,
       )}`
-    : "#";
+    : `/${storeSlug}#contato`;
+  const price = listing.priceCents
+    ? formatPrice(listing.priceCents)
+    : "Sob consulta";
 
   return [
     {
-      id: "header",
-      type: "header",
+      id: "vitrine_trust",
+      type: "marquee",
       order: 0,
       visible: true,
       props: {
-        logoText: storeName,
-        showContactButton: true,
-        contactButtonText: "Falar Conosco",
-        contactButtonLink: whatsappUrl,
+        direction: "left",
+        speed: "slow",
+        text: `${storeName} · estoque real · atendimento direto · avaliação de troca · financiamento`,
       },
     },
     {
@@ -71,11 +89,15 @@ export function createVitrineComponents({
       order: 1,
       visible: true,
       props: {
-        badge: `${specs.modality} · ${listing.manufactureYear || ""}/${listing.modelYear || ""}`,
+        badge: `${specs.modality} · pronta entrega · ${listing.manufactureYear || ""}/${listing.modelYear || ""}`,
+        pageVariant: "vehicle-vitrine",
         title: listing.title,
-        subtitle: `Preço anunciado: ${listing.priceCents ? formatPrice(listing.priceCents) : "Sob Consulta"} · ${specs.km} · ${specs.transmission} · ${specs.fuel}`,
-        ctaLabel: "Garantir no WhatsApp",
+        subtitle: `${price} · ${specs.km} · ${specs.transmission} · ${specs.fuel}. Conheça todos os detalhes e fale diretamente com a equipe da ${storeName}.`,
+        ctaLabel: formattedWhatsapp
+          ? "Conversar sobre este veículo"
+          : "Falar com a loja",
         ctaUrl: whatsappUrl,
+        imageAlt: `${listing.title} anunciado pela ${storeName}`,
         imageUrl: coverUrl,
       },
     },
@@ -85,8 +107,9 @@ export function createVitrineComponents({
       order: 2,
       visible: true,
       props: {
-        title: "Ficha Técnica",
-        subtitle: "Especificações detalhadas do veículo para consulta rápida",
+        title: "Tudo o que importa, sem letras miúdas",
+        subtitle:
+          "Os principais dados deste veículo organizados para uma decisão mais segura.",
         specs: {
           Cor: specs.color,
           Quilometragem: specs.km,
@@ -104,58 +127,56 @@ export function createVitrineComponents({
       order: 3,
       visible: true,
       props: {
-        title: "Galeria de Fotos",
-        subtitle: "Imagens detalhadas do veículo em nosso estoque",
-        images: vitrinePhotos.map((photo, index) => ({
-          id: photo.id || `photo_${index}`,
-          url: photo.url,
-          alt: photo.altText || listing.title,
-          caption: "",
-        })),
+        title: "Veja cada detalhe",
+        subtitle: "Fotos reais e públicas deste veículo no estoque da loja.",
+        images: galleryImages,
         columns: 3,
+        gap: "sm",
+        layout: "grid",
         lightboxEnabled: true,
+        showCaptions: false,
       },
     },
     {
-      id: "about",
-      type: "about",
+      id: "vehicle_story",
+      type: "scroll_zoom",
       order: 4,
       visible: true,
       props: {
-        title: "Destaques e Histórico",
-        text:
+        title: "Um veículo para conhecer de perto",
+        subtitle:
           listing.description ||
-          "Veículo de alta procedência, revisado e pronto para entrega.",
-        imageUrl: vitrinePhotos[1]?.url || coverUrl || "",
-        imagePosition: "right",
+          "Veículo selecionado pela loja, apresentado com transparência e pronto para uma visita.",
+        imageUrl: vitrinePhotos[1]?.url || coverUrl,
+      },
+    },
+    {
+      id: "contact",
+      type: "contact_section",
+      order: 5,
+      visible: true,
+      props: {
+        fields: { email: true, message: true, name: true, phone: true },
+        submitButtonText: "Quero falar sobre este veículo",
+        subtitle: `Envie seus dados para a equipe da ${storeName} responder com disponibilidade, troca e financiamento.`,
+        successMessage:
+          "Mensagem enviada. A equipe entrará em contato em breve.",
+        title: "Este veículo combina com você?",
       },
     },
     {
       id: "cta",
       type: "cta",
-      order: 5,
-      visible: true,
-      props: {
-        title: "Ficou interessado?",
-        subtitle:
-          "Fale diretamente com nossa equipe comercial para simular financiamento, avaliar troca ou tirar dúvidas.",
-        buttonLabel: "Falar com Consultor no WhatsApp",
-        buttonUrl: whatsappUrl,
-      },
-    },
-    {
-      id: "footer",
-      type: "footer",
       order: 6,
       visible: true,
       props: {
-        showSocial: true,
-        columns: [
-          {
-            label: "Links Úteis",
-            links: [{ href: `/${storeSlug}`, title: "Voltar ao Estoque" }],
-          },
-        ],
+        title: `Não deixe o ${listing.title} passar`,
+        subtitle:
+          "Confirme a disponibilidade, agende sua visita ou envie os dados do seu usado para avaliação.",
+        buttonLabel: formattedWhatsapp
+          ? "Chamar agora no WhatsApp"
+          : "Voltar para a loja",
+        buttonUrl: whatsappUrl,
       },
     },
   ];

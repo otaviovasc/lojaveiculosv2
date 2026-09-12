@@ -27,7 +27,11 @@
 
 .documents-top-bar-eyebrow {
   align-items: center;
-  color: var(--color-accent-strong);
+  color: color-mix(
+    in srgb,
+    var(--color-accent-readable) 88%,
+    var(--color-text)
+  );
   display: flex;
   font-size: var(--font-size-xs);
   font-weight: 800;
@@ -166,7 +170,7 @@
     text-align: center;
   }
 
-  .documents-top-bar-actions:has(> :nth-child(3))
+  .documents-top-bar-actions:has(> :nth-child(3):last-child)
     .documents-top-bar-action--primary {
     grid-column: 1 / -1;
   }

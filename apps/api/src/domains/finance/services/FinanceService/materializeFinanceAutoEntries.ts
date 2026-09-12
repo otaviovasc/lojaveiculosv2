@@ -61,9 +61,10 @@ export async function materializeFinanceAutoEntries(
   context: ServiceContext,
   input: MaterializeFinanceAutoEntriesInput,
   ports?: MaterializeFinanceAutoEntryPorts,
+  access: { entitlement?: "finance" | "sales" } = {},
 ): Promise<readonly MaterializedFinanceAutoEntry[]> {
   assertMaterializationInput(input);
-  const scope = requireFinanceScope(context);
+  const scope = requireFinanceScope(context, access.entitlement ?? "finance");
   const autoEntryRepository = getFinanceAutoEntryRepository(ports);
   const financeRepository = getFinanceRepository(ports);
   await assertMaterializationUsersBelongToStore(

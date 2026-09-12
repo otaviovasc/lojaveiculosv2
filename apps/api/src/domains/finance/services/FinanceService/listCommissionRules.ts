@@ -8,10 +8,11 @@ import {
   auditFinanceServiceEvent,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireCommissionScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
-const permission = "finance.read";
+const permission = "commissions.read";
 
 export type ListCommissionRulesInput = {
   limit?: number;
@@ -25,12 +26,13 @@ export async function listCommissionRules(
   ports?: FinanceServicePorts,
 ): Promise<readonly CommissionRule[]> {
   assertPermission(context, permission);
+  const scope = requireCommissionScope(context);
   const rules = await getFinanceRepository(ports).listCommissionRules({
     limit: input.limit ?? 100,
     sellerUserId: input.sellerUserId ?? null,
     status: input.status ?? null,
-    storeId: context.storeId,
-    tenantId: context.tenantId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
 
   logFinanceServiceEvent(context, "commission_rule.list.read", {

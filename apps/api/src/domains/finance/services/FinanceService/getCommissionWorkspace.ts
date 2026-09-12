@@ -12,13 +12,13 @@ import {
   auditFinanceServiceEvent,
   getCommissionWorkspaceRepository,
   logFinanceServiceEvent,
-  requireFinanceScope,
+  requireCommissionScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 import { isStandardSaleCommission } from "../../commissionSettlementPolicy.js";
 import { assertCommissionWorkspaceRange } from "../../commissionWorkspaceValidation.js";
 
-const permission = "finance.read";
+const permission = "commissions.read";
 
 export type GetCommissionWorkspaceInput = {
   from: Date;
@@ -61,7 +61,7 @@ export async function getCommissionWorkspace(
 ): Promise<CommissionWorkspace> {
   assertPermission(context, permission);
   assertCommissionWorkspaceRange(input);
-  const scope = requireFinanceScope(context);
+  const scope = requireCommissionScope(context);
   const source = await getCommissionWorkspaceRepository(ports).read({
     ...input,
     ...scope,

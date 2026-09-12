@@ -150,7 +150,15 @@ function createEnrichmentServices(): InventoryEnrichmentServices {
     ],
   };
   const lookup: InventoryPlateLookupResponse = {
+    catalogIdentity: {
+      candidates: [],
+      catalog: null,
+      reason: "fipe_not_found",
+      status: "unresolved",
+    },
     fipe: null,
+    fipeCandidates: [],
+    lookupVersion: 2,
     metadata: [],
     plate: "ABC1D23",
     source: "apibrasil",
@@ -161,6 +169,7 @@ function createEnrichmentServices(): InventoryEnrichmentServices {
       chassis: null,
       city: null,
       color: "Branca",
+      doors: null,
       engine: null,
       fuel: "Flex",
       manufactureYear: 2023,

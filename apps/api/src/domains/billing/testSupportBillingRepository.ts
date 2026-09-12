@@ -10,7 +10,6 @@ export function createUnusedBillingRepository(): BillingRepository {
     getOverview: unused,
     getTenantOverview: unused,
     storeExistsInTenant: unused,
-    updateSubscriptionSelection: unused,
     updateStoreEntitlement: unused,
   };
 }

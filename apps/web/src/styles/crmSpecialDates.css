@@ -1,0 +1,210 @@
+.crm-special-date-settings {
+  gap: 1.25rem;
+}
+
+.crm-special-date-connection-selector {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  max-width: 26rem;
+}
+
+.crm-special-date-connection-selector > span:first-child {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.crm-special-date-intro {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.crm-special-date-intro > p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-special-date-info {
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-app));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 30%, var(--color-line));
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+}
+
+.crm-special-date-info strong {
+  color: var(--color-warning-strong);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.crm-special-date-info p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-special-date-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.crm-special-date-card {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.crm-special-date-card[data-enabled="true"] {
+  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-line));
+}
+
+.crm-special-date-card-header {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.crm-special-date-card-header > div:first-child {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.crm-special-date-card-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.crm-special-date-card-title h4 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+.crm-special-date-card-header p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-special-date-toggle {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.55rem;
+  white-space: nowrap;
+}
+
+.crm-special-date-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.55fr);
+}
+
+.crm-special-date-field {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.4rem;
+}
+
+.crm-special-date-field > span:first-child {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.crm-special-date-field small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.crm-special-date-input-with-suffix {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-special-date-input-with-suffix input {
+  flex: 1 1 5rem;
+}
+
+.crm-special-date-input-with-suffix small {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.crm-special-date-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.crm-special-date-card-actions .crm-action svg,
+.crm-special-date-error .crm-action svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-special-date-error,
+.crm-special-date-success,
+.crm-special-date-permission {
+  border-radius: var(--radius-md);
+}
+
+.crm-special-date-error p {
+  margin: 0 0 0.8rem;
+}
+
+.crm-special-date-error .crm-action {
+  align-self: start;
+}
+
+.crm-special-date-loading {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .crm-special-date-card-header {
+    display: grid;
+  }
+
+  .crm-special-date-toggle {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .crm-special-date-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-special-date-card-actions {
+    justify-content: stretch;
+  }
+
+  .crm-special-date-card-actions .crm-action {
+    justify-content: center;
+    width: 100%;
+  }
+}

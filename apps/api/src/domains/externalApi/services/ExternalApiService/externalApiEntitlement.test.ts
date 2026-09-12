@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import type { AuditSink } from "@lojaveiculosv2/audit";
+import { describe, expect, it, vi } from "vitest";
 import type {
   ExternalApiClient,
   ExternalApiRepository,
@@ -48,12 +49,45 @@ describe("External API entitlement", () => {
       revokeExternalApiClient(context, { clientId: created.client.id }, ports),
     ).resolves.toMatchObject({ status: "revoked" });
   });
+
+  it("does not mutate credentials when the critical audit sink is unavailable", async () => {
+    const audit: AuditSink = {
+      record: vi.fn(async () => {
+        throw new Error("audit unavailable");
+      }),
+    };
+    const repository = createTestRepository();
+    repository.createClient = vi.fn(repository.createClient);
+    repository.revokeClient = vi.fn(repository.revokeClient);
+    const context = externalApiContext(["external_api"], audit);
+
+    await expect(
+      createExternalApiClient(
+        context,
+        { name: "ERP", scopes: ["inventory.read"] },
+        { externalApiRepository: repository },
+      ),
+    ).rejects.toThrow("audit unavailable");
+    await expect(
+      revokeExternalApiClient(
+        context,
+        { clientId: "client_1" },
+        { externalApiRepository: repository },
+      ),
+    ).rejects.toThrow("audit unavailable");
+    expect(repository.createClient).not.toHaveBeenCalled();
+    expect(repository.revokeClient).not.toHaveBeenCalled();
+  });
 });
 
-function externalApiContext(entitlements: readonly "external_api"[]) {
+function externalApiContext(
+  entitlements: readonly "external_api"[],
+  audit?: AuditSink,
+) {
   return Object.assign(
     createServiceContext({
       actor: { id: "user_1", kind: "user" },
+      ...(audit ? { audit } : {}),
       permissions: ["external_api.manage"],
       request: { requestId: "request_1" },
       storeId: "store_1",
@@ -67,6 +101,7 @@ function createTestRepository(): ExternalApiRepository {
   const clients: ExternalApiClient[] = [];
   return {
     authenticateByKeyHash: async () => null,
+    completeIdempotencyKey: async () => true,
     countRecentRequests: async () => 0,
     createClient: async (input) => {
       const now = new Date();
@@ -74,6 +109,7 @@ function createTestRepository(): ExternalApiRepository {
         createdAt: now,
         id: `client_${clients.length + 1}`,
         keyPrefixes: [input.keyPrefix],
+        lastUsedAt: null,
         name: input.name,
         scopes: input.scopes,
         status: "active",
@@ -85,6 +121,7 @@ function createTestRepository(): ExternalApiRepository {
       return client;
     },
     listClients: async () => clients,
+    failIdempotencyKey: async () => true,
     recordRequest: async () => undefined,
     reserveIdempotencyKey: async () => ({ kind: "created" }),
     revokeClient: async ({ clientId }) => {

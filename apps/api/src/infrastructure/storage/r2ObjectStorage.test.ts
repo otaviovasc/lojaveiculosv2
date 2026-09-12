@@ -21,6 +21,7 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      environmentPrefix: "s",
       publicBaseUrl: "https://media.lojaveiculos.com.br/",
       secretAccessKey: "secret",
       signer,
@@ -46,9 +47,9 @@ describe("R2 object storage", () => {
     expect(upload).toEqual({
       expiresAt: new Date("2026-01-01T00:10:00.000Z"),
       publicUrl:
-        "https://media.lojaveiculos.com.br/tenants/tenant_1/stores/store_1/listings/listing_1/photo/1767225600000-uuid_1-frente-principal.jpg",
+        "https://media.lojaveiculos.com.br/s/tenants/tenant_1/stores/store_1/listings/listing_1/photo/1767225600000-uuid_1-frente-principal.jpg",
       storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/photo/1767225600000-uuid_1-frente-principal.jpg",
+        "s/tenants/tenant_1/stores/store_1/listings/listing_1/photo/1767225600000-uuid_1-frente-principal.jpg",
       uploadHeaders: { "content-type": "image/jpeg" },
       uploadMethod: "PUT",
       uploadUrl: "https://upload.example/front.jpg",
@@ -83,6 +84,7 @@ describe("R2 object storage", () => {
       return "https://signed-download.example/document.pdf";
     });
     const storage = createR2ObjectStorageFromEnv({
+      APP_ENV: "staging",
       R2_ACCESS_KEY_ID: "key",
       R2_BUCKET_NAME: "app-media",
       R2_ENDPOINT: "https://account.r2.cloudflarestorage.com",
@@ -93,6 +95,7 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      environmentPrefix: "s",
       objectReader,
       publicBaseUrl: "https://media.lojaveiculos.com.br",
       secretAccessKey: "secret",
@@ -103,7 +106,7 @@ describe("R2 object storage", () => {
     const download = await directStorage.createDownload({
       fileName: "Contrato.pdf",
       mimeType: "application/pdf",
-      storageKey: "private/document.pdf",
+      storageKey: "s/private/document.pdf",
     });
 
     expect(download).toEqual({
@@ -130,6 +133,7 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      environmentPrefix: "s",
       objectReader,
       publicBaseUrl: "https://media.lojaveiculos.com.br",
       secretAccessKey: "secret",
@@ -140,7 +144,7 @@ describe("R2 object storage", () => {
       disposition: "inline",
       fileName: "Contrato.pdf",
       mimeType: "application/pdf",
-      storageKey: "private/document.pdf",
+      storageKey: "s/private/document.pdf",
     });
 
     expect(download.downloadUrl).toBe(
@@ -166,6 +170,7 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      environmentPrefix: "s",
       objectReader,
       publicBaseUrl: "https://media.lojaveiculos.com.br",
       secretAccessKey: "secret",
@@ -176,7 +181,7 @@ describe("R2 object storage", () => {
       storage.createDownload({
         fileName: "Contrato.pdf",
         mimeType: "application/pdf",
-        storageKey: "private/missing-document.pdf",
+        storageKey: "s/private/missing-document.pdf",
       }),
     ).rejects.toBeInstanceOf(StorageObjectNotFoundError);
     expect(signer).not.toHaveBeenCalled();
@@ -190,12 +195,13 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      environmentPrefix: "s",
       objectDeleter,
       publicBaseUrl: "https://media.lojaveiculos.com.br",
       secretAccessKey: "secret",
     });
 
-    await storage.deleteObject?.({ storageKey: "media/front.jpg" });
+    await storage.deleteObject?.({ storageKey: "s/media/front.jpg" });
 
     expect(objectDeleter).toHaveBeenCalledOnce();
   });

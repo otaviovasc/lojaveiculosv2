@@ -17,7 +17,13 @@ describe("API middleware", () => {
     const readinessResponse = await app.request("/ready");
 
     expect(healthResponse.status).toBe(200);
-    expect(await healthResponse.json()).toEqual({ ok: true });
+    expect(await healthResponse.json()).toEqual({
+      build: {
+        commitSha: "unknown",
+        crmApiContractVersion: "crm-lead-session-v1",
+      },
+      ok: true,
+    });
     expect(readinessResponse.status).toBe(503);
     expect(await readinessResponse.json()).toEqual({
       checks: { productDatabase: "not_ready" },
@@ -48,7 +54,8 @@ describe("API middleware", () => {
 
     const response = await app.request("/api/v1/inventory/listings", {
       headers: {
-        "Access-Control-Request-Headers": "Authorization,X-Request-Id",
+        "Access-Control-Request-Headers":
+          "Authorization,X-CRM-SSE-Ticket,X-Request-Id",
         "Access-Control-Request-Method": "GET",
         Origin: "https://app.lojaveiculos.local",
       },
@@ -60,7 +67,7 @@ describe("API middleware", () => {
       "GET,HEAD,POST,PUT,PATCH,DELETE",
     );
     expect(response.headers.get("access-control-allow-headers")).toBe(
-      "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Clerk-User-Id,X-Idempotency-Key,X-Request-Id,X-Store-Slug,X-Store-Id,X-User-Email,X-User-Name",
+      "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Clerk-User-Id,X-CRM-SSE-Ticket,X-Idempotency-Key,X-Request-Id,X-Store-Slug,X-Store-Id,X-User-Email,X-User-Name",
     );
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });
@@ -132,8 +139,10 @@ function createExternalApiRepository(apiKey: string): ExternalApiRepository {
           }
         : null,
     countRecentRequests: vi.fn(async () => 0),
+    completeIdempotencyKey: vi.fn(async () => true),
     createClient: vi.fn(),
     listClients: vi.fn(),
+    failIdempotencyKey: vi.fn(async () => true),
     recordRequest: vi.fn(),
     reserveIdempotencyKey: vi.fn(async () => ({ kind: "created" as const })),
     revokeClient: vi.fn(),

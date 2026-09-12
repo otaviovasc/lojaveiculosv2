@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 type LockedAddonPanelProps = {
-  kind: "crm" | "nfe";
+  kind: "crm" | "fiscal";
 };
 
 const addonCopy = {
@@ -17,10 +17,10 @@ const addonCopy = {
     title: "CRM WhatsApp",
     subtitle: "Atendimento da equipe com conversas e historico por cliente.",
   },
-  nfe: {
+  fiscal: {
     accent: "blue",
     icon: FileText,
-    title: "NF-e Spedy",
+    title: "Fiscal Spedy",
     subtitle: "Emissao fiscal com auditoria e configuracao guiada.",
   },
 };

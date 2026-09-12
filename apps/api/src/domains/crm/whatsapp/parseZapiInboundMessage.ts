@@ -1,4 +1,4 @@
-import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
+import type { CrmMessageType } from "../ports/crmConversationRepository.js";
 import {
   isTruthy,
   readNumber,
@@ -8,7 +8,7 @@ import {
 import { extractZapiInboundContent } from "./zapiInboundContent.js";
 
 export type ParsedZapiInboundMessage = {
-  buyerName?: string;
+  customerDisplayName?: string;
   chatLid?: string;
   content: string;
   externalId: string;
@@ -17,13 +17,14 @@ export type ParsedZapiInboundMessage = {
   mediaUrl?: string;
   metadata: Record<string, unknown>;
   phone: string;
+  profilePhotoUrl?: string;
   providerTimestamp: Date;
-  type: CrmWhatsappMessageType;
+  type: CrmMessageType;
 };
 
 export type ParsedZapiContactIdentity = Pick<
   ParsedZapiInboundMessage,
-  "buyerName" | "chatLid" | "fromMe" | "phone"
+  "customerDisplayName" | "chatLid" | "fromMe" | "phone"
 >;
 
 export function parseZapiInboundMessage(
@@ -44,8 +45,13 @@ export function parseZapiInboundMessage(
 
   const content = extractZapiInboundContent(payload);
   if (!content) return null;
+  const profilePhotoUrl = identity.fromMe
+    ? undefined
+    : readProfilePhotoUrl(payload);
   return {
-    ...(identity.buyerName ? { buyerName: identity.buyerName } : {}),
+    ...(identity.customerDisplayName
+      ? { customerDisplayName: identity.customerDisplayName }
+      : {}),
     ...(identity.chatLid ? { chatLid: identity.chatLid } : {}),
     content: content.content,
     externalId,
@@ -54,9 +60,14 @@ export function parseZapiInboundMessage(
     ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
     metadata: buildMetadata(payload, identity.chatLid, content.metadata),
     phone: identity.phone,
+    ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
     providerTimestamp: readZapiTimestamp(payload),
     type: content.type,
   };
+}
+
+function readProfilePhotoUrl(payload: Record<string, unknown>) {
+  return readString(payload.senderPhoto) ?? readString(payload.photo);
 }
 
 export function parseZapiContactIdentity(
@@ -66,15 +77,20 @@ export function parseZapiContactIdentity(
   const phone = resolvePhone(payload, chatLid);
   if (!phone) return null;
   const fromMe = isTruthy(payload.fromMe);
-  const buyerName = fromMe
-    ? readString(payload.chatName)
-    : readString(payload.senderName);
+  const customerDisplayName = readUsableZapiContactName(
+    fromMe ? readString(payload.chatName) : readString(payload.senderName),
+  );
   return {
-    ...(buyerName ? { buyerName } : {}),
+    ...(customerDisplayName ? { customerDisplayName } : {}),
     ...(chatLid ? { chatLid } : {}),
     fromMe,
     phone,
   };
+}
+
+export function readUsableZapiContactName(value?: string) {
+  if (!value || /@lid\b/i.test(value)) return undefined;
+  return value;
 }
 
 function resolvePhone(
@@ -85,27 +101,33 @@ function resolvePhone(
   let resolved = normalizePhone(rawPhone);
   const ctwaPhone = readCtwaPhone(payload);
   const participantPhone = normalizePhone(readString(payload.participantPhone));
-  const connectedPhone = normalizePhone(readString(payload.connectedPhone));
+  const chatPhone = normalizePhone(readString(payload.chatPhone));
 
   if (isLid(rawPhone) || isLikelyLidNumber(resolved, chatLid)) {
-    const chatPhone = normalizePhone(readString(payload.chatPhone));
     if (chatPhone && !isLid(readString(payload.chatPhone))) {
       resolved = chatPhone;
     } else {
       const chatNamePhone = normalizeChatNamePhone(
         readString(payload.chatName),
       );
+      // The connected account's own number is never a customer identity
+      // fallback: on fromMe payloads it is the sender, so keying the
+      // conversation by it hides phone-direct messages from the customer
+      // thread (repasses backend behavior).
       resolved =
-        participantPhone ??
-        chatNamePhone ??
-        ctwaPhone ??
-        connectedPhone ??
-        chatLid ??
-        null;
+        participantPhone ?? chatNamePhone ?? ctwaPhone ?? chatLid ?? null;
     }
   }
 
-  return resolved || participantPhone || ctwaPhone || connectedPhone || null;
+  return (
+    resolved ||
+    participantPhone ||
+    ctwaPhone ||
+    // LID-only identity: key the conversation by the stable chat LID so
+    // phone-direct messages still land in the customer thread.
+    chatLid ||
+    null
+  );
 }
 
 function normalizePhone(value?: string) {
@@ -183,5 +205,18 @@ function isNotification(payload: Record<string, unknown>) {
     payload.notification === true ||
     typeof payload.notification === "string" ||
     payload.type === "notification"
+  );
+}
+
+export function isDirectHumanOutboundEcho(
+  parsed: Pick<ParsedZapiInboundMessage, "fromMe" | "metadata">,
+) {
+  if (!parsed.fromMe) return false;
+  const interactive = parsed.metadata.interactive;
+  return !(
+    interactive &&
+    typeof interactive === "object" &&
+    !Array.isArray(interactive) &&
+    (interactive as Record<string, unknown>).kind === "reaction"
   );
 }

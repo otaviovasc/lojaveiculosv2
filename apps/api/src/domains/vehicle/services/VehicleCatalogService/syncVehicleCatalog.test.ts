@@ -177,6 +177,7 @@ function createRepository(
     }),
     finishSyncRun: async () => undefined,
     getSnapshot: async () => null,
+    listSnapshotsByFipeReference: async () => [],
     getVersionYearSyncState: async () => ({
       lastSyncedAt: null,
       yearCount: 0,

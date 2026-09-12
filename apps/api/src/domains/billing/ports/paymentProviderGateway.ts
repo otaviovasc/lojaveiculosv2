@@ -60,10 +60,14 @@ export type PaymentProviderCheckoutInput = {
     successUrl: string;
   };
   customerData?: {
+    address: string | null;
+    addressNumber: string | null;
     cpfCnpj: string | null;
     email: string | null;
     name: string;
     phone: string | null;
+    postalCode: string | null;
+    province: string | null;
   };
   externalReference: string;
   items: readonly PaymentProviderCheckoutLineItem[];
@@ -80,11 +84,26 @@ export type PaymentProviderCheckoutResult = {
   raw: Record<string, unknown>;
 };
 
+export type PaymentProviderPaymentCorrelation = {
+  externalReference: string | null;
+  providerCheckoutId: string | null;
+  providerCustomerId: string | null;
+  providerPaymentId: string;
+  providerSubscriptionId: string | null;
+};
+
 export type PaymentProviderGateway = {
+  cancelSubscription?: (providerSubscriptionId: string) => Promise<void>;
   createCheckout?: (
     input: PaymentProviderCheckoutInput,
   ) => Promise<PaymentProviderCheckoutResult>;
   getProviderStatus: () => Promise<PaymentProviderStatus>;
+  lookupPaymentCorrelation?: (input: {
+    externalReference?: string | null;
+    providerCheckoutId?: string | null;
+    providerPaymentId: string;
+    providerSubscriptionId?: string | null;
+  }) => Promise<PaymentProviderPaymentCorrelation | null>;
   syncCustomer?: (
     input: PaymentProviderCustomerInput,
   ) => Promise<PaymentProviderCustomerResult>;

@@ -45,6 +45,7 @@ describe("runMarketplaceSyncJob catalog mappings", () => {
             return {
               externalId: "provider_listing_1",
               metadata: {},
+              operationToken: null,
               providerStatus: "active",
             };
           },
@@ -61,7 +62,10 @@ describe("runMarketplaceSyncJob catalog mappings", () => {
     await upsertMarketplaceAccount(
       context,
       {
-        config: { credentials: { accessToken: "token_1" } },
+        config: {
+          connection: { scope: "autoupload" },
+          credentials: { accessToken: "token_1" },
+        },
         provider: "olx",
         status: "active",
       },
@@ -91,6 +95,90 @@ describe("runMarketplaceSyncJob catalog mappings", () => {
         providerTrimCode: "provider_trim_001267_0",
         providerYearCode: "provider_year_2024_1",
       },
+    });
+  });
+
+  it("uses an OLX mapping carried by a reviewed stock plan", async () => {
+    const calls: MarketplacePublishInput[] = [];
+    const repository = createTestMarketplaceRepository();
+    const ports = {
+      gatewayRegistry: {
+        getGateway: () => ({
+          checkAccount: async () => ({
+            accountId: "provider_user_1",
+            requirements: [],
+            status: "connected" as const,
+          }),
+          createAuthorizationUrl: async () => "https://provider.test/oauth",
+          exchangeAuthorizationCode: async () => ({
+            accessToken: "token_1",
+            expiresAt: null,
+            providerAccountId: "provider_user_1",
+            refreshToken: null,
+            scope: "autoupload",
+            tokenType: "Bearer",
+          }),
+          provider: "olx" as const,
+          runListingSync: async (input: MarketplacePublishInput) => {
+            calls.push(input);
+            return {
+              externalId: "provider_listing_1",
+              metadata: {},
+              operationToken: "operation_1",
+              providerStatus: "submitted",
+            };
+          },
+        }),
+      },
+      marketplaceRepository: {
+        ...repository,
+        findCatalogMapping: async () => null,
+        findListingProjection: async () => listingProjection(),
+      } satisfies MarketplaceRepository,
+    };
+    const context = createMarketplaceContext();
+    await upsertMarketplaceAccount(
+      context,
+      {
+        config: {
+          connection: { scope: "autoupload" },
+          credentials: { accessToken: "token_1" },
+        },
+        provider: "olx",
+        status: "active",
+      },
+      ports,
+    );
+    const job = await createMarketplaceSyncJob(
+      context,
+      {
+        jobType: "listing_publish",
+        metadata: {
+          listingId: "listing_1",
+          providerMapping: {
+            providerBrandCode: "17",
+            providerModelCode: "5",
+            providerTrimCode: "3",
+            providerYearCode: null,
+          },
+        },
+        provider: "olx",
+      },
+      ports,
+    );
+
+    const result = await runMarketplaceSyncJob(
+      context,
+      { jobId: job.id },
+      ports,
+    );
+
+    expect(result.status).toBe("submitted");
+    expect(calls[0]?.metadata.providerMapping).toEqual({
+      providerBrandCode: "17",
+      providerModelCode: "5",
+      providerTrimCode: "3",
+      providerYearCode: null,
     });
   });
 });

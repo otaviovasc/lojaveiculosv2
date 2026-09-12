@@ -92,6 +92,7 @@ describe("V1 finance auto-entry defaults", () => {
     const rules = await listFinanceAutoEntryRules(
       createServiceContext({
         actor: { id: "user_1", kind: "user" },
+        entitlements: ["finance"],
         permissions: ["finance.read"],
         request: { requestId: "request_1" },
         storeId: "store_1",

@@ -3,6 +3,8 @@
   display: grid;
   gap: 1rem;
   padding-top: 1.25rem;
+  position: relative;
+  z-index: 2;
 }
 
 .billing-package-heading {
@@ -28,18 +30,35 @@
 }
 
 .billing-package-card {
-  background: var(--color-app);
+  background: var(--color-panel);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
   display: grid;
   gap: 0.85rem;
-  padding: 0.9rem;
+  padding: 1rem;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.billing-package-card:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--color-line));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .billing-package-card.is-active {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success-strong) 8%, var(--color-panel)),
+    var(--color-panel) 80%
+  );
   border-color: color-mix(
     in srgb,
-    var(--color-success-strong) 38%,
+    var(--color-success-strong) 48%,
     var(--color-line)
   );
 }

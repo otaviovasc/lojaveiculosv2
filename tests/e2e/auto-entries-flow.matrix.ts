@@ -8,6 +8,8 @@ import {
   cleanupRules,
   ruleCard,
   selectOption,
+  selectSegmentedOption,
+  selectTiming,
 } from "./auto-entries-flow.support";
 
 export async function runAutoEntryOptionMatrix(
@@ -30,22 +32,22 @@ export async function runAutoEntryOptionMatrix(
 
     await dialog.getByLabel("Prioridade").fill("101");
     await expectRangeOverflow(dialog.getByLabel("Prioridade"));
-    await selectOption(page, dialog, "Momento do lançamento", "Dias depois");
+    await selectTiming(dialog, "Dias depois");
     await dialog.getByLabel("Quantidade").fill("366");
     await expectRangeOverflow(dialog.getByLabel("Quantidade"));
 
-    await selectOption(page, dialog, "Momento do lançamento", "Dia do mês");
+    await selectTiming(dialog, "Dia do mês");
     await dialog.getByLabel("Dia").fill("32");
     await expectRangeOverflow(dialog.getByLabel("Dia"));
 
     await dialog.getByLabel("Prioridade").fill("45");
-    await selectOption(page, dialog, "Momento do lançamento", "No mesmo dia");
-    await selectOption(page, dialog, "Modelo de cálculo", "Percentual");
+    await selectTiming(dialog, "Mesmo dia");
+    await selectSegmentedOption(dialog, "Modelo de cálculo", "Percentual");
     await dialog.getByLabel("Percentual (%)").fill("100,01");
     await submitInvalid(dialog);
     await expectExactError(dialog, "Use um percentual entre 0,01% e 100%.");
 
-    await selectOption(page, dialog, "Modelo de cálculo", "Valor fixo");
+    await selectSegmentedOption(dialog, "Modelo de cálculo", "Valor fixo");
     await dialog.getByLabel("Valor fixo (R$)").fill("250,00");
     await selectOption(page, dialog, "Tipo de lançamento", "Comissão");
     const sellerName = await chooseFirstSourceSeller(page, dialog);
@@ -66,7 +68,7 @@ export async function runAutoEntryOptionMatrix(
       name: "Editar regra automática",
     });
     await selectOption(page, editDialog, "Evento de origem", "Seguro emitido");
-    await selectOption(page, editDialog, "Modelo de cálculo", "Percentual");
+    await selectSegmentedOption(editDialog, "Modelo de cálculo", "Percentual");
     await editDialog.getByLabel("Percentual (%)").fill("2,5");
     await selectOption(page, editDialog, "Tipo de lançamento", "Despesa");
     await editDialog.getByLabel("Categoria").fill("Despesa de seguro");

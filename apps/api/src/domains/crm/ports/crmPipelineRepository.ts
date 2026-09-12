@@ -73,6 +73,10 @@ export type CrmPipelineRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<boolean>;
+  ensureDefaultPipeline: (input: {
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmPipeline>;
   findPipelineById: (input: {
     pipelineId: string;
     storeId: StoreId;

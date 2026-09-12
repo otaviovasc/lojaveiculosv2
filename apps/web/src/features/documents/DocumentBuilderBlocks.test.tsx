@@ -25,6 +25,7 @@ describe("DocumentBuilderBlocks", () => {
     const { container } = render(
       <DocumentBuilderBlocks
         blocks={blocks}
+        clauseBank={[]}
         isEditable={false}
         onBlocksChange={vi.fn()}
         variables={[]}

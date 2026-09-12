@@ -3,6 +3,10 @@ import type { StorefrontMediaRepository } from "../../ports/storefrontMediaRepos
 import type { StorefrontPageRepository } from "../../ports/storefrontPageRepository.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import {
+  isStorageKeyInEnvironment,
+  stripStorageEnvironmentPrefix,
+} from "../../../../shared/storage/storageKeyScope.js";
 
 export class PublicStorefrontRepositoryError extends Error {
   constructor() {
@@ -43,6 +47,13 @@ export class StorefrontPageScopeError extends Error {
   constructor(fieldName: string) {
     super(`Storefront page service requires ${fieldName}.`);
     this.name = "StorefrontPageScopeError";
+  }
+}
+
+export class StorefrontVehicleVitrineSourceNotFoundError extends Error {
+  constructor(listingId: string) {
+    super(`Vehicle listing is not public and publishable: ${listingId}`);
+    this.name = "StorefrontVehicleVitrineSourceNotFoundError";
   }
 }
 
@@ -153,9 +164,13 @@ export function createStorefrontMediaScopeSegments(
 export function assertStorefrontMediaStorageKey(
   scope: StorefrontMediaScopeInput,
   storageKey: string,
+  environment?: string,
 ) {
   const prefix = `${createStorefrontMediaScopeSegments(scope).join("/")}/`;
-  if (!storageKey.startsWith(prefix)) {
+  if (
+    !isStorageKeyInEnvironment(storageKey, environment) ||
+    !stripStorageEnvironmentPrefix(storageKey, environment).startsWith(prefix)
+  ) {
     throw new StorefrontMediaValidationError(
       "Storefront media storage key does not belong to this store.",
     );

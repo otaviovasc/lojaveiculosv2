@@ -7,6 +7,7 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { assertVehicleChecklistAccess } from "./checklistAccess.js";
 import {
   loadVehicleChecklistOverview,
   type VehicleChecklistOverviewInput,
@@ -25,6 +26,7 @@ export async function exportVehicleChecklistReport(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleChecklistReport> {
   assertPermission(context, permission);
+  assertVehicleChecklistAccess(context);
   const overview = await loadVehicleChecklistOverview(context, input, ports);
   const branding = await getVehicleWorkflowStoreBranding(context, ports);
   const unitReport = Boolean(input.unitId);

@@ -99,7 +99,7 @@ export const featureBlocks = [
     key: "sales_crm",
     title: "Vendas, Propostas e Atendimento (CRM)",
     description:
-      "Visualização de vendas, criação de propostas, chats e interações de WhatsApp.",
+      "Visualização de vendas, criação de propostas e atendimento em canais de mensagens.",
     icon: MessageSquare,
     groups: ["sales", "crm"],
   },

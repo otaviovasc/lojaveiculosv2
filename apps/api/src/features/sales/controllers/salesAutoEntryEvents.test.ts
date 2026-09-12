@@ -53,7 +53,7 @@ describe("sale automatic finance events", () => {
         },
       }),
       expect.objectContaining({
-        attributes: { financingRank: "R2" },
+        attributes: { financingRank: "R4" },
         basisCents: { financing: 3_000_000 },
         event: "financing_approved",
         sourceId: "payment_financing",

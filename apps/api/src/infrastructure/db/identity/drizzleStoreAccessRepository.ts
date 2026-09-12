@@ -35,8 +35,8 @@ export function createDrizzleStoreAccessRepository(
   return {
     async findByClerkUserAndStoreSlug(input) {
       const access =
-        (await findDirectStoreAccess(db, input)) ??
-        (await findAgencyTenantStoreAccess(db, input));
+        (await findAgencyTenantStoreAccess(db, input)) ??
+        (await findDirectStoreAccess(db, input));
 
       if (!access) return null;
 
@@ -69,10 +69,7 @@ export function createDrizzleStoreAccessRepository(
               and(
                 eq(storeEntitlements.storeId, access.storeId),
                 eq(storeEntitlements.tenantId, access.tenantId),
-                or(
-                  eq(storeEntitlements.status, "active"),
-                  eq(storeEntitlements.status, "trialing"),
-                ),
+                eq(storeEntitlements.status, "active"),
                 or(
                   isNull(storeEntitlements.startsAt),
                   lte(storeEntitlements.startsAt, checkedAt),
@@ -104,6 +101,9 @@ export function createDrizzleStoreAccessRepository(
         ]);
 
       return {
+        accessOrigin: access.membershipId
+          ? "direct_store_membership"
+          : "tenant_agency_fallback",
         billingManagedBy: tenantAgencyMemberships.length
           ? "agency"
           : "store_owner",
@@ -115,6 +115,7 @@ export function createDrizzleStoreAccessRepository(
         storeId: access.storeId,
         tenantId: access.tenantId,
         userId: access.userId,
+        userName: access.userName,
       } satisfies StoreAccessRecord;
     },
   };
@@ -137,6 +138,7 @@ async function findDirectStoreAccess(
       storeId: stores.id,
       tenantId: stores.tenantId,
       userId: users.id,
+      userName: users.name,
     })
     .from(users)
     .innerJoin(stores, eq(stores.publicSlug, input.storeSlug))
@@ -183,6 +185,7 @@ async function findAgencyTenantStoreAccess(
       storeId: stores.id,
       tenantId: stores.tenantId,
       userId: users.id,
+      userName: users.name,
     })
     .from(users)
     .innerJoin(

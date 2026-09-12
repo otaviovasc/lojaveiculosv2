@@ -1,14 +1,17 @@
 import { financeAutoEntryMaxAmountCents } from "@lojaveiculosv2/shared";
 import { z } from "zod";
+import { isValidIsoCalendarBirthDate } from "../../../domains/crm/messaging/crmSpecialDateCalculator.js";
 
 export {
-  whatsappMessagesQuerySchema,
-  whatsappSessionCountsQuerySchema,
-  whatsappSessionFilterSchema,
-  whatsappSessionsQuerySchema,
-  whatsappSessionStatusSchema,
-} from "./crm.whatsapp.querySchemas.js";
-export * from "./crm.whatsapp.schemas.js";
+  crmMessagesQuerySchema,
+  conversationCycleCountsQuerySchema,
+  crmConversationCycleFilterSchema,
+  conversationCyclesQuerySchema,
+  crmConversationCycleStateSchema,
+} from "./crm.conversationCycle.schemas.js";
+export * from "./crm.channelConnections.schemas.js";
+export * from "./crm.messaging.extraSchemas.js";
+export * from "./crm.messaging.messageSchemas.js";
 
 export const leadStatusSchema = z.enum([
   "new",
@@ -24,6 +27,7 @@ export const leadSourceSchema = z.enum([
   "public_site",
   "crm",
   "external_api",
+  "instagram",
   "manual",
   "olx",
   "whatsapp",
@@ -33,7 +37,7 @@ export const leadSourceSchema = z.enum([
 export const leadActivityTypeSchema = z.enum([
   "note",
   "call",
-  "whatsapp",
+  "message",
   "email",
   "status_change",
   "task",
@@ -45,27 +49,94 @@ export const leadActivityDirectionSchema = z.enum([
   "internal",
 ]);
 
+const leadOperationalQueryFields = {
+  assignee: z
+    .union([z.enum(["assigned", "unassigned", "me"]), z.string().uuid()])
+    .optional(),
+  sources: z
+    .string()
+    .max(200)
+    .transform((value) => value.split(",").map((source) => source.trim()))
+    .pipe(z.array(leadSourceSchema).min(1).max(8))
+    .transform((values) => [...new Set(values)])
+    .optional(),
+  listingId: z.string().uuid().optional(),
+  responseState: z.enum(["responded", "no_response"]).optional(),
+  inactiveDays: z.coerce.number().int().min(1).max(3650).optional(),
+  humanAttendanceState: z
+    .enum(["waiting_human", "in_human_service"])
+    .optional(),
+  sortBy: z.enum(["created_at", "next_task"]).optional(),
+};
+
 export const listLeadsQuerySchema = z.object({
+  ...leadOperationalQueryFields,
+  cursor: z.string().trim().min(1).max(512).optional(),
   listingId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+  pipelineId: z.string().uuid().optional(),
+  pipelineStageId: z.string().uuid().optional(),
   search: z.string().trim().max(120).optional(),
   source: leadSourceSchema.optional(),
   status: leadStatusSchema.optional(),
 });
 
+export const listLeadBoardQuerySchema = z.object({
+  ...leadOperationalQueryFields,
+  pipelineId: z.string().uuid(),
+  search: z.string().trim().min(1).max(120).optional(),
+  source: leadSourceSchema.optional(),
+  stageLimit: z.coerce.number().int().min(1).max(100).default(20),
+  status: leadStatusSchema.optional(),
+});
+
+export const crmStatisticsQuerySchema = z
+  .object({
+    connectionId: z.string().uuid().optional(),
+    from: z.string().datetime({ offset: true }),
+    toExclusive: z.string().datetime({ offset: true }),
+  })
+  .superRefine((value, context) => {
+    const from = new Date(value.from);
+    const toExclusive = new Date(value.toExclusive);
+    if (from >= toExclusive) {
+      context.addIssue({
+        code: "custom",
+        message: "from must precede toExclusive",
+      });
+    }
+    if (toExclusive.getTime() - from.getTime() > 366 * 24 * 60 * 60 * 1_000) {
+      context.addIssue({ code: "custom", message: "period exceeds 366 days" });
+    }
+  });
+
+export { isValidIsoCalendarBirthDate };
+
+export const leadBirthDateSchema = z
+  .string()
+  .refine(isValidIsoCalendarBirthDate, {
+    message:
+      "Invalid birthDate: must be a valid calendar date (YYYY-MM-DD) not in the future",
+  })
+  .nullable()
+  .optional();
+
 export const createLeadSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
+  birthDate: leadBirthDateSchema,
   buyerEmail: z.string().email().nullable().optional(),
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   listingId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  pipelineStageId: z.string().uuid().optional(),
   source: leadSourceSchema.default("manual"),
 });
 
 export const updateLeadSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
+  birthDate: leadBirthDateSchema,
   buyerEmail: z.string().email().nullable().optional(),
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),

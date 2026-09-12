@@ -24,6 +24,7 @@ import type {
   FinanceEntryDocumentDownload,
   GetFinanceEntryDocumentDownloadInput,
 } from "../../../domains/finance/services/FinanceService/getFinanceEntryDocumentDownload.js";
+import type { GenerateFinanceEntryReceiptResult } from "../../../domains/finance/services/FinanceService/generateFinanceEntryReceipt.js";
 import type { ListFinanceRecurringEntriesInput } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
 import type {
   MaterializeFinanceRecurringEntriesInput,
@@ -59,6 +60,7 @@ import type {
   SettleCommissionEntriesInput,
 } from "../../../domains/finance/services/FinanceService/settleCommissionEntries.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
+import type { FinanceStoreIdentityReader } from "../../../domains/finance/ports/financeStoreIdentityReader.js";
 
 export type FinanceEntryListItemDto = FinanceEntry & {
   links: readonly FinanceEntryLink[];
@@ -116,6 +118,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: GetFinanceEntryDocumentDownloadInput,
   ) => Promise<FinanceEntryDocumentDownload>;
+  generateEntryReceipt: (
+    context: ServiceContext,
+    input: { entryId: string },
+  ) => Promise<GenerateFinanceEntryReceiptResult>;
   getCommissionWorkspace: (
     context: ServiceContext,
     input: GetCommissionWorkspaceInput,
@@ -174,8 +180,9 @@ export type FinanceServices = {
 export type CreateFinanceServicesOptions =
   | {
       drizzleClient?: never;
-      objectStorage?: never;
+      objectStorage?: FinanceServicePorts["objectStorage"];
       ports?: FinanceServicePorts;
+      storeIdentityReader?: FinanceStoreIdentityReader;
       transactionRunner?: TransactionRunner<FinanceServicePorts>;
     }
   | {

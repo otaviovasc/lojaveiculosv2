@@ -27,7 +27,11 @@
 }
 
 .agency-table tr:hover td {
-  background-color: rgba(247, 249, 251, 0.5);
+  background-color: color-mix(
+    in srgb,
+    var(--color-app-elevated) 60%,
+    transparent
+  );
 }
 
 /* Animations */
@@ -44,5 +48,9 @@
 
 /* Dark Mode Extensions */
 [data-theme="dark"] .agency-table tr:hover td {
-  background-color: rgba(29, 44, 54, 0.3);
+  background-color: color-mix(
+    in srgb,
+    var(--color-app-elevated) 40%,
+    transparent
+  );
 }

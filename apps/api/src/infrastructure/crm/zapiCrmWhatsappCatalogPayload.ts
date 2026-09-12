@@ -1,4 +1,4 @@
-import type { CrmWhatsappCatalogProduct } from "../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmWhatsappCatalogProduct } from "../../domains/crm/ports/crmMessagingGateway.js";
 import { readString } from "./zapiCrmWhatsappGatewaySupport.js";
 
 export function readZapiCatalogProducts(

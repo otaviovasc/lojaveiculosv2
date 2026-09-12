@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { StatusIllustration } from "../../components/ui/StatusIllustration";
+import { readRuntimeApiBaseUrl } from "../account/runtimeAuth";
 import { AppApiError } from "../../lib/apiErrors";
 import {
   createPublicStorefrontApi,
@@ -145,9 +146,8 @@ function applyCustomPageMetadata(data: PublicStorefrontCustomPageData) {
 }
 
 function createPublicStorefrontApiOptions(storeSlug?: string) {
-  const env = import.meta.env as unknown as { VITE_API_BASE_URL?: string };
   return {
-    ...(env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {}),
+    ...readRuntimeApiBaseUrl(),
     fetch: window.fetch.bind(window),
     ...(storeSlug ? { storeSlug } : {}),
   };

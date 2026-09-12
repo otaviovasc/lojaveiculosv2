@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import {
+  CalendarDays,
   CarFront,
   ChevronDown,
   Handshake,
@@ -16,7 +17,7 @@ import {
   FeatureDialogActions,
 } from "../../components/ui/FeatureOverlay";
 import { formatBrazilianPhone } from "../../lib/masks";
-import { CrmSelect } from "./CrmFormControls";
+import { CrmDateField, CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { PipelineStage } from "./crmPipelineStorage";
@@ -24,6 +25,7 @@ import type { CrmLeadSource } from "./productCrmTypes";
 import { CrmFormError, formatCrmSubmitError } from "./CrmFormFeedback";
 import { CrmQuickAddLeadMoreOptions } from "./CrmQuickAddLeadMoreOptions";
 import { validateQuickLeadInput } from "./crmFormValidation";
+import { getSaoPauloTodayIsoDate } from "./crmLeadBirthDate";
 
 type Props = {
   stageId: string;
@@ -44,6 +46,7 @@ export function CrmQuickAddLeadModal({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [showMore, setShowMore] = useState(false);
   const [priority, setPriority] = useState("Média");
@@ -77,6 +80,7 @@ export function CrmQuickAddLeadModal({
       await onCreateLead({
         buyerName: name.trim(),
         source: source || "manual",
+        ...(birthDate ? { birthDate } : {}),
         ...(phone.trim() ? { buyerPhone: phone.trim() } : {}),
         ...(email.trim() ? { buyerEmail: email.trim() } : {}),
         ...(vehicleId ? { listingId: vehicleId } : {}),
@@ -186,6 +190,21 @@ export function CrmQuickAddLeadModal({
                 spellCheck={false}
                 type="email"
                 value={email}
+              />
+            </FeatureField>
+            <FeatureField
+              label={
+                <FieldLabel
+                  icon={<CalendarDays />}
+                  label="Data de nascimento"
+                />
+              }
+            >
+              <CrmDateField
+                label="Nascimento"
+                max={getSaoPauloTodayIsoDate()}
+                onChange={setBirthDate}
+                value={birthDate}
               />
             </FeatureField>
           </div>

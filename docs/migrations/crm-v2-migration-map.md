@@ -25,7 +25,8 @@ It reconciles current V2 code, `docs/migration.md`, `v2-plan.html`,
 
 Already V2-owned:
 
-- ZAPI connection/session/message runtime.
+- Channel/provider/broker routing over `crm_channel_connections`.
+- Canonical contacts, conversation threads, cycles, attendances, and messages.
 - ZAPI received, delivery, status, connected, disconnected, and chat-presence
   webhooks.
 - Durable `provider_events` capture and retry surface.
@@ -34,20 +35,19 @@ Already V2-owned:
 - Text, media, location, catalog/product, vehicle sends.
 - Quick messages.
 - Session assignment, close, read/unread, human intervention.
-- Normalized WhatsApp tags with `crm_tags` and
-  `crm_whatsapp_session_tags`.
 - One-off scheduled messages.
 - Scheduled-message backend routes, services, persistence, store-wide operations
   page, and campaign linkage are present.
 - DB-backed CRM pipelines and stages with audited lead stage movement.
-- Lead detail Chat tab resolves WhatsApp sessions by V2 `leadId` and can start
-  a V2-native WhatsApp conversation by `leadId`.
+- Lead detail Chat tab resolves canonical conversations by V2 `leadId` and can
+  start a V2-native conversation by `leadId`.
 - V2 visits operations over `lead_visits` with backend services/controllers,
   audited status changes, lead activities, and a Repasses-style Visitas timeline.
-- Bot integration config page, action API, and write-only secret state.
+- External-bot configuration page, action API, and write-only secret state;
+  one external bot is configured per store.
 - Outbound bot webhook forwarding with Repasses-style message and intervention
   events, handback summaries, dispatch audit, and system-origin scheduled sends.
-- Persistent WhatsApp campaigns with recipient rows, scheduled-message linkage,
+- Persistent channel-neutral campaigns with recipient rows, scheduled-message linkage,
   send/reply metrics, and reply-triggered secondary messages.
 - Filtered V2 lead campaign audiences resolved to linked WhatsApp sessions.
 - Atomic campaign reply claiming that prevents duplicate metrics and secondary
@@ -63,8 +63,9 @@ Still incomplete for production sign-off:
 
 - Railway scheduled-message cron provisioning and verification.
 - Live Z-API, R2, and Redis smoke/load/recovery evidence.
-- Historical Repasses import only if the product reverses its current
-  migration-deferred decision.
+- Historical Repasses import rehearsal and cutover acceptance. The implemented
+  mapping and operator boundary live in
+  `docs/migrations/v1-crm-whatsapp-import.md`.
 
 ## Slice Map
 
@@ -74,7 +75,6 @@ Still incomplete for production sign-off:
 | Phase 1 permissions/foundation | Completed | `apps/api/src/domains/identity/domain/*permission*`, `apps/web/src/features/crm/crmWhatsappPermissions.ts`, focused CRM service permission constants | Existing CRM permission tests                               | Normalized names without weakening current access.                              |
 | Shell/nav                      | Completed | `CrmWhatsappScopedNav.tsx`, `CrmWhatsappMobileNav.tsx`, `CrmWhatsappInbox.tsx`, `CrmWhatsappConversationWorkspace.tsx`, CRM WhatsApp CSS             | `CrmNavbar.tsx`, `CrmWhatsApp.tsx`                          | Desktop scoped tabs plus the Repasses-derived mobile 3+Mais bottom navigation.  |
 | Connection page                | Completed | `CrmWhatsappConnectionAdmin.tsx`, `CrmWhatsappConnectionAdminParts.tsx`, `useCrmWhatsappConnections.ts`, CSS                                         | `CrmIntegracoes.tsx`, backend connection controllers        | Simple operations page: status, two write-only ZAPI values, webhooks.           |
-| Tags page                      | Completed | `CrmWhatsappTagManager.tsx`, `CrmWhatsappTagManagerParts.tsx`, `useCrmWhatsappTags.ts`, tag API tests                                                | `CrmEtiquetas.tsx`, `SortableTagItem.tsx`                   | Repasses-style preview/swatches/emoji/list rows; no column/pipeline semantics.  |
 | Pipeline persistence           | Completed | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                         | Landed before campaign/visit deep linking.                                      |
 | Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                | Lead is source of truth.                                                        |
 | Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`, visit CSS/tests                                                      | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                 | Repasses-style date filters, counts, and timeline rows over `lead_visits`.      |
@@ -114,8 +114,6 @@ Still incomplete for production sign-off:
 - Meta Cloud API provider switching.
 - Old `crm_agents` semantics.
 - MiniBot tables/controllers as the V2 bot implementation.
-- `isColumn` tag behavior.
-- Pipeline semantics stored in tags.
 - Bridge auth contracts such as `x-crm-agent-id`.
 - uaZapi compatibility payloads.
 - Numeric Repasses route ids as V2 contracts.

@@ -32,7 +32,7 @@ run("git", ["checkout", "staging"]);
 if (remoteStagingExists) {
   run("git", ["merge", "--ff-only", "origin/staging"]);
 }
-run("git", ["merge", "--no-ff", "--edit", featureBranch]);
+run("git", ["merge", "--no-ff", "--no-edit", featureBranch]);
 run("git", ["push", "origin", "staging"]);
 run("git", ["checkout", featureBranch]);
 

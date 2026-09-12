@@ -38,6 +38,7 @@ export async function syncFiscalDocumentStatus(
   );
 
   const providerResult = await ports.fiscalProviderGateway.syncDocumentStatus({
+    documentKind: persistedDocument.documentKind,
     providerDocumentId: persistedDocument.providerDocumentId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,

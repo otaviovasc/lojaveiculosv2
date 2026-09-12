@@ -1,25 +1,47 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
-import type { DispatchCrmBotWebhookInput } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
-  configureBot,
-  createBotDispatcher,
   createSendTextSpy,
   createZapiConnection,
   jsonRequest,
   postZapiWebhook,
-} from "./crm.whatsapp.botForwarding.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.messaging.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp ad-initiated conversations", () => {
+  it("links a notification-only conversation to its canonical lead", async () => {
+    const { app, whatsappRepository } = createAdTestApp();
+
+    const response = await postZapiWebhook(app, {
+      externalAdReply: adReply(),
+      messageId: "zapi-new-ad-notification-1",
+      notification: true,
+      text: { message: "Mensagem automatica do anuncio" },
+    });
+
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      conversationCycle: { id: string; leadId: string | null };
+    };
+    expect(payload.conversationCycle.leadId).toEqual(expect.any(String));
+    await expect(
+      whatsappRepository.listConversationCycles({
+        limit: 1,
+        offset: 0,
+        storeId,
+        tenantId,
+      }),
+    ).resolves.toMatchObject([{ leadId: payload.conversationCycle.leadId }]);
+  });
+
   it("resumes automation before forwarding an attributed buyer message", async () => {
-    const { app, dispatched, whatsappRepository } = createAdTestApp();
-    const sessionId = await startHumanTakeover(app, dispatched);
+    const { app, whatsappRepository } = createAdTestApp();
+    const cycleId = await startHumanTakeover(app);
 
     const response = await postZapiWebhook(app, {
       externalAdReply: adReply(),
@@ -30,8 +52,8 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
 
     expect(response.status).toBe(201);
     await expect(response.clone().json()).resolves.toMatchObject({
-      session: {
-        id: sessionId,
+      conversationCycle: {
+        id: cycleId,
         metadata: {
           adBody: "Civic Touring com baixa quilometragem",
           adDetectionMethod: "external_ad_reply",
@@ -43,51 +65,13 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
         status: "ACTIVE",
       },
     });
-    expect(dispatched.slice(-2).map((item) => item.payload.event)).toEqual([
-      "intervention_ended",
-      "message",
-    ]);
-    expect(dispatched.at(-2)?.payload).toMatchObject({
-      event: "intervention_ended",
-      intervention: {
-        active: false,
-        reason: "ad_initiated_conversation",
-        triggeredBy: "system",
-      },
-      session: {
-        adAttribution: {
-          body: "Civic Touring com baixa quilometragem",
-          sourceApp: "facebook",
-          sourceId: "ad-civic-123",
-          title: "Civic Touring 2024",
-        },
-        isBotActive: true,
-        status: "ACTIVE",
-      },
-    });
-    expect(dispatched.at(-2)?.payload.intervention?.summary).toContain(
-      "Staff: Vou assumir por alguns minutos.",
-    );
-    expect(dispatched.at(-2)?.payload.intervention?.summary).not.toContain(
-      "Vi o anuncio",
-    );
-    expect(dispatched.at(-1)?.payload).toMatchObject({
-      event: "message",
-      message: { providerMessageId: "zapi-ad-inbound-1" },
-      session: {
-        adAttribution: { sourceId: "ad-civic-123" },
-        isBotActive: true,
-        status: "ACTIVE",
-      },
-    });
-
-    const [session] = await whatsappRepository.listSessions({
+    const [cycle] = await whatsappRepository.listConversationCycles({
       limit: 1,
       offset: 0,
       storeId,
       tenantId,
     });
-    expect(session).toMatchObject({
+    expect(cycle).toMatchObject({
       humanTakeoverAt: null,
       metadata: { isAdInitiated: true },
       status: "ACTIVE",
@@ -95,9 +79,9 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
   });
 
   it("captures an ad notification without a message and resumes the next buyer turn", async () => {
-    const { app, dispatched, whatsappRepository } = createAdTestApp();
-    const sessionId = await startHumanTakeover(app, dispatched);
-    const before = await listMessages(whatsappRepository, sessionId);
+    const { app, whatsappRepository } = createAdTestApp();
+    const cycleId = await startHumanTakeover(app);
+    const before = await listMessages(whatsappRepository, cycleId);
 
     const notification = await postZapiWebhook(app, {
       externalAdReply: adReply(),
@@ -108,8 +92,8 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
 
     expect(notification.status).toBe(200);
     await expect(notification.clone().json()).resolves.toMatchObject({
-      session: {
-        id: sessionId,
+      conversationCycle: {
+        id: cycleId,
         metadata: {
           adDetectionMethod: "notification_webhook",
           isAdInitiated: true,
@@ -118,11 +102,9 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
       },
       status: "captured",
     });
-    expect(await listMessages(whatsappRepository, sessionId)).toHaveLength(
+    expect(await listMessages(whatsappRepository, cycleId)).toHaveLength(
       before.length,
     );
-    expect(dispatched.at(-1)?.payload.event).toBe("intervention_ended");
-    const dispatchCount = dispatched.length;
     const retry = await postZapiWebhook(app, {
       externalAdReply: adReply(),
       messageId: "zapi-ad-notification-1",
@@ -130,8 +112,7 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
       text: { message: "Mensagem automatica do anuncio" },
     });
     expect(retry.status).toBe(200);
-    expect(dispatched).toHaveLength(dispatchCount);
-    expect(await listMessages(whatsappRepository, sessionId)).toHaveLength(
+    expect(await listMessages(whatsappRepository, cycleId)).toHaveLength(
       before.length,
     );
 
@@ -140,60 +121,50 @@ describe("CRM WhatsApp ad-initiated conversations", () => {
       text: { message: "Boa tarde" },
     });
     expect(buyerReply.status).toBe(201);
-    expect(dispatched.at(-1)?.payload).toMatchObject({
-      event: "message",
-      message: { providerMessageId: "zapi-after-ad-notification-1" },
-      session: {
-        adAttribution: { sourceId: "ad-civic-123" },
-        isBotActive: true,
-        status: "ACTIVE",
+    await expect(buyerReply.json()).resolves.toMatchObject({
+      conversationCycle: {
+        metadata: { adSourceId: "ad-civic-123", isAdInitiated: true },
       },
     });
   });
 });
 
 function createAdTestApp() {
-  const dispatched: DispatchCrmBotWebhookInput[] = [];
-  const whatsappRepository = createMemoryCrmWhatsappRepository();
+  const whatsappRepository = createMemoryCrmConversationRepository();
   const app = createTestApp({
-    crmBotWebhookDispatcher: createBotDispatcher(dispatched),
     crmConnectionRepository: createMemoryCrmConnectionRepository([
       createZapiConnection(),
     ]),
-    crmWhatsappGateway: { sendText: createSendTextSpy() },
-    crmWhatsappRepository: whatsappRepository,
+    crmMessagingGateway: { sendText: createSendTextSpy() },
+    crmConversationRepository: whatsappRepository,
   });
-  return { app, dispatched, whatsappRepository };
+  return { app, whatsappRepository };
 }
 
-async function startHumanTakeover(
-  app: ReturnType<typeof createTestApp>,
-  dispatched: DispatchCrmBotWebhookInput[],
-) {
-  await configureBot(app);
+async function startHumanTakeover(app: ReturnType<typeof createTestApp>) {
   const initialResponse = await postZapiWebhook(app);
-  const initial = (await initialResponse.json()) as { session: { id: string } };
+  const initial = (await initialResponse.json()) as {
+    conversationCycle: { id: string };
+  };
   expect(initialResponse.status).toBe(201);
   const humanResponse = await app.request(
-    "/api/v1/crm/whatsapp/send/text",
+    `/api/v1/crm/conversation-cycles/${initial.conversationCycle.id}/messages`,
     jsonRequest({
-      sessionId: initial.session.id,
-      text: "Vou assumir por alguns minutos.",
+      content: "Vou assumir por alguns minutos.",
     }),
   );
   expect(humanResponse.status).toBe(201);
-  expect(dispatched.at(-1)?.payload.event).toBe("intervention_started");
-  return initial.session.id;
+  return initial.conversationCycle.id;
 }
 
 function listMessages(
-  repository: ReturnType<typeof createMemoryCrmWhatsappRepository>,
-  sessionId: string,
+  repository: ReturnType<typeof createMemoryCrmConversationRepository>,
+  cycleId: string,
 ) {
   return repository.listMessages({
     limit: 20,
     offset: 0,
-    sessionId,
+    cycleId,
     storeId,
     tenantId,
   });

@@ -1,0 +1,74 @@
+import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
+import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
+import type { CrmExternalBotIntegrationRepository } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
+import type { CrmExternalBotProfileRepository } from "../../../domains/crm/ports/crmExternalBotProfileRepository.js";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
+import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type {
+  CrmConnectionCredentialVault,
+  CrmZapiSupportAuthorizer,
+} from "../../../domains/crm/ports/crmConnectionSetupProvider.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
+import type {
+  CrmRealtimeBroker,
+  CrmRealtimePublisher,
+} from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmRemoteMediaFetcher } from "../../../domains/crm/ports/crmRemoteMediaFetcher.js";
+import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmVisitRepository } from "../../../domains/crm/ports/crmVisitRepository.js";
+import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
+import type { CrmMessagingGateway } from "../../../domains/crm/ports/crmMessagingGateway.js";
+import type { CrmConversationRepository } from "../../../domains/crm/ports/crmConversationRepository.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
+import type { ServiceLogger } from "../../../shared/serviceContext.js";
+import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
+import type { CrmPushRepository } from "../../../domains/crm/ports/crmPushRepository.js";
+import type { CrmPushPublicConfig } from "./crm.push.routes.js";
+
+export type CreateCrmTestAppOptions = {
+  actorDisplayName?: string;
+  audit?: AuditSink;
+  auditFailureTier?: AuditFailureTier;
+  crmAudioNormalizer?: CrmServicePorts["crmAudioNormalizer"];
+  composioChannelOnboardingProvider?: CrmServicePorts["composioChannelOnboardingProvider"];
+  crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
+  crmExternalBotProfileRepository?: CrmExternalBotProfileRepository;
+  crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
+  crmConnectionCredentialVault?: CrmConnectionCredentialVault;
+  crmConnectionMemberRepository?: CrmServicePorts["crmConnectionMemberRepository"];
+  crmConnectionRepository?: CrmConnectionRepository;
+  crmStatisticsReadModel?: CrmServicePorts["crmStatisticsReadModel"];
+  crmOlxWebhookSecurity?: CrmServicePorts["crmOlxWebhookSecurity"];
+  crmOutcomeRepository?: CrmServicePorts["crmOutcomeRepository"];
+  olxCrmWebhookSetupProvider?: CrmServicePorts["olxCrmWebhookSetupProvider"];
+  olxCrmCallbackOrigin?: string;
+  olxChatEnabled?: boolean;
+  crmZapiSupportAuthorizer?: CrmZapiSupportAuthorizer;
+  crmPipelineRepository?: CrmPipelineRepository;
+  crmPushRepository?: CrmPushRepository;
+  crmRealtimeBroker?: CrmRealtimeBroker;
+  crmRealtimePublisher?: CrmRealtimePublisher;
+  crmRoutingConnectionRepository?: CrmServicePorts["crmRoutingConnectionRepository"];
+  crmRoutingPolicyRepository?: CrmServicePorts["crmRoutingPolicyRepository"];
+  crmRepository?: CrmRepository;
+  crmSpecialDateRepository?: CrmServicePorts["crmSpecialDateRepository"];
+  crmVisitRepository?: CrmVisitRepository;
+  crmWebhookEventRepository?: CrmWebhookEventRepository;
+  crmMessagingGateway?: Partial<CrmMessagingGateway>;
+  crmMediaFetcher?: CrmRemoteMediaFetcher;
+  crmMediaStorage?: ObjectStorage;
+  crmConversationRepository?: CrmConversationRepository;
+  entitlements?: EntitlementKey[];
+  externalBotManager?: ExternalBotManagerPorts;
+  logger?: ServiceLogger;
+  permissions?: PermissionKey[];
+  pushPublicConfig?: CrmPushPublicConfig;
+  supportPermissions?: PermissionKey[];
+  resolveBotEntitlements?: ResolveCrmBotEntitlements;
+  transaction?: CrmServicePorts["transaction"];
+  vehicleInventory?: CrmServicePorts["vehicleInventory"];
+  crmUazapiProvisioningProvider?: CrmServicePorts["crmUazapiProvisioningProvider"];
+  uazapiConnectionSetupProvider?: CrmServicePorts["uazapiConnectionSetupProvider"];
+  zapiConnectionSetupProvider?: CrmServicePorts["zapiConnectionSetupProvider"];
+};

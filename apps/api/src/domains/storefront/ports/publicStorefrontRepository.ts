@@ -31,6 +31,15 @@ export type PublicStorefrontContact = {
   whatsappUrl: string | null;
 };
 
+export type PublicStorefrontSettingsContact = PublicStorefrontContact & {
+  addressCity: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  addressState: string | null;
+  addressZipCode: string | null;
+  businessHours: Record<string, unknown>;
+};
+
 export type PublicStorefrontSite = {
   heroImageUrl: string | null;
   layoutKey: string;
@@ -40,13 +49,13 @@ export type PublicStorefrontSite = {
 };
 
 export type PublicStorefrontSiteSnapshot = {
-  contact: PublicStorefrontContact;
+  contact: PublicStorefrontSettingsContact;
   site: PublicStorefrontSite;
   store: PublicStorefrontStore & { publicUrl: string };
 };
 
 export type PublicStorefrontSiteResult = {
-  contact: PublicStorefrontContact;
+  contact: PublicStorefrontSettingsContact;
   site: PublicStorefrontSite;
   store: PublicStorefrontPublicStore;
 };
@@ -62,6 +71,7 @@ export type PublicVehicleListing = {
   heroMedia: PublicVehicleMedia | null;
   id: string;
   manufactureYear: number | null;
+  media: readonly PublicVehicleMedia[];
   mileageKm: number | null;
   modelYear: number | null;
   priceCents: number | null;
@@ -90,18 +100,24 @@ export type PublicVehicleMediaGroup = {
 };
 
 export type PublicVehicleListingDetail = PublicVehicleListing & {
-  media: readonly PublicVehicleMedia[];
   mediaGroups: readonly PublicVehicleMediaGroup[];
 };
 
 export type FindPublicListingsInput = {
   limit: number;
+  offset?: number;
   storeId: StoreId;
   tenantId: TenantId;
 };
 
 export type FindPublicListingDetailInput = {
   listingSlug: string;
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
+export type FindPublicListingDetailByIdInput = {
+  listingId: string;
   storeId: StoreId;
   tenantId: TenantId;
 };
@@ -115,6 +131,9 @@ export type PublicStorefrontRepository = {
   ) => Promise<PublicStorefrontStore | null>;
   findPublicListingDetail: (
     input: FindPublicListingDetailInput,
+  ) => Promise<PublicVehicleListingDetail | null>;
+  findPublicListingDetailById?: (
+    input: FindPublicListingDetailByIdInput,
   ) => Promise<PublicVehicleListingDetail | null>;
   listPublicListings: (
     input: FindPublicListingsInput,

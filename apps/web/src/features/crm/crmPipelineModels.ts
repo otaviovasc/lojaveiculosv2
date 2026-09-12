@@ -1,8 +1,8 @@
-import { normalizeBrazilianPhoneDigits } from "../../lib/masks";
-import { pipelineStatuses } from "./crmPipelineConfig";
 import type {
   CreateProductCrmActivityInput,
   CreateProductCrmLeadInput,
+  CrmLeadHumanAttendanceState,
+  CrmLeadResponseState,
   CrmLeadSource,
   CrmLeadStatus,
   LeadActivityType,
@@ -13,11 +13,53 @@ import type {
 
 export type CrmViewMode = "kanban" | "list" | "table";
 
+export type CrmLeadSortBy = "created_at" | "next_task";
+
+export const CRM_LEAD_DEFAULT_SORT: CrmLeadSortBy = "created_at";
+
 export type LeadFilters = {
+  assignee?: string | undefined;
+  humanAttendanceState?: CrmLeadHumanAttendanceState | "all";
+  inactiveDays?: number | null;
+  listingId?: string | undefined;
+  responseState?: CrmLeadResponseState | "all";
   search: string;
+  sortBy?: CrmLeadSortBy;
   source: CrmLeadSource | "all";
+  sources?: CrmLeadSource[] | undefined;
   status: CrmLeadStatus | "all";
 };
+
+export function createDefaultLeadFilters(): LeadFilters {
+  return {
+    assignee: undefined,
+    humanAttendanceState: "all",
+    inactiveDays: null,
+    listingId: undefined,
+    responseState: "all",
+    search: "",
+    sortBy: CRM_LEAD_DEFAULT_SORT,
+    source: "all",
+    sources: [],
+    status: "all",
+  };
+}
+
+export function hasActiveServerLeadFilters(filters: LeadFilters) {
+  return Boolean(
+    (filters.responseState && filters.responseState !== "all") ||
+    (typeof filters.inactiveDays === "number" &&
+      Number.isInteger(filters.inactiveDays) &&
+      filters.inactiveDays > 0) ||
+    (filters.humanAttendanceState && filters.humanAttendanceState !== "all") ||
+    (filters.sortBy && filters.sortBy !== CRM_LEAD_DEFAULT_SORT) ||
+    (filters.assignee &&
+      filters.assignee !== "all" &&
+      filters.assignee !== "") ||
+    (filters.sources && filters.sources.length > 0) ||
+    Boolean(filters.listingId),
+  );
+}
 
 export type LeadCreateDraft = CreateProductCrmLeadInput & {
   initialNote?: string;
@@ -28,27 +70,13 @@ export type LeadCreateDraft = CreateProductCrmLeadInput & {
 
 export type LeadContactPatch = Pick<
   UpdateProductCrmLeadInput,
-  "buyerEmail" | "buyerName" | "buyerPhone" | "metadata"
+  "birthDate" | "buyerEmail" | "buyerName" | "buyerPhone" | "metadata"
 >;
 
 export type LeadTaskMetadata = {
   dueAt?: string | undefined;
   title?: string | undefined;
 };
-
-export function buildLeadContactPatch(
-  lead: Pick<ProductCrmLead, "buyerPhone">,
-  draft: LeadContactPatch,
-): LeadContactPatch {
-  const { buyerPhone, ...patch } = draft;
-  if (!("buyerPhone" in draft)) return patch;
-
-  const currentPhone = normalizeBrazilianPhoneDigits(lead.buyerPhone ?? "");
-  const nextPhone = normalizeBrazilianPhoneDigits(buyerPhone ?? "");
-  return currentPhone === nextPhone
-    ? patch
-    : { ...patch, buyerPhone: nextPhone || null };
-}
 
 export function filterLeads(leads: ProductCrmLead[], filters: LeadFilters) {
   const needle = normalize(filters.search);
@@ -71,15 +99,6 @@ export function filterLeads(leads: ProductCrmLead[], filters: LeadFilters) {
 
     return matchesStatus && matchesSource && matchesSearch;
   });
-}
-
-export function groupLeadsByStatus(leads: ProductCrmLead[]) {
-  return Object.fromEntries(
-    pipelineStatuses.map((status) => [
-      status,
-      leads.filter((lead) => lead.status === status),
-    ]),
-  ) as Record<(typeof pipelineStatuses)[number], ProductCrmLead[]>;
 }
 
 export function deriveLeadStats(
@@ -142,10 +161,6 @@ export function isOverdueTask(activity: ProductCrmLeadActivity) {
 
 export function formatLeadName(lead: ProductCrmLead) {
   return lead.buyerName?.trim() || "Lead sem nome";
-}
-
-export function formatLeadContact(lead: ProductCrmLead) {
-  return lead.buyerPhone || lead.buyerEmail || "Contato nao informado";
 }
 
 export function formatRelativeDate(value: string | null) {

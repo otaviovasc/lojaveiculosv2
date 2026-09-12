@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { SaleCancelDialog } from "./SaleCancelDialog";
 import { SaleRevertDialog } from "./SaleRevertDialog";
@@ -11,7 +12,12 @@ import {
   SaleWorkspaceNavigation,
 } from "./SaleWorkspaceChrome";
 import { StickySaleSummary } from "./SaleSummaryPanel";
-import { canPersistSaleWorkspaceEdits } from "./salesModel";
+import { canPersistSaleWorkspaceEdits, saleMissingFields } from "./salesModel";
+import {
+  canNavigateToSaleWorkspaceStep,
+  getSaleCloseMissingFields,
+  getSaleWorkspaceStepReadiness,
+} from "./saleWorkspaceReadiness";
 import {
   clearSaleAutosaveTimer,
   createSaleSaveState,
@@ -23,7 +29,9 @@ import {
 } from "./saleWorkspacePersistence";
 import {
   emptySaleContextOptions,
+  type CreateSaleLeadInput,
   type SaleContextOptions,
+  type SaleLeadOption,
 } from "./saleContextOptions";
 import type { SaleRecord } from "./types";
 
@@ -33,6 +41,7 @@ export function SaleWorkspace({
   inventoryApi = null,
   onCancel,
   onClose,
+  onCreateLead,
   onReserve,
   onRevert,
   onSave,
@@ -44,6 +53,7 @@ export function SaleWorkspace({
   inventoryApi?: InventoryApi | null;
   onCancel: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onCreateLead?: (input: CreateSaleLeadInput) => Promise<SaleLeadOption>;
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onRevert: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onSave: (sale: SaleRecord) => Promise<SaleRecord>;
@@ -55,6 +65,8 @@ export function SaleWorkspace({
   const [message, setMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
   const draftRef = useRef<SaleRecord | null>(sale);
@@ -62,11 +74,38 @@ export function SaleWorkspace({
 
   useEffect(() => {
     const previousDraftId = draftRef.current?.id;
-    setDraft(sale);
-    draftRef.current = sale;
-    resetSaleSaveState(saveStateRef.current, sale);
-    if (sale?.id !== previousDraftId) {
-      setCurrentStep(0);
+    const previousStatus = draftRef.current?.status;
+    const previousRevision = draftRef.current?.revision;
+
+    const isDifferentSale = sale?.id !== previousDraftId;
+    const isStatusChanged = sale?.status !== previousStatus;
+    const isRevisionChanged = sale?.revision !== previousRevision;
+
+    if (isDifferentSale || isStatusChanged || isRevisionChanged) {
+      setDraft(sale);
+      draftRef.current = sale;
+      resetSaleSaveState(saveStateRef.current, sale);
+      if (isDifferentSale) {
+        setIsCloseDialogOpen(false);
+        setIsClosing(false);
+        setCurrentStep(sale?.status === "closed" ? 3 : 0);
+      } else if (sale?.status === "closed" && previousStatus !== "closed") {
+        setCurrentStep(3);
+      }
+      return;
+    }
+
+    if (sale) {
+      saveStateRef.current.lastResult = sale;
+      saveStateRef.current.saved = serializeSaleDraft(sale);
+      const currentDraft = draftRef.current;
+      if (
+        !currentDraft ||
+        serializeSaleDraft(currentDraft) === saveStateRef.current.saved
+      ) {
+        setDraft(sale);
+        draftRef.current = sale;
+      }
     }
   }, [sale]);
 
@@ -84,7 +123,7 @@ export function SaleWorkspace({
       if (result.submitted) {
         const currentDraft = draftRef.current;
         if (
-          !currentDraft ||
+          currentDraft &&
           serializeSaleDraft(currentDraft) === result.submitted
         ) {
           setDraft(result.sale);
@@ -102,7 +141,8 @@ export function SaleWorkspace({
     setIsSaving(true);
     clearSaleAutosaveTimer(autosaveTimerRef);
     autosaveTimerRef.current = window.setTimeout(() => {
-      void persistDraft(draft)
+      const latestDraft = draftRef.current ?? draft;
+      void persistDraft(latestDraft)
         .then(() => {
           setMessage("Rascunho salvo automaticamente");
         })
@@ -128,7 +168,7 @@ export function SaleWorkspace({
   const update = (updater: (sale: SaleRecord) => SaleRecord) => {
     setDraft((current) => {
       if (!current || !canPersistSaleWorkspaceEdits(current)) return current;
-      const next = current ? updater(current) : current;
+      const next = updater(current);
       draftRef.current = next;
       return next;
     });
@@ -162,13 +202,15 @@ export function SaleWorkspace({
     clearSaleAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
-      const saved = await persistDraft(draft);
-      if (!saved) return;
+      const saved = await persistDraft(draftRef.current ?? draft);
+      if (!saved) return false;
       const transitioned = await action(saved);
       resetSaleSaveState(saveStateRef.current, transitioned ?? saved);
       setMessage("Status da venda atualizado");
+      return true;
     } catch (error) {
       setMessage(saleSaveErrorMessage(error));
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -190,40 +232,97 @@ export function SaleWorkspace({
     });
   };
 
+  const isCloseReady = getSaleCloseMissingFields(draft).length === 0;
+  const isReserveReady = saleMissingFields(draft, "reserve").length === 0;
+  const canClose =
+    isCloseReady && (draft.status === "draft" || draft.status === "pending");
+  const canReserve = isReserveReady && draft.status === "draft";
+  const stepReadiness = getSaleWorkspaceStepReadiness(draft);
+  const stepStates = stepReadiness.map((readiness, targetStep) => ({
+    ...readiness,
+    isAccessible: canNavigateToSaleWorkspaceStep({
+      currentStep,
+      readiness: stepReadiness,
+      sale: draft,
+      targetStep,
+    }),
+  }));
+  const canAdvance = canNavigateToSaleWorkspaceStep({
+    currentStep,
+    readiness: stepReadiness,
+    sale: draft,
+    targetStep: currentStep + 1,
+  });
+  const requestCloseSale = () => {
+    if (canClose) setIsCloseDialogOpen(true);
+  };
+  const confirmCloseSale = async () => {
+    setIsClosing(true);
+    try {
+      const didClose = await runTransition(onClose);
+      if (didClose) setIsCloseDialogOpen(false);
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
       <div className="flex flex-col gap-4">
         <SaleWorkspaceHeader
           currentStep={currentStep}
           isSaving={isSaving}
-          onStepChange={setCurrentStep}
+          onStepChange={(step) => {
+            if (stepStates[step]?.isAccessible) setCurrentStep(step);
+          }}
           sale={draft}
+          stepReadiness={stepStates}
           {...(onBack ? { onBack: () => void handleBack() } : {})}
         />
         <SaleWorkspaceMessage message={message} />
         <SaleWorkspaceReadOnlyNotice sale={draft} />
 
         <SaleWorkspaceStepContent
+          canClose={canClose}
           contextMessage={contextMessage}
           contextOptions={contextOptions}
           currentStep={currentStep}
           inventoryApi={inventoryApi}
+          isSaving={isSaving}
+          onClose={requestCloseSale}
           sale={draft}
           update={update}
+          {...(onBack
+            ? {
+                onBack: () => {
+                  void handleBack();
+                },
+              }
+            : {})}
+          {...(onCreateLead ? { onCreateLead } : {})}
         />
 
         <SaleWorkspaceNavigation
+          canAdvance={canAdvance}
+          canClose={canClose}
+          canReserve={canReserve}
           currentStep={currentStep}
+          isSaving={isSaving}
           onBack={() => setCurrentStep((step) => step - 1)}
+          onClose={requestCloseSale}
           onFinish={() => void handleBack()}
-          onNext={() => setCurrentStep((step) => step + 1)}
+          onNext={() => {
+            if (canAdvance) setCurrentStep((step) => step + 1);
+          }}
+          onReserve={() => void runTransition(onReserve)}
+          sale={draft}
         />
       </div>
 
       <StickySaleSummary
         isSaving={isSaving}
         onCancel={() => setIsCancelDialogOpen(true)}
-        onClose={() => void runTransition(onClose)}
+        onClose={requestCloseSale}
         onReserve={() => void runTransition(onReserve)}
         onRevert={() => setIsRevertDialogOpen(true)}
         sale={draft}
@@ -234,6 +333,16 @@ export function SaleWorkspace({
         onClose={() => setIsCancelDialogOpen(false)}
         onConfirm={cancelSale}
         status={draft.status}
+      />
+      <ConfirmDialog
+        confirmLabel="Confirmar fechamento"
+        description="Revise comprador, valores e documentos. O fechamento altera o estoque e solicita a emissão dos documentos selecionados."
+        isLoading={isClosing}
+        isOpen={isCloseDialogOpen}
+        loadingLabel="Fechando venda..."
+        onClose={() => setIsCloseDialogOpen(false)}
+        onConfirm={confirmCloseSale}
+        title="Fechar esta venda?"
       />
       <SaleRevertDialog
         isOpen={isRevertDialogOpen}

@@ -1,4 +1,6 @@
 import { Check } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,15 @@ export function WebsiteBuilderTemplatePanel({
   onChange: (templateId: WebsiteBuilderTemplateId) => void;
   templateId: WebsiteBuilderTemplateId;
 }) {
+  const [pendingTemplateId, setPendingTemplateId] =
+    useState<WebsiteBuilderTemplateId | null>(null);
+
+  const confirmSwitch = () => {
+    if (!pendingTemplateId) return;
+    onChange(pendingTemplateId);
+    setPendingTemplateId(null);
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
@@ -40,27 +51,29 @@ export function WebsiteBuilderTemplatePanel({
           return (
             <button
               className={cn(
-                "group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300",
+                "group relative overflow-hidden rounded-lg border p-3 text-left transition-all duration-200",
                 selected
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-border/50 hover:border-line-strong",
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border/40 hover:border-line-strong bg-card/40",
               )}
               key={id}
-              onClick={() => onChange(id)}
+              onClick={() => {
+                if (!selected) setPendingTemplateId(id);
+              }}
               type="button"
             >
               <div
                 className={cn(
-                  "absolute inset-0 bg-linear-to-br transition-opacity duration-300",
+                  "absolute inset-0 bg-linear-to-br transition-opacity duration-200",
                   branding.gradient,
-                  selected ? "opacity-100" : "opacity-0 group-hover:opacity-60",
+                  selected ? "opacity-100" : "opacity-0 group-hover:opacity-40",
                 )}
               />
               <div className="relative z-10">
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-1.5 flex items-center justify-between">
                   <div
                     className={cn(
-                      "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+                      "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors",
                       selected
                         ? "bg-primary/15 text-primary"
                         : "bg-muted/60 text-muted-foreground",
@@ -71,7 +84,7 @@ export function WebsiteBuilderTemplatePanel({
                   </div>
                   <div
                     className={cn(
-                      "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
+                      "flex h-4 w-4 items-center justify-center rounded-full border transition-all",
                       selected
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border/60",
@@ -79,16 +92,16 @@ export function WebsiteBuilderTemplatePanel({
                   >
                     <Check
                       className={cn(
-                        "h-3 w-3 transition-opacity",
+                        "h-2.5 w-2.5 transition-opacity",
                         selected ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </div>
                 </div>
-                <p className="text-sm font-bold">
+                <p className="text-xs font-bold">
                   {websiteBuilderTemplateInfo[id].name}
                 </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {websiteBuilderTemplateInfo[id].description}
                 </p>
               </div>
@@ -96,6 +109,31 @@ export function WebsiteBuilderTemplatePanel({
           );
         })}
       </div>
+      {pendingTemplateId ? (
+        <div className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
+          <p className="text-xs leading-relaxed text-warning-strong">
+            Trocar para o modelo{" "}
+            <strong>
+              {websiteBuilderTemplateInfo[pendingTemplateId].name}
+            </strong>{" "}
+            altera a estrutura visual da vitrine. Seus textos, cores, tipografia
+            e seções são mantidos.
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={confirmSwitch} size="sm" type="button">
+              Trocar modelo
+            </Button>
+            <Button
+              onClick={() => setPendingTemplateId(null)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Manter atual
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -115,7 +153,7 @@ export function WebsiteBuilderBrandPanel({
         </h4>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="corretorName">Nome / Título da Marca</Label>
+            <Label htmlFor="corretorName">Nome de exibição</Label>
             <Input
               className="h-10"
               id="corretorName"
@@ -127,7 +165,9 @@ export function WebsiteBuilderBrandPanel({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="corretorCreci">Registro / Identificação</Label>
+            <Label htmlFor="corretorCreci">
+              Registro / identificação (opcional)
+            </Label>
             <Input
               className="h-10"
               id="corretorCreci"
@@ -141,21 +181,21 @@ export function WebsiteBuilderBrandPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="space-y-5">
         <WebsiteBuilderImageUrlField
           imageClassName="h-24 w-24 rounded-full"
-          label="Sua Foto"
+          label="Foto do responsável (opcional)"
           onChange={(value) => updateConfig("corretorPhotoUrl", value)}
           value={config.corretorPhotoUrl ?? ""}
         />
         <WebsiteBuilderImageUrlField
-          imageClassName="h-16 min-w-[120px] max-w-[140px] rounded-xl bg-card p-2"
-          label="Sua Logo"
+          imageClassName="h-16 w-48 rounded-lg bg-card p-2 border border-border/40"
+          label="Logo da loja"
           onChange={(value) => updateConfig("logoUrl", value)}
           value={config.logoUrl ?? ""}
         />
         <WebsiteBuilderImageUrlField
-          imageClassName="h-16 w-16 rounded-xl bg-card p-2"
+          imageClassName="h-16 w-16 rounded-lg bg-card p-2 border border-border/40"
           label="Favicon"
           onChange={(value) => updateConfig("faviconUrl", value)}
           value={config.faviconUrl ?? ""}
@@ -165,6 +205,17 @@ export function WebsiteBuilderBrandPanel({
   );
 }
 
+const fontPairingPresets = [
+  { body: "Inter", heading: "Outfit", label: "Esportivo & Impacto" },
+  { body: "Inter", heading: "Roboto", label: "Seminovos Moderno" },
+  { body: "Cinzel", heading: "Playfair Display", label: "Luxury & Elegante" },
+  {
+    body: "Plus Jakarta Sans",
+    heading: "Plus Jakarta Sans",
+    label: "Clean Minimal",
+  },
+] as const;
+
 export function WebsiteBuilderTypographyPanel({
   config,
   updateConfig,
@@ -172,37 +223,89 @@ export function WebsiteBuilderTypographyPanel({
   config: WebsiteBuilderConfig;
   updateConfig: UpdateConfig;
 }) {
+  const currentHeading =
+    config.fonts.heading ?? storefrontFontOptions[0]?.value ?? "";
+  const currentBody =
+    config.fonts.body ?? storefrontFontOptions[0]?.value ?? "";
+
   return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <Label>Fonte dos títulos</Label>
-        <FeatureSelect
-          className="h-10 border-input bg-background text-foreground"
-          onChange={(heading) =>
-            updateConfig("fonts", {
-              ...config.fonts,
-              heading,
-            })
-          }
-          options={storefrontFontOptions}
-          radius="md"
-          value={config.fonts.heading ?? storefrontFontOptions[0]?.value ?? ""}
-        />
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Combinações Recomendadas
+        </h4>
+        <div className="grid grid-cols-2 gap-2">
+          {fontPairingPresets.map((preset) => {
+            const isActive =
+              currentHeading === preset.heading && currentBody === preset.body;
+            return (
+              <button
+                className={cn(
+                  "flex flex-col gap-1 rounded-lg border p-2.5 text-left transition-all",
+                  isActive
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border/40 bg-card/40 hover:border-border",
+                )}
+                key={preset.label}
+                onClick={() =>
+                  updateConfig("fonts", {
+                    body: preset.body,
+                    heading: preset.heading,
+                  })
+                }
+                type="button"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground">
+                    {preset.label}
+                  </span>
+                  {isActive ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : null}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {preset.heading} + {preset.body}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label>Fonte dos textos</Label>
-        <FeatureSelect
-          className="h-10 border-input bg-background text-foreground"
-          onChange={(body) =>
-            updateConfig("fonts", {
-              ...config.fonts,
-              body,
-            })
-          }
-          options={storefrontFontOptions}
-          radius="md"
-          value={config.fonts.body ?? storefrontFontOptions[0]?.value ?? ""}
-        />
+
+      <div className="space-y-4 border-t border-border/40 pt-4">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Fontes Individuais
+        </h4>
+        <div className="space-y-2">
+          <Label>Fonte dos títulos</Label>
+          <FeatureSelect
+            className="h-10 border-input bg-background text-foreground"
+            onChange={(heading) =>
+              updateConfig("fonts", {
+                ...config.fonts,
+                heading,
+              })
+            }
+            options={storefrontFontOptions}
+            radius="md"
+            value={currentHeading}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Fonte dos textos</Label>
+          <FeatureSelect
+            className="h-10 border-input bg-background text-foreground"
+            onChange={(body) =>
+              updateConfig("fonts", {
+                ...config.fonts,
+                body,
+              })
+            }
+            options={storefrontFontOptions}
+            radius="md"
+            value={currentBody}
+          />
+        </div>
       </div>
     </div>
   );
@@ -252,6 +355,24 @@ export function WebsiteBuilderHeroPanel({
             />
             <span className="text-xs text-muted-foreground">
               Max. 160 caracteres
+            </span>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="heroPromoBanner">
+              Banner Promocional (Troca / Financiamento)
+            </Label>
+            <Input
+              className="h-10"
+              id="heroPromoBanner"
+              maxLength={120}
+              onChange={(event) =>
+                updateConfig("aboutWhyTitle", event.target.value)
+              }
+              placeholder="Ex: Aceitamos seu usado na troca • Financiamento em até 60x"
+              value={config.aboutWhyTitle ?? ""}
+            />
+            <span className="text-xs text-muted-foreground">
+              Destaque promocional de financiamento/troca
             </span>
           </div>
         </div>

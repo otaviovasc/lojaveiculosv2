@@ -1,5 +1,6 @@
-import { Bot, RefreshCcw } from "lucide-react";
+import { Bot, RefreshCcw, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import "../../styles/autoEntries.css";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import {
   FeatureActionButton,
@@ -8,7 +9,6 @@ import {
 import {
   FeatureAlert,
   FeatureEmptyState,
-  FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
@@ -20,9 +20,14 @@ import {
   createRuntimeAutoEntryRulesApi,
   type AutoEntryRulesApi,
 } from "./apiClient";
+import {
+  AutoEntriesDirtyProvider,
+  useAutoEntriesDirtyState,
+} from "./autoEntriesDirtyState";
+import { Toast } from "../../components/ui/Toast";
 import { AutoEntriesCommandBar } from "./AutoEntriesCommandBar";
+import { AutoEntriesLoadingSkeleton } from "./AutoEntriesLoadingSkeleton";
 import { AutoEntriesNotices } from "./AutoEntriesNotices";
-import { AutoEntriesSummary } from "./AutoEntriesSummary";
 import { AutoEntriesTabs } from "./AutoEntriesTabs";
 import { AutoEntryDomainPanel } from "./AutoEntryDomainPanel";
 import { AutoEntryRuleDialog } from "./AutoEntryRuleDialog";
@@ -67,6 +72,28 @@ export function AutoEntriesWorkspace({
   const [editingRule, setEditingRule] = useState<AutoEntryRule | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AutoEntryRule | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const dirty = useAutoEntriesDirtyState();
+  const [pendingTab, setPendingTab] = useState<AutoEntryWorkspaceTab | null>(
+    null,
+  );
+  // Tab content remounts per tab (`key={activeTab}` below), so switching tabs
+  // would silently discard unsaved card input. Route every tab change through
+  // this guard: when the active tab reports dirty state (via
+  // useAutoEntryDirty in the domain cards), confirm before switching.
+  const requestTabChange = (tab: AutoEntryWorkspaceTab) => {
+    if (tab === activeTab) return;
+    if (dirty.dirtyTabs.has(activeTab)) {
+      setPendingTab(tab);
+      return;
+    }
+    setActiveTab(tab);
+  };
+  const confirmTabDiscard = () => {
+    if (!pendingTab) return;
+    dirty.clearDirty(activeTab);
+    setActiveTab(pendingTab);
+    setPendingTab(null);
+  };
   const [sellers, setSellers] = useState<readonly SaleSellerOption[]>(
     sellerOptions ?? [],
   );
@@ -142,14 +169,29 @@ export function AutoEntriesWorkspace({
         onRefresh={() => void workspace.refresh()}
       />
       {workspace.loadState.kind === "loading" ? (
-        <FeatureLoadingState
-          className="feature-empty"
-          title="Carregando regras"
-        />
+        <AutoEntriesLoadingSkeleton />
       ) : workspace.loadState.kind === "error" ? (
         <>
-          <FeatureAlert title="As regras não puderam ser carregadas">
-            <p>{workspace.loadState.message}</p>
+          <FeatureAlert
+            className="auto-entries-shell-notice"
+            icon={<TriangleAlert aria-hidden="true" className="size-5" />}
+            title={
+              <span className="auto-entries-notice-header">
+                <span className="auto-entries-notice-title">
+                  As regras não puderam ser carregadas
+                </span>
+                <span className="auto-entries-notice-badge auto-entries-notice-badge--danger">
+                  Erro de sincronização
+                </span>
+              </span>
+            }
+            tone="danger"
+          >
+            <div className="auto-entries-notice-text-wrap">
+              <p className="auto-entries-notice-body">
+                {workspace.loadState.message}
+              </p>
+            </div>
           </FeatureAlert>
           <FeatureEmptyState
             action={
@@ -167,58 +209,58 @@ export function AutoEntriesWorkspace({
       ) : (
         <>
           <AutoEntriesNotices
-            activeSaleTab={activeTab === "vehicle_sale_closed"}
             canManage={capabilities.canManage}
-            feedback={workspace.feedback}
             sellerError={sellerError}
           />
           <AutoEntriesTabs
-            onChange={setActiveTab}
+            dirtyTabs={dirty.dirtyTabs}
+            onChange={requestTabChange}
             rules={workspace.rules}
             value={activeTab}
           />
-          <div className="ae-content ae-content-enter" key={activeTab}>
-            {activeTab === "custom" ? (
-              <AutoEntryRuleList
-                canManage={capabilities.canManage}
-                onCreate={openCreate}
-                onDelete={(rule) => {
-                  setDeleteError(null);
-                  setDeleteTarget(rule);
-                }}
-                onEdit={openEdit}
-                onToggle={(rule, active) =>
-                  void workspace.toggleRule(
-                    rule,
-                    active ? "active" : "inactive",
-                  )
-                }
-                rules={customRules}
-                sellers={sellers}
-                workingKey={workspace.workingKey}
-              />
-            ) : (
-              <AutoEntryDomainPanel
-                canManage={capabilities.canManage}
-                isSaving={workspace.workingKey === "domain"}
-                onDelete={(rule) => {
-                  setDeleteError(null);
-                  setDeleteTarget(rule);
-                }}
-                onSave={async (mutations) => {
-                  try {
-                    await workspace.saveRules(mutations);
-                  } catch {
-                    /* The hook exposes the actionable API message. */
+          <AutoEntriesDirtyProvider registerDirty={dirty.registerDirty}>
+            <div className="ae-content ae-content-enter" key={activeTab}>
+              {activeTab === "custom" ? (
+                <AutoEntryRuleList
+                  canManage={capabilities.canManage}
+                  onCreate={openCreate}
+                  onDelete={(rule) => {
+                    setDeleteError(null);
+                    setDeleteTarget(rule);
+                  }}
+                  onEdit={openEdit}
+                  onToggle={(rule, active) =>
+                    void workspace.toggleRule(
+                      rule,
+                      active ? "active" : "inactive",
+                    )
                   }
-                }}
-                rules={workspace.rules}
-                sellers={sellers}
-                tab={activeTab}
-              />
-            )}
-          </div>
-          <AutoEntriesSummary rules={workspace.rules} />
+                  rules={customRules}
+                  sellers={sellers}
+                  workingKey={workspace.workingKey}
+                />
+              ) : (
+                <AutoEntryDomainPanel
+                  canManage={capabilities.canManage}
+                  isSaving={workspace.workingKey === "domain"}
+                  onDelete={(rule) => {
+                    setDeleteError(null);
+                    setDeleteTarget(rule);
+                  }}
+                  onSave={async (mutations) => {
+                    try {
+                      await workspace.saveRules(mutations);
+                    } catch {
+                      /* The hook exposes the actionable API message. */
+                    }
+                  }}
+                  rules={workspace.rules}
+                  sellers={sellers}
+                  tab={activeTab}
+                />
+              )}
+            </div>
+          </AutoEntriesDirtyProvider>
         </>
       )}
       {capabilities.canManage ? (
@@ -231,6 +273,15 @@ export function AutoEntriesWorkspace({
           sellers={sellers}
         />
       ) : null}
+      <ConfirmDialog
+        confirmLabel="Descartar e trocar"
+        description="As alterações não salvas nesta aba serão perdidas ao trocar de domínio."
+        isOpen={pendingTab !== null}
+        onClose={() => setPendingTab(null)}
+        onConfirm={confirmTabDiscard}
+        title="Descartar alterações não salvas?"
+        variant="destructive"
+      />
       <ConfirmDialog
         confirmLabel="Excluir regra"
         description="A exclusão é auditada e interrompe novos lançamentos desta regra. Os registros financeiros já criados permanecem intactos."
@@ -249,6 +300,14 @@ export function AutoEntriesWorkspace({
         title={`Excluir ${deleteTarget?.name ?? "regra"}?`}
         variant="destructive"
       />
+      {workspace.feedback ? (
+        <Toast
+          key={workspace.feedback.message}
+          onDismiss={workspace.clearFeedback}
+          title={workspace.feedback.message}
+          tone={workspace.feedback.tone}
+        />
+      ) : null}
     </FeaturePageShell>
   );
 }

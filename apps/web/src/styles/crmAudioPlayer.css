@@ -1,0 +1,177 @@
+/* Custom WhatsApp-Style CRM Audio Player */
+.crm-audio-player {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text);
+  display: flex;
+  gap: 0.85rem;
+  width: 100%;
+  min-width: min(20rem, 100%);
+  max-width: 100%;
+  padding: 0.2rem 0;
+  position: relative;
+}
+
+.crm-bubble:has(.crm-audio-player) {
+  min-width: min(22rem, 100%);
+}
+
+.crm-audio-ctrl-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crm-audio-play-btn {
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    var(--color-success) 0%,
+    color-mix(in srgb, var(--color-success-strong) 85%, var(--color-success))
+      100%
+  );
+  border: 0;
+  border-radius: 9999px;
+  color: var(--color-success-foreground);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+  cursor: pointer;
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.crm-audio-play-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+.crm-audio-play-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.crm-audio-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.crm-audio-waveform {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  height: 1.875rem;
+  outline: none;
+  padding: 0 0.125rem;
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+
+.crm-audio-waveform:focus-visible {
+  border-radius: 0.375rem;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.crm-audio-bars {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+}
+
+.crm-audio-bar {
+  background: color-mix(in srgb, var(--color-text) 22%, transparent);
+  border-radius: 9999px;
+  display: inline-block;
+  flex: 1 1 0%;
+  min-height: 4px;
+  min-width: 2px;
+  max-width: 4px;
+  transition:
+    background-color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.crm-audio-waveform:hover .crm-audio-bar {
+  transform: scaleY(1.05);
+}
+
+.crm-audio-bar-played {
+  background: var(--color-success-strong);
+}
+
+.crm-audio-scrubber-thumb {
+  background: var(--color-success-strong);
+  border: 2px solid var(--color-panel);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.25);
+  height: 0.75rem;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.75rem;
+  z-index: 3;
+}
+
+.crm-audio-meta {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  justify-content: space-between;
+  line-height: 1;
+}
+
+.crm-audio-time {
+  letter-spacing: -0.01em;
+}
+
+.crm-audio-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-audio-speed-btn {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  justify-content: center;
+  padding: 0.15rem 0.45rem;
+  text-decoration: none;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-audio-speed-btn:hover {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success-strong);
+  transform: translateY(-0.5px);
+}
+
+.crm-audio-speed-btn.crm-audio-speed-active {
+  background: color-mix(in srgb, var(--color-success) 18%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+  color: var(--color-success-strong);
+}

@@ -15,10 +15,14 @@ export function costToItem(
   return {
     account: cost.description || costKindLabel(cost.kind),
     date: formatDate(cost.costDate),
+    dateIso: cost.costDate.slice(0, 10),
     id: cost.id,
     kind: cost.kind,
     kindLabel: costKindLabel(cost.kind),
+    status: cost.status,
     value: cost.amountCents,
+    voidedAt: cost.voidedAt,
+    voidReason: cost.voidReason,
     receipt: receiptDoc
       ? { id: receiptDoc.id, fileName: receiptDoc.fileName }
       : null,
@@ -31,14 +35,15 @@ export function costToCashFlowItem(cost: InventoryCost): TransactionItem {
     description: cost.description || `Custo: ${costKindLabel(cost.kind)}`,
     id: cost.id,
     origin: costKindLabel(cost.kind),
-    status: "Registrado",
+    status: cost.status === "active" ? "Registrado" : "Estornado",
     value: -cost.amountCents,
   };
 }
 
 export function summarizeCosts(costs: readonly InventoryCost[]) {
-  if (!costs.length) return "Sem custos registrados para esta unidade.";
-  return costs
+  const activeCosts = activeVehicleCosts(costs);
+  if (!activeCosts.length) return "Sem custos ativos para esta unidade.";
+  return activeCosts
     .map(
       (cost) => `${costKindLabel(cost.kind)}: ${formatBRL(cost.amountCents)}`,
     )
@@ -46,11 +51,19 @@ export function summarizeCosts(costs: readonly InventoryCost[]) {
 }
 
 export function sumCosts(costs: readonly InventoryCost[]) {
-  return costs.reduce((sum, cost) => sum + cost.amountCents, 0);
+  return activeVehicleCosts(costs).reduce(
+    (sum, cost) => sum + cost.amountCents,
+    0,
+  );
 }
 
 export function sumOrNull(costs: readonly InventoryCost[]) {
-  return costs.length ? sumCosts(costs) : null;
+  const activeCosts = activeVehicleCosts(costs);
+  return activeCosts.length ? sumCosts(activeCosts) : null;
+}
+
+export function activeVehicleCosts(costs: readonly InventoryCost[]) {
+  return costs.filter((cost) => cost.status === "active");
 }
 
 export function formatOptionalBRL(value: number | null) {

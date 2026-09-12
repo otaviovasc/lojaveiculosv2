@@ -19,7 +19,7 @@ export type ListLeadVisitsInput = {
   leadId?: string;
   limit: number;
   offset?: number;
-  sessionId?: string;
+  cycleId?: string;
   status?: LeadVisitStatus;
   to?: Date;
 };
@@ -31,8 +31,8 @@ export async function listLeadVisits(
 ): Promise<readonly CrmLeadVisit[]> {
   assertPermission(context, permission);
   const scope = requireCrmScope(context);
-  const leadId = input.sessionId
-    ? await resolveVisitSessionLeadId(context, input.sessionId, ports)
+  const leadId = input.cycleId
+    ? await resolveVisitSessionLeadId(context, input.cycleId, ports)
     : input.leadId;
 
   context.logger.info(
@@ -42,7 +42,7 @@ export async function listLeadVisits(
       leadId: leadId ?? null,
       limit: input.limit,
       offset: input.offset ?? 0,
-      sessionId: input.sessionId ?? null,
+      cycleId: input.cycleId ?? null,
       status: input.status ?? null,
       to: input.to?.toISOString() ?? null,
     }),

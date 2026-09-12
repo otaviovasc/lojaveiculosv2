@@ -8,13 +8,13 @@ import {
 describe("builder block catalog", () => {
   it("creates image-led blocks with usable automotive media defaults", () => {
     expect(createDefaultPageComponent("hero", 0).props.imageUrl).toBe(
-      pageBuilderDefaultMedia.audiFront,
+      pageBuilderDefaultMedia.storefront,
     );
     expect(createDefaultPageComponent("image", 1).props.imageUrl).toBe(
-      pageBuilderDefaultMedia.audiSide,
+      pageBuilderDefaultMedia.showroom,
     );
     expect(createDefaultPageComponent("scroll_zoom", 2).props.imageUrl).toBe(
-      pageBuilderDefaultMedia.bmwFront,
+      pageBuilderDefaultMedia.showroom,
     );
     expect(createDefaultPageComponent("gallery", 3).props.images).toEqual(
       pageBuilderDefaultGalleryImages,

@@ -1,4 +1,5 @@
 import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import { observabilitySchemas } from "./observabilityOntology.js";
 
 export type ServiceLogMetadata = SafeAuditMetadata;
 
@@ -25,7 +26,16 @@ export function createConsoleServiceLogger(
     message: string,
     metadata: ServiceLogMetadata = {},
   ) => {
-    console[level](message, { ...baseMetadata, ...metadata });
+    console[level](
+      JSON.stringify({
+        ...metadata,
+        ...baseMetadata,
+        event: message,
+        level,
+        schema: observabilitySchemas.serviceLog,
+        timestamp: new Date().toISOString(),
+      }),
+    );
   };
 
   return {

@@ -2,15 +2,20 @@ import {
   auditFailurePolicies,
   createAuditRecorder,
 } from "@lojaveiculosv2/audit";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLoggingAuditSink, createMemoryAuditSink } from "./auditSink.js";
 import {
+  createConsoleServiceLogger,
   createNoopServiceLogger,
   createServiceContext,
   createServiceLogMetadata,
 } from "./serviceContext.js";
 
 describe("service context scaffolding", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("creates a public context with noop dependencies by default", async () => {
     const context = createServiceContext({
       request: { requestId: "req_1" },
@@ -30,13 +35,24 @@ describe("service context scaffolding", () => {
     expect(context.actor).toEqual({ id: "public", kind: "public" });
     expect(context.permissions).toEqual([]);
     expect(context.requestId).toBe("req_1");
+    expect(context.correlationId).toBe("req_1");
+    expect(context.request).toMatchObject({
+      correlationId: "req_1",
+      requestId: "req_1",
+    });
   });
 
   it("captures audit events in a memory sink for tests", async () => {
     const audit = createMemoryAuditSink();
     const context = createServiceContext({
       audit,
-      request: { correlationId: "corr_1", requestId: "req_1" },
+      request: {
+        causationId: "cause_1",
+        correlationId: "corr_1",
+        idempotencyKey: "idem_1",
+        requestId: "req_1",
+      },
+      source: { service: "api", version: "sha_1" },
     });
 
     await context.audit.record({
@@ -50,12 +66,18 @@ describe("service context scaffolding", () => {
     });
 
     expect(audit.events).toHaveLength(1);
-    expect(audit.events[0]).toEqual(
-      expect.objectContaining({
-        action: "vehicle.read",
-        requestId: "req_1",
-      }),
-    );
+    expect(audit.events[0]).toMatchObject({
+      action: "vehicle.read",
+      requestId: "req_1",
+    });
+    expect(audit.events[0]?.request).toMatchObject({
+      causationId: "cause_1",
+      idempotencyKey: "idem_1",
+    });
+    expect(audit.events[0]?.source).toMatchObject({
+      service: "api",
+      version: "sha_1",
+    });
   });
 
   it("logs audit records through the logging sink", async () => {
@@ -183,9 +205,43 @@ describe("service context scaffolding", () => {
       actorId: "public",
       actorKind: "public",
       billingManagedBy: null,
+      causationId: null,
       correlationId: "corr_1",
+      idempotencyKey: null,
       membershipRole: null,
       requestId: "req_1",
+      requestMethod: null,
+      requestPath: null,
+      service: null,
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+  });
+
+  it("writes versioned JSON service events and protects scope metadata", () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const context = createServiceContext({
+      logger: createConsoleServiceLogger({ service: "api" }),
+      request: {
+        method: "GET",
+        path: "/health",
+        requestId: "req_1",
+      },
+      source: { component: "http", environment: "test", service: "api" },
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+
+    context.logger.info(
+      "vehicle.read",
+      createServiceLogMetadata(context, { tenantId: "spoofed" }),
+    );
+
+    expect(JSON.parse(String(info.mock.calls[0]?.[0]))).toMatchObject({
+      event: "vehicle.read",
+      level: "info",
+      schema: "loja.service_log.v1",
+      service: "api",
       storeId: "store_1",
       tenantId: "tenant_1",
     });

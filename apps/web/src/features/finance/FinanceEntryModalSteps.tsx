@@ -1,4 +1,5 @@
 import { Repeat2 } from "lucide-react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import {
   FeatureFieldGroup,
   FeatureFormSection,
@@ -26,6 +27,8 @@ import {
   financeTypeLabels,
 } from "./FinanceFormParts";
 import type { FinanceEntryType } from "./types";
+import type { FinanceVehicleOption } from "./financeVehicleOptions";
+import type { FinanceVehicleOptionsState } from "./useFinanceAccess";
 
 export function StepHeader({ step }: { step: 1 | 2 | 3 }) {
   return (
@@ -139,12 +142,16 @@ export function DetailsStep({
   sellerOptions = [],
   setDraft,
   setField,
+  vehicleOptions = [],
+  vehicleOptionsState = { kind: "idle" },
 }: {
   draft: FinanceEntryDraft;
   isRecurringEdit?: boolean;
   sellerOptions?: readonly SaleSellerOption[];
   setDraft: (draft: FinanceEntryDraft) => void;
   setField: FinanceDraftFieldSetter;
+  vehicleOptions?: readonly FinanceVehicleOption[];
+  vehicleOptionsState?: FinanceVehicleOptionsState;
 }) {
   const categories =
     draft.type === "expense"
@@ -155,6 +162,9 @@ export function DetailsStep({
   const selectedSellerMissing =
     Boolean(draft.sellerUserId) &&
     !sellerOptions.some((seller) => seller.id === draft.sellerUserId);
+  const selectedVehicleMissing =
+    Boolean(draft.vehicleUnitId) &&
+    !vehicleOptions.some((vehicle) => vehicle.id === draft.vehicleUnitId);
   return (
     <div className="grid gap-5 md:grid-cols-2">
       <FeatureFormSection
@@ -229,7 +239,7 @@ export function DetailsStep({
 
       <FeatureFormSection
         className="md:col-span-2"
-        description="Vincule um vendedor e registre anotações internas."
+        description="Vincule responsáveis, o veículo relacionado e anotações internas."
         title="Atribuição e notas"
       >
         <FeatureFieldGroup>
@@ -254,6 +264,37 @@ export function DetailsStep({
               value={draft.sellerUserId}
             />
           </FinanceField>
+          {draft.type === "expense" && draft.recurrence === "once" ? (
+            <FinanceField
+              hint={vehicleHint(vehicleOptionsState)}
+              label="Veículo"
+            >
+              <FeatureSelect
+                disabled={vehicleOptionsState.kind === "loading"}
+                emptyMessage="Nenhum veículo encontrado"
+                onChange={setField("vehicleUnitId")}
+                options={[
+                  { label: "Sem veículo vinculado", value: "" },
+                  ...(selectedVehicleMissing
+                    ? [
+                        {
+                          label: "Veículo vinculado",
+                          value: draft.vehicleUnitId,
+                        },
+                      ]
+                    : []),
+                  ...vehicleOptions.map((vehicle) => ({
+                    label: vehicle.label,
+                    searchText: `${vehicle.label} ${vehicle.detail}`,
+                    value: vehicle.id,
+                  })),
+                ]}
+                searchable
+                searchPlaceholder="Buscar por veículo, placa ou estoque"
+                value={draft.vehicleUnitId}
+              />
+            </FinanceField>
+          ) : null}
           <FinanceField className="md:col-span-2" label="Observação">
             <FinanceInput onChange={setField("notes")} value={draft.notes} />
           </FinanceField>
@@ -268,6 +309,14 @@ export function DetailsStep({
       ) : null}
     </div>
   );
+}
+
+function vehicleHint(state: FinanceVehicleOptionsState) {
+  if (state.kind === "loading") return "Carregando veículos do estoque.";
+  if (state.kind === "error") {
+    return "A lista de veículos está indisponível. Salve sem vínculo ou recarregue a página.";
+  }
+  return "Opcional. Use a unidade específica para filtrar custos depois.";
 }
 
 function optionClass(isActive: boolean) {

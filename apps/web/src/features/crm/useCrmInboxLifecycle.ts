@@ -1,0 +1,174 @@
+import { type SetStateAction, useEffect } from "react";
+import type {
+  CrmConversationCycle,
+  CrmConversationCycleId,
+} from "./crmConversationTypes";
+
+type UseCrmInboxLifecycleInput = {
+  activeSession: CrmConversationCycle | null;
+  asError: (error: unknown) => Error;
+  connectionId: string | null;
+  /** Aggregate connection filter: the queue queries run store-wide. */
+  storeWide?: boolean;
+  connections: {
+    error: Error | null;
+    isLoading: boolean;
+    refreshConnections: () => Promise<unknown>;
+  };
+  conversationCyclesCount?: number;
+  markCycleReadOnce: (cycle: CrmConversationCycle) => void;
+  hasLoadedActiveMessages: boolean;
+  manualUnreadCycleIdsRef: { current: Set<CrmConversationCycleId> };
+  permissions: {
+    canList: boolean;
+    canRead: boolean;
+  };
+  refreshSessions: (options?: {
+    preserveLocalOnly?: boolean;
+    snapshotKind?: "mutation" | "poll" | "realtime" | "reconciled";
+  }) => Promise<unknown>;
+  search: string | null;
+  setSessions: (value: SetStateAction<CrmConversationCycle[]>) => void;
+  setError: (error: Error | null) => void;
+  setIsLoadingSessions: (value: SetStateAction<boolean>) => void;
+  setIsRefetchingSessions?: (value: SetStateAction<boolean>) => void;
+};
+
+export function useCrmInboxLifecycle({
+  activeSession,
+  asError,
+  connectionId,
+  connections,
+  conversationCyclesCount = 0,
+  markCycleReadOnce,
+  hasLoadedActiveMessages,
+  manualUnreadCycleIdsRef,
+  permissions,
+  refreshSessions,
+  search,
+  setSessions,
+  setError,
+  setIsLoadingSessions,
+  setIsRefetchingSessions,
+  storeWide = false,
+}: UseCrmInboxLifecycleInput): void {
+  useEffect(() => {
+    if (
+      !activeSession ||
+      !hasLoadedActiveMessages ||
+      document.visibilityState !== "visible" ||
+      manualUnreadCycleIdsRef.current.has(activeSession.id)
+    ) {
+      return;
+    }
+    markCycleReadOnce(activeSession);
+  }, [
+    activeSession,
+    hasLoadedActiveMessages,
+    manualUnreadCycleIdsRef,
+    markCycleReadOnce,
+  ]);
+
+  useEffect(() => {
+    if (search === null) return;
+    if (connections.isLoading) return;
+    if (
+      connections.error ||
+      (!connectionId && !storeWide) ||
+      !permissions.canList
+    ) {
+      if (!permissions.canList) setSessions([]);
+      setIsLoadingSessions(false);
+      setIsRefetchingSessions?.(false);
+      return;
+    }
+    let active = true;
+    if (!conversationCyclesCount) {
+      setIsLoadingSessions(true);
+    }
+    // A filter/search/connection change refetches while the previous list is
+    // still mounted; flag it so the queue shows the skeleton instead of
+    // flashing the "Nenhuma conversa encontrada" empty card.
+    setIsRefetchingSessions?.(true);
+    // A narrowing change replaces the list with the filtered server page
+    // instead of preserving local-only cycles from the previous scope (poll
+    // and realtime reconciles below still preserve them).
+    void refreshSessions({
+      preserveLocalOnly: false,
+      snapshotKind: "reconciled",
+    })
+      .catch((caught) => {
+        if (active) setError(asError(caught));
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingSessions(false);
+          setIsRefetchingSessions?.(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    connections.error,
+    connections.isLoading,
+    connectionId,
+    permissions.canList,
+    refreshSessions,
+    search,
+    setError,
+    setIsLoadingSessions,
+    setIsRefetchingSessions,
+    setSessions,
+    storeWide,
+    asError,
+  ]);
+
+  useEffect(() => {
+    if (
+      connections.error ||
+      (!connectionId && !storeWide) ||
+      !permissions.canList
+    ) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      void refreshSessions({
+        preserveLocalOnly: true,
+        snapshotKind: "reconciled",
+      }).catch(() => undefined);
+    }, 15_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        if (
+          activeSession &&
+          hasLoadedActiveMessages &&
+          !manualUnreadCycleIdsRef.current.has(activeSession.id)
+        ) {
+          markCycleReadOnce(activeSession);
+        }
+        void refreshSessions({
+          preserveLocalOnly: true,
+          snapshotKind: "reconciled",
+        }).catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [
+    activeSession,
+    connections.error,
+    connectionId,
+    hasLoadedActiveMessages,
+    manualUnreadCycleIdsRef,
+    markCycleReadOnce,
+    permissions.canList,
+    refreshSessions,
+    storeWide,
+  ]);
+}

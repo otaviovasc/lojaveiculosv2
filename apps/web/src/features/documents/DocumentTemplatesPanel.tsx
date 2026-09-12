@@ -1,5 +1,6 @@
 import { Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { InventorySelect } from "../inventory/components/InventoryFormParts";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { kindLabel } from "./documentLabels";
@@ -112,13 +113,15 @@ export function DocumentTemplatesPanel({
             <span>Cláusulas</span>
             <button
               aria-label="Adicionar cláusula"
+              className="documents-template-add-clause flex items-center gap-1 text-xs font-semibold text-accent-strong hover:underline"
               onClick={() =>
                 setDraft({ ...draft, clauses: [...draft.clauses, ""] })
               }
               title="Adicionar cláusula"
               type="button"
             >
-              <Plus aria-hidden="true" className="size-4" />
+              <Plus aria-hidden="true" className="size-3.5" />
+              <span>+ Cláusula</span>
             </button>
           </div>
           {draft.clauses.map((clause, index) => (
@@ -165,27 +168,26 @@ export function DocumentTemplatesPanel({
           ))}
         </section>
 
-        <footer className="documents-template-actions">
-          <button
+        <footer className="documents-template-actions flex items-center justify-end gap-2.5 pt-4 border-t border-line">
+          <FeatureActionButton
+            disabled={isSaving}
+            icon={RotateCcw}
+            label="Restaurar padrão"
             onClick={() =>
               setDraft({
                 clauses: [...selected.defaultClauses],
                 title: selected.defaultTitle,
               })
             }
-            type="button"
-          >
-            <RotateCcw aria-hidden="true" className="size-4" />
-            Restaurar padrão
-          </button>
-          <button
+          />
+          <FeatureActionButton
             disabled={isSaving || !canSave || !isDirty}
+            icon={Save}
+            isBusy={isSaving}
+            label="Salvar modelo"
             onClick={() => void onSave(selected.kind, draft)}
-            type="button"
-          >
-            <Save aria-hidden="true" className="size-4" />
-            {isSaving ? "Salvando" : "Salvar modelo"}
-          </button>
+            variant="primary"
+          />
         </footer>
       </section>
 

@@ -5,10 +5,12 @@ const env = readDotEnv(".env");
 const webhookUrl = requiredEnv(env, "ASAAS_WEBHOOK_URL");
 const webhookSecret = requiredEnv(env, "ASAAS_WEBHOOK_SECRET");
 const eventId = `evt_manual_${Date.now()}`;
-const providerScope = readLocalProviderScope() ?? {
-  providerCustomerId: "local_asaas_customer_test",
-  providerSubscriptionId: "local_asaas_subscription_test",
-};
+const providerScope = readLocalProviderScope();
+if (!providerScope) {
+  throw new Error(
+    "Verified Asaas customer, subscription, and plan-hire evidence is required for this smoke.",
+  );
+}
 
 const response = await fetch(webhookUrl, {
   body: JSON.stringify({
@@ -17,12 +19,12 @@ const response = await fetch(webhookUrl, {
     payment: {
       customer: providerScope.providerCustomerId,
       dueDate: "2026-07-31",
-      externalReference: "lojaveiculos:manual-smoke",
+      externalReference: providerScope.externalReference,
       id: `pay_manual_${Date.now()}`,
       invoiceUrl: "https://sandbox.asaas.com/i/manual-smoke",
       paymentDate: "2026-07-06",
       subscription: providerScope.providerSubscriptionId,
-      value: 548.99,
+      value: 197,
     },
   }),
   headers: {
@@ -87,7 +89,7 @@ function readLocalProviderScope() {
         "-d",
         "lojaveiculosv2",
         "-Atc",
-        "select bc.provider_customer_id || ',' || coalesce(s.provider_subscription_id, '') from subscriptions s join billing_customers bc on bc.id = s.billing_customer_id where s.id = '14141414-1414-4414-8414-141414141414';",
+        "select bc.provider_customer_id || ',' || s.provider_subscription_id || ',' || hire.id::text from billing_plan_hires hire join subscriptions s on s.id = hire.subscription_id and s.tenant_id = hire.tenant_id join billing_customers bc on bc.id = s.billing_customer_id and bc.tenant_id = s.tenant_id where hire.status in ('payment_pending', 'activation_pending', 'paid_active') and bc.provider_customer_id is not null and s.provider_subscription_id is not null order by hire.updated_at desc limit 1;",
       ],
       {
         env: { ...process.env, COMPOSE_DISABLE_ENV_FILE: "1" },
@@ -95,12 +97,17 @@ function readLocalProviderScope() {
         stdio: ["ignore", "pipe", "ignore"],
       },
     ).trim();
-    const [providerCustomerId, providerSubscriptionId] = output.split(",");
-    if (providerCustomerId && providerSubscriptionId) {
-      return { providerCustomerId, providerSubscriptionId };
+    const [providerCustomerId, providerSubscriptionId, externalReference] =
+      output.split(",");
+    if (providerCustomerId && providerSubscriptionId && externalReference) {
+      return {
+        externalReference,
+        providerCustomerId,
+        providerSubscriptionId,
+      };
     }
   } catch {
-    // Fall back to the local seed placeholders when Docker is unavailable.
+    // A smoke cannot fabricate provider evidence when Docker is unavailable.
   }
   return null;
 }

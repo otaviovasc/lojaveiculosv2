@@ -1,3 +1,10 @@
+/* Bare tone-colored identity icon (FeatureToneIcon primitive): no filled
+   square behind the glyph; colour inherits from the nearest --tone scope. */
+.feature-tone-icon {
+  color: var(--tone-strong, var(--color-accent-strong));
+  flex: 0 0 auto;
+}
+
 .icon-button {
   align-items: center;
   background: var(--color-panel);
@@ -28,6 +35,8 @@
 .crm-thread:focus-visible {
   box-shadow: var(--shadow-focus);
   outline: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
 }
 
 .nav-item {

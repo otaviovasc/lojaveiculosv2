@@ -71,6 +71,11 @@ export const sales = pgTable(
     index("sales_seller_user_id_idx").on(table.sellerUserId),
     index("sales_store_status_idx").on(table.storeId, table.status),
     index("sales_unit_id_idx").on(table.unitId),
+    uniqueIndex("sales_scope_id_unique").on(
+      table.tenantId,
+      table.storeId,
+      table.id,
+    ),
     uniqueIndex("sales_current_unit_unique")
       .on(table.unitId)
       .where(

@@ -7,6 +7,17 @@ const nullableName = nullableBoundedText(1, 191);
 const nullablePhone = nullableBoundedText(3, 40);
 const nullableMessage = nullableBoundedText(1, 2000);
 const nullableIdentifier = nullableBoundedText(1);
+const publicLeadMetadata = {
+  type: "object",
+  additionalProperties: false,
+  maxProperties: 2,
+  description:
+    "Flat public metadata allowlist. Only message and title are accepted; the UTF-8 encoded object is capped at 4096 bytes.",
+  properties: {
+    message: { type: "string", minLength: 1, maxLength: 2000 },
+    title: { type: "string", minLength: 1, maxLength: 191 },
+  },
+} as const;
 const leadStatus = {
   type: "string",
   enum: [
@@ -50,7 +61,7 @@ export const externalApiRequestSchemas = {
       ...buyerProperties,
       listingId: nullableIdentifier,
       message: nullableMessage,
-      metadata: { type: "object", additionalProperties: true },
+      metadata: publicLeadMetadata,
       source: {
         type: "string",
         default: "external_api",
@@ -76,7 +87,7 @@ export const externalApiRequestSchemas = {
     properties: {
       ...buyerProperties,
       message: nullableMessage,
-      metadata: { type: "object", additionalProperties: true },
+      metadata: publicLeadMetadata,
       status: leadStatus,
     },
   },

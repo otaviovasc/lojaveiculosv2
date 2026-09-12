@@ -17,6 +17,20 @@
   }
 }
 
+/* Compact icon-first row actions inside the workspace table frame. */
+.documents-table-frame .feature-row-actions {
+  gap: 0.25rem;
+}
+
+.documents-table-frame .feature-row-action__button {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.documents-table-frame .feature-row-action__icon {
+  width: 1rem;
+}
+
 /* Premium List Cards (mobile fallback) */
 .documents-list-item {
   align-items: center;

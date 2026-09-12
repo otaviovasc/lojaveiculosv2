@@ -9,6 +9,8 @@ export type VehicleCostKind =
   | "tax"
   | "transport";
 
+export type VehicleCostStatus = "active" | "voided";
+
 export type VehicleCost = {
   amountCents: number;
   costDate: Date;
@@ -16,10 +18,13 @@ export type VehicleCost = {
   description: string | null;
   id: string;
   kind: VehicleCostKind;
+  status: VehicleCostStatus;
   storeId: string | null;
   tenantId: string | null;
   unitId: string;
   updatedAt: Date;
+  voidedAt: Date | null;
+  voidReason: string | null;
 };
 
 export type VehiclePriceHistoryEntry = {
@@ -54,8 +59,26 @@ export type VehicleStatusHistoryEntry = {
 
 export type CreateVehicleCostRecord = Omit<
   VehicleCost,
-  "createdAt" | "id" | "updatedAt"
+  "createdAt" | "id" | "status" | "updatedAt" | "voidedAt" | "voidReason"
 >;
+
+export type FindVehicleCostInput = {
+  costId: string;
+  storeId: string | null;
+  tenantId: string | null;
+  unitId: string;
+};
+
+export type UpdateVehicleCostRecord = FindVehicleCostInput & {
+  amountCents?: number;
+  costDate?: Date;
+  description?: string | null;
+  expectedStatus: VehicleCostStatus;
+  kind?: VehicleCostKind;
+  status?: VehicleCostStatus;
+  voidedAt?: Date | null;
+  voidReason?: string | null;
+};
 
 export type CreateVehiclePriceHistoryRecord = Omit<
   VehiclePriceHistoryEntry,
@@ -81,6 +104,10 @@ export type VehicleOperationsRepository = {
   createStatusHistory: (
     record: CreateVehicleStatusHistoryRecord,
   ) => Promise<VehicleStatusHistoryEntry>;
+  findCost: (input: FindVehicleCostInput) => Promise<VehicleCost | null>;
+  listActiveCostsByUnitIds: (
+    input: ListVehicleCostsInput,
+  ) => Promise<readonly VehicleCost[]>;
   listCostsByUnitIds: (
     input: ListVehicleCostsInput,
   ) => Promise<readonly VehicleCost[]>;
@@ -90,4 +117,5 @@ export type VehicleOperationsRepository = {
   listStatusHistoryByListing: (
     input: FindVehicleListingInput,
   ) => Promise<readonly VehicleStatusHistoryEntry[]>;
+  updateCost: (record: UpdateVehicleCostRecord) => Promise<VehicleCost | null>;
 };

@@ -1,0 +1,11 @@
+CREATE TYPE "public"."crm_whatsapp_human_attendance_state" AS ENUM('WAITING_HUMAN', 'IN_HUMAN_SERVICE');--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD COLUMN "human_attendance_changed_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD COLUMN "human_attendance_state" "crm_whatsapp_human_attendance_state";--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD COLUMN "human_attendance_state_version" integer;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD COLUMN "human_handling_started_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD COLUMN "intervention_id" uuid;--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD CONSTRAINT "crm_whatsapp_sessions_human_attendance_version_positive" CHECK ("crm_whatsapp_sessions"."human_attendance_state_version" IS NULL OR "crm_whatsapp_sessions"."human_attendance_state_version" > 0);--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD CONSTRAINT "crm_whatsapp_sessions_human_attendance_active_consistent" CHECK ("crm_whatsapp_sessions"."human_attendance_state" IS NULL OR ("crm_whatsapp_sessions"."status" = 'HUMAN_TAKEOVER' AND "crm_whatsapp_sessions"."human_attendance_changed_at" IS NOT NULL AND "crm_whatsapp_sessions"."human_attendance_state_version" IS NOT NULL AND "crm_whatsapp_sessions"."intervention_id" IS NOT NULL));--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD CONSTRAINT "crm_whatsapp_sessions_human_attendance_handling_consistent" CHECK (("crm_whatsapp_sessions"."human_attendance_state" IS DISTINCT FROM 'IN_HUMAN_SERVICE' OR "crm_whatsapp_sessions"."human_handling_started_at" IS NOT NULL) AND ("crm_whatsapp_sessions"."human_attendance_state" IS DISTINCT FROM 'WAITING_HUMAN' OR "crm_whatsapp_sessions"."human_handling_started_at" IS NULL));--> statement-breakpoint
+ALTER TABLE "crm_whatsapp_sessions" ADD CONSTRAINT "crm_whatsapp_sessions_human_attendance_inactive_consistent" CHECK ("crm_whatsapp_sessions"."human_attendance_state" IS NOT NULL OR ("crm_whatsapp_sessions"."human_handling_started_at" IS NULL AND "crm_whatsapp_sessions"."intervention_id" IS NULL));--> statement-breakpoint
+CREATE INDEX "crm_whatsapp_sessions_store_human_attendance_idx" ON "crm_whatsapp_sessions" USING btree ("store_id","human_attendance_state");

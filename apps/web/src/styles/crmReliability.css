@@ -1,0 +1,164 @@
+.crm-reliability,
+.crm-events-state {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  color: var(--color-text);
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.crm-reliability-header,
+.crm-reliability-summary,
+.crm-events-state {
+  align-items: center;
+}
+
+.crm-reliability-header {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.crm-reliability-summary {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: inline-flex;
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  gap: 0.6rem;
+  justify-content: flex-start;
+  min-height: 2.5rem;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-reliability-summary svg {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-reliability-summary[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.crm-reliability p,
+.crm-events-state p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.crm-reliability-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crm-reliability-event {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1rem 1.25rem;
+  transition: all 0.18s ease;
+}
+
+.crm-reliability-event:hover {
+  border-color: color-mix(in srgb, #f59e0b 35%, var(--color-line));
+}
+
+.crm-reliability-event strong,
+.crm-reliability-event span {
+  display: block;
+}
+
+.crm-reliability-event strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.crm-reliability-event span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.crm-reliability-event button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.625rem;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  box-shadow: none;
+  transition: all 0.18s ease;
+}
+
+.crm-reliability-event button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-panel));
+}
+
+.crm-reliability-event button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.crm-events-state {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 5rem;
+}
+
+.crm-events-state > svg {
+  height: 1.85rem;
+  width: 1.85rem;
+  color: #059669;
+  flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .crm-events-state > svg,
+.dark .crm-events-state > svg {
+  color: #34d399;
+}
+
+.crm-events-state > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.crm-events-state strong {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.crm-events-state-success {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #10b981 6%, var(--color-panel)),
+    var(--color-panel) 75%
+  );
+  border-color: color-mix(in srgb, #10b981 25%, var(--color-line));
+}
+
+@media (max-width: 540px) {
+  .crm-reliability-event {
+    grid-template-columns: 1fr;
+  }
+}

@@ -10,12 +10,13 @@ describe("sales trade-in acquisition", () => {
     const { services, vehiclePorts } = createHarness("reserved");
     const draft = await services.createDraft(context(["sale.draft"]), {
       ...completeDraft(),
+      salePriceCents: 8800000,
       payments: [
         {
-          amountCents: 5000000,
+          amountCents: 8800000,
           dueAt: new Date("2026-07-14T12:00:00.000Z"),
-          method: "pix",
-          principalCents: 5000000,
+          method: "trade_in",
+          principalCents: 8800000,
         },
       ],
       saleSourceSnapshot: {
@@ -44,7 +45,7 @@ describe("sales trade-in acquisition", () => {
           renavam: "12345678901",
           transmission: "automatic",
           valuationCents: 8800000,
-          yearFabrication: "2021",
+          yearFabrication: 2021,
           yearModel: 2022,
         },
       },

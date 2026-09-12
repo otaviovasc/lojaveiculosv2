@@ -1,4 +1,5 @@
 export type DocumentKind =
+  | "buyer_acknowledgment"
   | "buyer_document"
   | "delivery_term"
   | "finance_receipt"
@@ -218,10 +219,22 @@ export type DocumentsAuth = {
 };
 
 export type ListDocumentsFilters = {
+  dateFrom?: string;
+  dateTo?: string;
   kind?: DocumentKind | "";
   limit?: number;
+  offset?: number;
+  origin?: "automatic" | "manual";
   search?: string;
+  scope?: "general" | "vehicle";
   status?: DocumentStatus | "";
   targetId?: string;
   targetType?: DocumentLinkTarget | "";
+};
+
+export type DocumentsPage = {
+  documents: WorkspaceDocument[];
+  limit: number;
+  offset: number;
+  total: number;
 };

@@ -39,6 +39,7 @@ export type MarketplaceServiceErrorCode =
   | "MARKETPLACE_PROVIDER_RATE_LIMITED"
   | "MARKETPLACE_PROVIDER_UNAVAILABLE"
   | "MARKETPLACE_PROVIDER_ACCOUNT_BLOCKED"
+  | "MARKETPLACE_OAUTH_STATE_INVALID"
   | "MARKETPLACE_TOKEN_REFRESH_FAILED"
   | "MARKETPLACE_SYNC_JOB_INVALID_METADATA"
   | "MARKETPLACE_SYNC_JOB_NOT_RETRYABLE"
@@ -55,14 +56,32 @@ export type MarketplaceAccountRequirement = {
 
 export type MarketplaceProviderState = {
   accountId: string | null;
+  capabilities: {
+    chat: MarketplaceProviderCapability;
+    leads: MarketplaceProviderCapability;
+    stock: MarketplaceProviderCapability;
+  } | null;
   connectionStatus: MarketplaceAccountConnectionStatus;
   lastSyncSummary: MarketplaceStockSyncSummary | null;
   provider: MarketplaceProvider;
   requirements: MarketplaceAccountRequirement[];
 };
 
+export type MarketplaceProviderCapability = {
+  capability: "inventory_sync" | "lead_ingestion" | "messaging";
+  grantState: "denied" | "granted";
+  reason:
+    | "access_denied"
+    | "missing_scope"
+    | "provider_outcome_indeterminate"
+    | "provider_rejected"
+    | "runtime_unavailable"
+    | null;
+  status: "active" | "blocked" | "error";
+};
+
 export type MarketplaceJobStatus =
-  "cancelled" | "failed" | "queued" | "running" | "succeeded";
+  "cancelled" | "failed" | "queued" | "running" | "submitted" | "succeeded";
 
 export type MarketplaceSyncJobType =
   "listing_publish" | "listing_unpublish" | "listing_update";
@@ -90,9 +109,15 @@ export type MarketplaceJobMetadata = {
   };
   providerResult?: {
     externalId?: string | null;
+    listingUrl?: string | null;
+    message?: string | null;
+    providerListingId?: string | null;
     providerRequestId?: string | null;
     providerStatus?: string | null;
   };
+  reconciliationLastCheckedAt?: string;
+  reconciliationMessage?: string;
+  reconciliationRequired?: boolean;
   retryOfJobId?: string;
   stockSync?: true;
 };
@@ -119,7 +144,6 @@ export type MarketplaceOverview = {
 };
 
 export type UpsertMarketplaceAccountInput = {
-  config?: Record<string, unknown>;
   provider: MarketplaceProvider;
   status: MarketplaceAccountStatus;
 };
@@ -137,11 +161,21 @@ export type MarketplaceConnectUrl = {
 
 export type CreateMarketplaceConnectUrlInput = {
   provider: MarketplaceProvider;
-  redirectUri: string;
 };
 
-export type CompleteMarketplaceConnectionInput = {
-  code: string;
-  provider: MarketplaceProvider;
-  redirectUri: string;
-};
+export type CompleteMarketplaceConnectionInput =
+  | { code: string; state: string }
+  | { error: string; state: string }
+  | { transactionId: string };
+
+export type CompleteMarketplaceConnectionResult =
+  | {
+      account: MarketplaceAccount;
+      capabilities?: {
+        chat: MarketplaceProviderCapability;
+        leads: MarketplaceProviderCapability;
+        stock: MarketplaceProviderCapability;
+      };
+      kind: "connected" | "partial";
+    }
+  | { kind: "cancelled"; provider: MarketplaceProvider };

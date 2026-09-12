@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PublicApiReferencePanel } from "./PublicApiReferencePanel";
@@ -19,7 +19,10 @@ describe("PublicApiReferencePanel", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Copiar rota do artefato Docs" }),
+      screen.getByRole("button", { name: "Copiar URL do artefato Docs" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("https://api.example.test/api/v1/external-api/docs"),
     ).toBeVisible();
     expect(screen.queryByText("Listar veículos")).not.toBeInTheDocument();
 
@@ -33,6 +36,24 @@ describe("PublicApiReferencePanel", () => {
     }
 
     await user.click(screen.getByText("Listar veículos"));
+    const vehicleDetails = screen
+      .getByText("Listar veículos")
+      .closest("details");
+    expect(vehicleDetails).not.toBeNull();
+    expect(
+      within(vehicleDetails!).getByText(/Query: page, limit, offset/),
+    ).toBeVisible();
+    expect(
+      within(vehicleDetails!).getByText(
+        "data[] + pagination { page, limit, total, hasMore }",
+      ),
+    ).toBeVisible();
+    expect(
+      within(vehicleDetails!).getByText(/"nextOffset":null/),
+    ).toBeVisible();
+    expect(
+      within(vehicleDetails!).getByText(/401 chave.*403 escopo/),
+    ).toBeVisible();
     expect(
       screen.getByLabelText("Exemplo curl para Listar veículos"),
     ).toBeVisible();

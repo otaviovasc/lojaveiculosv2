@@ -124,6 +124,8 @@ function cleanCatalogQuery(query: {
 function cleanCatalogSnapshotQuery(query: {
   brandCode: string;
   modelCode: string;
+  modelFamilyCode?: string | undefined;
+  modelFamilyName?: string | undefined;
   vehicleType?: VehicleCatalogType | undefined;
   yearCode: string;
 }) {
@@ -132,6 +134,12 @@ function cleanCatalogSnapshotQuery(query: {
     modelCode: query.modelCode,
     yearCode: query.yearCode,
     ...cleanCatalogQuery(query),
+    ...(query.modelFamilyCode
+      ? { modelFamilyCode: query.modelFamilyCode }
+      : {}),
+    ...(query.modelFamilyName
+      ? { modelFamilyName: query.modelFamilyName }
+      : {}),
   };
 }
 

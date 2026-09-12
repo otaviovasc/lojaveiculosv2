@@ -73,6 +73,85 @@ describe("storefront custom page leads", () => {
       ),
     ).rejects.toBeInstanceOf(StorefrontPageNotFoundError);
   });
+
+  it("binds vehicle-page leads to the trusted persisted listing", async () => {
+    const page = createPage({ visible: true });
+    const repository = createPublicRepository({
+      page,
+      sitePublished: true,
+      sourceListingId: "listing_trusted",
+    });
+    const leadSink = createLeadSink();
+
+    await createPublicStorefrontPageLead(
+      createPublicLeadContext(),
+      {
+        buyerName: "Cliente Demo",
+        pageSlug: page.slug,
+        storeSlug: "demo",
+      },
+      { leadSink, pageRepository: repository },
+    );
+
+    expect(leadSink.createLead).toHaveBeenCalledWith(
+      expect.objectContaining({ listingId: "listing_trusted" }),
+    );
+  });
+
+  it("deduplicates only against the same trusted source listing", async () => {
+    const page = createPage({ visible: true });
+    const repository = createPublicRepository({
+      page,
+      sitePublished: true,
+      sourceListingId: "listing_trusted",
+    });
+    const leadSink = createLeadSink([
+      recentLead({ id: "generic", listingId: null }),
+      recentLead({ id: "other-vehicle", listingId: "listing_other" }),
+      recentLead({ id: "same-vehicle", listingId: "listing_trusted" }),
+    ]);
+
+    const result = await createPublicStorefrontPageLead(
+      createPublicLeadContext(),
+      {
+        buyerEmail: "cliente@example.com",
+        buyerName: "Cliente Demo",
+        pageSlug: page.slug,
+        storeSlug: "demo",
+      },
+      { leadSink, pageRepository: repository },
+    );
+
+    expect(result).toMatchObject({
+      deduplicated: true,
+      lead: { id: "same-vehicle" },
+    });
+    expect(leadSink.createLead).not.toHaveBeenCalled();
+  });
+
+  it("keeps generic-page dedupe scoped to leads without a listing", async () => {
+    const page = createPage({ visible: true });
+    const repository = createPublicRepository({ page, sitePublished: true });
+    const leadSink = createLeadSink([
+      recentLead({ id: "vehicle", listingId: "listing_trusted" }),
+    ]);
+
+    const result = await createPublicStorefrontPageLead(
+      createPublicLeadContext(),
+      {
+        buyerEmail: "cliente@example.com",
+        buyerName: "Cliente Demo",
+        pageSlug: page.slug,
+        storeSlug: "demo",
+      },
+      { leadSink, pageRepository: repository },
+    );
+
+    expect(result.deduplicated).toBe(false);
+    expect(leadSink.createLead).toHaveBeenCalledWith(
+      expect.objectContaining({ listingId: null }),
+    );
+  });
 });
 
 function createPublicLeadContext() {
@@ -83,7 +162,9 @@ function createPublicLeadContext() {
   });
 }
 
-function createLeadSink(): PublicStorefrontLeadSink {
+function createLeadSink(
+  leads: Awaited<ReturnType<PublicStorefrontLeadSink["listLeads"]>> = [],
+): PublicStorefrontLeadSink {
   return {
     createLead: vi.fn<PublicStorefrontLeadSink["createLead"]>(
       async (input) => ({
@@ -96,7 +177,19 @@ function createLeadSink(): PublicStorefrontLeadSink {
         status: "new",
       }),
     ),
-    listLeads: vi.fn<PublicStorefrontLeadSink["listLeads"]>(async () => []),
+    listLeads: vi.fn<PublicStorefrontLeadSink["listLeads"]>(async () => leads),
+  };
+}
+
+function recentLead(input: { id: string; listingId: string | null }) {
+  return {
+    buyerEmail: "cliente@example.com",
+    buyerPhone: null,
+    createdAt: new Date(),
+    id: input.id,
+    listingId: input.listingId,
+    source: "public_site" as const,
+    status: "new",
   };
 }
 
@@ -118,6 +211,7 @@ function createPage(
 function createPublicRepository(input: {
   page: StorefrontCustomPage;
   sitePublished: boolean;
+  sourceListingId?: string | null;
 }): StorefrontPageRepository {
   return {
     createCustomPage: vi.fn(async () => input.page),
@@ -133,6 +227,7 @@ function createPublicRepository(input: {
         whatsappUrl: null,
       },
       page: input.page,
+      sourceListingId: input.sourceListingId ?? null,
       sitePublished: input.sitePublished,
       store: {
         id: storeId,

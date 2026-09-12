@@ -9,32 +9,38 @@ import { FinanceCategoryBadge } from "./FinanceCategoryBadge";
 import type { FinanceEntry } from "./types";
 
 export function FinanceEntryDesktopTable({
-  canAttach,
+  canGenerateReceipt,
+  canOpenReceipt,
   canUpdate,
   entries,
   onCancel,
   onEdit,
   onMarkPending,
   onPay,
+  onReceipt,
+  receiptActionEntryId,
 }: {
-  canAttach: boolean;
+  canGenerateReceipt: boolean;
+  canOpenReceipt: boolean;
   canUpdate: boolean;
   entries: FinanceEntry[];
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
   onMarkPending: (entry: FinanceEntry) => void;
   onPay: (entry: FinanceEntry) => void;
+  onReceipt: (entry: FinanceEntry) => void;
+  receiptActionEntryId?: string | null | undefined;
 }) {
   return (
     <FeatureTableFrame className="hidden md:block finance-table-frame">
       <table className="w-full table-fixed text-left text-sm">
         <colgroup>
-          <col style={{ width: "32%" }} />
-          <col style={{ width: "18%" }} />
-          <col style={{ width: "15%" }} />
-          <col style={{ width: "13%" }} />
+          <col style={{ width: "29%" }} />
+          <col style={{ width: "16%" }} />
+          <col style={{ width: "14%" }} />
           <col style={{ width: "12%" }} />
-          <col style={{ width: "10%" }} />
+          <col style={{ width: "14%" }} />
+          <col style={{ width: "15%" }} />
         </colgroup>
         <thead className="border-b border-line text-xs font-black uppercase tracking-wider text-muted">
           <tr>
@@ -80,11 +86,14 @@ export function FinanceEntryDesktopTable({
               </td>
               <td className="pb-3 pt-3 pl-3 pr-0">
                 <EntryActions
-                  canAttach={canAttach}
+                  canGenerateReceipt={canGenerateReceipt}
+                  canOpenReceipt={canOpenReceipt}
                   canUpdate={canUpdate}
                   entry={entry}
                   onCancel={onCancel}
                   onEdit={onEdit}
+                  onReceipt={onReceipt}
+                  receiptActionEntryId={receiptActionEntryId}
                 />
               </td>
             </tr>

@@ -18,13 +18,13 @@ describe("derivePublicStorefrontState", () => {
     });
   });
 
-  it("returns empty state when the store has no public listings", () => {
+  it("keeps a published storefront ready when it has no public listings", () => {
     const state = derivePublicStorefrontState({
       data: { ...publicStorefrontPreview, listings: [] },
       isLoading: false,
     });
 
-    expect(state.kind).toBe("empty");
+    expect(state.kind).toBe("ready");
   });
 
   it("returns ready state when public listings are present", () => {

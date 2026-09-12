@@ -140,7 +140,7 @@ const defaultBlockProps: Record<
 > = {
   about: {
     imagePosition: "right",
-    imageUrl: pageBuilderDefaultMedia.bmwGreen,
+    imageUrl: pageBuilderDefaultMedia.showroom,
     text: "Apresente a curadoria da loja, a preparação dos veículos e o atendimento que acompanha o cliente até a entrega.",
     title: "Compra assistida, estoque revisado",
   },
@@ -213,7 +213,7 @@ const defaultBlockProps: Record<
     ctaLabel: "Ver estoque",
     ctaUrl: "#estoque",
     fullHeight: false,
-    imageUrl: pageBuilderDefaultMedia.audiFront,
+    imageUrl: pageBuilderDefaultMedia.storefront,
     subtitle:
       "Estoque selecionado, atendimento consultivo e publicação direta pela loja.",
     title: "Encontre seu próximo veículo com confiança",
@@ -221,7 +221,7 @@ const defaultBlockProps: Record<
   image: {
     alignment: "center",
     caption: "Imagem editorial para destacar estoque, entrega ou showroom.",
-    imageUrl: pageBuilderDefaultMedia.audiSide,
+    imageUrl: pageBuilderDefaultMedia.showroom,
     lightboxEnabled: true,
   },
   map: {
@@ -240,7 +240,7 @@ const defaultBlockProps: Record<
     title: "Veículos disponíveis",
   },
   scroll_zoom: {
-    imageUrl: pageBuilderDefaultMedia.bmwFront,
+    imageUrl: pageBuilderDefaultMedia.showroom,
     subtitle: "Mostre uma entrega, preparação ou veículo especial da loja.",
     title: "Experiência de compra premium",
   },
@@ -251,15 +251,7 @@ const defaultBlockProps: Record<
   },
   spacer: { height: "lg" },
   testimonials: {
-    testimonials: [
-      {
-        id: "t1",
-        imageSrc: "",
-        name: "Cliente",
-        quote: "Atendimento claro e rápido do primeiro contato até a entrega.",
-        role: "Comprador",
-      },
-    ],
+    testimonials: [],
     title: "O que dizem os clientes",
   },
   text_block: {

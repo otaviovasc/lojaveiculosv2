@@ -6,7 +6,6 @@ import {
 import type { MarketplaceJob } from "../../ports/marketplaceRepository.js";
 import { createMarketplaceSyncJob } from "./createMarketplaceSyncJob.js";
 import { MarketplaceServiceError } from "./marketplaceErrors.js";
-import { runMarketplaceSyncJob } from "./runMarketplaceSyncJob.js";
 import {
   requireMarketplaceScope,
   type MarketplaceServicePorts,
@@ -92,7 +91,7 @@ export async function retryMarketplaceSyncJob(
   });
 
   return {
-    job: await runMarketplaceSyncJob(context, { jobId: queued.id }, ports),
+    job: queued,
     previousJobId: previous.id,
   };
 }

@@ -6,6 +6,7 @@ import {
   findScopedFinanceRecurringEntry,
   getFinanceRepository,
   logFinanceServiceEvent,
+  requireFinanceScope,
   type FinanceServicePorts,
 } from "./serviceSupport.js";
 
@@ -22,6 +23,7 @@ export async function cancelFinanceRecurringEntry(
   ports?: FinanceServicePorts,
 ): Promise<FinanceRecurringEntry> {
   assertPermission(context, permission);
+  const scope = requireFinanceScope(context);
   const repository = getFinanceRepository(ports);
   const current = await findScopedFinanceRecurringEntry(
     context,
@@ -41,8 +43,8 @@ export async function cancelFinanceRecurringEntry(
     },
     recurringEntryId: input.recurringEntryId,
     status: "cancelled",
-    storeId: context.storeId,
-    tenantId: context.tenantId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
 
   await auditFinanceServiceEvent(context, {

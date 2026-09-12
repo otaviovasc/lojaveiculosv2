@@ -9,6 +9,11 @@ import type {
   LeadCreateFullState,
 } from "./CrmLeadCreateTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
+import { validateQuickLeadInput } from "./crmFormValidation";
+import {
+  getSaoPauloTodayIsoDate,
+  normalizeLeadBirthDateInput,
+} from "./crmLeadBirthDate";
 
 export function CrmLeadCreateFullPage({
   onCancel,
@@ -60,7 +65,16 @@ export function CrmLeadCreateFullPage({
 
   const handleUpdateState = (updates: Partial<LeadCreateFullState>) => {
     setState((current) => ({ ...current, ...updates }));
-    if (updates.buyerName !== undefined) setValidationMessage(null);
+    if (
+      updates.buyerName !== undefined ||
+      updates.buyerEmail !== undefined ||
+      updates.buyerPhone !== undefined ||
+      updates.dataNascimento !== undefined ||
+      updates.telefoneFixo !== undefined ||
+      updates.whatsapp !== undefined
+    ) {
+      setValidationMessage(null);
+    }
   };
 
   const handleCreate = async () => {
@@ -68,10 +82,25 @@ export function CrmLeadCreateFullPage({
       setValidationMessage("Nome completo e obrigatorio.");
       return;
     }
+    const quickError = validateQuickLeadInput({
+      email: state.buyerEmail,
+      name: state.buyerName,
+      phone: state.buyerPhone || state.whatsapp || state.telefoneFixo,
+    });
+    if (quickError) {
+      setValidationMessage(quickError);
+      return;
+    }
 
     setIsSaving(true);
     try {
+      const birthDate = normalizeLeadBirthDateInput(state.dataNascimento);
+      if (state.dataNascimento.trim() && !birthDate) {
+        setValidationMessage("Informe uma data de nascimento válida.");
+        return;
+      }
       const draft: LeadCreateDraft = {
+        ...(birthDate ? { birthDate } : {}),
         buyerEmail: state.buyerEmail.trim() || null,
         buyerName: state.buyerName.trim(),
         buyerPhone:
@@ -134,6 +163,7 @@ export function CrmLeadCreateFullPage({
           <CrmLeadCreateMainSection
             onChange={handleUpdateState}
             state={state}
+            todayIsoDate={getSaoPauloTodayIsoDate()}
           />
           <CrmLeadCreateAddressSection
             onChange={handleUpdateState}

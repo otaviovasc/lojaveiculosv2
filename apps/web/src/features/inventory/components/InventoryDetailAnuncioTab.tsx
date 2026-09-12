@@ -252,8 +252,11 @@ export function InventoryDetailAnuncioTab({
       </FeatureSection>
 
       <InventoryDetailPortaisSection
+        api={api}
         advertisedPrice={advertisedPrice}
+        detail={detail}
         publicListingUrl={publicListingUrl}
+        onUpdated={onUpdated}
         title={listing.title}
       />
     </div>

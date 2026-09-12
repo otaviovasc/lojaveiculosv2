@@ -68,7 +68,7 @@ describe("commission workspace", () => {
     });
 
     const workspace = await getCommissionWorkspace(
-      context(["finance.read"]),
+      context(["commissions.read"]),
       period(),
       { commissionWorkspaceRepository: repository } as FinanceServicePorts,
     );
@@ -116,7 +116,7 @@ describe("commission workspace", () => {
     });
 
     const workspace = await getCommissionWorkspace(
-      context(["finance.read"]),
+      context(["commissions.read"]),
       period(),
       { commissionWorkspaceRepository: repository } as FinanceServicePorts,
     );
@@ -154,7 +154,7 @@ describe("commission workspace", () => {
     });
 
     const result = await settleCommissionEntries(
-      context(["finance.update"]),
+      context(["commissions.settle"]),
       {
         entryIds: ["entry_1", "entry_2"],
         paidAt: new Date("2026-07-14T12:00:00.000Z"),
@@ -197,7 +197,7 @@ describe("commission workspace", () => {
     });
 
     const result = await settleCommissionEntries(
-      context(["finance.update"]),
+      context(["commissions.settle"]),
       {
         entryIds: ["entry_1"],
         paidAt,

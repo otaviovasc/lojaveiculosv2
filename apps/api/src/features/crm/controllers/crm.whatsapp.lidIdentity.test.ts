@@ -2,26 +2,26 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
-import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
+import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
 import {
   createZapiConnection,
   postZapiWebhook,
-} from "./crm.whatsapp.botForwarding.testSupport.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
+} from "./crm.messaging.testSupport.js";
+import { createTestApp } from "./crm.controller.testSupport.js";
 
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp LID identity", () => {
-  it("backfills a matched session and lead without stealing unrelated sessions", async () => {
+  it("backfills a matched cycle and lead without stealing unrelated cycles", async () => {
     const crmRepository = createMemoryCrmRepository();
-    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const whatsappRepository = createMemoryCrmConversationRepository();
     const app = createTestApp({
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
       ]),
       crmRepository,
-      crmWhatsappRepository: whatsappRepository,
+      crmConversationRepository: whatsappRepository,
     });
     const chatLid = "158716288618587@lid";
     const first = await postZapiWebhook(app, {
@@ -31,7 +31,7 @@ describe("CRM WhatsApp LID identity", () => {
       text: { message: "Primeiro contato pelo anuncio" },
     });
     const firstBody = (await first.json()) as {
-      session: { id: string; leadId: string };
+      conversationCycle: { id: string; leadId: string };
     };
     expect(first.status).toBe(201);
 
@@ -43,10 +43,10 @@ describe("CRM WhatsApp LID identity", () => {
     });
     expect(backfill.status).toBe(201);
     await expect(backfill.clone().json()).resolves.toMatchObject({
-      session: {
-        buyerPhone: "5511999999999",
-        id: firstBody.session.id,
-        leadId: firstBody.session.leadId,
+      conversationCycle: {
+        customerPhone: "5511999999999",
+        id: firstBody.conversationCycle.id,
+        leadId: firstBody.conversationCycle.leadId,
       },
     });
 
@@ -56,16 +56,16 @@ describe("CRM WhatsApp LID identity", () => {
       senderName: "Outro comprador",
       text: { message: "Contato sem chatLid" },
     });
-    const sessions = await whatsappRepository.listSessions({
+    const cycles = await whatsappRepository.listConversationCycles({
       limit: 10,
       offset: 0,
       storeId,
       tenantId,
     });
-    expect(sessions).toHaveLength(2);
+    expect(cycles).toHaveLength(2);
     expect(
-      sessions.find((session) => session.id === firstBody.session.id),
-    ).toMatchObject({ buyerPhone: "5511999999999" });
+      cycles.find((cycle) => cycle.id === firstBody.conversationCycle.id),
+    ).toMatchObject({ customerPhone: "5511999999999" });
     const leads = await crmRepository.listLeads({
       limit: 10,
       storeId,
@@ -73,7 +73,7 @@ describe("CRM WhatsApp LID identity", () => {
     });
     expect(leads).toHaveLength(2);
     expect(
-      leads.find((lead) => lead.id === firstBody.session.leadId),
+      leads.find((lead) => lead.id === firstBody.conversationCycle.leadId),
     ).toMatchObject({ buyerPhone: "5511999999999" });
   });
 });

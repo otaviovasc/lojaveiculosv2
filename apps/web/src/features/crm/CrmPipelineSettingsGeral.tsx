@@ -8,10 +8,11 @@ import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { Switch } from "../../components/ui/switch";
 import type { Pipeline } from "./crmPipelineStorage";
+import type { PipelineUpdateFeedback } from "./CrmPipelineSettingsLayout";
 
 type Props = {
   pipeline: Pipeline;
-  onUpdate: (updated: Pipeline) => void;
+  onUpdate: (updated: Pipeline, feedback?: PipelineUpdateFeedback) => void;
   onDelete: (pipelineId: string) => void;
 };
 
@@ -26,12 +27,15 @@ export function CrmPipelineSettingsGeral({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleSave = () => {
-    onUpdate({
-      ...pipeline,
-      name: name.trim() || pipeline.name,
-      description: description.trim(),
-      isDefault,
-    });
+    onUpdate(
+      {
+        ...pipeline,
+        name: name.trim() || pipeline.name,
+        description: description.trim(),
+        isDefault,
+      },
+      { successMessage: "Pipeline atualizado com sucesso." },
+    );
   };
 
   return (
@@ -72,8 +76,8 @@ export function CrmPipelineSettingsGeral({
               <span>Pipeline padrão</span>
             </span>
             <span className="text-xs font-bold text-muted">
-              Este é o pipeline padrão do time. Leads sem regra específica
-              entram aqui.
+              Este é o pipeline padrão do time. Leads sem configuração
+              específica entram aqui.
             </span>
           </div>
           <Switch
@@ -114,8 +118,8 @@ export function CrmPipelineSettingsGeral({
                 Excluir pipeline
               </span>
               <span className="text-xs font-bold text-muted max-w-xl leading-relaxed">
-                Remove o pipeline e todas as suas regras de roteamento e
-                configuração de rodízio. Negócios precisam ser movidos antes.
+                Remove o pipeline e sua configuração de rodízio. Negócios
+                precisam ser movidos antes.
               </span>
             </div>
             <button

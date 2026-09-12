@@ -20,7 +20,9 @@ import {
   readPolicyNumber,
   ruleRateInput,
   toMutation,
+  validMoney,
 } from "./domainModel";
+import { useAutoEntryDirty } from "./autoEntriesDirtyState";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
 import type { AutoEntryRule } from "./types";
 
@@ -43,8 +45,14 @@ export function ConsortiumRulesPanel({
     [seller, store],
   );
   const [values, setValues] = useState(stored);
+  const [basis, setBasis] = useState("");
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setValues(stored), [stored]);
+  const isDirty =
+    values.seller !== stored.seller ||
+    values.storeShare !== stored.storeShare ||
+    values.total !== stored.total;
+  useAutoEntryDirty("consortium_sold", isDirty);
 
   const save = () => {
     const totalRatePpm = parseRatePpm(values.total);
@@ -105,7 +113,7 @@ export function ConsortiumRulesPanel({
     ]);
   };
 
-  const preview = consortiumPreview(values);
+  const preview = consortiumPreview(values, basis);
   return (
     <div className="grid items-stretch gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
@@ -138,25 +146,41 @@ export function ConsortiumRulesPanel({
         <AutoEntryInlineError message={error} />
         <AutoEntrySaveAction
           canManage={canManage}
+          isDirty={isDirty}
           isSaving={isSaving}
           onClick={save}
         />
       </AutoEntryDomainCard>
       <AutoEntryDomainCard
-        description="Simulação com carta de crédito de R$ 100.000."
+        description="Simulação local sobre a carta de crédito informada."
         title="Prévia"
         tone="neutral"
       >
-        <AutoEntryStat
-          icon={Store}
-          label="Receita da loja"
-          value={preview.store}
-        />
-        <AutoEntryStat
-          icon={UserRound}
-          label="Comissão do vendedor"
-          value={preview.seller}
-        />
+        <FeatureField label="Carta de crédito da simulação (R$)">
+          <FeatureInput
+            inputMode="decimal"
+            onChange={(event) => setBasis(event.target.value)}
+            placeholder="Ex.: 100.000"
+            value={basis}
+          />
+        </FeatureField>
+        <div
+          className="ae-preview-pulse grid gap-3"
+          key={`${preview.store}|${preview.seller}`}
+        >
+          <AutoEntryStat
+            hint={preview.storeBreakdown}
+            icon={Store}
+            label="Receita da loja"
+            value={preview.store}
+          />
+          <AutoEntryStat
+            hint={preview.sellerBreakdown}
+            icon={UserRound}
+            label="Comissão do vendedor"
+            value={preview.seller}
+          />
+        </div>
       </AutoEntryDomainCard>
     </div>
   );
@@ -188,8 +212,8 @@ function policyInput(rule: AutoEntryRule | undefined, key: string) {
   const value = readPolicyNumber(rule, [key]);
   return value === null ? "" : formatRatePpm(value);
 }
-function consortiumPreview(values: Values) {
-  const basis = 10_000_000;
+function consortiumPreview(values: Values, basisInput: string) {
+  const basis = validMoney(basisInput) ?? 10_000_000;
   const total = parseRatePpm(values.total);
   const share = parseRatePpm(values.storeShare);
   const seller = parseRatePpm(values.seller);
@@ -200,14 +224,17 @@ function consortiumPreview(values: Values) {
           currency: "BRL",
           style: "currency",
         }).format(cents / 100);
+  const basisLabel = money(basis);
+  const storeCents =
+    total === null || share === null
+      ? null
+      : Math.round((((basis * total) / 1_000_000) * share) / 1_000_000);
+  const sellerCents =
+    seller === null ? null : Math.round((basis * seller) / 1_000_000);
   return {
-    seller: money(
-      seller === null ? null : Math.round((basis * seller) / 1_000_000),
-    ),
-    store: money(
-      total === null || share === null
-        ? null
-        : Math.round((((basis * total) / 1_000_000) * share) / 1_000_000),
-    ),
+    seller: money(sellerCents),
+    sellerBreakdown: `${basisLabel} × ${values.seller || "—"}% = ${money(sellerCents)}`,
+    store: money(storeCents),
+    storeBreakdown: `${basisLabel} × ${values.total || "—"}% × ${values.storeShare || "—"}% = ${money(storeCents)}`,
   };
 }

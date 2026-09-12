@@ -1,4 +1,3 @@
-import { addVehicleCost } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
 import { attachVehicleDocument } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
 import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
@@ -29,25 +28,27 @@ import {
 } from "./listingServicesFactorySupport.js";
 import { createInventoryPublicationTransactionalServices } from "./listingPublicationServices.js";
 import { runInventoryWorkflowTransaction } from "./listingWorkflowStorageCompensation.js";
+import { createInventoryCostTransactionalServices } from "./listingCostTransactionalServices.js";
+import type { InventoryCostServices } from "./listingCostServices.js";
 
-type InventoryTransactionalServices = Pick<
-  InventoryListingServices,
-  | "addVehicleCost"
-  | "attachListingUnit"
-  | "attachVehicleDocument"
-  | "changeListingStatus"
-  | "createChecklist"
-  | "deleteListing"
-  | "publishListing"
-  | "releaseUnitReservation"
-  | "reserveUnit"
-  | "sellUnit"
-  | "unpublishListing"
-  | "updateListingDetails"
-  | "updateChecklist"
-  | "updateListingPrice"
-  | "updateListingUnit"
->;
+type InventoryTransactionalServices = InventoryCostServices &
+  Pick<
+    InventoryListingServices,
+    | "attachListingUnit"
+    | "attachVehicleDocument"
+    | "changeListingStatus"
+    | "createChecklist"
+    | "deleteListing"
+    | "publishListing"
+    | "releaseUnitReservation"
+    | "reserveUnit"
+    | "sellUnit"
+    | "unpublishListing"
+    | "updateListingDetails"
+    | "updateChecklist"
+    | "updateListingPrice"
+    | "updateListingUnit"
+  >;
 
 export function createInventoryTransactionalServices(input: {
   ports: VehicleInventoryServicePorts;
@@ -56,21 +57,11 @@ export function createInventoryTransactionalServices(input: {
   const { ports, transactionRunner } = input;
 
   return {
+    ...createInventoryCostTransactionalServices({ ports, transactionRunner }),
     ...createInventoryPublicationTransactionalServices({
       ports,
       transactionRunner,
     }),
-    async addVehicleCost(context, costInput) {
-      await runVehicleInventoryMutation(transactionRunner, (transactionPorts) =>
-        addVehicleCost(context, costInput, transactionPorts),
-      );
-      return loadInventoryListingDetailDto(
-        context,
-        await findListingIdForUnit(context, costInput.unitId, ports),
-        ports,
-        "inventory.cost_create",
-      );
-    },
     async attachListingUnit(context, unitInput) {
       const cleanedInput = cleanAttachInput(unitInput);
       const unit = await runVehicleInventoryMutation(

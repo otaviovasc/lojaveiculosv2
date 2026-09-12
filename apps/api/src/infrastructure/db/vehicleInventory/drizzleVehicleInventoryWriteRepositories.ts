@@ -5,7 +5,12 @@ import type {
   VehicleUnit,
   VehicleUnitRepository,
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import {
+  VehicleUnitIdentifierConflictError,
+  type VehicleUnitIdentifier,
+} from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import type { DrizzleRepositoryClient } from "../drizzleClient.js";
+import { isPostgresConstraintError } from "../postgresConstraintError.js";
 import {
   requireReturnedRow,
   toDbUnitStatus,
@@ -30,27 +35,39 @@ export type DrizzleVehicleUnitClient = DrizzleRepositoryClient<
   Partial<InsertVehicleUnitRow>
 >;
 
+export const vehicleUnitIdentifierConstraints = {
+  plate: "vehicle_units_store_plate_unique",
+  renavam: "vehicle_units_store_renavam_unique",
+  stockNumber: "vehicle_units_store_stock_unique",
+  vin: "vehicle_units_store_vin_unique",
+} as const satisfies Record<VehicleUnitIdentifier, string>;
+
 export function createDrizzleVehicleUnitRepository(
   db: DrizzleVehicleUnitClient,
 ): VehicleUnitRepository {
   return {
     async create(record) {
-      const scope = requireWriteScope(record);
-      const [row] = await db
-        .insert(vehicleUnits)
-        .values({
-          colorName: record.colorName ?? null,
-          listingId: record.listingId,
-          plate: record.plate,
-          status: toDbUnitStatus(record.status),
-          stockNumber: record.stockNumber,
-          storeId: scope.storeId,
-          tenantId: scope.tenantId,
-          vin: record.vin,
-        })
-        .returning();
+      try {
+        const scope = requireWriteScope(record);
+        const [row] = await db
+          .insert(vehicleUnits)
+          .values({
+            colorName: record.colorName ?? null,
+            listingId: record.listingId,
+            plate: normalizeOptionalText(record.plate),
+            renavam: normalizeOptionalText(record.renavam),
+            status: toDbUnitStatus(record.status),
+            stockNumber: normalizeOptionalText(record.stockNumber),
+            storeId: scope.storeId,
+            tenantId: scope.tenantId,
+            vin: normalizeOptionalText(record.vin),
+          })
+          .returning();
 
-      return toVehicleUnit(requireReturnedRow(row, "vehicle unit create"));
+        return toVehicleUnit(requireReturnedRow(row, "vehicle unit create"));
+      } catch (error) {
+        throw mapVehicleUnitWriteError(error);
+      }
     },
     async delete(unit) {
       const scope = requireWriteScope(unit);
@@ -166,13 +183,35 @@ export function createDrizzleVehicleUnitRepository(
   };
 }
 
+function mapVehicleUnitWriteError(error: unknown): Error {
+  for (const [field, constraintName] of Object.entries(
+    vehicleUnitIdentifierConstraints,
+  ) as [VehicleUnitIdentifier, string][]) {
+    if (
+      isPostgresConstraintError(error, {
+        code: "23505",
+        constraintName,
+      })
+    ) {
+      return new VehicleUnitIdentifierConflictError(field);
+    }
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+function normalizeOptionalText(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized || null;
+}
+
 function toVehicleUnitUpdate(unit: VehicleUnit): Partial<InsertVehicleUnitRow> {
   return {
     colorName: unit.colorName,
-    plate: unit.plate,
+    plate: normalizeOptionalText(unit.plate),
+    renavam: normalizeOptionalText(unit.renavam),
     status: toDbUnitStatus(unit.status),
-    stockNumber: unit.stockNumber,
+    stockNumber: normalizeOptionalText(unit.stockNumber),
     updatedAt: unit.updatedAt,
-    vin: unit.vin,
+    vin: normalizeOptionalText(unit.vin),
   };
 }

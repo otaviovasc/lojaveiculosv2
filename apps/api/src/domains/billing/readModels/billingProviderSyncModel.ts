@@ -18,6 +18,7 @@ export class BillingProviderSyncError extends Error {
 
 export function assertSyncableAccount(
   account: BillingProviderAccount | null,
+  options: { allowEmptyChargePreview?: boolean } = {},
 ): BillingProviderAccount & {
   subscription: BillingProviderSubscriptionRecord;
 } {
@@ -35,7 +36,10 @@ export function assertSyncableAccount(
       409,
     );
   }
-  if (account.chargePreview.totalCents <= 0) {
+  if (
+    account.chargePreview.totalCents <= 0 &&
+    !options.allowEmptyChargePreview
+  ) {
     throw new BillingProviderSyncError(
       "empty_charge_preview",
       "Billing subscription has no positive chargeable value.",
@@ -67,7 +71,10 @@ export function toLocalSubscriptionStatus(
   if (input.status === "OVERDUE") return "past_due";
   if (input.status === "EXPIRED") return "expired";
   if (input.status === "INACTIVE") return "cancelled";
-  return "trialing";
+  throw new BillingProviderSyncError(
+    "provider_subscription_status_unknown",
+    "Asaas returned an unknown subscription status.",
+  );
 }
 
 export function subscriptionDescription(

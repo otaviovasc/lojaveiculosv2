@@ -9,6 +9,7 @@ import {
 } from "./crm-whatsapp-test-helpers";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
+const mediaSendRoute = "**/api/v1/crm/conversation-cycles/*/messages/media";
 
 test.describe("CRM WhatsApp media", () => {
   test("previews and sends image media from the composer", async ({
@@ -34,7 +35,7 @@ test.describe("CRM WhatsApp media", () => {
     );
     expect(response.status()).toBe(201);
 
-    await page.route("**/api/v1/crm/whatsapp/send/media", async (route) => {
+    await page.route(mediaSendRoute, async (route) => {
       const body = route.request().postDataJSON() as {
         base64?: string;
         caption?: string;
@@ -72,9 +73,9 @@ test.describe("CRM WhatsApp media", () => {
 
     await installConnectedWhatsappConnectionStub(page, connectionId);
     await installLocalOwnerSession(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -124,7 +125,7 @@ test.describe("CRM WhatsApp media", () => {
     );
     expect(response.status()).toBe(201);
 
-    await page.route("**/api/v1/crm/whatsapp/send/media", async (route) => {
+    await page.route(mediaSendRoute, async (route) => {
       const body = route.request().postDataJSON() as {
         base64?: string;
         caption?: string;
@@ -166,9 +167,9 @@ test.describe("CRM WhatsApp media", () => {
 
     await installConnectedWhatsappConnectionStub(page, connectionId);
     await installLocalOwnerSession(page);
-    await page.goto("/crm#/crm?surface=whatsapp");
+    await page.goto("/crm#/crm?surface=conversations");
     await page
-      .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+      .getByPlaceholder("Pesquisar por nome ou telefone")
       .fill(contactName);
     await page
       .getByLabel("Conversas do WhatsApp")
@@ -189,7 +190,7 @@ test.describe("CRM WhatsApp media", () => {
     await expect(page.getByText(caption).last()).toBeVisible();
   });
 
-  test("renders inbound image media from the webhook pipeline", async ({
+  test("rejects unsafe inbound media URLs while preserving the caption", async ({
     page,
     request,
   }, testInfo) => {
@@ -220,16 +221,16 @@ test.describe("CRM WhatsApp media", () => {
 
       await installConnectedWhatsappConnectionStub(page, connectionId);
       await installLocalOwnerSession(page);
-      await page.goto("/crm#/crm?surface=whatsapp");
+      await page.goto("/crm#/crm?surface=conversations");
       await page
-        .getByPlaceholder("Buscar por contato, telefone ou mensagem")
+        .getByPlaceholder("Pesquisar por nome ou telefone")
         .fill(contactName);
       await page
         .getByLabel("Conversas do WhatsApp")
         .getByText(contactName)
         .click();
 
-      await expect(page.getByAltText(caption)).toBeVisible();
+      await expect(page.getByAltText(caption)).toHaveCount(0);
       await expect(page.getByText(caption).last()).toBeVisible();
       await capture(page, testInfo, "crm-whatsapp-media");
     } finally {

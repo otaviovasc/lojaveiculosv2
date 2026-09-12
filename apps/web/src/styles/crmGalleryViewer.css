@@ -1,0 +1,276 @@
+/* CRM Fullscreen Media Gallery Viewer / Lightbox */
+.crm-gallery-dialog-panel {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  height: 100dvh;
+  width: 100vw;
+  max-width: 100vw;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+}
+
+.crm-gallery-viewer {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  inset: 0;
+  justify-content: space-between;
+  overflow: hidden;
+  position: absolute;
+  width: 100%;
+  z-index: 120;
+}
+
+.crm-gallery-backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 15, 22, 0.94);
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.crm-gallery-header {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+}
+
+.crm-gallery-info {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.crm-gallery-info strong {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.crm-gallery-info span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-gallery-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-gallery-btn {
+  align-items: center;
+  background: var(--color-dark-control-surface);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  color: white;
+  display: inline-flex;
+  height: 2.375rem;
+  justify-content: center;
+  width: 2.375rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+}
+
+.crm-gallery-btn:hover {
+  background: var(--color-dark-control-surface-hover);
+  transform: scale(1.05);
+}
+
+.crm-gallery-btn svg {
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.crm-gallery-close:hover {
+  background: var(--color-dark-control-surface-hover);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.crm-gallery-stage {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 0;
+  padding: 1rem;
+  position: relative;
+  width: 100%;
+}
+
+.crm-gallery-nav {
+  align-items: center;
+  background: var(--color-dark-control-surface);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: white;
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  z-index: 15;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-gallery-nav:hover {
+  background: var(--color-dark-control-surface-hover);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.crm-gallery-prev {
+  left: 1.25rem;
+}
+
+.crm-gallery-next {
+  right: 1.25rem;
+}
+
+.crm-gallery-nav svg {
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.crm-gallery-content {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-height: 80vh;
+  max-width: 90vw;
+  position: relative;
+}
+
+.crm-gallery-image {
+  border-radius: 0.75rem;
+  cursor: zoom-in;
+  max-height: 75vh;
+  max-width: 100%;
+  object-fit: contain;
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.crm-gallery-content-zoomed .crm-gallery-image {
+  cursor: zoom-out;
+  transform: scale(1.4);
+}
+
+.crm-gallery-video {
+  background: #000;
+  border-radius: 0.75rem;
+  max-height: 75vh;
+  max-width: 100%;
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, 0.6);
+}
+
+.crm-gallery-caption {
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.crm-gallery-footer {
+  align-items: center;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+}
+
+.crm-gallery-thumbs {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  max-width: min(32rem, 90vw);
+  overflow-x: auto;
+  padding: 0.25rem;
+}
+
+.crm-gallery-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  opacity: 0.6;
+  overflow: hidden;
+  position: relative;
+  width: 2.75rem;
+  transition: all 0.15s ease;
+}
+
+.crm-gallery-thumb:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.crm-gallery-thumb.active {
+  border-color: var(--color-success);
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.crm-gallery-thumb img,
+.crm-gallery-thumb video {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.crm-gallery-thumb-video {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.crm-gallery-thumb-video svg {
+  position: absolute;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.crm-gallery-counter {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: white;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  backdrop-filter: blur(4px);
+}

@@ -11,6 +11,13 @@ import {
   unitDto,
 } from "../../inventory/controllers/vehicle.controller.testFixtures.js";
 import { createExternalApiFeature } from "./externalApi.controller.js";
+import { publicStorefrontRepository } from "./externalApiRuntime.publicStorefront.testSupport.js";
+import type {
+  LeadDetailJson,
+  ManifestJson,
+  ToolsJson,
+  VehicleListJson,
+} from "./externalApiRuntime.controller.testTypes.js";
 
 describe("external API runtime routes", () => {
   it("serves AI-native manifest and tool discovery without tenant data", async () => {
@@ -29,6 +36,9 @@ describe("external API runtime routes", () => {
       expect.arrayContaining([
         expect.objectContaining({ path: "/api/v1/external-api/vehicles" }),
         expect.objectContaining({ path: "/api/v1/external-api/leads" }),
+        expect.objectContaining({
+          path: "/api/v1/external-api/financing/credere/preflight",
+        }),
       ]),
     );
     expect(manifest.aiNative).toMatchObject({
@@ -36,7 +46,20 @@ describe("external API runtime routes", () => {
       llmsTxt: "https://api.local/api/v1/external-api/llms.txt",
       openApi: "https://api.local/api/v1/external-api/openapi.json",
     });
-    expect(tools.tools.at(0)?.function.name).toBe("search_vehicles");
+    expect(tools.tools.map((tool) => tool.function.name)).toEqual(
+      expect.arrayContaining([
+        "preflight_credere_simulation",
+        "create_credere_simulation",
+        "get_credere_simulation",
+        "search_vehicles",
+      ]),
+    );
+    const createCredereTool = tools.tools.find(
+      (tool) => tool.function.name === "create_credere_simulation",
+    );
+    expect(
+      createCredereTool?.function.parameters.properties,
+    ).not.toHaveProperty("idempotencyKey");
     expect(JSON.stringify(manifest)).not.toContain("tenant_");
   });
 
@@ -46,6 +69,7 @@ describe("external API runtime routes", () => {
       hasMore: false,
       items: [
         {
+          leadsCount: 0,
           listing: {
             ...listingDto(),
             catalog: {
@@ -80,7 +104,12 @@ describe("external API runtime routes", () => {
     });
     const app = createExternalApiFeature({
       contextFactory: async () => integrationContext(["inventory.read"]),
-      runtimeServices: { inventory },
+      runtimeServices: {
+        inventory,
+        publicStorefront: publicStorefrontRepository({
+          listing_1: 12_690_000,
+        }),
+      },
     });
 
     const response = await app.request(
@@ -112,30 +141,6 @@ describe("external API runtime routes", () => {
     expect(JSON.stringify(firstVehicle)).not.toContain("private-front.jpg");
   });
 
-  it("returns vehicle detail without VIN or full plate fields", async () => {
-    const inventory = createInventoryTestServices();
-    const app = createExternalApiFeature({
-      contextFactory: async () => integrationContext(["inventory.read"]),
-      runtimeServices: { inventory },
-    });
-
-    const response = await app.request("/vehicles/listing_1", {
-      headers: { "x-api-key": "lv2_test_secret" },
-    });
-
-    expect(response.status).toBe(200);
-    const json = await readJson<VehicleDetailJson>(response);
-    expect(json.data.media[0]).toMatchObject({
-      kind: "photo",
-      url: "https://cdn.local/front.jpg",
-    });
-    expect(json.data.units[0]).not.toHaveProperty("vin");
-    expect(json.data.units[0]).not.toHaveProperty("plate");
-    expect(inventory.getListing).toHaveBeenCalledWith(expect.anything(), {
-      listingId: "listing_1",
-    });
-  });
-
   it("creates leads with V1-compatible field aliases", async () => {
     const crmRepository = createMemoryCrmRepository();
     const crm = createCrmServices({ ports: { crmRepository } });
@@ -148,6 +153,9 @@ describe("external API runtime routes", () => {
       body: JSON.stringify({
         email: "ana@example.com",
         message: "Quero simular financiamento",
+        metadata: {
+          title: "Campanha de agosto",
+        },
         name: "Ana Compradora",
         phone: "+55 11 99999-0000",
         vehicleId: "listing_1",
@@ -169,7 +177,10 @@ describe("external API runtime routes", () => {
         phone: "+55 11 99999-0000",
       },
       listingId: "listing_1",
-      metadata: { message: "Quero simular financiamento" },
+      metadata: {
+        message: "Quero simular financiamento",
+        title: "Campanha de agosto",
+      },
       source: "external_api",
     });
   });
@@ -219,27 +230,3 @@ function userContext(): ServiceContext {
 async function readJson<T>(response: Response): Promise<T> {
   return (await response.json()) as unknown as T;
 }
-
-type ManifestJson = {
-  aiNative: Record<string, string>;
-  operations: Array<{ path: string }>;
-};
-
-type ToolsJson = {
-  tools: Array<{ function: { name: string } }>;
-};
-
-type VehicleListJson = {
-  data: Array<Record<string, unknown>>;
-};
-
-type VehicleDetailJson = {
-  data: {
-    media: Array<Record<string, unknown>>;
-    units: Array<Record<string, unknown>>;
-  };
-};
-
-type LeadDetailJson = {
-  data: Record<string, unknown>;
-};

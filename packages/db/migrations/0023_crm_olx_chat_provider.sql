@@ -1,0 +1,1 @@
+ALTER TYPE "public"."crm_connection_provider" ADD VALUE 'olx_chat';

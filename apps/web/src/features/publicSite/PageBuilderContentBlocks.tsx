@@ -13,18 +13,25 @@ import {
   youtubeEmbedUrl,
 } from "./pageBuilderRenderUtils";
 
+import {
+  VehicleVitrineHero,
+  VehicleVitrineImage,
+} from "./VehicleVitrineComponents";
+import { isVehicleVitrine } from "./vehicleVitrineContent";
+
 export function HeroBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
+  if (props.pageVariant === "vehicle-vitrine")
+    return <VehicleVitrineHero component={component} context={context} />;
   const firstListing =
     context.vehicles && context.vehicles.length > 0
       ? context.vehicles[0]
       : null;
-  const fallbackHeroImage = firstListing?.thumbnailUrl ?? "";
   const imageUrl =
     textProp(props.imageUrl) ??
-    fallbackHeroImage ??
+    firstListing?.thumbnailUrl ??
     context.config.heroImageUrl ??
-    pageBuilderDefaultMedia.audiFront;
+    null;
   const ctaUrl = textProp(props.ctaUrl) ?? "#estoque";
   return (
     <section className="bg-panel" id="home">
@@ -272,11 +279,17 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const imageUrl =
     textProp(props.imageUrl) ??
-    (context.preview ? pageBuilderDefaultMedia.bmwFront : null);
+    (context.preview ? pageBuilderDefaultMedia.showroom : null);
   return (
     <section className="bg-app">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">
-        {imageUrl ? (
+        {isVehicleVitrine(context.allComponents) ? (
+          <VehicleVitrineImage
+            alt={textProp(props.title) ?? "Veículo"}
+            src={imageUrl}
+            className="aspect-[4/3] w-full object-cover"
+          />
+        ) : imageUrl ? (
           <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-md">
             <img
               alt=""
@@ -287,7 +300,9 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
         ) : null}
         <div className="flex min-w-0 flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
-            DESTAQUE ESPECIAL
+            {isVehicleVitrine(context.allComponents)
+              ? "Sobre o veículo"
+              : "DESTAQUE ESPECIAL"}
           </p>
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
             {textProp(props.title) ?? "Destaque"}

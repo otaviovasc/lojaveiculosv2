@@ -240,6 +240,7 @@ INSERT INTO financing_inquiries (
   listing_id,
   metadata,
   provider,
+  provider_environment,
   provider_inquiry_id,
   status,
   store_id,
@@ -251,8 +252,9 @@ VALUES (
   null,
   '20000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000001',
-  '{"downPaymentCents": 4000000, "fixture": true, "officialOperation": false}'::jsonb,
-  'local_fixture',
+  '{"downPaymentCents": 4000000, "fixture": true, "legacyProvider": "local_fixture", "officialOperation": false}'::jsonb,
+  'credere',
+  'sandbox',
   null,
   'review',
   '66666666-6666-4666-8666-666666666666',
@@ -265,6 +267,7 @@ ON CONFLICT (id) DO UPDATE SET
   listing_id = EXCLUDED.listing_id,
   metadata = EXCLUDED.metadata,
   provider = EXCLUDED.provider,
+  provider_environment = EXCLUDED.provider_environment,
   provider_inquiry_id = EXCLUDED.provider_inquiry_id,
   status = EXCLUDED.status,
   store_id = EXCLUDED.store_id,
@@ -279,18 +282,22 @@ INSERT INTO financing_conditions (
   installments,
   metadata,
   status,
+  store_id,
   summary,
+  tenant_id,
   total_amount_cents
 )
 VALUES
-  ('46000000-0000-4000-8000-000000000001', 'Simulacao local', '45000000-0000-4000-8000-000000000001', 48, '{"monthlyPaymentCents": 246000, "fixture": true, "officialOperation": false}'::jsonb, 'review', 'Estimativa local: entrada de R$ 40.000 e 48 parcelas.', 11808000),
-  ('46000000-0000-4000-8000-000000000002', 'Simulacao local', '45000000-0000-4000-8000-000000000001', 60, '{"monthlyPaymentCents": 216000, "fixture": true, "officialOperation": false}'::jsonb, 'review', 'Estimativa local em revisao; nenhuma proposta bancaria ocorreu.', 12960000)
+  ('46000000-0000-4000-8000-000000000001', 'Simulacao local', '45000000-0000-4000-8000-000000000001', 48, '{"monthlyPaymentCents": 246000, "fixture": true, "officialOperation": false}'::jsonb, 'review', '66666666-6666-4666-8666-666666666666', 'Estimativa local: entrada de R$ 40.000 e 48 parcelas.', '77777777-7777-4777-8777-777777777777', 11808000),
+  ('46000000-0000-4000-8000-000000000002', 'Simulacao local', '45000000-0000-4000-8000-000000000001', 60, '{"monthlyPaymentCents": 216000, "fixture": true, "officialOperation": false}'::jsonb, 'review', '66666666-6666-4666-8666-666666666666', 'Estimativa local em revisao; nenhuma proposta bancaria ocorreu.', '77777777-7777-4777-8777-777777777777', 12960000)
 ON CONFLICT (id) DO UPDATE SET
   bank_name = EXCLUDED.bank_name,
   inquiry_id = EXCLUDED.inquiry_id,
   installments = EXCLUDED.installments,
   metadata = EXCLUDED.metadata,
   status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
   summary = EXCLUDED.summary,
+  tenant_id = EXCLUDED.tenant_id,
   total_amount_cents = EXCLUDED.total_amount_cents,
   updated_at = now();

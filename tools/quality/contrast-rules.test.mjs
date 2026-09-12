@@ -41,6 +41,74 @@ describe("contrast guard", () => {
     ]);
   });
 
+  it("holds contextual module accents to the 3:1 large-text minimum", () => {
+    // #10b981 + #ffffff is 2.54:1 — below 3:1, so it fails (see test above).
+    // #0f766e + #ffffff is ~4.0:1: above the 3:1 contextual floor but below
+    // the 4.5:1 body-text minimum, so a decorative module accent passes.
+    const themes = buildContrastThemes(
+      safeTokens,
+      "",
+      `[data-active-module="inventory"] {
+        --color-accent: #0f766e;
+        --color-accent-contrast: #ffffff;
+      }`,
+    );
+
+    expect(findSemanticContrastViolations(themes)).toEqual([]);
+  });
+
+  it("still enforces the 4.5:1 minimum on base theme accent pairs", () => {
+    const themes = buildContrastThemes(
+      safeTokens.replace(
+        "--color-accent-contrast: #ffffff",
+        "--color-accent-contrast: #f49a9c",
+      ),
+    );
+    expect(findSemanticContrastViolations(themes)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("--color-accent + --color-accent-foreground"),
+      ]),
+    );
+  });
+
+  it("skips negligible hover washes below 10% alpha", () => {
+    const themes = buildContrastThemes(safeTokens);
+    const failures = findCssStateContrastViolations(
+      "control.css",
+      ".control { color: var(--color-text); } .control:hover { background: rgba(124, 58, 237, 0.04); color: var(--color-accent); }",
+      themes,
+    );
+    expect(failures).toEqual([]);
+  });
+
+  it("still checks translucent hover backgrounds at or above 10% alpha", () => {
+    const themes = buildContrastThemes(safeTokens);
+    const failures = findCssStateContrastViolations(
+      "control.css",
+      ".control { color: var(--color-text); } .control:hover { background: rgba(24, 184, 65, 0.5); color: var(--color-accent); }",
+      themes,
+    );
+    expect(failures).toEqual([expect.stringContaining(".control:hover")]);
+  });
+
+  it("accepts documented dynamic-accent pairing exemptions only", () => {
+    const themes = buildContrastThemes(safeTokens);
+    const allowed = findCssStateContrastViolations(
+      "apps/web/src/styles/dashboardSidebar.css",
+      ".sidebar-btn-primary { background: var(--color-accent); color: var(--color-inverse); }",
+      themes,
+    );
+    expect(allowed).toEqual([]);
+    const notAllowed = findCssStateContrastViolations(
+      "apps/web/src/styles/other.css",
+      ".sidebar-btn-primary { background: var(--color-accent); color: var(--color-inverse); }",
+      themes,
+    );
+    expect(notAllowed).toEqual([
+      expect.stringContaining("tenant accent colors are dynamic"),
+    ]);
+  });
+
   it("checks inherited text against hover and selected Tailwind backgrounds", () => {
     const themes = buildContrastThemes(safeTokens);
     const failures = findClassContrastViolations(

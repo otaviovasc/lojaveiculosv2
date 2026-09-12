@@ -25,6 +25,7 @@ type CustomSelectProps<Value extends string = string> = {
   density?: "compact" | "default";
   disabled?: boolean | undefined;
   emptyMessage?: string | undefined;
+  invalid?: boolean | undefined;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: ((value: Value) => void) | undefined;
@@ -43,6 +44,7 @@ export function CustomSelect<Value extends string = string>({
   density = "default",
   disabled = false,
   emptyMessage = "Nenhuma opção encontrada",
+  invalid = false,
   leftIcon,
   name,
   onChange,
@@ -71,9 +73,9 @@ export function CustomSelect<Value extends string = string>({
     fallbackValue(options, defaultValue),
   );
   const selectedValue = value ?? internalValue;
-  const selectedOption =
-    options.find((option) => option.value === selectedValue) ??
-    options.find((option) => !option.disabled);
+  const selectedOption = options.find(
+    (option) => option.value === selectedValue,
+  );
   const visibleOptions = useMemo(
     () => filterOptions(options, searchable ? searchQuery : ""),
     [options, searchQuery, searchable],
@@ -234,7 +236,7 @@ export function CustomSelect<Value extends string = string>({
           disabled={disabled}
           name={name}
           type="hidden"
-          value={selectedOption?.value ?? selectedValue}
+          value={String(selectedOption?.value ?? selectedValue ?? "")}
         />
       ) : null}
       <button
@@ -253,6 +255,7 @@ export function CustomSelect<Value extends string = string>({
           .filter(Boolean)
           .join(" ")}
         disabled={disabled}
+        data-invalid={invalid ? "true" : undefined}
         onClick={() => (isOpen ? closeMenu() : openMenu())}
         ref={triggerRef}
         type="button"
@@ -368,11 +371,10 @@ function normalizeSearch(value: string) {
 }
 
 function fallbackValue<Value extends string>(
-  options: readonly CustomSelectOption<Value>[],
+  _options: readonly CustomSelectOption<Value>[],
   defaultValue: Value | undefined,
 ) {
-  const firstValue = options.find((option) => !option.disabled)?.value;
-  return defaultValue ?? firstValue ?? ("" as Value);
+  return defaultValue ?? ("" as Value);
 }
 
 function firstEnabled<Value extends string>(

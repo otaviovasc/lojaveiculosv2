@@ -1,4 +1,4 @@
-import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
+import type { CrmMessageType } from "../ports/crmConversationRepository.js";
 import {
   cleanRecord,
   firstArrayString,
@@ -14,7 +14,7 @@ export type ExtractedZapiInboundContent = {
   mediaType?: string;
   mediaUrl?: string;
   metadata: Record<string, unknown>;
-  type: CrmWhatsappMessageType;
+  type: CrmMessageType;
 };
 
 export function extractZapiInboundContent(
@@ -75,7 +75,7 @@ export function extractZapiInboundContent(
 
 function mediaContent(
   type: Extract<
-    CrmWhatsappMessageType,
+    CrmMessageType,
     "AUDIO" | "DOCUMENT" | "IMAGE" | "STICKER" | "VIDEO"
   >,
   source: Record<string, unknown>,

@@ -9,6 +9,7 @@ export type PutStorageObjectInput = {
   body: Uint8Array;
   contentType: string;
   fileName: string;
+  idempotencyKey?: string;
   scopeSegments: readonly string[];
 };
 

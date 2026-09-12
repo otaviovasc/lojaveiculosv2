@@ -1,8 +1,7 @@
 import { join } from "node:path";
 import {
-  collectActionClassNames,
+  analyzeJsxButtonShadows,
   findCssButtonShadowViolations,
-  findJsxButtonShadowViolations,
 } from "./button-shadow-rules.mjs";
 import { readText, repoPath, repoRoot, walkFiles } from "./quality-files.mjs";
 
@@ -12,15 +11,17 @@ const checkedRoots = [
 ];
 const scriptExtensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
 const scriptFiles = walkFiles(checkedRoots, { extensions: scriptExtensions });
-const actionClassNames = new Set(
-  scriptFiles.flatMap((file) => [
-    ...collectActionClassNames(file, readText(file)),
-  ]),
-);
+const actionClassNames = new Set();
+const jsxViolations = [];
+for (const file of scriptFiles) {
+  const result = analyzeJsxButtonShadows(file, readText(file));
+  for (const className of result.actionClassNames) {
+    actionClassNames.add(className);
+  }
+  jsxViolations.push(...result.violations);
+}
 const violations = [
-  ...scriptFiles.flatMap((file) =>
-    findJsxButtonShadowViolations(file, readText(file)),
-  ),
+  ...jsxViolations,
   ...walkFiles(checkedRoots, { extensions: new Set([".css"]) }).flatMap(
     (file) =>
       findCssButtonShadowViolations(file, readText(file), actionClassNames),

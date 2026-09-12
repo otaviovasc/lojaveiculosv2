@@ -12,6 +12,7 @@ import {
 import {
   assertVisitSessionMatchesLead,
   findVisitLeadOrThrow,
+  resolveVisitVehicleInterest,
   visitActivityMetadata,
 } from "./leadVisitSupport.js";
 
@@ -20,9 +21,10 @@ const permission = "crm.visits.manage";
 export type CreateLeadVisitInput = {
   assignedUserId?: string | null;
   leadId: string;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt: Date;
-  sessionId?: string;
+  cycleId?: string;
 };
 
 export async function createLeadVisit(
@@ -37,12 +39,18 @@ export async function createLeadVisit(
     "crm.visit.create.started",
     createServiceLogMetadata(context, {
       hasAssignedUser: Boolean(input.assignedUserId),
-      hasSession: Boolean(input.sessionId),
+      hasSession: Boolean(input.cycleId),
+      hasVehicleInterest: Boolean(input.listingId),
       leadId: input.leadId,
       scheduledAt: input.scheduledAt.toISOString(),
     }),
   );
 
+  const vehicleInterest = await resolveVisitVehicleInterest(
+    context,
+    input.listingId ?? null,
+    ports,
+  );
   const visit = await runCrmTransaction(ports, async (transactionPorts) => {
     await findVisitLeadOrThrow(context, input.leadId, transactionPorts);
     await assertVisitSessionMatchesLead(context, input, transactionPorts);
@@ -51,10 +59,12 @@ export async function createLeadVisit(
         ? { assignedUserId: input.assignedUserId as never }
         : {}),
       leadId: input.leadId,
+      listingId: vehicleInterest.listingId,
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
       scheduledAt: input.scheduledAt,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
+      vehicleTitle: vehicleInterest.vehicleTitle,
     });
     await getCrmRepository(transactionPorts).createActivity({
       activityType: "task",
@@ -64,7 +74,7 @@ export async function createLeadVisit(
       direction: "internal",
       leadId: created.leadId,
       metadata: visitActivityMetadata(created, {
-        sessionId: input.sessionId ?? null,
+        cycleId: input.cycleId ?? null,
       }),
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
@@ -78,7 +88,11 @@ export async function createLeadVisit(
     category: "data_change",
     entityId: visit.id,
     entityType: "lead_visit",
-    metadata: { leadId: visit.leadId, permission },
+    metadata: {
+      leadId: visit.leadId,
+      listingId: visit.listingId,
+      permission,
+    },
     outcome: "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,

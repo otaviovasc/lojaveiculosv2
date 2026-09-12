@@ -105,6 +105,7 @@ function createContext(
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     audit: options.audit ?? { record: vi.fn(async () => undefined) },
+    entitlements: ["documents"],
     permissions: ["documents.download", "documents.read"],
     request: { requestId: "req_1" },
     storeId: "store_1",

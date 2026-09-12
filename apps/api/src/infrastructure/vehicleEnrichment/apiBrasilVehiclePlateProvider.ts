@@ -2,7 +2,8 @@ import {
   type InventoryPlateLookupResponse,
   type InventoryPlateMetadataItem,
 } from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
-import { pickFipeReference } from "./apiBrasilFipeReference.js";
+import { pickFipeReferences } from "./apiBrasilFipeReference.js";
+import { requestApiBrasilPlatePayload } from "./apiBrasilPlateRequest.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 
 const defaultBaseUrl = "https://gateway.apibrasil.io/api/v2";
@@ -33,38 +34,25 @@ export function createApiBrasilVehiclePlateProvider({
         );
       }
 
-      let response: Response;
-      try {
-        response = await fetch(`${baseUrl.replace(/\/$/, "")}${dadosPath}`, {
-          body: JSON.stringify({ placa: normalizePlate(plate) }),
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          method: "POST",
+      const request = (body: Record<string, unknown>) =>
+        requestApiBrasilPlatePayload({
+          body,
+          fetch,
+          token,
+          url: `${baseUrl.replace(/\/$/, "")}${dadosPath}`,
         });
-      } catch {
-        throw new InventoryEnrichmentProviderError(
-          "Plate lookup provider request failed.",
-          503,
-        );
-      }
+      const normalizedPlate = normalizePlate(plate);
+      const [vehicleResult, fipeResult] = await Promise.allSettled([
+        request({ placa: normalizedPlate }),
+        request({ homolog: false, placa: normalizedPlate, tipo: "fipe" }),
+      ]);
+      if (vehicleResult.status === "rejected") throw vehicleResult.reason;
 
-      if (!response.ok) {
-        throw new InventoryEnrichmentProviderError(
-          `Plate lookup failed with status ${response.status}.`,
-          response.status === 401 || response.status === 403 ? 502 : 503,
-        );
-      }
-
-      const payload = (await response.json()) as unknown;
-      const providerError = readProviderError(payload);
-      if (providerError) {
-        throw new InventoryEnrichmentProviderError(providerError, 502);
-      }
-
-      return normalizeApiBrasilPlateResponse(payload, plate);
+      return normalizeApiBrasilPlateResponse(vehicleResult.value, plate, {
+        fipePayload:
+          fipeResult.status === "fulfilled" ? fipeResult.value : undefined,
+        fipeUnavailable: fipeResult.status === "rejected",
+      });
     },
   };
 }
@@ -72,18 +60,44 @@ export function createApiBrasilVehiclePlateProvider({
 export function normalizeApiBrasilPlateResponse(
   payload: unknown,
   fallbackPlate: string,
+  options: {
+    fipePayload?: unknown;
+    fipeUnavailable?: boolean;
+  } = {},
 ): InventoryPlateLookupResponse {
   const root = asRecord(payload) ?? {};
   const envelope = asRecord(root.data) ?? asRecord(root.dados) ?? root;
   const data = asRecord(envelope.data) ?? asRecord(envelope.dados) ?? envelope;
   const extra = asRecord(data.extra) ?? {};
   const candidates = [data, extra, envelope, root].filter(hasKeys);
-  const fipe = pickFipeReference(root, envelope, data, extra);
+  const fipeCandidates = pickFipeReferences(options.fipePayload ?? payload);
+  const fipe = fipeCandidates[0] ?? null;
+  const unresolvedReason = options.fipeUnavailable
+    ? "fipe_provider_unavailable"
+    : fipeCandidates.length
+      ? "catalog_not_found"
+      : "fipe_not_found";
 
   return {
+    catalogIdentity:
+      fipeCandidates.length > 1
+        ? {
+            candidates: [],
+            catalog: null,
+            reason: "multiple_fipe_candidates",
+            status: "ambiguous",
+          }
+        : {
+            candidates: [],
+            catalog: null,
+            reason: unresolvedReason,
+            status: "unresolved",
+          },
     fipe,
+    fipeCandidates,
+    lookupVersion: 2,
     metadata: buildMetadata(candidates),
-    plate: findString(candidates, ["placa"]) ?? normalizePlate(fallbackPlate),
+    plate: normalizePlate(fallbackPlate),
     source: "apibrasil",
     vehicle: {
       aspiration: findString(candidates, [
@@ -97,6 +111,7 @@ export function normalizeApiBrasilPlateResponse(
       chassis: findString(candidates, ["chassi", "chassis"]),
       city: findString(candidates, ["municipio", "cidade"]),
       color: findString(candidates, ["cor", "color"]),
+      doors: findNumber(candidates, ["quantidade_portas", "portas"]),
       engine: findString(candidates, ["motor", "cilindradas", "cilindrada"]),
       fuel: findString(candidates, ["combustivel", "fuel"]),
       manufactureYear: findNumber(candidates, ["ano_fabricacao", "ano"]),
@@ -105,20 +120,12 @@ export function normalizeApiBrasilPlateResponse(
       modelYear: findNumber(candidates, ["ano_modelo", "anoModelo"]),
       origin: findString(candidates, ["origem", "nacionalidade"]),
       power: findString(candidates, ["potencia"]),
-      state: findString(candidates, ["uf_placa", "uf"]),
+      state: findString(candidates, ["uf_jurisdicao", "uf_placa", "uf"]),
       transmission: findString(candidates, ["caixa_cambio", "cambio"]),
       vehicleType: findString(candidates, ["tipo_veiculo", "segmento"]),
       version: findString(candidates, ["versao", "VERSAO", "submodelo"]),
     },
   };
-}
-
-function readProviderError(payload: unknown) {
-  const root = asRecord(payload);
-  if (!root) return null;
-  if (root.error === true)
-    return findString([root], ["message"]) ?? "Plate lookup failed.";
-  return null;
 }
 
 function buildMetadata(
@@ -127,7 +134,7 @@ function buildMetadata(
   const fields: Array<[string, string[]]> = [
     ["Situacao", ["situacao", "situacao_veiculo"]],
     ["Municipio", ["municipio", "cidade"]],
-    ["UF", ["uf_placa", "uf"]],
+    ["UF", ["uf_jurisdicao", "uf_placa", "uf"]],
     ["Origem", ["origem", "nacionalidade"]],
     ["Especie", ["especie", "s.especie"]],
     ["Segmento", ["segmento", "sub_segmento"]],

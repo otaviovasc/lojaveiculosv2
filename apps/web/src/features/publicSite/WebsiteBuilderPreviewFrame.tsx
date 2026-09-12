@@ -1,4 +1,11 @@
-import { Eye, Loader2, Monitor, Smartphone, Tablet } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  Monitor,
+  RefreshCcw,
+  Smartphone,
+  Tablet,
+} from "lucide-react";
 import {
   forwardRef,
   useCallback,
@@ -7,6 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { buildGoogleFontsHref } from "./storefrontFonts";
 import type {
@@ -20,6 +28,8 @@ const viewportWidths: Record<WebsiteBuilderViewportMode, string> = {
   tablet: "768px",
 };
 
+const previewLoadTimeoutMs = 8_000;
+
 export type WebsiteBuilderPreviewFrameHandle = {
   postUpdate: (payload: Record<string, unknown>) => void;
 };
@@ -28,6 +38,7 @@ function syncPreviewFontLinks(
   target: Document,
   fonts: ReadonlyArray<string | null | undefined>,
 ) {
+  if (!target.head) return;
   target.head
     .querySelectorAll("[data-storefront-preview-font]")
     .forEach((node) => node.remove());
@@ -76,15 +87,18 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
   ref,
 ) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [iframeReady, setIframeReady] = useState(false);
+  const [previewStatus, setPreviewStatus] = useState<
+    "loading" | "ready" | "timed-out"
+  >("loading");
   const [iframeSrc, setIframeSrc] = useState("");
+  const [previewAttempt, setPreviewAttempt] = useState(0);
 
   useEffect(() => {
-    setIframeReady(false);
+    setPreviewStatus("loading");
     setIframeSrc(
-      `/${slug}?editor=1&template=${encodeURIComponent(templateId)}`,
+      `/${slug}?editor=1&template=${encodeURIComponent(templateId)}&previewAttempt=${previewAttempt}`,
     );
-  }, [slug, templateId]);
+  }, [previewAttempt, slug, templateId]);
 
   const postUpdate = useCallback((payload: Record<string, unknown>) => {
     iframeRef.current?.contentWindow?.postMessage(
@@ -104,26 +118,29 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
   }, [syncIframeFonts]);
 
   useEffect(() => {
-    if (!iframeSrc) return undefined;
+    if (!iframeSrc || previewStatus !== "loading") return undefined;
 
-    const fallbackId = window.setTimeout(() => {
-      syncIframeFonts();
-      setIframeReady(true);
-      postUpdate(config as unknown as Record<string, unknown>);
-    }, 1800);
+    const timeoutId = window.setTimeout(() => {
+      setPreviewStatus("timed-out");
+    }, previewLoadTimeoutMs);
 
-    return () => window.clearTimeout(fallbackId);
-  }, [config, iframeSrc, postUpdate, syncIframeFonts]);
+    return () => window.clearTimeout(timeoutId);
+  }, [iframeSrc, previewStatus]);
 
   useImperativeHandle(ref, () => ({ postUpdate }), [postUpdate]);
 
   const handleIframeLoad = useCallback(() => {
     window.setTimeout(() => {
       syncIframeFonts();
-      setIframeReady(true);
+      setPreviewStatus("ready");
       postUpdate(config as unknown as Record<string, unknown>);
     }, 200);
   }, [config, postUpdate, syncIframeFonts]);
+
+  const retryPreview = () => {
+    setPreviewStatus("loading");
+    setPreviewAttempt((current) => current + 1);
+  };
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-muted/30">
@@ -131,7 +148,11 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
         <div className="flex items-center gap-2">
           <Eye className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs font-medium text-muted-foreground">
-            Pré-visualização ao vivo
+            {previewStatus === "ready"
+              ? "Pré-visualização ao vivo"
+              : previewStatus === "timed-out"
+                ? "Pré-visualização indisponível"
+                : "Carregando pré-visualização"}
           </span>
         </div>
 
@@ -169,44 +190,76 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
         </div>
       </div>
 
-      <div className="flex flex-1 items-start justify-center overflow-auto p-3 md:p-5">
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 justify-center overflow-auto",
+          viewportMode === "desktop"
+            ? "items-stretch"
+            : "items-start p-3 md:p-5",
+        )}
+      >
         <div
-          className="relative overflow-hidden rounded-xl bg-card shadow-lg ring-1 ring-border/30 transition-all duration-300"
+          className={cn(
+            "relative overflow-hidden bg-card transition-all duration-300",
+            viewportMode === "desktop"
+              ? "h-full w-full"
+              : "rounded-xl shadow-lg ring-1 ring-border/30",
+          )}
           style={{
-            height: viewportMode === "desktop" ? "100%" : undefined,
             maxWidth: "100%",
             minHeight: viewportMode !== "desktop" ? "80vh" : undefined,
-            width: viewportWidths[viewportMode],
+            width:
+              viewportMode === "desktop"
+                ? "100%"
+                : viewportWidths[viewportMode],
           }}
         >
-          {iframeReady ? null : (
+          {previewStatus === "ready" ? null : (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-card transition-opacity duration-300">
-              <div className="w-full space-y-4 p-6">
-                <div className="h-14 w-full animate-pulse rounded-lg bg-muted" />
-                <div className="space-y-3">
-                  <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
-                  <div className="h-5 w-1/2 animate-pulse rounded-lg bg-muted" />
-                  <div className="h-52 w-full animate-pulse rounded-lg bg-muted" />
+              {previewStatus === "timed-out" ? (
+                <div className="flex max-w-sm flex-col items-center gap-3 p-6 text-center">
+                  <strong className="text-sm text-foreground">
+                    O preview demorou mais do que o esperado.
+                  </strong>
+                  <p className="text-xs text-muted-foreground">
+                    Suas alterações continuam no editor. Tente carregar a
+                    visualização novamente.
+                  </p>
+                  <Button onClick={retryPreview} size="sm" type="button">
+                    <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
+                    Tentar novamente
+                  </Button>
                 </div>
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">
-                    Carregando preview...
-                  </span>
+              ) : (
+                <div className="w-full space-y-4 p-6">
+                  <div className="h-14 w-full animate-pulse rounded-lg bg-muted" />
+                  <div className="space-y-3">
+                    <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
+                    <div className="h-5 w-1/2 animate-pulse rounded-lg bg-muted" />
+                    <div className="h-52 w-full animate-pulse rounded-lg bg-muted" />
+                  </div>
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      Carregando preview...
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {iframeSrc ? (
             <iframe
               className="w-full bg-card"
+              key={iframeSrc}
+              onError={() => setPreviewStatus("timed-out")}
               onLoad={handleIframeLoad}
               ref={iframeRef}
               src={iframeSrc}
               style={{
                 height: viewportMode === "desktop" ? "100%" : "80vh",
-                minHeight: "600px",
+                minHeight: viewportMode === "desktop" ? undefined : "600px",
               }}
               title="Pré-visualização"
             />

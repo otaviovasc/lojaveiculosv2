@@ -1,4 +1,5 @@
 import type { InventoryCatalogVehicleType } from "./catalogTypes";
+import type { InventoryCatalogSnapshot } from "./catalogTypes";
 
 export type InventoryPlateMetadataItem = {
   label: string;
@@ -24,6 +25,7 @@ export type InventoryPlateVehicle = {
   chassis: string | null;
   city: string | null;
   color: string | null;
+  doors: number | null;
   engine: string | null;
   fuel: string | null;
   manufactureYear: number | null;
@@ -38,8 +40,35 @@ export type InventoryPlateVehicle = {
   version: string | null;
 };
 
+export type InventoryPlateCatalogIdentity =
+  | {
+      candidates: readonly InventoryCatalogSnapshot[];
+      catalog: null;
+      reason: "multiple_catalog_matches" | "multiple_fipe_candidates";
+      status: "ambiguous";
+    }
+  | {
+      candidates: readonly [];
+      catalog: InventoryCatalogSnapshot;
+      reason: null;
+      status: "resolved";
+    }
+  | {
+      candidates: readonly InventoryCatalogSnapshot[];
+      catalog: null;
+      reason:
+        | "catalog_not_found"
+        | "catalog_provider_unavailable"
+        | "fipe_not_found"
+        | "fipe_provider_unavailable";
+      status: "unresolved";
+    };
+
 export type InventoryPlateLookupResponse = {
+  catalogIdentity: InventoryPlateCatalogIdentity;
   fipe: InventoryPlateFipeReference | null;
+  fipeCandidates: readonly InventoryPlateFipeReference[];
+  lookupVersion: 1 | 2;
   metadata: readonly InventoryPlateMetadataItem[];
   plate: string;
   source: "apibrasil";

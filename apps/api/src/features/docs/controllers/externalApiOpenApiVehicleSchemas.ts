@@ -102,23 +102,39 @@ export const externalApiVehicleSchemas = {
       },
       priceHistory: {
         type: "array",
-        items: { type: "object", additionalProperties: true },
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["changedAt", "newPriceCents", "oldPriceCents"],
+          properties: {
+            changedAt: { type: "string", format: "date-time" },
+            newPriceCents: nullableInteger,
+            oldPriceCents: nullableInteger,
+          },
+        },
       },
       statusHistory: {
         type: "array",
-        items: { type: "object", additionalProperties: true },
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["changedAt", "fromStatus", "toStatus"],
+          properties: {
+            changedAt: { type: "string", format: "date-time" },
+            fromStatus: nullableString,
+            toStatus: { type: "string" },
+          },
+        },
       },
       units: {
         type: "array",
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["colorName", "id", "status", "stockNumber"],
+          required: ["colorName", "status"],
           properties: {
             colorName: nullableString,
-            id: { type: "string" },
             status: { type: "string" },
-            stockNumber: nullableString,
           },
         },
       },

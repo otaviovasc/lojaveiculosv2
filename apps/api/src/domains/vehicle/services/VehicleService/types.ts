@@ -18,6 +18,7 @@ import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard
 import type { VehicleAuditRepository } from "../../ports/vehicleAuditRepository.js";
 import type { VehicleResaleAnalysisProvider } from "../../ports/vehicleResaleAnalysisProvider.js";
 import type { VehicleAiStudioProvider } from "../../ports/vehicleAiStudioProvider.js";
+import type { VehicleLeadInterestCounter } from "../../ports/vehicleLeadInterestCounter.js";
 
 export type VehicleInventoryServicePorts = {
   acquisitionRepository?: VehicleAcquisitionRepository;
@@ -29,6 +30,7 @@ export type VehicleInventoryServicePorts = {
   documentRepository?: VehicleDocumentRepository;
   documentTemplateRepository?: Pick<DocumentRepository, "findTemplate">;
   financeRepository?: FinanceRepository;
+  leadInterestCounter?: VehicleLeadInterestCounter;
   listingRepository: VehicleListingRepository;
   mediaRepository?: VehicleMediaRepository;
   mediaStorage?: VehicleMediaStorage;

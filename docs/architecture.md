@@ -157,6 +157,54 @@ dealer-facing analytics domain.
 The metric and event definitions live in
 `docs/strategy/product-operating-model.md`.
 
+## Store Dashboard Access Direction
+
+The store home dashboard is a core operational surface, separate from the
+dealer-facing analytics entitlement. Every active store role receives
+`dashboard.read`; `GET /api/v1/analytics/home` returns only the minimal
+inventory and active-lead summary needed by the home page and has no commercial
+entitlement requirement.
+
+Detailed, period-filtered revenue, margin, sales, inventory aging, funnel, and
+lead-source reporting remains behind both `analytics.read` and the `analytics`
+entitlement through `GET /api/v1/analytics/dashboard`. Without both grants, the
+frontend must not request or render analytics data; it keeps the dashboard
+layout stable with neutral placeholder values and disabled analytics controls.
+An analytics request failure must not replace or block the core home dashboard.
+Store users with `finance.read` may materialize the same selected period as a
+downloadable executive PDF through `GET /api/v1/analytics/dashboard.pdf`. The
+server renders the bytes from the scoped dashboard read model and records the
+export as a data-access audit event.
+
+## Billing Contract Direction
+
+Free is the permanent default contract. Every store is provisioned atomically
+with one open-ended Free `subscription_items` plan row and its entitlement
+projection. New-account paths have no trial phase.
+
+The current server-owned catalog is a versioned domain definition. Deployment
+materializes a missing version transactionally and changes one explicit active
+catalog pointer only after the persisted plan and feature rows match the
+canonical checksum. Deployed versions are immutable and superseded versions
+cannot be reactivated. Runtime catalog reads resolve through that pointer
+rather than guessing the newest version from a sortable string. Each billing
+overview pins the pointer once so a concurrent activation cannot mix plans or
+capabilities from different versions. Catalog v3 has no active feature
+add-ons; future add-ons, if introduced, must be explicit usage packs or
+professional services.
+
+Catalog activation does not mutate paid access. A choice is first persisted as
+a durable `billing_plan_hires` aggregate; `subscription_items` changes only
+after confirmed/received Asaas payment evidence is correlated and the contract,
+provider identities, entitlements, audit evidence, and hire completion can be
+committed atomically. Checkout redirects never activate access.
+
+Unmatched provider events remain pending reconciliation. If paid evidence is
+temporarily inconsistent, Free remains effective until an unambiguous repair.
+Past-due paid access has a seven-day grace period and then falls back to Free
+without deleting customer data. Detailed invariants live in
+`docs/billing-business-rules.md`.
+
 ## RENAVE And Fiscal Reconciliation Direction
 
 Loja Veiculos is a dealership-management-system provider. Under CONTRAN
@@ -201,6 +249,26 @@ payload and block obviously invalid submissions before the API call. Backend
 validation remains authoritative and must return field-level issues for 400
 responses so logs and UI messages identify the failing field without logging
 request bodies.
+
+## Frontend Contrast Guard Exceptions
+
+`pnpm run check:contrast` enforces 4.5:1 on semantic foreground/background
+pairs. Three narrow, documented relaxations live in the checker itself:
+
+- Contextual module themes (`[data-active-module="..."]` accents) are
+  decorative identity colors (badges, highlights, charts), not body-text
+  surfaces, so they are held to the WCAG 3:1 large-text/UI minimum
+  (`tools/quality/contrast-tokens.mjs`). The finance gold module accents
+  (#b89418 with a light foreground, 2.88:1) are explicitly exempted there
+  because those modules never render text on the solid accent.
+- `.sidebar-btn-primary` pairs `var(--color-accent)` with
+  `var(--color-inverse)` instead of `--color-accent-foreground`; every brand
+  palette binds the accent foreground to a light color, so the pairing is
+  equivalent. Encoded as an explicit allowlist entry in
+  `tools/quality/contrast-css-states.mjs`.
+- Hover/active background washes below 10% alpha are skipped: they do not
+  materially change the effective background, whose readability is governed by
+  the resting state.
 
 ## Database Direction
 

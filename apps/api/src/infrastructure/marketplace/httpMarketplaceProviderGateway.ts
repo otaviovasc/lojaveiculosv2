@@ -9,6 +9,12 @@ import {
   exchangeToken,
 } from "./httpMarketplaceProviderGatewayAuth.js";
 import { runOlxAutouploadSync } from "./httpMarketplaceProviderGatewayOlx.js";
+import { resolveOlxCatalogMapping } from "./httpMarketplaceProviderGatewayOlxCatalog.js";
+import { reconcileOlxListingSync } from "./httpMarketplaceProviderGatewayOlxStatus.js";
+import {
+  marketplaceProviderSuccessEvidence,
+  readMarketplaceResponsePayload,
+} from "./httpMarketplaceProviderGatewayEvidence.js";
 import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
   baseUrl,
@@ -16,7 +22,6 @@ import {
   MarketplaceProviderGatewayError,
   MarketplaceProviderPayloadError,
   providerHttpError,
-  readString,
   sanitizedResult,
 } from "./httpMarketplaceProviderGatewaySupport.js";
 
@@ -59,6 +64,14 @@ export function createHttpMarketplaceProviderGateway(
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       }),
+    ...(options.provider === "olx"
+      ? {
+          reconcileListingSync: (input) =>
+            reconcileOlxListingSync(fetchImpl, options, input),
+          resolveCatalogMapping: (input) =>
+            resolveOlxCatalogMapping(fetchImpl, options, input),
+        }
+      : {}),
     runListingSync: (input) => runListingSync(fetchImpl, options, input),
   };
 }
@@ -79,20 +92,22 @@ async function runListingSync(
         "Content-Type": "application/json",
       },
       method,
+      redirect: "error",
     });
-    const responsePayload = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const responsePayload = await readMarketplaceResponsePayload(response);
     if (!response.ok) {
       throw providerHttpError(options.provider, response, responsePayload);
     }
-    const externalId =
-      readString(responsePayload.id) ?? input.externalId ?? null;
-    const providerStatus = readString(responsePayload.status) ?? "accepted";
+    const { externalId, providerStatus } = marketplaceProviderSuccessEvidence(
+      options.provider,
+      input,
+      response,
+      responsePayload,
+    );
     return {
       externalId,
       metadata: sanitizedResult(externalId, response, providerStatus),
+      operationToken: null,
       providerStatus,
     };
   }
@@ -110,13 +125,11 @@ async function runListingSync(
       "Content-Type": "application/json",
     },
     method,
+    redirect: "error",
   };
   requestInit.body = JSON.stringify(payload.body);
   const response = await fetchImpl(`${baseUrl(options)}${path}`, requestInit);
-  const responsePayload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const responsePayload = await readMarketplaceResponsePayload(response);
   if (!response.ok) {
     if (response.status === 409 && input.jobType === "listing_publish") {
       const duplicateId =
@@ -133,14 +146,19 @@ async function runListingSync(
     }
     throw providerHttpError(options.provider, response, responsePayload);
   }
-  const externalId = readString(responsePayload.id) ?? input.externalId ?? null;
-  const providerStatus = readString(responsePayload.status) ?? "accepted";
+  const { externalId, providerStatus } = marketplaceProviderSuccessEvidence(
+    options.provider,
+    input,
+    response,
+    responsePayload,
+  );
   return {
     externalId,
     metadata: {
       providerRequest: payload.attributes,
       providerResult: sanitizedResult(externalId, response, providerStatus),
     },
+    operationToken: null,
     providerStatus,
   };
 }
@@ -161,21 +179,25 @@ async function updateDuplicateListing(
         "Content-Type": "application/json",
       },
       method: "PUT",
+      redirect: "error",
     },
   );
-  const responsePayload = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const responsePayload = await readMarketplaceResponsePayload(response);
   if (!response.ok)
     throw providerHttpError(options.provider, response, responsePayload);
-  const providerStatus = readString(responsePayload.status) ?? "accepted";
+  const { providerStatus } = marketplaceProviderSuccessEvidence(
+    options.provider,
+    { ...input, externalId, jobType: "listing_update" },
+    response,
+    responsePayload,
+  );
   return {
     externalId,
     metadata: {
       providerRequest: payload.attributes,
       providerResult: sanitizedResult(externalId, response, providerStatus),
     },
+    operationToken: null,
     providerStatus,
   };
 }
@@ -184,24 +206,16 @@ function requestShape(
   options: HttpMarketplaceGatewayOptions,
   input: MarketplacePublishInput,
 ) {
-  if (input.jobType === "listing_unpublish" && input.externalId) {
-    return {
-      method: "DELETE",
-      path: `${listingPath(options)}/${input.externalId}`,
-    };
-  }
-  if (input.externalId && input.jobType !== "listing_publish") {
-    return {
-      method: "PUT",
-      path: `${listingPath(options)}/${input.externalId}`,
-    };
-  }
+  const externalPath = `${listingPath(options)}/${input.externalId}`;
+  if (input.jobType === "listing_unpublish" && input.externalId)
+    return { method: "DELETE", path: externalPath };
+  if (input.externalId && input.jobType !== "listing_publish")
+    return { method: "PUT", path: externalPath };
   return { method: "POST", path: listingPath(options) };
 }
 
 function listingPath(options: HttpMarketplaceGatewayOptions) {
-  return (
-    options.listingPath ??
-    (options.provider === "mercado_livre" ? "/items" : "/listings")
-  );
+  const fallback =
+    options.provider === "mercado_livre" ? "/items" : "/listings";
+  return options.listingPath ?? fallback;
 }

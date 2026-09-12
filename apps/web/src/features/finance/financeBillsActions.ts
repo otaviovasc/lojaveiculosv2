@@ -22,6 +22,14 @@ export async function updateEntryFromDraft(
   const update: UpdateFinanceEntryInput = {
     amountCents: input.amountCents,
     category: input.category,
+    links: [
+      ...(entry.links ?? []).filter(
+        (link) =>
+          link.targetType !== "vehicle_listing" &&
+          link.targetType !== "vehicle_unit",
+      ),
+      ...(input.links ?? []),
+    ].map(({ targetId, targetType }) => ({ targetId, targetType })),
     name: input.name,
     status: input.status,
   };

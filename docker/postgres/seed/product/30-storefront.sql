@@ -59,8 +59,7 @@ VALUES (
     "badgeLabel": "Curadoria Horizonte",
     "ctaLabel": "Chamar no WhatsApp",
     "headline": "Seminovos selecionados para compra segura",
-    "sections": ["featured", "financing", "trust", "contact"],
-    "tone": "premium"
+    "sections": ["featured", "financing", "trust", "contact"]
   }'::jsonb
 )
 ON CONFLICT (store_id) DO UPDATE SET

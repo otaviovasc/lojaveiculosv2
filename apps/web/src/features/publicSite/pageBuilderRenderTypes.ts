@@ -7,6 +7,7 @@ import type {
 
 export type BuilderRenderContext = {
   accent: string;
+  allComponents?: readonly StorefrontBuilderComponent[];
   config: StorefrontBuilderConfig;
   pageSlug: string;
   preview: boolean;

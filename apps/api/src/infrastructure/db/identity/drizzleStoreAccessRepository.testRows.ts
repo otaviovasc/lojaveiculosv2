@@ -12,6 +12,7 @@ export type UserRow = {
   deletedAt: Date | null;
   id: UserId;
   isDeleted: boolean;
+  name: string | null;
 };
 
 export type StoreRow = {

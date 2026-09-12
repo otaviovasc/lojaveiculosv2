@@ -14,10 +14,7 @@ export async function resolveStoreEntitlements(
     .where(
       and(
         eq(storeEntitlements.storeId, storeId),
-        or(
-          eq(storeEntitlements.status, "active"),
-          eq(storeEntitlements.status, "trialing"),
-        ),
+        eq(storeEntitlements.status, "active"),
         or(
           isNull(storeEntitlements.startsAt),
           lte(storeEntitlements.startsAt, now),

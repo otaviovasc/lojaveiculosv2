@@ -1,0 +1,5 @@
+/*
+ * Legacy import retained while the CRM route migrates from the Repasses bundle.
+ * Visual ownership now lives in the CRM foundation, layout, queue, sessions and
+ * conversation stylesheets so this file cannot reintroduce conflicting cards.
+ */

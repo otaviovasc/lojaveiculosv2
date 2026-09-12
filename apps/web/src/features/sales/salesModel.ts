@@ -15,6 +15,11 @@ export const defaultRequiredDocumentKinds = [
   "power_of_attorney",
 ] as const;
 
+export const saleDocumentKinds = [
+  ...defaultRequiredDocumentKinds,
+  "buyer_acknowledgment",
+] as const satisfies readonly SaleDocumentKind[];
+
 export const saleSourceOptions = [
   { label: "Lead Digital", value: "lead" },
   { label: "Loja Física (Walk-in)", value: "walk_in" },
@@ -82,6 +87,7 @@ export function createDraftFromContext(
       source: "lead_or_vehicle_workspace",
     },
     selectedDocumentKinds: [...defaultRequiredDocumentKinds],
+    sellerUserId: context.sellerUserId ?? null,
     unitId: context.unitId ?? null,
   };
 }
@@ -101,9 +107,21 @@ export function parseSaleStartContext(): SaleStartContext {
   setParam(context, "plate", params.get("plate") || params.get("placa"));
   setParam(context, "colorName", params.get("colorName") || params.get("cor"));
   setParam(context, "primaryMediaUrl", params.get("primaryMediaUrl"));
+  setParam(context, "sellerUserId", params.get("sellerUserId"));
   const priceCents = readNumber(params.get("priceCents"));
   if (priceCents !== undefined) context.priceCents = priceCents;
   return context;
+}
+
+export function clearSaleStartContext(): void {
+  if (typeof window === "undefined") return;
+  const [path, query] = window.location.hash.split("?");
+  if (!query) return;
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${path}`,
+  );
 }
 
 export function saleMissingFields(
@@ -158,7 +176,7 @@ export function requiredDocumentKinds(
 }
 
 export function isSaleDocumentKind(value: string): value is SaleDocumentKind {
-  return (defaultRequiredDocumentKinds as readonly string[]).includes(value);
+  return (saleDocumentKinds as readonly string[]).includes(value);
 }
 
 export function paymentPrincipalTotal(sale: SaleRecord): number {
@@ -186,6 +204,48 @@ export function formatCents(value: number | null | undefined): string {
     currency: "BRL",
     style: "currency",
   });
+}
+
+export function formatPaymentMethodLabel(method: string): string {
+  switch (method) {
+    case "pix":
+      return "PIX";
+    case "credit_card":
+      return "Cartão de Crédito";
+    case "cash":
+      return "Dinheiro em Espécie";
+    case "financing":
+      return "Financiamento Bancário";
+    case "trade_in":
+      return "Veículo na Troca (Trade-in)";
+    case "transfer":
+      return "Transferência (TED/DOC)";
+    case "boleto":
+      return "Boleto Bancário";
+    case "letter_of_credit":
+      return "Carta de Crédito (Consórcio)";
+    default:
+      return method.replace(/_/g, " ").toUpperCase();
+  }
+}
+
+export function formatDocumentKindLabel(kind: string): string {
+  switch (kind) {
+    case "sale_contract":
+      return "Contrato de Compra e Venda";
+    case "sale_receipt":
+      return "Recibo de Venda";
+    case "delivery_term":
+      return "Termo de Entrega";
+    case "power_of_attorney":
+      return "Procuração de Transferência";
+    case "buyer_acknowledgment":
+      return "Termo de recebimento";
+    case "reservation_receipt":
+      return "Recibo de Sinal e Reserva";
+    default:
+      return kind.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
 }
 
 export function parseCurrencyInput(value: string): number | null {

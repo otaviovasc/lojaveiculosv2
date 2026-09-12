@@ -4,14 +4,20 @@ import type {
   StoreScopedServiceContext,
 } from "../../../../shared/serviceContext.js";
 import type { FiscalProviderGateway } from "../../ports/fiscalProviderGateway.js";
+import type { FiscalConnectionRepository } from "../../ports/fiscalConnectionRepository.js";
+import type { FiscalProviderAdminGateway } from "../../ports/fiscalProviderAdminGateway.js";
+import type { FiscalWebhookRepository } from "../../ports/fiscalWebhookRepository.js";
 import type {
   FiscalDocument,
   FiscalRepository,
 } from "../../ports/fiscalRepository.js";
 
 export type FiscalServicePorts = {
+  fiscalConnectionRepository: FiscalConnectionRepository;
+  fiscalProviderAdminGateway: FiscalProviderAdminGateway;
   fiscalProviderGateway: FiscalProviderGateway;
   fiscalRepository: FiscalRepository;
+  fiscalWebhookRepository: FiscalWebhookRepository;
 };
 
 export function requireFiscalScope(
@@ -22,7 +28,7 @@ export function requireFiscalScope(
   }
 
   const scoped = context as StoreScopedServiceContext;
-  assertEntitlement(scoped, "nfe");
+  assertEntitlement(scoped, "fiscal");
   return scoped;
 }
 
@@ -46,7 +52,9 @@ export async function requireScopedFiscalDocument(
 
 export class FiscalScopeError extends Error {
   constructor() {
-    super("Fiscal service requires store, tenant and nfe entitlement scope.");
+    super(
+      "Fiscal service requires store, tenant and fiscal entitlement scope.",
+    );
     this.name = "FiscalScopeError";
   }
 }

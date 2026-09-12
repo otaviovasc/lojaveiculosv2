@@ -38,6 +38,7 @@ export function AutoEntriesCommandBar({
           ) : null}
         </>
       }
+      chip={canManage ? "Gestão liberada" : "Somente leitura"}
       description={
         <span className="text-muted">
           Gerenciamento de regras para lançamentos automáticos de receitas,

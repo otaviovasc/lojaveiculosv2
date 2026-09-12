@@ -51,7 +51,7 @@ export const vehicleColorOptions = [
   colorOption("graphite", "Grafite", "#36454f"),
   colorOption("champagne", "Champanhe", "#f7e7ce"),
   colorOption("pearl", "Perolizado", "#e8e4c9", ["perola", "perolada"]),
-  colorOption("navy", "Navy", "#000080", ["azul marinho"]),
+  colorOption("navy", "Azul-marinho", "#000080", ["azul marinho"]),
   colorOption("coral", "Coral", "#ff7f50"),
   colorOption("burgundy", "Vinho", "#800020"),
   colorOption("bronze", "Bronze", "#cd7f32"),

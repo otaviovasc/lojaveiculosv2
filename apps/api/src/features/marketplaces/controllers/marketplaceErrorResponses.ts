@@ -8,6 +8,7 @@ import {
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { MarketplaceServiceError } from "../../../domains/marketplace/services/MarketplaceService/marketplaceErrors.js";
 import {
+  MarketplaceOAuthStateInvalidError,
   MarketplaceProviderRuntimeError,
   MarketplaceScopeError,
 } from "../../../domains/marketplace/services/MarketplaceService/serviceSupport.js";
@@ -62,6 +63,14 @@ export function marketplaceErrorResponse(context: Context, error: unknown) {
   if (error instanceof MarketplaceScopeError) {
     return jsonApiError(context, {
       code: "MARKETPLACE_REQUEST_VALIDATION_FAILED",
+      error,
+      message: error.message,
+      status: 400,
+    });
+  }
+  if (error instanceof MarketplaceOAuthStateInvalidError) {
+    return jsonApiError(context, {
+      code: "MARKETPLACE_OAUTH_STATE_INVALID",
       error,
       message: error.message,
       status: 400,

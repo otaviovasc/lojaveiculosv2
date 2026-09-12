@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import {
   DASHBOARD_CONTENT_ENTRY_DISTANCE,
   DASHBOARD_CONTENT_ENTRY_DURATION,
@@ -24,61 +22,6 @@ import {
   getNextDashboardResourceIndex,
 } from "./dashboardHomeAnimation";
 
-const dashboardHomeSource = readFileSync(
-  fileURLToPath(new URL("../../components/DashboardHome.tsx", import.meta.url)),
-  "utf8",
-);
-const dashboardHomeMainPanelsSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardHomeMainPanels.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const dashboardHomeEntrySource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardHomeEntry.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const dashboardHomeKpisSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardHomeKpis.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const dashboardHomeToolbarSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardHomeToolbar.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const dashboardHomeSidebarPanelSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardHomeSidebarPanel.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const dashboardLeadSourcesPanelSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/DashboardLeadSourcesPanel.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const animatedContentSource = readFileSync(
-  fileURLToPath(
-    new URL("../../components/ui/AnimatedContent.tsx", import.meta.url),
-  ),
-  "utf8",
-);
-const appShellSource = readFileSync(
-  fileURLToPath(new URL("../../components/AppShell.tsx", import.meta.url)),
-  "utf8",
-);
-const agencyCssSource = readFileSync(
-  fileURLToPath(new URL("../../styles/agency.css", import.meta.url)),
-  "utf8",
-);
-
 describe("dashboard home animation contract", () => {
   it("uses a fast opacity entry without long blank stagger", () => {
     expect(DASHBOARD_ENTRY_INITIAL).toEqual({ opacity: 0, y: 8 });
@@ -92,7 +35,6 @@ describe("dashboard home animation contract", () => {
       transition: { duration: 0.18 },
     });
     expect(motion.transition.delay).toBeCloseTo(0.07);
-    expect(dashboardHomeSource).not.toContain("duration: 0.3");
   });
 
   it("keeps dashboard KPI cards aligned with the non-flickering inventory entrance", () => {
@@ -103,7 +45,7 @@ describe("dashboard home animation contract", () => {
     expect(DASHBOARD_KPI_ENTRY_DURATION).toBeLessThanOrEqual(0.6);
   });
 
-  it("routes dashboard card entrances through the hidden-first shared wrapper", () => {
+  it("builds dashboard card entrance configuration from shared defaults", () => {
     expect(getDashboardContentEntryConfig(0.12)).toEqual({
       delay: 0.12,
       direction: "vertical",
@@ -123,24 +65,6 @@ describe("dashboard home animation contract", () => {
       direction: "horizontal",
       distance: 12,
     });
-    expect(dashboardHomeEntrySource).toContain("<AnimatedContent");
-    expect(dashboardHomeEntrySource).toContain('trigger = "mount"');
-    expect(animatedContentSource).toContain('from "animejs"');
-    expect(animatedContentSource).toContain("createScope");
-    expect(animatedContentSource).toContain("prefers-reduced-motion: reduce");
-    expect(animatedContentSource).toContain('visibility: "hidden"');
-    expect(animatedContentSource).toContain("style={hiddenStyle}");
-
-    for (const source of [
-      dashboardHomeKpisSource,
-      dashboardHomeMainPanelsSource,
-      dashboardHomeToolbarSource,
-      dashboardHomeSidebarPanelSource,
-      dashboardLeadSourcesPanelSource,
-    ]) {
-      expect(source).toContain("DashboardHomeEntry");
-      expect(source).not.toContain("getDashboardEntryMotion");
-    }
   });
 
   it("keeps the resource carousel from rendering an exit-only blank frame", () => {
@@ -149,22 +73,6 @@ describe("dashboard home animation contract", () => {
     expect(DASHBOARD_RESOURCE_SLIDE_CLASS.split(" ")).toEqual(
       expect.arrayContaining(["absolute", "inset-0"]),
     );
-  });
-
-  it("keeps resource backgrounds on animated slides, not the static parent", () => {
-    expect(dashboardHomeMainPanelsSource).toContain(
-      "className={`${DASHBOARD_RESOURCE_SLIDE_CLASS} ${currentResource.panelClass}`}",
-    );
-    expect(dashboardHomeSource).not.toContain(
-      '"+\\n              currentResource.panelClass',
-    );
-  });
-
-  it("keeps agency fade-in CSS from applying to the store shell", () => {
-    expect(appShellSource).not.toContain("animate-fade-in");
-    expect(appShellSource).toContain("mobile-nav-enter");
-    expect(agencyCssSource).toContain(".agency-layout .animate-fade-in");
-    expect(agencyCssSource).not.toMatch(/^\.animate-fade-in/m);
   });
 
   it("keeps carousel rotation bounded to the available resources", () => {

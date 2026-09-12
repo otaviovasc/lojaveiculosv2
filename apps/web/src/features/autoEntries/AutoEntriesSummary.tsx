@@ -1,83 +1,131 @@
-import { CircleCheck, TriangleAlert } from "lucide-react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import { cx } from "../../components/ui/featureShared";
+import { Bot, CheckCircle2, ShieldAlert, Sparkles, Users } from "lucide-react";
 import { autoEntryDomains } from "./domainMeta";
-import type { AutoEntryRule } from "./types";
+import type { AutoEntryRule, AutoEntryWorkspaceTab } from "./types";
+import { cx } from "../../components/ui/featureShared";
 
 export function AutoEntriesSummary({
+  onSelectDomain,
   rules,
 }: {
+  onSelectDomain?: (tab: AutoEntryWorkspaceTab) => void;
   rules: readonly AutoEntryRule[];
 }) {
   const activeRules = rules.filter((rule) => rule.status === "active");
-  const pausedRules = rules.filter((rule) => rule.status === "inactive");
   const readyDomains = autoEntryDomains.filter((domain) =>
     activeRules.some((rule) => rule.event === domain.event),
   ).length;
-  const missing = autoEntryDomains.length - readyDomains;
-  const complete = missing === 0;
+  const uniqueSellersWithRules = new Set(
+    rules.map((rule) => rule.sellerUserId).filter(Boolean),
+  ).size;
+
+  const headingId = "auto-entries-coverage-heading";
 
   return (
-    <FeatureSection
-      className="ae-summary"
-      description={
-        complete
-          ? "Todos os domínios operacionais possuem ao menos uma regra ativa."
-          : `${missing} ${missing === 1 ? "domínio ainda não tem" : "domínios ainda não têm"} regra ativa. Revise a cobertura para não perder lançamentos.`
-      }
-      icon={
-        complete ? (
-          <CircleCheck className="size-5" />
-        ) : (
-          <TriangleAlert className="size-5" />
-        )
-      }
-      title="Cobertura da automação"
+    <section
+      aria-labelledby={headingId}
+      className="ae-summary-strip rounded-2xl border border-line bg-panel p-4 md:p-5 shadow-sm space-y-4"
     >
-      <div className="ae-summary__body">
-        <ul aria-label="Domínios da automação" className="ae-summary__pills">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-accent-strong flex items-center gap-1.5">
+            <Sparkles aria-hidden="true" className="size-3.5" />
+            Automação Financeira da Loja
+          </span>
+          <h2
+            className="text-base md:text-lg font-extrabold text-text"
+            id={headingId}
+          >
+            Cobertura da automação
+          </h2>
+          <p className="text-xs text-muted mt-0.5">
+            Gera lançamentos de comissão, repasses e despesas automaticamente ao
+            fechar vendas e operações.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-app-elevated px-3 py-2">
+            <Bot aria-hidden="true" className="size-4 text-accent" />
+            <div>
+              <span className="block text-xs uppercase font-bold text-muted">
+                Regras Ativas
+              </span>
+              <strong className="text-sm font-extrabold text-text tabular-nums">
+                {activeRules.length}
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-app-elevated px-3 py-2">
+            <CheckCircle2 aria-hidden="true" className="size-4 text-success" />
+            <div>
+              <span className="block text-xs uppercase font-bold text-muted">
+                Cobertura
+              </span>
+              <strong className="text-sm font-extrabold text-text tabular-nums">
+                {readyDomains}/{autoEntryDomains.length}
+              </strong>
+            </div>
+          </div>
+
+          {uniqueSellersWithRules > 0 ? (
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-app-elevated px-3 py-2">
+              <Users aria-hidden="true" className="size-4 text-info-start" />
+              <div>
+                <span className="block text-xs uppercase font-bold text-muted">
+                  Vendedores
+                </span>
+                <strong className="text-sm font-extrabold text-text tabular-nums">
+                  {uniqueSellersWithRules}
+                </strong>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-line/60 text-xs text-muted">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold text-text">Cobertura por domínio:</span>
+          <div className="w-32 md:w-48 h-2 rounded-full bg-app-elevated overflow-hidden border border-line">
+            <div
+              className="h-full bg-accent transition-all duration-300 rounded-full"
+              style={{
+                width: `${Math.round((readyDomains / autoEntryDomains.length) * 100)}%`,
+              }}
+            />
+          </div>
+          <span className="font-extrabold text-accent-strong tabular-nums">
+            {Math.round((readyDomains / autoEntryDomains.length) * 100)}%
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-muted">
           {autoEntryDomains.map((domain) => {
             const count = activeRules.filter(
               (rule) => rule.event === domain.event,
             ).length;
             const ready = count > 0;
             return (
-              <li
-                className={cx("ae-summary__pill", `ae-tone--${domain.tone}`)}
+              <span
+                className={cx(
+                  "inline-flex items-center gap-1",
+                  ready ? "text-text font-bold" : "text-muted/70",
+                )}
                 key={domain.value}
               >
-                <FeatureStatusBadge
-                  size="dense"
-                  tone={ready ? "success" : "neutral"}
-                >
-                  {domain.tab} · {count}
-                </FeatureStatusBadge>
-              </li>
+                <span
+                  className={cx(
+                    "size-1.5 rounded-full",
+                    ready ? "bg-success" : "bg-muted/40",
+                  )}
+                />
+                {domain.tab} ({count})
+              </span>
             );
           })}
-        </ul>
-        <div className="ae-summary__meter">
-          <div
-            aria-hidden="true"
-            className="ae-summary__bar"
-            role="presentation"
-          >
-            <span
-              className="ae-summary__bar-fill"
-              style={{
-                width: `${Math.round(
-                  (readyDomains / autoEntryDomains.length) * 100,
-                )}%`,
-              }}
-            />
-          </div>
-          <p className="ae-summary__stats">
-            {activeRules.length} ativa(s) · {pausedRules.length} pausada(s) ·{" "}
-            {readyDomains}/{autoEntryDomains.length} domínios
-          </p>
         </div>
       </div>
-    </FeatureSection>
+    </section>
   );
 }

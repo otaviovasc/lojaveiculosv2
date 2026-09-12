@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,6 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { PgTableExtraConfigValue } from "drizzle-orm/pg-core";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 import { stores, tenants } from "./identity.js";
 
@@ -57,8 +59,27 @@ export const fiscalServiceRecipients = pgTable(
       .references(() => tenants.id),
     tradeName: varchar("trade_name", { length: 191 }),
   },
-  (table) => [
+  (table): PgTableExtraConfigValue[] => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_service_recipients_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.defaultServiceTemplateId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalServiceInvoiceTemplates.id,
+        fiscalServiceInvoiceTemplates.tenantId,
+        fiscalServiceInvoiceTemplates.storeId,
+      ],
+      name: "fiscal_service_recipients_default_template_scope_fk",
+    }),
     index("fiscal_service_recipients_store_idx").on(table.storeId),
+    uniqueIndex("fiscal_service_recipients_id_scope_unique").on(
+      table.id,
+      table.tenantId,
+      table.storeId,
+    ),
     uniqueIndex("fiscal_service_recipients_document_unique").on(
       table.storeId,
       table.documentNumber,
@@ -108,7 +129,21 @@ export const fiscalServiceInvoiceTemplates = pgTable(
     useCase: fiscalServiceTemplateUseCase("use_case").notNull(),
     version: integer("version").notNull().default(1),
   },
-  (table) => [
+  (table): PgTableExtraConfigValue[] => [
+    foreignKey({
+      columns: [table.storeId, table.tenantId],
+      foreignColumns: [stores.id, stores.tenantId],
+      name: "fiscal_service_invoice_templates_store_scope_fk",
+    }),
+    foreignKey({
+      columns: [table.recipientId, table.tenantId, table.storeId],
+      foreignColumns: [
+        fiscalServiceRecipients.id,
+        fiscalServiceRecipients.tenantId,
+        fiscalServiceRecipients.storeId,
+      ],
+      name: "fiscal_service_invoice_templates_recipient_scope_fk",
+    }),
     index("fiscal_service_invoice_templates_store_idx").on(table.storeId),
     index("fiscal_service_invoice_templates_recipient_idx").on(
       table.recipientId,
@@ -117,6 +152,11 @@ export const fiscalServiceInvoiceTemplates = pgTable(
       table.storeId,
       table.name,
       table.version,
+    ),
+    uniqueIndex("fiscal_service_invoice_templates_id_scope_unique").on(
+      table.id,
+      table.tenantId,
+      table.storeId,
     ),
   ],
 );

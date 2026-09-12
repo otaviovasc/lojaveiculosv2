@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
+import { vehicleListings } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const customDomainStatus = pgEnum("custom_domain_status", [
@@ -31,8 +32,10 @@ export const storeProfiles = pgTable(
   {
     ...lifecycleColumns,
     addressCity: varchar("address_city", { length: 120 }),
+    addressDistrict: varchar("address_district", { length: 120 }),
     addressLine1: varchar("address_line_1", { length: 191 }),
     addressLine2: varchar("address_line_2", { length: 191 }),
+    addressNumber: varchar("address_number", { length: 32 }),
     addressState: varchar("address_state", { length: 80 }),
     addressZipCode: varchar("address_zip_code", { length: 32 }),
     businessHours: jsonb("business_hours").notNull().default({}),
@@ -64,7 +67,7 @@ export const storePublicSiteSettings = pgTable(
       .notNull()
       .default("not_configured"),
     heroImageUrl: text("hero_image_url"),
-    isPublished: boolean("is_published").notNull().default(false),
+    isPublished: boolean("is_published").notNull().default(true),
     layoutKey: varchar("layout_key", { length: 80 })
       .notNull()
       .default("default"),
@@ -109,6 +112,9 @@ export const storeCustomPages = pgTable(
     secretToken: varchar("secret_token", { length: 120 }).notNull(),
     seo: jsonb("seo").notNull().default({}),
     slug: varchar("slug", { length: 80 }).notNull(),
+    sourceListingId: uuid("source_listing_id").references(
+      () => vehicleListings.id,
+    ),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
@@ -127,6 +133,11 @@ export const storeCustomPages = pgTable(
     uniqueIndex("store_custom_pages_store_slug_deleted_unique")
       .on(table.storeId, table.slug)
       .where(sql`${table.isDeleted} = false`),
+    uniqueIndex("store_custom_pages_source_listing_unique")
+      .on(table.tenantId, table.storeId, table.sourceListingId)
+      .where(
+        sql`${table.isDeleted} = false AND ${table.sourceListingId} IS NOT NULL`,
+      ),
   ],
 );
 

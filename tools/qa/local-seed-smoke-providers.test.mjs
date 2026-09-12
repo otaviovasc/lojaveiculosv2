@@ -5,9 +5,7 @@ const providerVariables = [
   "ASAAS_API_KEY",
   "ASAAS_API_URL",
   "CRM_ZAPI_API_BASE_URL",
-  "CRM_ZAPI_TEST_CLIENT_TOKEN",
-  "CRM_ZAPI_TEST_INSTANCE_ID",
-  "CRM_ZAPI_TEST_INSTANCE_TOKEN",
+  "CRM_ZAPI_CONNECTION_FILE",
 ];
 
 afterEach(() => {
@@ -56,7 +54,9 @@ describe("local seed provider verification", () => {
       .mockResolvedValue(jsonResponse({ connected: true }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await verifySandboxProviders();
+    const result = await verifySandboxProviders({
+      zapiConnection: zapiConnection(),
+    });
 
     expect(result).toEqual({
       asaas: { authenticated: false, checked: false },
@@ -77,10 +77,10 @@ describe("local seed provider verification", () => {
     );
 
     vi.unstubAllEnvs();
-    vi.stubEnv("CRM_ZAPI_TEST_INSTANCE_ID", "instance-id");
-    await expect(verifySandboxProviders()).rejects.toThrow(
-      "Incomplete sandbox configuration",
-    );
+    vi.stubEnv("CRM_ZAPI_API_BASE_URL", "https://api.z-api.io");
+    await expect(
+      verifySandboxProviders({ zapiConnection: { instanceId: "instance-id" } }),
+    ).rejects.toThrow("Incomplete sandbox configuration");
   });
 
   it("does not include provider response bodies in failures", async () => {
@@ -109,9 +109,14 @@ function setAsaasEnvironment() {
 
 function setZapiEnvironment() {
   vi.stubEnv("CRM_ZAPI_API_BASE_URL", "https://api.z-api.io");
-  vi.stubEnv("CRM_ZAPI_TEST_CLIENT_TOKEN", "client-token");
-  vi.stubEnv("CRM_ZAPI_TEST_INSTANCE_ID", "instance-id");
-  vi.stubEnv("CRM_ZAPI_TEST_INSTANCE_TOKEN", "instance-token");
+}
+
+function zapiConnection() {
+  return {
+    clientToken: "client-token",
+    instanceId: "instance-id",
+    instanceToken: "instance-token",
+  };
 }
 
 function jsonResponse(payload) {

@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createProductCrmApi } from "../crm/productCrmApi";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createSettingsApi } from "../settings/apiClient";
-import { loadSaleContextOptions } from "./saleContextOptions";
+import { createSaleLead, loadSaleContextOptions } from "./saleContextOptions";
 
+const createLead = vi.fn();
 const listLeads = vi.fn();
 const listListings = vi.fn();
 const getStoreMemberOptions = vi.fn();
@@ -35,6 +36,7 @@ vi.mock("../settings/runtimeApi", () => ({
 describe("sale context options", () => {
   beforeEach(() => {
     vi.mocked(createProductCrmApi).mockReturnValue({
+      createLead,
       listLeads,
     } as unknown as ReturnType<typeof createProductCrmApi>);
     vi.mocked(createInventoryApi).mockReturnValue({
@@ -44,6 +46,7 @@ describe("sale context options", () => {
       getStoreMemberOptions,
     } as unknown as ReturnType<typeof createSettingsApi>);
     listLeads.mockResolvedValue([]);
+    createLead.mockReset();
     listListings.mockResolvedValue({ items: [] });
     getStoreMemberOptions.mockReset();
   });
@@ -108,9 +111,12 @@ describe("sale context options", () => {
           units: [
             {
               id: "unit_available",
+              colorName: "white",
               plate: "ABC1D23",
+              renavam: "12345678901",
               status: "available",
               stockNumber: "EST-1",
+              vin: "9BWZZZ377VT004251",
             },
             {
               id: "unit_sold",
@@ -131,9 +137,45 @@ describe("sale context options", () => {
     });
     expect(state.options.units).toEqual([
       expect.objectContaining({
+        colorName: "white",
         id: "unit_available",
         label: "Carro demo · EST-1",
+        renavam: "12345678901",
+        vin: "9BWZZZ377VT004251",
       }),
     ]);
+  });
+
+  it("creates a CRM lead with sale provenance and maps it for selection", async () => {
+    createLead.mockResolvedValue({
+      buyerEmail: "cliente@example.test",
+      buyerName: "Cliente QA",
+      buyerPhone: "(11) 99999-9999",
+      id: "lead_new",
+      listingId: "listing_1",
+      vehicleTitle: "Carro demo",
+    });
+
+    const option = await createSaleLead({
+      buyerEmail: "cliente@example.test",
+      buyerName: "Cliente QA",
+      buyerPhone: "(11) 99999-9999",
+      listingId: "listing_1",
+      saleId: "sale_1",
+    });
+
+    expect(createLead).toHaveBeenCalledWith({
+      buyerEmail: "cliente@example.test",
+      buyerName: "Cliente QA",
+      buyerPhone: "(11) 99999-9999",
+      listingId: "listing_1",
+      metadata: { origin: "sale_workspace", saleId: "sale_1" },
+      source: "manual",
+    });
+    expect(option).toMatchObject({
+      id: "lead_new",
+      label: "Cliente QA",
+      listingId: "listing_1",
+    });
   });
 });

@@ -11,12 +11,14 @@ export type CrmLeadVisit = {
   createdAt: string;
   id: string;
   leadId: string;
+  listingId: string | null;
   notes: string | null;
   scheduledAt: string;
   status: LeadVisitStatus;
   storeId: string;
   tenantId: string;
   updatedAt: string;
+  vehicleTitle: string | null;
 };
 
 export type ListCrmVisitsInput = {
@@ -24,7 +26,7 @@ export type ListCrmVisitsInput = {
   leadId?: string;
   limit?: number;
   offset?: number;
-  sessionId?: string;
+  cycleId?: string;
   status?: LeadVisitStatus;
   to?: string;
 };
@@ -32,13 +34,15 @@ export type ListCrmVisitsInput = {
 export type CreateCrmVisitInput = {
   assignedUserId?: string | null;
   leadId: string;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt: string;
-  sessionId?: string;
+  cycleId?: string;
 };
 
 export type UpdateCrmVisitInput = {
   assignedUserId?: string | null;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt?: string;
   status?: Extract<LeadVisitStatus, "confirmed" | "no_show" | "scheduled">;
@@ -126,7 +130,7 @@ function createVisitsQuery(input: ListCrmVisitsInput) {
   addOptionalParam(params, "leadId", input.leadId);
   addOptionalParam(params, "limit", input.limit);
   addOptionalParam(params, "offset", input.offset);
-  addOptionalParam(params, "sessionId", input.sessionId);
+  addOptionalParam(params, "cycleId", input.cycleId);
   addOptionalParam(params, "status", input.status);
   addOptionalParam(params, "to", input.to);
   return params;

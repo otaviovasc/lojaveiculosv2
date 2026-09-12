@@ -31,7 +31,10 @@ describe("public vehicle formatters", () => {
 
   it("formats public vehicle specs from backend enum values", () => {
     expect(formatPublicVehicleFuel("flex")).toBe("Flex");
-    expect(formatPublicVehicleTransmission("automatic")).toBe("Automatico");
+    expect(formatPublicVehicleFuel("gasoline")).toBe("Gasolina");
+    expect(formatPublicVehicleFuel("electric")).toBe("Elétrico");
+    expect(formatPublicVehicleFuel("hybrid")).toBe("Híbrido");
+    expect(formatPublicVehicleTransmission("automatic")).toBe("Automático");
     expect(
       formatPublicVehicleEngine({
         aspiration: "aspirated",

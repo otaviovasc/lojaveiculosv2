@@ -59,6 +59,8 @@ export function createInventoryTestServices(): InventoryListingServices {
   return {
     ...createChecklistTestServices(),
     addVehicleCost: vi.fn(async () => listingDetailResult()),
+    updateVehicleCost: vi.fn(async () => listingDetailResult()),
+    voidVehicleCost: vi.fn(async () => listingDetailResult()),
     analyzeListingResale: vi.fn(async () => listingDetailResult()),
     archiveVehicleSupplier: vi.fn(async () => supplierResult()),
     approveAiStudioImage: vi.fn(async () => listingDetailResult()),
@@ -82,6 +84,8 @@ export function createInventoryTestServices(): InventoryListingServices {
       fipeCode: "001267-0",
       fuel: "Flex",
       modelCode: "4828",
+      modelFamilyCode: "toro",
+      modelFamilyName: "Toro",
       modelName: "Toro Volcano",
       modelYear: 2024,
       priceCents: 12690000,
@@ -143,6 +147,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       hasMore: false,
       items: [
         {
+          leadsCount: 0,
           listing: listingDto(),
           mediaCount: 1,
           primaryPublicMediaUrl: "https://cdn.local/front.jpg",
@@ -213,6 +218,9 @@ export async function createUserContext() {
       "inventory.checklist_read",
       "inventory.checklist_update",
       "inventory.document_attach",
+      "inventory.cost_create",
+      "inventory.cost_update",
+      "inventory.cost_void",
       "inventory.media_delete",
       "inventory.media_update",
       "inventory.read",

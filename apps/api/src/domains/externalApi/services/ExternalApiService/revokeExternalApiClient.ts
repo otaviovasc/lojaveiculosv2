@@ -21,6 +21,20 @@ export async function revokeExternalApiClient(
     "external_api.client.revoke.started",
     createServiceLogMetadata(context, { clientId: input.clientId }),
   );
+  await context.audit.record({
+    action: "external_api.client.revoke",
+    actor: context.actor,
+    category: "authorization",
+    criticality: "high",
+    entityId: input.clientId,
+    entityType: "api_client",
+    failureTier: "required",
+    outcome: "attempted",
+    requestId: context.requestId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+    summary: "Requested external API client revocation",
+  });
   const client = await ports.externalApiRepository.revokeClient({
     clientId: input.clientId,
     storeId: scope.storeId,
@@ -36,6 +50,7 @@ export async function revokeExternalApiClient(
     criticality: "high",
     entityId: client.id,
     entityType: "api_client",
+    failureTier: "required",
     metadata: {
       keyPrefixes: client.keyPrefixes,
       scopes: client.scopes,

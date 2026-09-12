@@ -1,0 +1,458 @@
+/* CRM Z-API pairing stage surfaces and responsive states. */
+.crm-pairing-tabs {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.35rem;
+}
+
+.crm-pairing-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg, 0.75rem);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 0;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  justify-content: center;
+  min-height: 2.65rem;
+  min-width: 0;
+  padding: 0 1rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.crm-pairing-tab:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
+}
+
+.crm-pairing-tab[data-active="true"] {
+  background: linear-gradient(
+    180deg,
+    var(--color-panel) 0%,
+    color-mix(in srgb, var(--color-panel) 90%, var(--color-app)) 100%
+  );
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-line));
+  box-shadow: none;
+  color: var(--color-crm-active-emerald);
+}
+
+.crm-pairing-panel {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow:
+    0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent) inset,
+    0 2px 8px color-mix(in srgb, var(--color-text) 3%, transparent);
+  display: grid;
+  min-height: 18rem;
+  padding: 1.5rem;
+}
+
+.crm-pairing-qr {
+  align-items: center;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  margin: 0 auto;
+  max-width: 42rem;
+  width: 100%;
+}
+
+.crm-pairing-qr-frame {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #ffffff;
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.crm-pairing-qr-frame img {
+  aspect-ratio: 1;
+  display: block;
+  image-rendering: pixelated;
+  max-width: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.crm-pairing-qr-details {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.crm-pairing-countdown {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 28%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-success-strong, var(--color-success));
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  justify-self: start;
+  margin-top: 0.65rem !important;
+  padding: 0.35rem 0.75rem;
+}
+
+.crm-pairing-empty {
+  align-content: center;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  margin: 0 auto;
+  max-width: 24rem;
+  min-height: 14rem;
+  text-align: center;
+}
+
+.crm-pairing-empty > svg {
+  color: #059669;
+  height: 2.75rem;
+  width: 2.75rem;
+}
+
+:root[data-theme="dark"] .crm-pairing-empty > svg,
+.dark .crm-pairing-empty > svg {
+  color: #34d399;
+}
+
+.crm-pairing-empty p {
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.crm-pairing-phone {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 auto;
+  max-width: 30rem;
+  width: 100%;
+}
+
+.crm-pairing-phone input {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent) !important;
+  border-radius: var(--radius-lg, 0.75rem) !important;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  min-height: 2.85rem !important;
+  outline: none !important;
+  padding: 0.65rem 0.95rem !important;
+  text-transform: none !important;
+  width: 100% !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.crm-pairing-phone input:focus {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  ) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  outline: none !important;
+}
+
+.crm-pairing-code {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 2px dashed color-mix(in srgb, #10b981 40%, var(--color-line));
+  border-radius: 0.875rem;
+  color: var(--color-text);
+  display: block;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xl);
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  padding: 1rem;
+  text-align: center;
+}
+
+.crm-zapi-auto-refresh {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem 0.65rem 1rem;
+}
+
+.crm-zapi-auto-refresh .crm-action {
+  min-height: 2.2rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.crm-zapi-inline-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.crm-pairing-panel .crm-action-primary,
+.crm-pairing-panel button.crm-action-primary {
+  align-items: center !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: 1px solid #047857 !important;
+  border-radius: var(--radius-lg, 0.75rem) !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-family: inherit !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 750 !important;
+  gap: 0.55rem !important;
+  justify-content: center !important;
+  letter-spacing: -0.01em !important;
+  min-height: 2.85rem !important;
+  padding: 0.65rem 1.45rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
+}
+
+.crm-pairing-panel .crm-action-primary:hover:not(:disabled),
+.crm-pairing-panel button.crm-action-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #065f46 !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.crm-pairing-panel .crm-action-primary:active:not(:disabled),
+.crm-pairing-panel button.crm-action-primary:active:not(:disabled) {
+  box-shadow: none !important;
+  transform: scale(0.98) !important;
+}
+
+.crm-pairing-panel .crm-action-primary:disabled,
+.crm-pairing-panel button.crm-action-primary:disabled {
+  background: color-mix(
+    in srgb,
+    var(--color-line) 80%,
+    var(--color-app)
+  ) !important;
+  border-color: var(--color-line) !important;
+  box-shadow: none !important;
+  color: var(--color-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+
+.crm-zapi-automatic-setup,
+.crm-zapi-ready {
+  align-items: start;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-xl, 1rem);
+  box-shadow:
+    0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent) inset,
+    0 2px 8px color-mix(in srgb, var(--color-text) 3%, transparent);
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 1.25rem;
+}
+
+.crm-zapi-automatic-setup > span > svg,
+.crm-zapi-ready > span > svg {
+  color: var(--color-success-strong, var(--color-success));
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.crm-zapi-automatic-setup[data-state="failed"] > span > svg {
+  color: var(--color-danger);
+}
+
+.crm-zapi-automatic-setup h4,
+.crm-zapi-ready h4 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 850;
+  margin: 0;
+}
+
+.crm-zapi-automatic-setup p,
+.crm-zapi-ready p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+}
+
+.crm-zapi-setup-count {
+  color: var(--color-text) !important;
+  font-size: var(--font-size-xs) !important;
+  font-weight: 800;
+}
+
+.crm-zapi-webhook-status-list {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.crm-zapi-webhook-status-list li {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.65rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 4%, transparent);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 0.5rem 0.75rem;
+}
+
+.crm-zapi-webhook-status-list li svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-zapi-webhook-status-list li[data-state="configured"] svg {
+  color: var(--color-success-strong, var(--color-success));
+}
+
+.crm-zapi-webhook-status-list li strong {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+}
+
+.crm-zapi-permission-note,
+.crm-zapi-support-link {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.crm-zapi-support-link {
+  color: #059669;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+:root[data-theme="dark"] .crm-zapi-support-link,
+.dark .crm-zapi-support-link {
+  color: #34d399;
+}
+
+.crm-zapi-back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.4rem;
+  justify-self: start;
+  padding: 0.25rem 0;
+}
+
+.crm-zapi-back:hover {
+  color: var(--color-text);
+}
+
+.crm-spin {
+  animation: crm-zapi-spin 0.9s linear infinite;
+}
+
+@keyframes crm-zapi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .crm-zapi-progress ol {
+    grid-template-columns: repeat(4, minmax(7rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .crm-zapi-progress li {
+    min-width: 7rem;
+  }
+
+  .crm-pairing-qr {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-pairing-qr-frame {
+    justify-self: center;
+    max-width: 18rem;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-spin {
+    animation: none;
+  }
+}

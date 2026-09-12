@@ -2,11 +2,32 @@ INSERT INTO "plans" (
   "code", "catalog_version", "is_default", "limits",
   "monthly_price_cents", "name", "status"
 )
-VALUES (
-  'growth', '2026-07-v1', true,
-  '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb,
-  29900, 'Growth', 'active'
-)
+VALUES
+  (
+    'basico', '2026-07-v1', false,
+    '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb,
+    0, 'Básico', 'active'
+  ),
+  (
+    'premium', '2026-07-v1', false,
+    '{"vehicle_limit": 30, "seller_limit": 1}'::jsonb,
+    9997, 'Premium', 'active'
+  ),
+  (
+    'estoque', '2026-07-v1', false,
+    '{"vehicle_limit": 60, "seller_limit": 1}'::jsonb,
+    14999, 'Estoque', 'active'
+  ),
+  (
+    'pro', '2026-07-v1', false,
+    '{"vehicle_limit": 100, "seller_limit": 1}'::jsonb,
+    17990, 'Pro', 'active'
+  ),
+  (
+    'growth', '2026-07-v1', true,
+    '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb,
+    29900, 'Growth', 'active'
+  )
 ON CONFLICT ("code", "catalog_version") DO UPDATE SET
   "is_default" = EXCLUDED."is_default",
   "limits" = EXCLUDED."limits",
@@ -19,25 +40,73 @@ INSERT INTO "plan_features" (
   "feature_key", "included", "included_in_trial", "limit_value", "plan_id"
 )
 SELECT
-  feature.feature_key,
-  feature.included,
-  feature.included_in_trial,
-  feature.limit_value,
+  pf.feature_key,
+  pf.included,
+  pf.included_in_trial,
+  pf.limit_value,
   plan.id
 FROM "plans" AS plan
-CROSS JOIN (
+JOIN (
   VALUES
-    ('subdomain', 1, true, null::integer),
-    ('automation', 1, true, null::integer),
-    ('plate_lookup', 1, true, 300),
-    ('custom_domain', 0, false, null::integer),
-    ('crm', 0, false, null::integer),
-    ('external_api', 0, false, null::integer),
-    ('marketplace', 0, false, null::integer),
-    ('nfe', 0, false, null::integer),
-    ('simulations', 0, false, null::integer)
-) AS feature(feature_key, included, included_in_trial, limit_value)
-WHERE plan.code = 'growth' AND plan.catalog_version = '2026-07-v1'
+    ('basico', 'subdomain', 1, true, null::integer),
+    ('basico', 'automation', 0, false, null::integer),
+    ('basico', 'plate_lookup', 0, false, null::integer),
+    ('basico', 'custom_domain', 0, false, null::integer),
+    ('basico', 'crm', 0, false, null::integer),
+    ('basico', 'external_api', 0, false, null::integer),
+    ('basico', 'marketplace', 0, false, null::integer),
+    ('basico', 'fiscal', 0, false, null::integer),
+    ('basico', 'simulations', 0, false, null::integer),
+
+    ('premium', 'subdomain', 1, true, null::integer),
+    ('premium', 'automation', 1, true, null::integer),
+    ('premium', 'analytics', 1, true, null::integer),
+    ('premium', 'compliance', 1, true, null::integer),
+    ('premium', 'plate_lookup', 0, false, null::integer),
+    ('premium', 'custom_domain', 0, false, null::integer),
+    ('premium', 'crm', 0, false, null::integer),
+    ('premium', 'external_api', 0, false, null::integer),
+    ('premium', 'marketplace', 0, false, null::integer),
+    ('premium', 'fiscal', 0, false, null::integer),
+    ('premium', 'simulations', 0, false, null::integer),
+
+    ('estoque', 'subdomain', 1, true, null::integer),
+    ('estoque', 'automation', 1, true, null::integer),
+    ('estoque', 'analytics', 1, true, null::integer),
+    ('estoque', 'compliance', 1, true, null::integer),
+    ('estoque', 'plate_lookup', 1, true, 60),
+    ('estoque', 'external_api', 1, true, null::integer),
+    ('estoque', 'simulations', 1, true, null::integer),
+    ('estoque', 'custom_domain', 0, false, null::integer),
+    ('estoque', 'crm', 0, false, null::integer),
+    ('estoque', 'marketplace', 0, false, null::integer),
+    ('estoque', 'fiscal', 0, false, null::integer),
+
+    ('pro', 'subdomain', 1, true, null::integer),
+    ('pro', 'automation', 1, true, null::integer),
+    ('pro', 'analytics', 1, true, null::integer),
+    ('pro', 'compliance', 1, true, null::integer),
+    ('pro', 'plate_lookup', 1, true, 100),
+    ('pro', 'external_api', 1, true, null::integer),
+    ('pro', 'custom_domain', 1, true, null::integer),
+    ('pro', 'simulations', 1, true, null::integer),
+    ('pro', 'crm', 0, false, null::integer),
+    ('pro', 'marketplace', 0, false, null::integer),
+    ('pro', 'fiscal', 0, false, null::integer),
+
+    ('growth', 'subdomain', 1, true, null::integer),
+    ('growth', 'automation', 1, true, null::integer),
+    ('growth', 'analytics', 1, true, null::integer),
+    ('growth', 'compliance', 1, true, null::integer),
+    ('growth', 'plate_lookup', 1, true, 300),
+    ('growth', 'custom_domain', 1, true, null::integer),
+    ('growth', 'crm', 0, false, null::integer),
+    ('growth', 'external_api', 0, false, null::integer),
+    ('growth', 'marketplace', 0, false, null::integer),
+    ('growth', 'fiscal', 0, false, null::integer),
+    ('growth', 'simulations', 0, false, null::integer)
+) AS pf(plan_code, feature_key, included, included_in_trial, limit_value)
+  ON plan.code = pf.plan_code AND plan.catalog_version = '2026-07-v1'
 ON CONFLICT ("plan_id", "feature_key") DO UPDATE SET
   "included" = EXCLUDED."included",
   "included_in_trial" = EXCLUDED."included_in_trial",
@@ -51,23 +120,15 @@ INSERT INTO "addons" (
 VALUES
   (
     'crm_whatsapp_instance', '2026-07-v1', 'crm', false,
-    24999, 'CRM WhatsApp', 'active'
+    24900, 'CRM WhatsApp', 'active'
   ),
   (
     'marketplace_connectors', '2026-07-v1', 'marketplace', false,
     14990, 'Marketplaces', 'active'
   ),
   (
-    'nfe_spedy', '2026-07-v1', 'nfe', false,
-    19990, 'NF-e integrada', 'active'
-  ),
-  (
-    'public_api_access', '2026-07-v1', 'external_api', false,
-    9990, 'API Pública', 'active'
-  ),
-  (
-    'simulations_pro', '2026-07-v1', 'simulations', false,
-    4990, 'Simulações Pro', 'active'
+    'fiscal_spedy', '2026-07-v1', 'fiscal', false,
+    3500, 'Fiscal NF-e + NFS-e', 'active'
   )
 ON CONFLICT ("code", "catalog_version") DO UPDATE SET
   "feature_key" = EXCLUDED."feature_key",

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Context } from "hono";
+import { sanitizeHttpPath } from "./sanitizeHttpPath.js";
 
 export const requestIdContextKey = "requestId";
 
@@ -14,6 +15,7 @@ export function readHttpRequestId(context: Context) {
 export function readHttpRequestHeaders(context: Context) {
   const requestId = readHttpRequestId(context) ?? randomUUID();
   const correlationId = context.req.header("x-correlation-id") ?? requestId;
+  const causationId = context.req.header("x-causation-id");
   const idempotencyKey = context.req.header("idempotency-key");
   const ipAddress =
     context.req.header("x-forwarded-for") ?? context.req.header("x-real-ip");
@@ -22,8 +24,9 @@ export function readHttpRequestHeaders(context: Context) {
   return {
     correlationId,
     method: context.req.method,
-    path: context.req.path,
+    path: sanitizeHttpPath(context.req.path),
     requestId,
+    ...(causationId ? { causationId } : {}),
     ...(idempotencyKey ? { idempotencyKey } : {}),
     ...(ipAddress ? { ipAddress } : {}),
     ...(userAgent ? { userAgent } : {}),

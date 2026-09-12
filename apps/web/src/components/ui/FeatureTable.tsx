@@ -27,11 +27,7 @@ export function FeatureRowActions({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <div className={cx("flex h-10 items-center justify-end gap-2", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cx("feature-row-actions", className)}>{children}</div>;
 }
 
 export function FeatureRowAction({
@@ -50,22 +46,21 @@ export function FeatureRowAction({
   tooltip: ReactNode;
 }) {
   return (
-    <div className="relative flex items-center">
+    <div className="feature-row-action">
       <button
         aria-label={ariaLabel}
-        className="peer flex cursor-pointer items-center justify-center rounded-lg border border-line bg-panel p-1.5 text-muted transition-all hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="feature-row-action__button"
         disabled={disabled}
         onClick={onClick}
         type="button"
       >
         <IconComponent
           aria-hidden="true"
-          className={cx("size-3.5", iconClassName)}
+          className={cx("feature-row-action__icon", iconClassName)}
         />
       </button>
-      <div className="absolute right-full top-1/2 z-30 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-gray-900 px-2 py-1 text-xs font-bold leading-none text-white shadow-lg pointer-events-none peer-hover:block peer-focus-visible:block">
+      <div className="feature-row-action__tooltip" role="tooltip">
         {tooltip}
-        <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
       </div>
     </div>
   );

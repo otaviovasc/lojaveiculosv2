@@ -1,47 +1,143 @@
-.landing-hero-shader {
-  background:
-    radial-gradient(
-      circle at 18% 24%,
-      color-mix(in srgb, var(--color-accent) 72%, transparent),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 72% 18%,
-      color-mix(in srgb, var(--color-blue-start) 62%, transparent),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 78% 76%,
-      color-mix(in srgb, var(--color-green-start) 46%, transparent),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 38% 82%,
-      color-mix(in srgb, var(--color-warning) 42%, transparent),
-      transparent 30%
-    );
+/* Aurora marketing identity: tactile theme-aware surfaces. */
+
+/* Default / Dark theme tokens */
+.landing-page,
+:root[data-theme="dark"] .landing-page {
+  --color-app: #0e0e0e;
+  --color-app-elevated: #151515;
+  --color-panel: #181818;
+  --color-panel-card: #202020;
+  --color-text: #f5f5f5;
+  --color-muted: #9ca3af;
+  --color-app-text: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-caption: var(--color-muted);
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+  --color-accent-soft: rgba(220, 38, 38, 0.12);
+  --color-accent-readable: #ff5252;
+  --color-accent-text: var(--color-accent-readable);
+  background-color: var(--color-app);
+  color: var(--color-text);
+  overflow-x: clip;
+  position: relative;
+}
+
+/* Light theme tokens */
+:root[data-theme="light"] .landing-page {
+  --color-app: #ffffff;
+  --color-app-elevated: #f9fafb;
+  --color-panel: #f3f4f6;
+  --color-panel-card: #e5e7eb;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-app-text: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-caption: var(--color-muted);
+  --color-line: rgba(15, 23, 42, 0.08);
+  --color-line-strong: rgba(15, 23, 42, 0.16);
+  --color-accent-soft: rgba(220, 38, 38, 0.08);
+  --color-accent-readable: #dc2626;
+  --color-accent-text: #dc2626;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Resolution-Independent SVG Noise & Micro-Grid Texture — STRICTLY UNDER header/footer */
+.landing-page::before {
+  content: "";
+  position: fixed;
   inset: 0;
-  mix-blend-mode: screen;
-  opacity: 0.52;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(var(--color-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='highResNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23highResNoise)'/%3E%3C/svg%3E");
+  background-size:
+    28px 28px,
+    160px 160px;
+}
+
+:root[data-theme="light"] .landing-page::before {
+  opacity: 0.4;
+}
+
+/* Atmospheric Top Ambient Beam for Hero */
+.landing-hero-ambient {
+  background: radial-gradient(
+    ellipse 85% 60% at 50% -10%,
+    rgba(220, 38, 38, 0.22) 0%,
+    rgba(220, 38, 38, 0.05) 50%,
+    transparent 80%
+  );
+  inset: 0;
   pointer-events: none;
   position: absolute;
-  z-index: -15;
+  z-index: -10;
 }
 
-.landing-hero-shader-canvas,
-.landing-hero-shader-canvas canvas {
-  display: block;
-  height: 100%;
+:root[data-theme="light"] .landing-hero-ambient {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% -10%,
+    rgba(220, 38, 38, 0.08) 0%,
+    transparent 75%
+  );
+}
+
+/* Branded LV Logo Outline Pattern (from logged-in dashboard shell) */
+.bg-logo-pattern {
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-repeat: repeat;
+  background-size: 280px 116px;
+  background-position: -80px 0;
+  opacity: 0.04;
+}
+
+:root[data-theme="dark"] .bg-logo-pattern {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.025;
+}
+
+.bg-logo-pattern-subtle {
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-repeat: repeat;
+  background-size: 180px 75px;
+  background-position: -50px 0;
+  opacity: 0.035;
+}
+
+:root[data-theme="dark"] .bg-logo-pattern-subtle {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.02;
+}
+
+/* Authentic Full-Width Racing Stripe Livery Kerb */
+.racing-stripe-kerb {
+  height: 12px;
   width: 100%;
+  border-top: 1px solid rgba(220, 38, 38, 0.35);
+  border-bottom: 1px solid rgba(220, 38, 38, 0.35);
+  background-image: repeating-linear-gradient(
+    135deg,
+    #dc2626 0px,
+    #dc2626 24px,
+    var(--color-panel) 24px,
+    var(--color-panel) 48px
+  );
 }
 
-.landing-hero-shader-canvas {
+.landing-hero-scrim {
+  background: linear-gradient(180deg, transparent 0%, var(--color-app) 95%);
   inset: 0;
+  pointer-events: none;
   position: absolute;
+  z-index: -5;
 }
 
-@media (max-width: 767px) {
-  .landing-hero-shader {
-    opacity: 0.42;
-  }
+:root[data-theme="light"] .landing-hero-scrim {
+  display: none;
+}
+
+.landing-hero-shader {
+  display: none;
 }

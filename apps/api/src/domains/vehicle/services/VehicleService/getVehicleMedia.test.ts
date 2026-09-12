@@ -10,6 +10,28 @@ import {
 } from "./testSupport.js";
 
 describe("getVehicleMedia", () => {
+  it("accepts environment-prefixed R2 keys returned by the upload service", async () => {
+    const context = createContext(["inventory.create", "inventory.read"]);
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
+
+    const media = await createVehicleMedia(
+      context,
+      {
+        kind: "photo",
+        storageKey: `s/tenants/${context.tenantId}/stores/${context.storeId}/units/${unit.id}/photo/front.jpg`,
+        unitId: unit.id,
+      },
+      ports,
+    );
+
+    expect(media.storageKey).toContain(`/units/${unit.id}/photo/front.jpg`);
+  });
+
   it("reads media inside the tenant/store scope and audits access", async () => {
     const context = createContext(["inventory.create", "inventory.read"]);
     const ports = createInMemoryVehiclePorts([createListing()]);

@@ -7,6 +7,7 @@ describe("marketplace connection presentation", () => {
       resolveMarketplaceConnectionPresentation(
         {
           accountId: "account_1",
+          capabilities: null,
           connectionStatus: "paused",
           lastSyncSummary: null,
           provider: "mercado_livre",

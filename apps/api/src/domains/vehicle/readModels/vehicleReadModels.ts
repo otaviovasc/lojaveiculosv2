@@ -23,6 +23,8 @@ export type VehicleListingDetail = {
 };
 
 export type VehicleListingSummary = {
+  /** Distinct non-archived CRM leads interested in this listing (same scope as the CRM kanban). */
+  leadsCount: number;
   listing: VehicleListing;
   mediaCount: number;
   primaryPublicMediaUrl: string | null;
@@ -76,6 +78,7 @@ export function createListingDetail(input: {
 }
 
 export function createListingSummary(input: {
+  leadsCount?: number;
   listing: VehicleListing;
   media: readonly VehicleMedia[];
   units: readonly VehicleUnit[];
@@ -86,6 +89,7 @@ export function createListingSummary(input: {
   const publicMedia = orderedMedia.filter((item) => item.isPublic);
 
   return {
+    leadsCount: input.leadsCount ?? 0,
     listing: input.listing,
     mediaCount: input.media.length,
     primaryPublicMediaUrl: publicMedia[0]?.url ?? null,

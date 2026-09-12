@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createAsaasPaymentProviderGateway,
   getAsaasProviderStatus,
+  verifyAsaasWebhookToken,
 } from "./asaasPaymentProviderGateway.js";
 
 describe("getAsaasProviderStatus", () => {
@@ -48,6 +49,10 @@ describe("getAsaasProviderStatus", () => {
     expect(gateway.verifyWebhookToken?.("secret")).toBe(true);
     expect(gateway.verifyWebhookToken?.("wrong")).toBe(false);
     expect(gateway.verifyWebhookToken?.(null)).toBe(false);
+    expect(() =>
+      verifyAsaasWebhookToken("a", "a".repeat(10_000)),
+    ).not.toThrow();
+    expect(verifyAsaasWebhookToken("a", "a".repeat(10_000))).toBe(false);
   });
 
   it("reuses an Asaas customer found by external reference", async () => {
@@ -71,8 +76,28 @@ describe("getAsaasProviderStatus", () => {
     });
     expect(fetcher.calls).toHaveLength(1);
     expect(fetcher.calls[0]?.url).toContain(
-      "/customers?externalReference=lojaveiculos%3Atenant%3Atenant_1&limit=1",
+      "/customers?externalReference=lojaveiculos%3Atenant%3Atenant_1&limit=2",
     );
+  });
+
+  it("does not bind a customer from a truncated lookup page", async () => {
+    const fetcher = createFetchSequence([
+      { data: [{ id: "cus_first" }], hasMore: true },
+    ]);
+    const gateway = createConfiguredGateway(fetcher.fetcher);
+
+    await expect(
+      gateway.syncCustomer?.({
+        documentNumber: "11222333000181",
+        email: "billing-test@lojaveiculos.com.br",
+        externalReference: "lojaveiculos:tenant:tenant_1",
+        name: "Loja Teste LTDA",
+      }),
+    ).rejects.toMatchObject({
+      code: "asaas_customer_correlation_ambiguous",
+      status: 409,
+    });
+    expect(fetcher.calls).toHaveLength(1);
   });
 
   it("creates an Asaas customer only after lookup misses", async () => {
@@ -105,6 +130,7 @@ describe("getAsaasProviderStatus", () => {
 
   it("creates and updates Asaas monthly subscriptions", async () => {
     const createFetcher = createFetchSequence([
+      { data: [] },
       { id: "sub_created", nextDueDate: "2026-08-10", status: "ACTIVE" },
     ]);
     const createGateway = createConfiguredGateway(createFetcher.fetcher);
@@ -124,7 +150,10 @@ describe("getAsaasProviderStatus", () => {
       providerSubscriptionId: "sub_created",
       status: "ACTIVE",
     });
-    expect(createFetcher.calls[0]).toMatchObject({
+    expect(createFetcher.calls[0]?.url).toContain(
+      "/subscriptions?externalReference=lojaveiculos%3Asubscription%3Asubscription_1&limit=2",
+    );
+    expect(createFetcher.calls[1]).toMatchObject({
       method: "POST",
       body: {
         billingType: "PIX",

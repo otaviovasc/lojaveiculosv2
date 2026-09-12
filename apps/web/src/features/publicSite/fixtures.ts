@@ -3,6 +3,12 @@ import type { PublicStorefrontPageData } from "./types";
 export const publicStorefrontPreview = {
   settings: {
     contact: {
+      addressCity: "Sao Paulo",
+      addressLine1: "Avenida Paulista, 1000",
+      addressLine2: "Bela Vista",
+      addressState: "SP",
+      addressZipCode: "01310-100",
+      businessHours: { text: "Segunda a sexta, 9h as 18h" },
       city: "Sao Paulo",
       contactEmail: "contato@demo.com.br",
       contactPhone: null,
@@ -37,6 +43,7 @@ export const publicStorefrontPreview = {
       fuelType: "flex",
       heroMedia: null,
       manufactureYear: 2022,
+      media: [],
       mileageKm: 32000,
       modelYear: 2023,
       priceCents: 12690000,
@@ -58,6 +65,7 @@ export const publicStorefrontPreview = {
       fuelType: "flex",
       heroMedia: null,
       manufactureYear: 2021,
+      media: [],
       mileageKm: 41000,
       modelYear: 2022,
       priceCents: 9870000,
@@ -79,6 +87,7 @@ export const publicStorefrontPreview = {
       fuelType: "flex",
       heroMedia: null,
       manufactureYear: 2020,
+      media: [],
       mileageKm: 52000,
       modelYear: 2021,
       priceCents: 6850000,

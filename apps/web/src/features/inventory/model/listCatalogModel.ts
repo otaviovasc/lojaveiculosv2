@@ -5,6 +5,7 @@ import type {
   InventoryListingList,
   InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnit,
   InventoryUnitStatus,
 } from "./types";
 
@@ -121,6 +122,40 @@ export function getInventoryCatalogLine(
     .join(" - ");
 }
 
+export function getInventoryVehicleTitle(listing: InventoryListing): string {
+  if (listing.catalog?.brandName && listing.catalog?.modelName) {
+    return `${listing.catalog.brandName} ${listing.catalog.modelName}`;
+  }
+  return listing.title;
+}
+
+export function getInventoryVehicleSubtitle(
+  listing: InventoryListing,
+  catalog: InventoryCatalogSnapshot | null = listing.catalog,
+): string {
+  const trim = listing.trimName?.trim();
+  if (trim) return trim;
+
+  if (catalog?.brandName && catalog?.modelName) {
+    const brandModelPattern = new RegExp(
+      `^${escapeRegExp(catalog.brandName)}\\s+${escapeRegExp(catalog.modelName)}\\s*`,
+      "i",
+    );
+    const remainder = listing.title.replace(brandModelPattern, "").trim();
+    if (remainder) return remainder;
+  }
+
+  if (catalog?.yearName || catalog?.fuel) {
+    return [catalog.yearName, catalog.fuel].filter(Boolean).join(" • ");
+  }
+
+  return "Versão única";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function getInventoryYearLine(listing: InventoryListing): string {
   if (listing.manufactureYear && listing.modelYear) {
     return `${listing.manufactureYear}/${listing.modelYear}`;
@@ -134,11 +169,14 @@ export function getInventoryPlate(summary: InventoryListingSummary): string {
 }
 
 export function getInventoryDisplayStatus(
-  summary: InventoryListingSummary,
+  summary: Pick<InventoryListingSummary, "listing"> & {
+    primaryUnit?: InventoryUnit | null | undefined;
+    units?: readonly InventoryUnit[] | undefined;
+  },
 ): InventoryDisplayStatus {
   return (
     summary.primaryUnit?.status ??
-    summary.units[0]?.status ??
+    summary.units?.[0]?.status ??
     summary.listing.status
   );
 }
@@ -151,71 +189,43 @@ export function getInventoryStockLabel(
     : `${summary.listing.unitIds.length} unidade(s)`;
 }
 
-function stableHash(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
+export function getInventoryKm(mileageKm: number | null): string {
+  if (mileageKm === null) return "-";
+  return `${new Intl.NumberFormat("pt-BR").format(mileageKm)} km`;
 }
 
-export function getInventoryKm(
-  listingId: string,
-  modelYear: number | null,
-): string {
-  const hash = stableHash(listingId);
-  const currentYear = new Date().getFullYear();
-  const yearDiff = currentYear - (modelYear ?? currentYear - 3);
-  const baseKm = Math.max(1, yearDiff) * 12000;
-  const kmVal = baseKm + (hash % 15000) - 5000;
-  const finalKm = Math.max(2500, kmVal);
-  return `${new Intl.NumberFormat("pt-BR").format(finalKm)} km`;
+export function getInventoryStockDays(createdAtStr: string): number {
+  const created = new Date(createdAtStr).getTime();
+  if (Number.isNaN(created)) return 0;
+  const days = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
+  return Math.max(0, days);
 }
 
-export function getInventoryStockDays(
-  createdAtStr: string,
-  listingId: string,
-): number {
-  try {
-    const created = new Date(createdAtStr).getTime();
-    const now = Date.now();
-    const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-    if (days > 0) return days;
-  } catch (e) {
-    // ignore
-  }
-  const hash = stableHash(listingId);
-  return (hash % 85) + 3;
-}
-
-export function getInventoryFipeComparison(
-  priceCents: number | null,
-  listingId: string,
-): {
+export type InventoryFipeComparison = {
   percentage: number;
   label: string;
   isBelow: boolean;
   isAbove: boolean;
-} {
-  const hash = stableHash(listingId);
-  const percent = (hash % 13) - 6; // from -6% to +6%
-  if (percent === 0 || !priceCents) {
+};
+
+export function getInventoryFipeComparison(
+  priceCents: number | null,
+  fipePriceCents: number | null,
+): InventoryFipeComparison | null {
+  if (!priceCents || !fipePriceCents || fipePriceCents <= 0) return null;
+  const percent = Math.round(
+    ((priceCents - fipePriceCents) / fipePriceCents) * 100,
+  );
+  if (percent === 0) {
     return { percentage: 0, label: "FIPE", isBelow: false, isAbove: false };
   }
   const isBelow = percent < 0;
-  const label = `${isBelow ? "" : "+"}${percent}% FIPE`;
   return {
     percentage: percent,
-    label,
+    label: `${isBelow ? "" : "+"}${percent}% FIPE`,
     isBelow,
     isAbove: percent > 0,
   };
-}
-
-export function getInventoryLeadsCount(listingId: string): number {
-  const hash = stableHash(listingId);
-  return hash % 9;
 }
 
 export type InventoryLeadInterestLevel =

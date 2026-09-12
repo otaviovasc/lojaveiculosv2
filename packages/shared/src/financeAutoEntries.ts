@@ -26,6 +26,7 @@ export const financeAutoEntryRecipientKinds = [
 ] as const;
 
 export const financeAutoEntryFinancingRanks = [
+  "R0",
   "R1",
   "R2",
   "R3",

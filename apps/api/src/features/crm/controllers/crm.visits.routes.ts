@@ -93,7 +93,7 @@ function cleanListVisitsInput(input: z.infer<typeof listVisitsQuerySchema>) {
     ...(input.leadId ? { leadId: input.leadId } : {}),
     limit: input.limit,
     offset: input.offset,
-    ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+    ...(input.cycleId ? { cycleId: input.cycleId } : {}),
     ...(input.status ? { status: input.status } : {}),
     ...(input.to ? { to: new Date(input.to) } : {}),
   };
@@ -105,9 +105,10 @@ function cleanCreateVisitInput(input: z.infer<typeof createVisitSchema>) {
       ? { assignedUserId: input.assignedUserId }
       : {}),
     leadId: input.leadId,
+    ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.notes !== undefined ? { notes: input.notes } : {}),
     scheduledAt: new Date(input.scheduledAt),
-    ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+    ...(input.cycleId ? { cycleId: input.cycleId } : {}),
   };
 }
 
@@ -116,6 +117,7 @@ function cleanUpdateVisitInput(input: z.infer<typeof updateVisitSchema>) {
     ...(input.assignedUserId !== undefined
       ? { assignedUserId: input.assignedUserId }
       : {}),
+    ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.notes !== undefined ? { notes: input.notes } : {}),
     ...(input.scheduledAt ? { scheduledAt: new Date(input.scheduledAt) } : {}),
     ...(input.status ? { status: input.status } : {}),

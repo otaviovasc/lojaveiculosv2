@@ -1,24 +1,31 @@
-import { assertPermission } from "../../../../shared/authorization.js";
-import {
-  createServiceLogMetadata,
-  type ServiceContext,
-} from "../../../../shared/serviceContext.js";
-import type {
-  MarketplaceCatalogMapping,
-  MarketplaceCatalogSnapshot,
-  MarketplaceJob,
-  MarketplaceListingProjection,
-} from "../../ports/marketplaceRepository.js";
+import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { MarketplaceJob } from "../../ports/marketplaceRepository.js";
+import { createOlxProviderListingId } from "../../payloads/marketplaceListingPayload.js";
 import {
   MarketplaceProviderRuntimeError,
   requireMarketplaceScope,
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
 import { MarketplaceServiceError } from "./marketplaceErrors.js";
-import { permissionForMarketplaceJob } from "./marketplaceJobPermissions.js";
-import { readMarketplaceAccountToken } from "./marketplaceAccountPreflight.js";
-import { listListingBlockers } from "./marketplaceStockPlanRules.js";
+import { claimMarketplaceSyncJob } from "./claimMarketplaceSyncJob.js";
+import {
+  assertMarketplaceAccountPreflightReady,
+  readMarketplaceAccountToken,
+} from "./marketplaceAccountPreflight.js";
+import { isCatalogMappingResolvedForProvider } from "./marketplaceStockPlanRules.js";
 import { recordRunAudit } from "./runMarketplaceSyncJobAudit.js";
+import {
+  assertMarketplaceProjectionReady,
+  catalogMappingMetadata,
+  errorMessage,
+  findCatalogMapping,
+  isIndeterminateProviderError,
+  readJobCatalogMapping,
+  readRecord,
+  readString,
+  safeErrorMetadata,
+  staleDispatchClaim,
+} from "../runMarketplaceSyncJobSupport.js";
 
 export type RunMarketplaceSyncJobInput = {
   jobId: string;
@@ -30,51 +37,32 @@ export async function runMarketplaceSyncJob(
   ports: MarketplaceServicePorts,
 ): Promise<MarketplaceJob> {
   const scope = requireMarketplaceScope(context);
-  const queuedJob = await ports.marketplaceRepository.findSyncJob({
-    jobId: input.jobId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (!queuedJob) throw new MarketplaceProviderRuntimeError("Job missing.");
-  if (queuedJob.status !== "queued") {
-    throw new MarketplaceServiceError({
-      code: "MARKETPLACE_SYNC_JOB_STALE",
-      details: { jobId: queuedJob.id, status: queuedJob.status },
-      jobId: queuedJob.id,
-      message: "Marketplace sync job is not queued.",
-      provider: queuedJob.provider,
-      status: 409,
-      userAction: "Create or retry a fresh marketplace sync job.",
-    });
-  }
-  const permission = permissionForMarketplaceJob(queuedJob.jobType);
-  assertPermission(context, permission);
-  context.logger.info(
-    "marketplace.sync_job.run.started",
-    createServiceLogMetadata(context, {
-      jobId: queuedJob.id,
-      jobType: queuedJob.jobType,
-      provider: queuedJob.provider,
-    }),
-  );
-  const runningJob = await ports.marketplaceRepository.markJobRunning({
-    jobId: input.jobId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
+  const claim = await claimMarketplaceSyncJob(context, input, scope, ports);
+  const runningJob = claim.job;
   const gateway = ports.gatewayRegistry?.getGateway(runningJob.provider);
   if (!gateway) throw new MarketplaceProviderRuntimeError("Gateway missing.");
 
+  let providerCallStarted = false;
+  let effectExternalId: string | null = null;
+  let effectListingId: string | null = null;
   try {
     const listingId = readString(runningJob.metadata.listingId);
     if (!listingId)
       throw new MarketplaceProviderRuntimeError("listingId missing.");
-    const account = await ports.marketplaceRepository.findAccount({
-      provider: runningJob.provider,
+    effectListingId = listingId;
+    const account = await ports.marketplaceRepository.findAccountById({
+      accountId: runningJob.accountId,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
     if (!account) throw new MarketplaceProviderRuntimeError("Account missing.");
+    await assertMarketplaceAccountPreflightReady({
+      account,
+      ...(ports.gatewayRegistry
+        ? { gatewayRegistry: ports.gatewayRegistry }
+        : {}),
+      provider: runningJob.provider,
+    });
 
     const [listing, providerListing] = await Promise.all([
       runningJob.jobType === "listing_unpublish"
@@ -91,19 +79,36 @@ export async function runMarketplaceSyncJob(
         tenantId: scope.tenantId as never,
       }),
     ]);
-    const metadataExternalId = readString(runningJob.metadata.externalId);
     const externalId =
       runningJob.jobType === "listing_publish"
-        ? metadataExternalId
-        : (metadataExternalId ?? readString(providerListing?.externalId));
+        ? undefined
+        : readString(providerListing?.externalId);
     if (runningJob.jobType === "listing_unpublish" && !externalId) {
       throw new MarketplaceProviderRuntimeError(
         "externalId missing for listing unpublish.",
       );
     }
-    const catalogMapping = listing
+    effectExternalId =
+      externalId ??
+      (runningJob.provider === "olx"
+        ? createOlxProviderListingId(listingId)
+        : null);
+    const persistedCatalogMapping = listing
       ? await findCatalogMapping(ports, runningJob.provider, listing.catalog)
       : null;
+    const jobCatalogMapping = listing
+      ? readJobCatalogMapping(
+          runningJob.provider,
+          listing.catalog,
+          runningJob.metadata,
+        )
+      : null;
+    const catalogMapping = isCatalogMappingResolvedForProvider(
+      persistedCatalogMapping,
+      runningJob.provider,
+    )
+      ? persistedCatalogMapping
+      : jobCatalogMapping;
     if (runningJob.jobType !== "listing_unpublish") {
       if (!listing) {
         throw new MarketplaceProviderRuntimeError("Listing missing.");
@@ -116,6 +121,7 @@ export async function runMarketplaceSyncJob(
       catalogMapping?.status === "resolved"
         ? { providerMapping: catalogMappingMetadata(catalogMapping) }
         : {};
+    providerCallStarted = true;
     const result = await gateway.runListingSync({
       ...(externalId ? { externalId } : {}),
       jobType: runningJob.jobType,
@@ -123,8 +129,44 @@ export async function runMarketplaceSyncJob(
       metadata: { ...runningJob.metadata, ...providerMapping },
       token,
     });
+    if (result.providerStatus === "submitted") {
+      if (!result.operationToken) {
+        throw new MarketplaceServiceError({
+          code: "MARKETPLACE_PROVIDER_VALIDATION_FAILED",
+          jobId: runningJob.id,
+          message: "Marketplace provider omitted the status operation token.",
+          provider: runningJob.provider,
+          status: 502,
+          userAction:
+            "Do not resend automatically. Review the provider connection and try again only after confirming no operation exists.",
+        });
+      }
+      const submitted = await ports.marketplaceRepository.markJobSubmitted({
+        dispatchLeaseOwner: claim.dispatchLeaseOwner,
+        jobId: runningJob.id,
+        listingId,
+        metadata: {
+          ...runningJob.metadata,
+          ...result.metadata,
+          providerResult: {
+            ...readRecord(result.metadata.providerResult),
+            externalId: result.externalId,
+          },
+        },
+        nextAttemptAt: new Date(Date.now() + 60_000),
+        operationExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000),
+        operationToken: result.operationToken,
+        provider: runningJob.provider,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      if (!submitted) throw staleDispatchClaim(runningJob);
+      await recordRunAudit(context, submitted, "submitted", null);
+      return submitted;
+    }
     const completed = await ports.marketplaceRepository.markJobCompleted({
       completedAt: new Date(),
+      dispatchLeaseOwner: claim.dispatchLeaseOwner,
       externalId: result.externalId,
       jobId: runningJob.id,
       listingId,
@@ -133,92 +175,62 @@ export async function runMarketplaceSyncJob(
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
+    if (!completed) throw staleDispatchClaim(runningJob);
 
     await recordRunAudit(context, completed, "succeeded", null);
     return completed;
   } catch (error) {
+    const current = await ports.marketplaceRepository.findSyncJob({
+      jobId: runningJob.id,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (current && current.status !== "running") return current;
+    if (
+      providerCallStarted &&
+      effectListingId &&
+      isIndeterminateProviderError(error)
+    ) {
+      const submitted = await ports.marketplaceRepository.markJobSubmitted({
+        dispatchLeaseOwner: claim.dispatchLeaseOwner,
+        jobId: runningJob.id,
+        listingId: effectListingId,
+        metadata: {
+          ...runningJob.metadata,
+          providerResult: {
+            externalId: effectExternalId,
+            providerRequestId: null,
+            providerStatus: "indeterminate",
+          },
+          reconciliationRequired: true,
+        },
+        nextAttemptAt: new Date(Date.now() + 60_000),
+        operationExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000),
+        operationToken: null,
+        provider: runningJob.provider,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+      if (!submitted) throw staleDispatchClaim(runningJob);
+      await recordRunAudit(
+        context,
+        submitted,
+        "submitted",
+        "Provider outcome requires reconciliation.",
+      );
+      return submitted;
+    }
     const failed = await ports.marketplaceRepository.markJobFailed({
       completedAt: new Date(),
+      dispatchLeaseOwner: claim.dispatchLeaseOwner,
       errorMessage: errorMessage(error),
       jobId: runningJob.id,
       metadata: { ...runningJob.metadata, ...safeErrorMetadata(error) },
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
+    if (!failed) throw staleDispatchClaim(runningJob);
     await recordRunAudit(context, failed, "failed", errorMessage(error));
     return failed;
   }
-}
-
-function assertMarketplaceProjectionReady(
-  job: MarketplaceJob,
-  listing: MarketplaceListingProjection,
-  catalogMapping: MarketplaceCatalogMapping | null,
-) {
-  if (job.jobType === "listing_unpublish") return;
-  const blockers = listListingBlockers(listing, catalogMapping, job.provider);
-  if (!blockers.length) return;
-  throw new MarketplaceServiceError({
-    code: "MARKETPLACE_LISTING_NOT_READY",
-    details: {
-      blockers: blockers.map((blockerItem) => ({
-        code: blockerItem.code,
-        field: blockerItem.field ?? null,
-      })),
-      listingId: listing.listingId,
-      provider: job.provider,
-    },
-    jobId: job.id,
-    listingId: listing.listingId,
-    message: blockers[0]?.message ?? "Marketplace listing is not ready.",
-    provider: job.provider,
-    status: 400,
-    userAction:
-      blockers[0]?.userAction ??
-      "Fix the listing blockers before running marketplace sync.",
-  });
-}
-
-async function findCatalogMapping(
-  ports: MarketplaceServicePorts,
-  provider: MarketplaceJob["provider"],
-  catalog: MarketplaceCatalogSnapshot | null,
-) {
-  if (!catalog || catalog.source !== "fipe") return null;
-  return ports.marketplaceRepository.findCatalogMapping({
-    catalog,
-    provider,
-  });
-}
-
-function catalogMappingMetadata(mapping: MarketplaceCatalogMapping) {
-  return {
-    providerBrandCode: mapping.providerBrandCode,
-    providerModelCode: mapping.providerModelCode,
-    providerTrimCode: mapping.providerTrimCode,
-    providerYearCode: mapping.providerYearCode,
-  };
-}
-
-function readString(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function safeErrorMetadata(error: unknown) {
-  if (!error || typeof error !== "object") return {};
-  const record = error as Record<string, unknown>;
-  return {
-    providerResult: {
-      ...(typeof record.code === "string"
-        ? { providerStatus: record.code }
-        : {}),
-      ...(typeof record.requestId === "string"
-        ? { providerRequestId: record.requestId }
-        : {}),
-    },
-  };
 }

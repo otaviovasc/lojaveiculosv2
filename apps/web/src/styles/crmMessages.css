@@ -1,0 +1,1589 @@
+/* CRM Messages Viewport & Bubbles — single border separation */
+.crm-shell .crm-messages {
+  background:
+    radial-gradient(
+      900px 280px at 50% 0%,
+      color-mix(in srgb, var(--color-surface-raised) 58%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-subtle) 72%, var(--color-app)) 0%,
+      var(--color-app) 100%
+    );
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem clamp(0.875rem, 2.5vw, 2rem);
+  position: relative;
+  isolation: isolate;
+  border-left: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+}
+
+/* Memphis geometric background texture & wallpaper fallback */
+.crm-shell .crm-messages::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.18;
+  background-image:
+    url("/images/crm-whatsapp-chat-wallpaper.jpg"),
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23154D37' fill-opacity='0.10' fill-rule='evenodd'%3E%3Cpath d='M12 12h6v2h-6v6h-2v-6H4v-2h6V6h2v6z'/%3E%3Cpath d='M92 92h6v2h-6v6h-2v-6h-6v-2h6v-6h2v6z'/%3E%3Ccircle cx='60' cy='25' r='1.5'/%3E%3Ccircle cx='62' cy='25' r='1.5'/%3E%3Ccircle cx='60' cy='27' r='1.5'/%3E%3Ccircle cx='62' cy='27' r='1.5'/%3E%3Ccircle cx='25' cy='90' r='1.5'/%3E%3Ccircle cx='27' cy='90' r='1.5'/%3E%3Ccircle cx='25' cy='92' r='1.5'/%3E%3Ccircle cx='27' cy='92' r='1.5'/%3E%3Cpath d='M105 20l-10 10m8-10l-10 10m12-8l-10 10' stroke='%23154D37' stroke-opacity='0.14' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='100' cy='55' r='7' stroke='%23154D37' stroke-opacity='0.14' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='20' cy='55' r='5' stroke='%23154D37' stroke-opacity='0.14' stroke-width='1.5' fill='none'/%3E%3Cpath d='M55 95l5 10h-10z' fill='none' stroke='%23154D37' stroke-opacity='0.14' stroke-width='1.5'/%3E%3Cpath d='M50 60c2-2 4-2 6 0s4 2 6 0' fill='none' stroke='%23154D37' stroke-opacity='0.14' stroke-width='1.5' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: repeat;
+  background-size:
+    28rem 28rem,
+    120px 120px;
+  mask-image: linear-gradient(180deg, black 72%, transparent 100%);
+}
+
+:root[data-theme="dark"] .crm-shell .crm-messages::before,
+.dark .crm-shell .crm-messages::before {
+  opacity: 0.12;
+  filter: invert(1) contrast(1.05) saturate(0.9);
+}
+
+/* Date separator pill — single shadow */
+.crm-message-day {
+  align-self: center;
+  background: color-mix(
+    in srgb,
+    var(--color-panel) 88%,
+    var(--color-surface-subtle)
+  );
+  backdrop-filter: blur(8px) saturate(1.08);
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+  border: 1px solid color-mix(in srgb, var(--color-line) 82%, transparent);
+  border-radius: 9999px;
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 0.32rem 0.95rem;
+  position: sticky;
+  top: 0.65rem;
+  z-index: 5;
+  box-shadow: 0 4px 12px -8px
+    color-mix(in srgb, var(--color-text) 14%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Message Bubbles Base — single soft elevation */
+.crm-shell .crm-bubble {
+  align-self: flex-start;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  border-radius: 1.125rem;
+  border-top-left-radius: 0.32rem;
+  color: var(--color-text);
+  min-width: min(18rem, 100%);
+  max-width: min(34rem, 84%);
+  overflow-wrap: anywhere;
+  padding: 0.75rem 1rem 0.625rem;
+  position: relative;
+  box-shadow: 0 2px 10px -8px
+    color-mix(in srgb, var(--color-text) 14%, transparent);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Outbound Bubbles Base */
+.crm-shell .crm-bubble-out {
+  align-self: flex-end;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 0.25rem;
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 1: WhatsApp (Default) */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="whatsapp"],
+.crm-shell .crm-bubble-out:not([data-channel]) {
+  background: color-mix(in srgb, #10b981 12%, var(--color-panel));
+  border-color: color-mix(in srgb, #10b981 25%, var(--color-line));
+  color: var(--color-text);
+  box-shadow: 0 4px 14px -10px
+    color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="whatsapp"],
+:root[data-theme="dark"] .crm-shell .crm-bubble-out:not([data-channel]),
+.dark .crm-shell .crm-bubble-out[data-channel="whatsapp"],
+.dark .crm-shell .crm-bubble-out:not([data-channel]) {
+  background: color-mix(in srgb, #22c55e 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #22c55e 28%, var(--color-line));
+  color: var(--color-text);
+  box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.4);
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="whatsapp"]
+  .crm-message-attribution
+  strong,
+.crm-shell .crm-bubble-out:not([data-channel]) .crm-message-attribution strong {
+  color: var(--color-success-strong);
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="whatsapp"]
+  .crm-message-attribution
+  strong,
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out:not([data-channel])
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="whatsapp"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out:not([data-channel])
+  .crm-message-attribution
+  strong {
+  color: #34d399;
+}
+
+.crm-shell .crm-bubble-out[data-channel="whatsapp"] .crm-quoted-message,
+.crm-shell .crm-bubble-out:not([data-channel]) .crm-quoted-message {
+  border-left-color: var(--color-success);
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 2: Instagram Direct */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="instagram"],
+.crm-shell .crm-bubble-out[data-channel="ig"] {
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+  color: #831843;
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="instagram"],
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="ig"],
+.dark .crm-shell .crm-bubble-out[data-channel="instagram"] {
+  background: color-mix(in srgb, #e1306c 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #e1306c 28%, var(--color-line));
+  color: #fdf2f8;
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="instagram"]
+  .crm-message-attribution
+  strong,
+.crm-shell .crm-bubble-out[data-channel="ig"] .crm-message-attribution strong {
+  color: #be185d;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="instagram"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="instagram"]
+  .crm-message-attribution
+  strong {
+  color: #f472b6;
+}
+
+.crm-shell .crm-bubble-out[data-channel="instagram"] .crm-quoted-message,
+.crm-shell .crm-bubble-out[data-channel="ig"] .crm-quoted-message {
+  border-left-color: #e1306c;
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 3: OLX Chat */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="olx_chat"],
+.crm-shell .crm-bubble-out[data-channel="olx"] {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #4c1d95;
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="olx_chat"],
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="olx"],
+.dark .crm-shell .crm-bubble-out[data-channel="olx_chat"] {
+  background: color-mix(in srgb, #8b5cf6 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #8b5cf6 28%, var(--color-line));
+  color: #f5f3ff;
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="olx_chat"]
+  .crm-message-attribution
+  strong,
+.crm-shell .crm-bubble-out[data-channel="olx"] .crm-message-attribution strong {
+  color: #6e0ad6;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="olx_chat"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="olx_chat"]
+  .crm-message-attribution
+  strong {
+  color: #c084fc;
+}
+
+.crm-shell .crm-bubble-out[data-channel="olx_chat"] .crm-quoted-message,
+.crm-shell .crm-bubble-out[data-channel="olx"] .crm-quoted-message {
+  border-left-color: #6e0ad6;
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 4: WebChat */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="web_chat"],
+.crm-shell .crm-bubble-out[data-channel="webchat"],
+.crm-shell .crm-bubble-out[data-channel="web"] {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="web_chat"],
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="webchat"],
+.dark .crm-shell .crm-bubble-out[data-channel="web_chat"] {
+  background: color-mix(in srgb, #38bdf8 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #38bdf8 28%, var(--color-line));
+  color: #f0f9ff;
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="web_chat"]
+  .crm-message-attribution
+  strong,
+.crm-shell
+  .crm-bubble-out[data-channel="webchat"]
+  .crm-message-attribution
+  strong {
+  color: #0284c7;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="web_chat"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="web_chat"]
+  .crm-message-attribution
+  strong {
+  color: #38bdf8;
+}
+
+.crm-shell .crm-bubble-out[data-channel="web_chat"] .crm-quoted-message,
+.crm-shell .crm-bubble-out[data-channel="webchat"] .crm-quoted-message {
+  border-left-color: #0284c7;
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 5: Facebook Messenger */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="messenger"],
+.crm-shell .crm-bubble-out[data-channel="facebook"] {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="messenger"],
+:root[data-theme="dark"] .crm-shell .crm-bubble-out[data-channel="facebook"],
+.dark .crm-shell .crm-bubble-out[data-channel="messenger"] {
+  background: color-mix(in srgb, #60a5fa 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #60a5fa 28%, var(--color-line));
+  color: #eff6ff;
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="messenger"]
+  .crm-message-attribution
+  strong,
+.crm-shell
+  .crm-bubble-out[data-channel="facebook"]
+  .crm-message-attribution
+  strong {
+  color: #0084ff;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="messenger"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="messenger"]
+  .crm-message-attribution
+  strong {
+  color: #60a5fa;
+}
+
+.crm-shell .crm-bubble-out[data-channel="messenger"] .crm-quoted-message,
+.crm-shell .crm-bubble-out[data-channel="facebook"] .crm-quoted-message {
+  border-left-color: #0084ff;
+}
+
+/* ------------------------------------------------------------- */
+/* Channel 6: Mercado Livre */
+/* ------------------------------------------------------------- */
+.crm-shell .crm-bubble-out[data-channel="mercadolivre"],
+.crm-shell .crm-bubble-out[data-channel="meli"] {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #78350f;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="mercadolivre"],
+.dark .crm-shell .crm-bubble-out[data-channel="mercadolivre"] {
+  background: color-mix(in srgb, #facc15 14%, var(--color-panel));
+  border-color: color-mix(in srgb, #facc15 28%, var(--color-line));
+  color: #fefce8;
+}
+
+.crm-shell
+  .crm-bubble-out[data-channel="mercadolivre"]
+  .crm-message-attribution
+  strong {
+  color: #a16207;
+}
+
+:root[data-theme="dark"]
+  .crm-shell
+  .crm-bubble-out[data-channel="mercadolivre"]
+  .crm-message-attribution
+  strong,
+.dark
+  .crm-shell
+  .crm-bubble-out[data-channel="mercadolivre"]
+  .crm-message-attribution
+  strong {
+  color: #facc15;
+}
+
+.crm-shell .crm-bubble-out[data-channel="mercadolivre"] .crm-quoted-message {
+  border-left-color: #ca8a04;
+}
+
+/* Attribution styling */
+.crm-message-attribution {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.crm-message-attribution strong {
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+}
+
+.crm-message-attribution span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.crm-shell .crm-bubble p {
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Quoted Reply inside bubble */
+.crm-quoted-message {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  border-left: 3.5px solid var(--color-success);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.45rem;
+  padding: 0.35rem 0.6rem;
+  font-size: var(--font-size-xs);
+}
+
+.crm-quoted-message strong {
+  color: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.crm-quoted-message span {
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+}
+
+/* Media styling */
+/* Media Messages & Flush Bubbles */
+.crm-shell .crm-bubble.crm-bubble-media {
+  padding: 3px;
+  overflow: visible;
+  max-width: min(24rem, 84vw);
+}
+
+.crm-shell .crm-bubble.crm-bubble-media:has(figcaption) {
+  padding: 3px 3px 0.5rem 3px;
+}
+
+.crm-shell .crm-media {
+  background: transparent;
+  border: 0;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Image container and hover overlays */
+.crm-media-img-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  display: block;
+  width: 100%;
+  background: var(--color-app);
+}
+
+.crm-shell .crm-media-img {
+  border-radius: 0.75rem;
+  display: block;
+  height: auto;
+  max-height: 22rem;
+  min-height: 8rem;
+  object-fit: cover;
+  overflow: hidden;
+  width: 100%;
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.15s ease;
+}
+
+.crm-media-interactive:hover .crm-media-img {
+  transform: scale(1.02);
+}
+
+.crm-media-hover-overlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  z-index: 3;
+}
+
+.crm-media-interactive:hover .crm-media-hover-overlay,
+.crm-media-img-wrapper:hover .crm-media-hover-overlay {
+  opacity: 1;
+}
+
+.crm-media-hover-btn {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 1.875rem;
+  justify-content: center;
+  width: 1.875rem;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.crm-media-hover-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: scale(1.08);
+}
+
+/* Floating overlay footer for flush media messages */
+.crm-shell .crm-bubble.crm-bubble-media-flush {
+  position: relative;
+}
+
+.crm-shell .crm-bubble.crm-bubble-media-flush footer {
+  position: absolute;
+  bottom: 0.55rem;
+  right: 0.55rem;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 0.15rem 0.55rem;
+  color: #ffffff;
+  gap: 0.3rem;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.crm-shell .crm-bubble.crm-bubble-media-flush footer span {
+  color: #ffffff;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.crm-shell .crm-bubble.crm-bubble-media-flush footer svg {
+  color: #ffffff;
+}
+
+.crm-shell .crm-bubble.crm-bubble-media-flush footer .crm-delivery-read {
+  color: #38bdf8;
+}
+
+.crm-shell .crm-media figcaption {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 450;
+  line-height: 1.45;
+  padding: 0.45rem 0.65rem 0.15rem;
+  white-space: pre-wrap;
+}
+
+.crm-shell .crm-sticker {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.crm-shell .crm-sticker-img,
+.crm-shell .crm-sticker img {
+  aspect-ratio: auto;
+  max-height: 11rem;
+  object-fit: contain;
+  width: auto;
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
+.crm-shell .crm-audio audio {
+  display: block;
+  max-width: 18rem;
+  width: 100%;
+  margin: 0.25rem 0;
+}
+
+/* Rich Cards (Vehicles, Catalog, etc.) */
+.crm-shell .crm-rich-card {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  color: var(--color-text);
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  min-width: min(22rem, 100%);
+  padding: 0.625rem;
+  text-decoration: none;
+  margin: 0.35rem 0;
+  box-shadow: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-shell .crm-rich-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-success);
+}
+
+.crm-shell .crm-rich-card-media {
+  border-radius: 0.625rem;
+  overflow: hidden;
+  height: 4.5rem;
+  width: 4.5rem;
+  background: var(--color-app);
+}
+
+.crm-shell .crm-rich-card-media img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.crm-shell .crm-rich-card-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  color: var(--color-success-strong);
+  border-radius: 0.625rem;
+  display: inline-flex;
+  height: 4.5rem;
+  justify-content: center;
+  width: 4.5rem;
+}
+
+.crm-shell .crm-rich-card-info {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.crm-shell .crm-rich-card strong {
+  color: var(--color-text);
+  font-family: var(--font-heading, var(--font-sans));
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-shell .crm-rich-card small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+/* Price tag in vehicle rich card */
+.crm-shell .crm-rich-card small:has(span) {
+  color: var(--color-success-strong);
+  font-weight: 800;
+}
+
+/* Attachments */
+.crm-shell .crm-attachment {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  display: flex;
+  gap: 0.75rem;
+  min-width: min(18rem, 100%);
+  padding: 0.625rem 0.75rem;
+  text-decoration: none;
+  margin: 0.25rem 0;
+  transition: all 0.18s ease;
+}
+
+.crm-shell .crm-attachment:hover {
+  border-color: var(--color-success);
+  transform: translateY(-1px);
+}
+
+.crm-shell .crm-attachment svg {
+  color: var(--color-success-strong);
+  flex-shrink: 0;
+}
+
+.crm-shell .crm-attachment span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-shell .crm-attachment strong {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-shell .crm-attachment small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+/* Bubble Footer */
+.crm-shell .crm-bubble footer {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  margin-top: 0.3rem;
+}
+
+.crm-shell .crm-bubble-out footer {
+  color: var(--color-muted);
+}
+
+.crm-delivery-read {
+  color: var(--color-info);
+}
+
+.crm-delivery-failed {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  border-radius: 9999px;
+  color: var(--color-danger);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  letter-spacing: 0.01em;
+}
+
+.crm-delivery-pending {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 28%, var(--color-line));
+  border-radius: 9999px;
+  color: var(--color-warning-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.01em;
+  padding: 0.15rem 0.5rem;
+  line-height: 1;
+}
+
+.crm-delivery-pending svg {
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+.crm-delivery-indeterminate {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+/* Failed message bubble styling */
+.crm-shell .crm-bubble[data-message-status="failed"] {
+  background: color-mix(in srgb, var(--color-danger) 6%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-line));
+  box-shadow: 0 2px 10px -4px
+    color-mix(in srgb, var(--color-danger) 25%, transparent);
+}
+
+:root[data-theme="dark"] .crm-shell .crm-bubble[data-message-status="failed"],
+.dark .crm-shell .crm-bubble[data-message-status="failed"] {
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-line));
+  box-shadow: 0 4px 16px -4px
+    color-mix(in srgb, var(--color-danger) 30%, transparent);
+}
+
+.crm-message-recovery-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  margin-top: 0.45rem;
+}
+
+.crm-message-recovery-action {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger) 35%, var(--color-line));
+  border-radius: 9999px;
+  color: var(--color-danger);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  gap: 0.35rem;
+  line-height: 1;
+  min-height: 1.85rem;
+  padding: 0.3rem 0.65rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-message-recovery-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 22%, var(--color-panel));
+  border-color: var(--color-danger);
+  color: var(--color-danger-soft-foreground);
+  transform: translateY(-1px);
+}
+
+.crm-message-recovery-action:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+.crm-message-recovery-action:focus-visible {
+  outline: 2px solid var(--color-danger);
+  outline-offset: 2px;
+}
+
+.crm-message-recovery-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+/* Floating Reaction Pill */
+.crm-reaction-pill {
+  position: absolute;
+  bottom: -0.625rem;
+  right: 0.75rem;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  padding: 0.1rem 0.45rem;
+  font-size: var(--font-size-sm);
+  box-shadow: none;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-reaction-pill:hover {
+  transform: scale(1.2);
+}
+
+/* Quoted message jump highlight */
+@keyframes crmBubbleFlash {
+  0% {
+    box-shadow: 0 0 0 3px var(--color-success);
+    transform: scale(1.02);
+  }
+  70% {
+    box-shadow: 0 0 0 3px var(--color-success);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transform: scale(1);
+  }
+}
+
+.crm-bubble-highlight,
+.crm-message-highlight {
+  animation: crmBubbleFlash 1.4s ease-out;
+}
+
+.crm-message-highlight {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 42%, transparent);
+  outline-offset: 2px;
+}
+
+.crm-quoted-interactive {
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.crm-quoted-interactive:hover {
+  opacity: 0.85;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+/* Interactive Media Styling */
+.crm-media-interactive {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  padding: 0;
+  width: 100%;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.crm-media-cell-unavailable {
+  align-items: center;
+  background: var(--color-app);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  justify-content: center;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.crm-media-interactive:hover img {
+  opacity: 0.94;
+}
+
+.crm-media-video-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.crm-media-video-thumb-wrap {
+  align-items: center;
+  background: #000;
+  border: 0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.crm-media-video-preview {
+  border-radius: 0.75rem;
+  display: block;
+  height: auto;
+  max-height: 22rem;
+  min-height: 8rem;
+  max-width: 100%;
+  object-fit: cover;
+  overflow: hidden;
+  width: 100%;
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.15s ease;
+}
+
+.crm-media-video-thumb-wrap:hover .crm-media-video-preview {
+  transform: scale(1.02);
+  opacity: 0.92;
+}
+
+.crm-video-play-overlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.52);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+  display: inline-flex;
+  height: 3.5rem;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+  z-index: 2;
+}
+
+.crm-media-video-thumb-wrap:hover .crm-video-play-overlay {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: #ffffff;
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.crm-media-video-chip {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.02em;
+  z-index: 2;
+}
+
+/* Grouped media grid enhancements */
+.crm-media-grid {
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  overflow: hidden;
+  max-width: min(24rem, 84vw);
+}
+
+.crm-media-grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.crm-media-grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.crm-media-grid-3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.crm-media-grid-3 .crm-media-cell:first-child {
+  grid-row: span 2;
+}
+
+.crm-media-grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.crm-media-cell {
+  background: var(--color-app);
+  display: block;
+  height: 100%;
+  min-height: 7rem;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.crm-media-cell img,
+.crm-media-cell video {
+  aspect-ratio: 1 / 1;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.15s ease;
+}
+
+.crm-media-cell:hover img,
+.crm-media-cell:hover video {
+  opacity: 0.92;
+  transform: scale(1.025);
+}
+
+.crm-media-cell-video {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.crm-media-cell-play {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.52);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 9999px;
+  backdrop-filter: blur(4px);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s ease;
+}
+
+.crm-media-cell:hover .crm-media-cell-play {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.crm-media-cell-more {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  display: flex;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.18s ease;
+}
+
+.crm-media-cell:hover .crm-media-cell-more {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* Document & Attachment styling */
+.crm-attachment-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--color-success-strong);
+  border-radius: 0.625rem;
+  display: inline-flex;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+  flex-shrink: 0;
+}
+
+.crm-attachment-body {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-attachment-download {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  border-radius: 9999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.crm-attachment:hover .crm-attachment-download {
+  background: var(--color-success);
+  color: var(--color-success-foreground);
+  transform: scale(1.05);
+}
+
+/* WhatsApp-like Contact Card */
+.crm-contact-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  flex-direction: column;
+  margin: 0.25rem 0;
+  max-width: min(22rem, 100%);
+  min-width: min(16rem, 100%);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bubble-out .crm-contact-card {
+  background: color-mix(in srgb, var(--color-panel) 85%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-line));
+}
+
+.crm-contact-card:hover {
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-line));
+  box-shadow: 0 4px 14px -2px
+    color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.crm-contact-card-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem 0.625rem;
+}
+
+.crm-contact-card-avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-panel));
+  border: 1px solid
+    color-mix(in srgb, var(--color-success) 30%, var(--color-line));
+  border-radius: 50%;
+  color: var(--color-crm-active-emerald);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  height: 2.75rem;
+  justify-content: center;
+  overflow: hidden;
+  width: 2.75rem;
+}
+
+.crm-contact-avatar-img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.crm-contact-initials {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.crm-contact-card-info {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-contact-card-name {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-contact-card-org,
+.crm-contact-card-badge {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-contact-card-details {
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.875rem;
+}
+
+.crm-contact-detail-item {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.crm-contact-phone-text,
+.crm-contact-email-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-contact-card-actions {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  width: 100%;
+}
+
+.crm-contact-action-btn {
+  align-items: center;
+  background: transparent;
+  color: var(--color-crm-active-emerald);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.4rem;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.crm-contact-action-btn:not(:first-child) {
+  border-left: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+}
+
+.crm-contact-action-btn:hover {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+
+.crm-rich-card-link-icon {
+  color: var(--color-muted);
+  grid-column: 3;
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0.6;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.crm-message-empty {
+  align-self: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.25rem;
+  margin: auto;
+  max-width: 22rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.crm-message-empty strong {
+  color: var(--color-text);
+}
+
+.crm-rich-card:hover .crm-rich-card-link-icon {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* WhatsApp-like Location Card */
+.crm-location-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 96%, var(--color-app)) 0%,
+    color-mix(in srgb, var(--color-app) 88%, var(--color-panel)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--color-text) 5%, transparent)
+    inset;
+  display: flex;
+  flex-direction: column;
+  margin: 0.25rem 0;
+  max-width: min(24rem, 100%);
+  min-width: min(16rem, 100%);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crm-bubble-out .crm-location-card {
+  background: color-mix(in srgb, var(--color-panel) 85%, var(--color-app));
+  border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-line));
+}
+
+.crm-location-card:hover {
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-line));
+  box-shadow: 0 4px 14px -2px
+    color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.crm-location-map-wrap {
+  aspect-ratio: 16 / 9;
+  background: color-mix(in srgb, var(--color-text) 6%, var(--color-app));
+  border-bottom: 1px solid var(--color-line);
+  min-height: 8.5rem;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.crm-location-map-frame {
+  border: 0;
+  height: 100%;
+  pointer-events: auto;
+  width: 100%;
+}
+
+.crm-location-map-overlay-btn {
+  align-items: flex-end;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, #000 40%, transparent) 0%,
+    transparent 60%
+  );
+  display: flex;
+  inset: 0;
+  justify-content: flex-end;
+  padding: 0.5rem;
+  pointer-events: none;
+  position: absolute;
+  text-decoration: none;
+  transition: opacity 0.18s ease;
+}
+
+.crm-location-overlay-pill {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px color-mix(in srgb, #000 20%, transparent);
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  pointer-events: auto;
+  transition: all 0.15s ease;
+}
+
+.crm-location-overlay-pill:hover {
+  background: var(--color-panel);
+  border-color: var(--color-accent-strong);
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.crm-location-info-row {
+  align-items: center;
+  background: transparent;
+  color: var(--color-text);
+  display: flex;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.crm-location-info-row:hover {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.crm-location-pin-badge {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-danger, #ef4444) 14%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger, #ef4444) 28%, transparent);
+  border-radius: 50%;
+  color: var(--color-danger, #ef4444);
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.crm-location-copy {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-location-title {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-location-addr {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-location-arrow {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.crm-location-info-row:hover .crm-location-arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+/* Scroll to Latest Message Floating Button */
+.crm-scroll-bottom-btn {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-line) 90%, transparent);
+  border-radius: 9999px;
+  bottom: 5.75rem;
+  right: 1.5rem;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  position: absolute;
+  width: 2.5rem;
+  z-index: 25;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  animation: crmScrollBottomPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes crmScrollBottomPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.crm-scroll-bottom-btn:hover {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-line));
+  color: var(--color-success-strong);
+  transform: translateY(-2px) scale(1.06);
+}
+
+.crm-scroll-bottom-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.crm-scroll-bottom-btn svg {
+  stroke-width: 2.25;
+}
+
+@media (max-width: 768px) {
+  .crm-scroll-bottom-btn {
+    bottom: 5.25rem;
+    right: 1rem;
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+}

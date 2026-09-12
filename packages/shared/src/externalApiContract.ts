@@ -1,26 +1,12 @@
 import type { PermissionKey } from "./index.js";
 
 export const externalApiBasePath = "/api/v1/external-api";
-export const externalApiContractVersion = "2026-07-11";
+export const externalApiContractVersion = "2026-08-13";
 
 export const externalApiAssignableScopes = [
-  "crm.access",
-  "finance.attach_document",
-  "finance.create",
-  "finance.read",
-  "finance.update",
-  "inventory.cost_create",
-  "inventory.create",
-  "inventory.document_attach",
-  "inventory.media_update",
+  "financing.simulation.create",
+  "financing.simulation.read",
   "inventory.read",
-  "inventory.reserve",
-  "inventory.sell",
-  "inventory.update_description",
-  "inventory.update_internal_notes",
-  "inventory.update_price",
-  "inventory.update_status",
-  "inventory.update_unit",
   "lead.create",
   "lead.read",
   "lead.update",
@@ -30,6 +16,15 @@ export type ExternalApiAssignableScope =
   (typeof externalApiAssignableScopes)[number];
 
 export const externalApiRuntimeScopes = [
+  {
+    description:
+      "Read Credere readiness, applicant preflight, and simulations.",
+    key: "financing.simulation.read",
+  },
+  {
+    description: "Create consented Credere simulations for the scoped store.",
+    key: "financing.simulation.create",
+  },
   {
     description: "Read the clean external vehicle list and vehicle detail.",
     key: "inventory.read",
@@ -52,6 +47,27 @@ export const externalApiRuntimeScopes = [
 }[];
 
 export const externalApiRuntimeOperations = [
+  operation(
+    "preflightExternalApiCredereSimulation",
+    "POST",
+    "/financing/credere/preflight",
+    "financing.simulation.read",
+    "Check store readiness, usable banks, required fields, and an existing Credere applicant.",
+  ),
+  operation(
+    "createExternalApiCredereSimulation",
+    "POST",
+    "/financing/credere/simulations",
+    "financing.simulation.create",
+    "Create an official consented Credere simulation using the scoped store.",
+  ),
+  operation(
+    "getExternalApiCredereSimulation",
+    "GET",
+    "/financing/credere/simulations/{inquiryId}",
+    "financing.simulation.read",
+    "Read one official Credere simulation and its bank conditions.",
+  ),
   operation(
     "listExternalApiVehicles",
     "GET",

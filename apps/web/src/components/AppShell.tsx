@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   filterNavigationGroups,
   getModuleEntitlement,
-  isActiveStoreOwner,
 } from "../app/modulePermissions";
 import { navigationGroups } from "../app/modules";
 import type {
@@ -24,12 +23,22 @@ import { UserAccountButton } from "../features/account/UserAccountButton";
 import { useOptionalAccountSession } from "../features/account/accountSession";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
 import {
+  readStoreWorkspaceState,
+  switchStoreWorkspace,
+} from "../features/account/storeWorkspace";
+import {
   DashboardSidebar,
   type DashboardSidebarItem,
 } from "./ui/dashboard-sidebar";
 import { Logo } from "./ui/logo";
 import { TextureBackground } from "./ui/TextureBackground";
 import { WorkspaceCommandPalette } from "./ui/WorkspaceCommandPalette";
+
+const FULL_WIDTH_MODULES: ReadonlySet<ModuleId> = new Set([
+  "crm",
+  "public-site",
+  "custom-pages",
+]);
 
 type AppShellProps = {
   activeModule: ModuleDefinition;
@@ -55,15 +64,22 @@ export function AppShell({
   onNavigate,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(false);
+  const isRouteForced = FULL_WIDTH_MODULES.has(activeModule.id);
+  const isSidebarCollapsed = isManuallyCollapsed || isRouteForced;
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
   );
   const accountSession = useOptionalAccountSession();
-  const storeLabel = readStoreLabel();
+  const { activeStore, agencyPortalHref, workspaces } = useMemo(
+    () => readStoreWorkspaceState(accountSession),
+    [accountSession],
+  );
+  const storeLabel = activeStore?.storeSlug ?? readStoreLabel();
   const tenantBrandState = useTenantAdminBrand({
     fallbackStoreLabel: storeLabel,
+    theme,
   });
   const sidebarItems = useMemo(
     () =>
@@ -72,8 +88,7 @@ export function AppShell({
           group.items.map((item) => ({
             ...toSidebarItem(
               item,
-              isActiveStoreOwner(accountSession) &&
-                !getModuleEntitlement(item.id, accountSession).canUse
+              !getModuleEntitlement(item.id, accountSession).canUse
                 ? "PRO"
                 : undefined,
             ),
@@ -88,6 +103,10 @@ export function AppShell({
   const navigate = (moduleId: ModuleId) => {
     onNavigate(moduleId);
     setIsMobileNavOpen(false);
+  };
+
+  const selectWorkspace = (storeSlug: string) => {
+    if (accountSession) switchStoreWorkspace(accountSession, storeSlug);
   };
 
   const toggleTheme = () => {
@@ -112,29 +131,46 @@ export function AppShell({
       >
         <span className="sr-only">Preparando a área da loja</span>
         <aside aria-hidden="true" className="app-shell__loading-sidebar">
-          <div className="h-12 animate-pulse rounded-lg bg-app-elevated" />
-          <div className="mt-8 grid gap-3">
+          <div className="app-shell__loading-brand">
+            <Logo
+              alt=""
+              className="h-8 w-auto select-none"
+              variant={theme === "dark" ? "full-white" : "full"}
+            />
+          </div>
+          <div className="app-shell__loading-nav">
             {Array.from({ length: 7 }, (_, index) => (
               <div
-                className="h-11 animate-pulse rounded-lg bg-app-elevated"
+                className="app-shell__skeleton app-shell__loading-nav-item"
                 key={index}
-              />
+              >
+                <span className="app-shell__loading-nav-icon" />
+                <span className="app-shell__loading-nav-label" />
+              </div>
             ))}
+          </div>
+          <div className="app-shell__skeleton app-shell__loading-account">
+            <span className="app-shell__loading-avatar" />
+            <span className="app-shell__loading-nav-label" />
           </div>
         </aside>
         <div aria-hidden="true" className="app-shell__loading-content">
-          <div className="h-16 border-b border-line bg-panel lg:hidden" />
+          <div className="app-shell__loading-mobile-bar lg:hidden">
+            <span className="app-shell__skeleton app-shell__loading-mobile-control" />
+            <span className="app-shell__skeleton app-shell__loading-mobile-title" />
+            <span className="app-shell__skeleton app-shell__loading-mobile-control" />
+          </div>
           <main className="content-frame">
-            <div className="h-24 animate-pulse rounded-lg bg-panel" />
+            <div className="app-shell__skeleton app-shell__skeleton--panel h-24 rounded-lg" />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }, (_, index) => (
                 <div
-                  className="h-28 animate-pulse rounded-lg bg-panel"
+                  className="app-shell__skeleton app-shell__skeleton--panel h-28 rounded-lg"
                   key={index}
                 />
               ))}
             </div>
-            <div className="h-80 animate-pulse rounded-lg bg-panel" />
+            <div className="app-shell__skeleton app-shell__skeleton--panel h-80 rounded-lg" />
           </main>
         </div>
       </div>
@@ -144,14 +180,13 @@ export function AppShell({
   return (
     <div
       className={`app-shell${isSidebarCollapsed ? " app-shell--compact" : ""}`}
-      style={tenantBrandState.style}
     >
       <aside className="app-shell__sidebar">
         <DashboardSidebar
           activeId={activeModule.id}
           collapsed={isSidebarCollapsed}
           items={sidebarItems}
-          onCollapsedChange={setIsSidebarCollapsed}
+          onCollapsedChange={setIsManuallyCollapsed}
           onSelect={navigate}
           onThemeToggle={toggleTheme}
           renderAccountControl={({ isCompact }) => (
@@ -162,6 +197,10 @@ export function AppShell({
           workspaceLogoUrl={tenantBrand.logoUrl}
           workspaceMeta={tenantBrand.storeLabel}
           workspaceName={tenantBrand.storeName}
+          workspaceId={activeStore?.storeSlug}
+          workspaces={workspaces}
+          onWorkspaceSelect={selectWorkspace}
+          agencyPortalHref={agencyPortalHref}
           onSearchClick={() => setIsCommandOpen(true)}
         />
       </aside>
@@ -245,6 +284,10 @@ export function AppShell({
               workspaceLogoUrl={tenantBrand.logoUrl}
               workspaceMeta={tenantBrand.storeLabel}
               workspaceName={tenantBrand.storeName}
+              workspaceId={activeStore?.storeSlug}
+              workspaces={workspaces}
+              onWorkspaceSelect={selectWorkspace}
+              agencyPortalHref={agencyPortalHref}
               onSearchClick={() => setIsCommandOpen(true)}
             />
           </aside>

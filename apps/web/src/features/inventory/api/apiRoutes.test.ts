@@ -44,6 +44,18 @@ describe("inventory route helpers", () => {
     expect(
       inventoryRoutes.checklistReport({ scope: "all", unitId: "unit 1" }),
     ).toBe("/api/v1/inventory/checklists/report.pdf?scope=all&unitId=unit+1");
+    expect(
+      inventoryRoutes.catalogSnapshot({
+        brandCode: "59",
+        modelCode: "2344",
+        modelFamilyCode: "v40",
+        modelFamilyName: "V40",
+        vehicleType: "cars",
+        yearCode: "2013-1",
+      }),
+    ).toBe(
+      "/api/v1/inventory/catalog/snapshot?vehicleType=cars&brandCode=59&modelCode=2344&modelFamilyCode=v40&modelFamilyName=V40&yearCode=2013-1",
+    );
     expect(inventoryRoutes.unitAcquisition("unit 1")).toBe(
       "/api/v1/inventory/units/unit%201/acquisition",
     );

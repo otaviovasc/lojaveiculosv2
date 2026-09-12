@@ -1,7 +1,6 @@
 import type { ModuleId } from "./modules";
 
 export type ModuleSurface =
-  | "automation"
   | "billing"
   | "checklists"
   | "crm-leads"
@@ -19,12 +18,12 @@ export type ModuleSurface =
   | "reports"
   | "sales"
   | "settings"
+  | "simulations"
   | "storefront-design"
   | "storefront-pages";
 
 export const moduleSurfaceById = {
   "auto-entries": "finance-auto-entries",
-  autobot: "automation",
   billing: "billing",
   checklists: "checklists",
   commissions: "finance-commissions",
@@ -33,7 +32,6 @@ export const moduleSurfaceById = {
   customers: "crm-leads",
   dashboard: "dashboard",
   documents: "documents",
-  domain: "placeholder",
   expenses: "finance-expenses",
   fiscal: "fiscal",
   inventory: "inventory",
@@ -44,7 +42,7 @@ export const moduleSurfaceById = {
   reports: "reports",
   sales: "sales",
   settings: "settings",
-  simulations: "placeholder",
+  simulations: "simulations",
 } satisfies Record<ModuleId, ModuleSurface>;
 
 export function isPlaceholderModule(moduleId: ModuleId) {

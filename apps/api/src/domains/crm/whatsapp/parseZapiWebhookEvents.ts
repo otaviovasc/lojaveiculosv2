@@ -1,5 +1,5 @@
 import type { CrmConnectionConfiguredStatus } from "../ports/crmConnectionRepository.js";
-import type { CrmWhatsappMessageStatus } from "../ports/crmWhatsappRepository.js";
+import type { CrmMessageStatus } from "../ports/crmConversationRepository.js";
 import { readNumber, readRecord, readString } from "./zapiPayloadRead.js";
 
 export type ParsedZapiDelivery = {
@@ -11,12 +11,12 @@ export type ParsedZapiDelivery = {
 export type ParsedZapiStatus = {
   externalIds: string[];
   providerStatus: string | null;
-  status: CrmWhatsappMessageStatus | "READ_BY_ME" | null;
+  status: CrmMessageStatus | "READ_BY_ME" | null;
 };
 
 export type ParsedZapiConnectionEvent = {
   connectedPhone: string | null;
-  status: CrmConnectionConfiguredStatus;
+  status: CrmConnectionConfiguredStatus | null;
 };
 
 export function parseZapiDelivery(payload: Record<string, unknown>) {
@@ -39,12 +39,20 @@ export function parseZapiStatus(payload: Record<string, unknown>) {
 
 export function parseZapiConnected(payload: Record<string, unknown>) {
   const rawStatus = readString(payload.status)?.toUpperCase();
-  const connected =
-    payload.connected === false || rawStatus === "DISCONNECTED" ? false : true;
+  const status =
+    payload.connected === true ||
+    payload.smartphoneConnected === true ||
+    rawStatus === "CONNECTED"
+      ? "active"
+      : payload.connected === false ||
+          payload.smartphoneConnected === false ||
+          rawStatus === "DISCONNECTED"
+        ? "disconnected"
+        : null;
   return {
     connectedPhone:
       readString(payload.connectedPhone) ?? readString(payload.phone) ?? null,
-    status: connected ? "active" : "disconnected",
+    status,
   } satisfies ParsedZapiConnectionEvent;
 }
 
@@ -88,8 +96,8 @@ function readExternalIds(payload: Record<string, unknown>) {
 
 function mapZapiMessageStatus(
   status: string,
-): CrmWhatsappMessageStatus | "READ_BY_ME" | null {
-  const statusMap: Record<string, CrmWhatsappMessageStatus | "READ_BY_ME"> = {
+): CrmMessageStatus | "READ_BY_ME" | null {
+  const statusMap: Record<string, CrmMessageStatus | "READ_BY_ME"> = {
     DELIVERED: "DELIVERED",
     ERROR: "FAILED",
     FAILED: "FAILED",

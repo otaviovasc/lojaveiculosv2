@@ -86,4 +86,28 @@ describe("FeatureDialog", () => {
     expect(document.body.style.overflow).toBe("clip");
     document.body.style.overflow = "";
   });
+
+  it("keeps an accessible title while aligning close-only headers to the right", () => {
+    render(
+      <FeatureDialog
+        hideHeading
+        isOpen
+        onClose={vi.fn()}
+        title="Conectar WhatsApp · Z-API"
+      >
+        Conteudo
+      </FeatureDialog>,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Conectar WhatsApp · Z-API",
+    });
+    expect(dialog.querySelector(".feature-dialog__heading")).toBeNull();
+    expect(dialog.querySelector(".feature-dialog__header")).toHaveClass(
+      "feature-dialog__header--close-only",
+    );
+    expect(
+      within(dialog).getByRole("button", { name: "Fechar" }),
+    ).toBeVisible();
+  });
 });

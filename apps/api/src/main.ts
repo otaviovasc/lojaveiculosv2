@@ -5,6 +5,7 @@ import {
   installServerErrorHandler,
   readShutdownTimeoutMs,
 } from "./infrastructure/runtime/gracefulShutdown.js";
+import { createConsoleServiceLogger } from "./shared/serviceLogger.js";
 
 const [{ createApp }, { createRuntimeAppDependencies }] =
   await loadLocalEnvBefore(() =>
@@ -16,9 +17,14 @@ const [{ createApp }, { createRuntimeAppDependencies }] =
 const port = Number(process.env.PORT ?? 8787);
 const runtime = createRuntimeAppDependencies();
 const app = createApp(runtime.appOptions);
+const logger = createConsoleServiceLogger({
+  component: "server",
+  environment: process.env.APP_ENV ?? process.env.NODE_ENV ?? "unknown",
+  service: "api",
+});
 
 const server = serve({ fetch: app.fetch, port }, () => {
-  console.info(`Lojaveiculos V2 API listening on http://localhost:${port}`);
+  logger.info("server.started", { port });
 });
 configureHttpServerTimeouts(server, process.env);
 installServerErrorHandler({

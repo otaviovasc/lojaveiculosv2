@@ -14,6 +14,7 @@ export type PublicApiClient = {
   createdAt: string;
   id: string;
   keyPrefixes: string[];
+  lastUsedAt: string | null;
   name: string;
   scopes: PublicApiScope[];
   status: PublicApiClientStatus;

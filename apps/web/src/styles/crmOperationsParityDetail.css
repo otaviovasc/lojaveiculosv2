@@ -1,0 +1,40 @@
+.crm-bot-docs-grid article,
+.crm-bot-action-list div,
+.crm-bot-examples article,
+.crm-bot-events article,
+.crm-bot-note-grid article,
+.crm-bot-endpoint-card {
+  box-shadow: 0 0.75rem 1.75rem
+    color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.crm-bot-form-header,
+.crm-bot-docs > header {
+  align-items: start;
+}
+
+.crm-bot-form-status {
+  border-radius: 999px;
+}
+
+.crm-connection-card h3,
+.crm-bot-form-header h2 {
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 860px) {
+  .crm-tag-manager > header,
+  .crm-integrations-header,
+  .crm-connection-header {
+    gap: 0.625rem;
+  }
+
+  .crm-page-meta {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .crm-tag-manager-page .crm-tag-manager {
+    width: 100%;
+  }
+}

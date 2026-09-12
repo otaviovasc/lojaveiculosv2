@@ -47,6 +47,11 @@ export type VehicleCatalogRepository = {
     vehicleType: VehicleCatalogType;
     yearCode: string;
   }) => Promise<VehicleCatalogSnapshot | null>;
+  listSnapshotsByFipeReference: (input: {
+    fipeCode: string;
+    modelYear: number | null;
+    vehicleType: VehicleCatalogType;
+  }) => Promise<readonly VehicleCatalogSnapshot[]>;
   listBrands: (input: {
     vehicleType: VehicleCatalogType;
   }) => Promise<readonly VehicleCatalogOption[]>;

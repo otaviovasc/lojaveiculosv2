@@ -14,6 +14,7 @@ import type {
   InventoryAuditEvent,
   InventoryListingDetail,
 } from "../model/types";
+import { getResaleAnalysisReadiness } from "../model/inventoryEnrichment";
 import { buildInventoryHistoryEvents } from "./InventoryDetailHistoryModel";
 
 export function InventoryDetailHistoricoTab({
@@ -34,6 +35,9 @@ export function InventoryDetailHistoricoTab({
   const [isLoadingAudit, setIsLoadingAudit] = useState(true);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [acquisitionPriceCents, setAcquisitionPriceCents] = useState<
+    number | null | undefined
+  >(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,7 +66,44 @@ export function InventoryDetailHistoricoTab({
     };
   }, [api, detail.listing.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const unit = detail.units[0];
+    setAcquisitionPriceCents(undefined);
+    if (!unit) {
+      setAcquisitionPriceCents(null);
+      return;
+    }
+    void api
+      .getVehicleUnitAcquisition(unit.id)
+      .then((acquisition) => {
+        if (!cancelled) {
+          setAcquisitionPriceCents(acquisition?.acquisitionPriceCents ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAcquisitionPriceCents(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, detail.units]);
+
+  const acquisitionCostCents = detail.costs
+    .filter((cost) => cost.kind === "acquisition")
+    .reduce((total, cost) => total + cost.amountCents, 0);
+  const readiness = getResaleAnalysisReadiness({
+    acquisitionPriceCents:
+      acquisitionPriceCents ?? (acquisitionCostCents || null),
+    catalog: detail.listing.catalog,
+    mileageKm: detail.listing.mileageKm,
+    modelYear: detail.listing.modelYear,
+    sellingPriceCents: detail.listing.priceCents,
+    storeId: detail.listing.storeId,
+  });
+
   async function generateAnalysis() {
+    if (!readiness.isReady) return;
     setIsAnalyzing(true);
     setAnalysisError(null);
     try {
@@ -93,7 +134,7 @@ export function InventoryDetailHistoricoTab({
 
   return (
     <div className="flex w-full max-w-none flex-col gap-6 text-app-text">
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="flex flex-col justify-between gap-3 border-b border-line pb-3 sm:flex-row sm:items-center">
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
             <Sparkles className="size-4 shrink-0 text-accent" />
@@ -102,6 +143,7 @@ export function InventoryDetailHistoricoTab({
           <FeatureActionButton
             icon={isAnalyzing ? LoaderCircle : analysis ? RefreshCcw : Sparkles}
             isBusy={isAnalyzing}
+            disabled={!readiness.isReady}
             label={analysis ? "Atualizar análise" : "Gerar análise"}
             onClick={() => void generateAnalysis()}
             variant="secondary"
@@ -109,6 +151,25 @@ export function InventoryDetailHistoricoTab({
         </div>
 
         {analysisError ? <FeatureAlert>{analysisError}</FeatureAlert> : null}
+        {!readiness.isReady ? (
+          <div
+            className="rounded-xl border border-line bg-app p-4 text-xs font-bold text-muted"
+            role="status"
+          >
+            <p className="font-black text-app-text">
+              Complete os dados do veículo antes de gerar uma análise:
+            </p>
+            <ul className="mt-2 grid gap-1">
+              {readiness.missing.map((issue) => (
+                <li key={issue.code}>• {issue.label}</li>
+              ))}
+            </ul>
+            <p className="mt-2">
+              Nada será enviado ao Copilot até você completar os dados e clicar
+              em <strong>Gerar análise</strong>.
+            </p>
+          </div>
+        ) : null}
         {analysis ? (
           <div className="grid gap-4">
             <div className="grid divide-y divide-line/60 overflow-hidden rounded-xl border border-line sm:grid-cols-[160px_minmax(0,1fr)] sm:divide-x sm:divide-y-0">
@@ -157,7 +218,7 @@ export function InventoryDetailHistoricoTab({
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="border-b border-line pb-3">
           <h3 className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wider">
             <Clock className="size-4 shrink-0 text-muted" />
@@ -181,7 +242,7 @@ export function InventoryDetailHistoricoTab({
         </ol>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section className="vehicle-detail-card flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
         <div className="flex items-center gap-2 border-b border-line pb-3">
           <Database className="size-4 shrink-0 text-muted" />
           <h3 className="text-sm font-black uppercase tracking-wider">
@@ -237,7 +298,7 @@ function riskLabel(level: "high" | "low" | "medium") {
 }
 
 function providerLabel(name: string) {
-  return name.toLowerCase() === "openai" ? "OpenAI" : name;
+  return name.toLowerCase() === "openrouter" ? "OpenRouter" : name;
 }
 
 function actorLabel(event: InventoryAuditEvent) {

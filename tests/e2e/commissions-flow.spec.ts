@@ -32,14 +32,7 @@ test.describe("commissions flow", () => {
     await waitForSettledWorkspace(page);
     await expect(page.getByText("Vendedor não identificado")).toHaveCount(0);
 
-    for (const period of [
-      "Esta semana",
-      "Mês passado",
-      "Customizado",
-      "Este mês",
-    ]) {
-      await selectFilter(page, "Periodo", period);
-    }
+    await exercisePeriodFilter(page);
     for (const status of ["Pendente", "Pago", "Cancelado", "Todos"]) {
       await selectFilter(page, "Status", status);
     }
@@ -143,6 +136,28 @@ async function selectFilter(page: Page, label: string, value: string) {
   const field = page.locator("label").filter({ hasText: label }).first();
   await field.getByRole("button", { name: label }).click();
   await page.getByRole("option", { name: value, exact: true }).click();
+}
+
+async function exercisePeriodFilter(page: Page) {
+  const fromDate = page.getByRole("button", { name: /^De:/ });
+  const initialLabel = await fromDate.textContent();
+  const match = initialLabel?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!match) throw new Error("Commission start date is not formatted.");
+  const nextDate = new Date(
+    Number(match[3]),
+    Number(match[2]) - 1,
+    Number(match[1]) + 1,
+  );
+  const nextDateLabel = new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+    year: "numeric",
+  }).format(nextDate);
+
+  await fromDate.click();
+  await page.getByRole("button", { exact: true, name: nextDateLabel }).click();
+  await expect(fromDate).not.toHaveText(initialLabel ?? "");
 }
 
 async function chooseFirstSeller(dialog: Locator) {

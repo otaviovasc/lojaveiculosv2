@@ -20,7 +20,11 @@ export function ErrorPage({
         code="500"
         illustration={<StatusIllustration variant="open-hood" />}
         layout={layout}
-        meta={`Código de referência: ${reference}`}
+        meta={
+          <>
+            Código de referência: <code>{reference}</code>
+          </>
+        }
         primaryAction={
           onRetry ? (
             <Button onClick={onRetry} type="button" variant="brand">

@@ -1,8 +1,5 @@
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
-import type {
-  ServiceContext,
-  StoreScopedServiceContext,
-} from "./serviceContext.js";
+import type { ServiceContext } from "./serviceContext.js";
 
 export class AuthorizationError extends Error {
   constructor(message: string) {
@@ -51,10 +48,11 @@ export function assertAnyPermission(
 }
 
 export function assertEntitlement(
-  context: StoreScopedServiceContext,
+  context: ServiceContext,
   entitlement: EntitlementKey,
 ): void {
-  if (context.entitlements.includes(entitlement)) return;
+  const entitlements = context.entitlements ?? [];
+  if (entitlements.includes(entitlement)) return;
 
   context.logger.warn("authorization.entitlement.denied", {
     actorId: context.actor.id,

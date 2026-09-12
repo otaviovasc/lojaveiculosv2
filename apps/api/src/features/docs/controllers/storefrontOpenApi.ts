@@ -6,7 +6,7 @@ export const storefrontPaths = {
       tags: ["Public Storefront"],
       summary: "Get public storefront settings",
       description:
-        "Returns public-safe hero, SEO, contact, and branding settings for the published store resolved from the request host subdomain.",
+        "Returns public-safe hero, SEO, full address, business hours, contact, and branding settings for the published store resolved from the request host subdomain.",
       operationId: "getPublicStorefrontSettings",
       responses: {
         "200": {
@@ -27,7 +27,7 @@ export const storefrontPaths = {
       tags: ["Public Storefront"],
       summary: "List public storefront vehicles",
       description:
-        "Lists published, visible vehicles for the store resolved from the request host subdomain. thumbnailUrl is derived from the deterministic default unit gallery.",
+        "Lists published, visible vehicles for the store resolved from the request host subdomain. media and thumbnailUrl are derived from the deterministic default unit gallery.",
       operationId: "listPublicStorefrontVehicles",
       parameters: [
         {
@@ -35,6 +35,12 @@ export const storefrontPaths = {
           in: "query",
           required: false,
           schema: { type: "integer", minimum: 1, maximum: 48, default: 24 },
+        },
+        {
+          name: "offset",
+          in: "query",
+          required: false,
+          schema: { type: "integer", minimum: 0, default: 0 },
         },
       ],
       responses: {

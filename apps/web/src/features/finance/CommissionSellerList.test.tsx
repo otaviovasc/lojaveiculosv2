@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CommissionSellerList } from "./CommissionSellerList";
 import {
@@ -70,4 +70,74 @@ describe("CommissionSellerList", () => {
       ),
     ).toHaveLength(5);
   });
+
+  it("shows settlement only with the explicit commission settlement grant", () => {
+    const seller = sellerWithPendingCommission();
+    const onOpenPay = vi.fn();
+    const { rerender } = render(
+      <CommissionSellerList
+        canSettle={false}
+        canUpdate
+        filters={initialCommissionFilters()}
+        isPayingSellerId={null}
+        onCancel={vi.fn()}
+        onEdit={vi.fn()}
+        onOpenBonus={vi.fn()}
+        onOpenPay={onOpenPay}
+        onViewSale={vi.fn()}
+        sellers={[seller]}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Fechar pendências" }),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <CommissionSellerList
+        canSettle
+        canUpdate={false}
+        filters={initialCommissionFilters()}
+        isPayingSellerId={null}
+        onCancel={vi.fn()}
+        onEdit={vi.fn()}
+        onOpenBonus={vi.fn()}
+        onOpenPay={onOpenPay}
+        onViewSale={vi.fn()}
+        sellers={[seller]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Fechar pendências" }));
+    expect(onOpenPay).toHaveBeenCalledWith(seller);
+  });
 });
+
+function sellerWithPendingCommission(): CommissionSellerGroup {
+  return {
+    adjustments: [],
+    blockedCount: 0,
+    count: 1,
+    entries: [
+      {
+        amountCents: 15_000,
+        category: "commission",
+        dueAt: "2026-08-31T00:00:00.000Z",
+        id: "commission_1",
+        name: "Comissão da venda",
+        paidAt: null,
+        sellerUserId: "seller-a",
+        status: "pending",
+        type: "commission",
+      },
+    ],
+    origins: [],
+    paidCents: 0,
+    pendingCents: 15_000,
+    rank: 1,
+    sales: [],
+    salesCount: 0,
+    salesValueCents: 0,
+    sellerId: "seller-a",
+    sellerName: "Vendedor A",
+    totalCents: 15_000,
+  };
+}

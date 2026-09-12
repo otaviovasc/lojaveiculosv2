@@ -7,6 +7,7 @@ export type DashboardResource = {
   title: string;
   imagePath: string;
   buttonLabel: string;
+  moduleId: ModuleId;
 };
 
 export type DashboardQuickAction = {
@@ -52,12 +53,13 @@ export const DASHBOARD_RESOURCE_SLIDE_TRANSITION = {
 
 export const dashboardResources: readonly DashboardResource[] = [
   {
-    desc: "Sincronize seu estoque automaticamente com os maiores portais e ERPs do Brasil. Ganhe agilidade e elimine o erro humano com integração total via API.",
+    desc: "Publique seu estoque nos principais portais via API, sem retrabalho.",
     panelClass: "dashboard-resource-api",
     tag: "Agilidade",
     title: "Estoque via API (Portais)",
     imagePath: "/carousel/estoque.png",
     buttonLabel: "Integrar estoque",
+    moduleId: "marketplaces",
   },
   {
     desc: "Atraia centenas de novos leads qualificados todos os dias com campanhas estratégicas no Facebook, Instagram e Google Ads.",
@@ -66,6 +68,7 @@ export const dashboardResources: readonly DashboardResource[] = [
     title: "Marketing e Tráfego Pago",
     imagePath: "/carousel/marketing.png",
     buttonLabel: "Impulsionar resultados",
+    moduleId: "paid-traffic",
   },
   {
     desc: "Personalize cores, banners e vitrines para criar uma experiência de compra única que reflita o valor da sua marca.",
@@ -74,16 +77,18 @@ export const dashboardResources: readonly DashboardResource[] = [
     title: "Design & Personalização",
     imagePath: "/carousel/design.png",
     buttonLabel: "Personalizar vitrine",
+    moduleId: "public-site",
   },
 ];
 
 const fallbackDashboardResource: DashboardResource = {
-  desc: "Sincronize seu estoque automaticamente com os maiores portais e ERPs do Brasil. Ganhe agilidade e elimine o erro humano com integração total via API.",
+  desc: "Publique seu estoque nos principais portais via API, sem retrabalho.",
   panelClass: "dashboard-resource-api",
   tag: "Agilidade",
   title: "Estoque via API (Portais)",
   imagePath: "/carousel/estoque.png",
   buttonLabel: "Integrar estoque",
+  moduleId: "marketplaces",
 };
 
 export const dashboardQuickActions: readonly DashboardQuickAction[] = [

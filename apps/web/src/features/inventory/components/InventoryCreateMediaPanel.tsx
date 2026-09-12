@@ -25,6 +25,7 @@ export function InventoryCreateMediaPanel({
 }) {
   const [rejected, setRejected] = useState<CreateMediaReject[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
 
   const addFiles = (files: File[]) => {
@@ -97,26 +98,62 @@ export function InventoryCreateMediaPanel({
     onChange(next.map((item, displayOrder) => ({ ...item, displayOrder })));
   };
 
+  const galleryTitle = photoCount === 1 ? "Foto e vídeo" : "Fotos e vídeos";
+
   return (
-    <InventoryPanel icon={<ImageUp className="size-5" />} title="Fotos e video">
-      <div className="grid gap-4">
+    <InventoryPanel
+      bodyClassName="!gap-3 !p-3 sm:!p-4"
+      icon={<ImageUp className="size-5" />}
+      title={galleryTitle}
+    >
+      <div className="grid gap-3">
         {items.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((item, index) => (
               <InventoryCreateMediaCard
+                isDragging={draggedIndex === index}
+                isDragOver={dragOverIndex === index && draggedIndex !== index}
                 item={item}
                 index={index}
                 key={item.id}
-                onDragEnd={() => setDraggedIndex(null)}
-                onDragOver={(event) => event.preventDefault()}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnter={() => {
+                  if (draggedIndex !== null && draggedIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  if (draggedIndex !== null && draggedIndex !== index) {
+                    setDragOverIndex(index);
+                    event.dataTransfer.dropEffect = "move";
+                  }
+                }}
                 onDragStart={(event) => {
                   setDraggedIndex(index);
                   event.dataTransfer.effectAllowed = "move";
+                  // subtle: hide default ghost offset shadow
+                  if (
+                    event.dataTransfer.setDragImage &&
+                    event.currentTarget instanceof HTMLElement
+                  ) {
+                    // keep native preview but slightly transparent
+                    event.dataTransfer.setDragImage(
+                      event.currentTarget,
+                      event.currentTarget.offsetWidth / 2,
+                      event.currentTarget.offsetHeight / 2,
+                    );
+                  }
                 }}
                 onDrop={(event) => {
                   event.preventDefault();
                   if (draggedIndex !== null) reorderTo(draggedIndex, index);
                   setDraggedIndex(null);
+                  setDragOverIndex(null);
                 }}
                 onAltText={(altText) =>
                   onChange(
@@ -158,7 +195,7 @@ export function InventoryCreateMediaPanel({
 
         <label
           className={
-            "grid min-h-28 cursor-pointer place-items-center rounded-xl border-2 border-dashed p-4 text-center transition-all duration-200 select-none " +
+            "grid min-h-24 cursor-pointer place-items-center rounded-xl border-2 border-dashed px-3 py-3 text-center transition-all duration-200 select-none " +
             (isDragActive
               ? "border-accent-strong bg-accent-soft/30 text-accent-strong scale-[1.01] shadow-md"
               : "border-line bg-app hover:bg-app-elevated text-app-text")
@@ -182,8 +219,9 @@ export function InventoryCreateMediaPanel({
                 : "Enviar fotos, video ou preview"}
             </span>
             <span className="text-xs font-bold text-muted">
-              {photoCount}/{createMediaLimits.maxPhotos} fotos · {videoCount}/
-              {createMediaLimits.maxVideos} video · ate 25 MB
+              {photoCount}/{createMediaLimits.maxPhotos}{" "}
+              {photoCount === 1 ? "foto" : "fotos"} · {videoCount}/
+              {createMediaLimits.maxVideos} vídeo · até 25 MB
             </span>
           </div>
           <input
