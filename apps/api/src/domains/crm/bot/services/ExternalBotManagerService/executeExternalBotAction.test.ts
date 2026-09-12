@@ -207,4 +207,38 @@ describe("executeExternalBotAction security", () => {
       ),
     ).rejects.toMatchObject({ code: "CRM_BOT_PII_NOT_ALLOWED" });
   });
+
+  it("authorizes message.send_text regardless of the dynamic reply text", async () => {
+    let dispatchedText: string | undefined;
+    const manager = createMemoryExternalBotManager({
+      effectDispatcher: {
+        dispatch: async ({ command }) => {
+          if (command.action === "message.send_text") {
+            dispatchedText = command.payload.text;
+          }
+          return { kind: "succeeded" };
+        },
+      },
+      inspect: async () => ({
+        humanAttendanceActive: false,
+        revision: 4,
+        scopeExists: true,
+      }),
+    });
+    const granted = await request(manager, "message.send_text", { text: "" });
+    const reply = {
+      ...granted,
+      command: {
+        action: "message.send_text" as const,
+        payload: { text: "Oi, tudo bem? Posso ajudar?" },
+      },
+    };
+    const result = await executeExternalBotAction(
+      context(),
+      withDigest(manager, reply),
+      manager.ports,
+    );
+    expect(result.status).toBe("completed");
+    expect(dispatchedText).toBe("Oi, tudo bem? Posso ajudar?");
+  });
 });

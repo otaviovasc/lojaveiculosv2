@@ -190,7 +190,7 @@ idempotency through `provider_events`.
 | `CRM_META_WEBHOOK_VERIFY_TOKEN`            | When official enabled                                                 | local, staging, production | Yes    | Token used for Meta's GET webhook challenge at `/api/v1/crm/webhooks/meta`.                                                                                                                                                                                                                                                                                                                                                    |
 | `CRM_META_APP_SECRET`                      | When official enabled                                                 | local, staging, production | Yes    | Meta app secret used to verify the POST webhook `X-Hub-Signature-256` over the raw request body.                                                                                                                                                                                                                                                                                                                               |
 | `CRM_WEBHOOK_SECRET`                       | External bot client                                                   | customer bot runtime       | Yes    | Example environment variable used by the copyable TypeScript and Python client snippets for the connection-scoped `X-Webhook-Secret`. Configure it in the external bot deployment; the Loja API and web services do not read it.                                                                                                                                                                                               |
-| `CRM_EXTERNAL_BOT_EFFECT_BATCH_SIZE`       | No                                                                    | local, staging, production | No     | Maximum durable external-bot provider effects claimed per worker run. Defaults to `25` and is capped at `100`. The worker remains disabled unless it is explicitly deployed with complete server-owned authorization and executor wiring.                                                                                                                                                                                      |
+| `CRM_EXTERNAL_BOT_EFFECT_BATCH_SIZE`       | No                                                                    | local, staging, production | No     | Maximum durable external-bot provider effects claimed per worker run. Defaults to `25` and is capped at `100`. Deployed as the `lojaveiculosv2-crm-external-bot-effects-worker` cron service.                                                                                                                                                                                                                                  |
 | `CRM_CONNECTION_CLEANUP_BATCH_SIZE`        | No                                                                    | local                      | No     | Maximum abandoned-connection and expired outbound-recovery rows handled by a manual cleanup run. Defaults to `100` and is capped at `500`; the deployed scheduled worker uses its own bounded batch.                                                                                                                                                                                                                           |
 | `CRM_RETENTION_TENANT_ID`                  | No                                                                    | local, staging, production | No     | Optional manual-run tenant filter. Deployed retention discovers all non-deleted stores from durable scope state; leave this unset for scheduled runs.                                                                                                                                                                                                                                                                          |
 | `CRM_RETENTION_STORE_ID`                   | No                                                                    | local, staging, production | No     | Optional manual-run store filter; requires `CRM_RETENTION_TENANT_ID`. Leave both unset for the scheduled global worker.                                                                                                                                                                                                                                                                                                        |
@@ -516,6 +516,21 @@ closed rather than falling back to the legacy webhook dispatcher.
 Inbound bearer hashes are stored per scoped integration account in
 `externalBotApiBearerHash`; plaintext bearer values and global tenant/store
 bindings are not runtime variables.
+
+### External bot provider effects
+
+The `crm:bot:effects:process` worker claims durable
+`crm_external_bot_provider_effects` rows and sends `message.send_text`,
+`message.send_media`, and `message.send_template` commands through the
+server-owned messaging gateway. It requires `DATABASE_URL`,
+`AUDIT_DATABASE_URL`, `CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY`, the API's R2
+configuration (for media preparation), and the same provider gateway runtime
+variables as the API (`CRM_ZAPI_API_BASE_URL`, `CRM_OLX_CHAT_ENABLED`,
+`COMPOSIO_*`). It is deployed as the `lojaveiculosv2-crm-external-bot-effects-worker`
+cron service in `.railway/railway.ts`. The worker reports `provider_succeeded`
+only after the provider returns an official operation id; failed or
+indeterminate provider results are recorded as retryable, dead-letter, or
+indeterminate, never as synthetic success.
 
 ### External bot document delivery
 

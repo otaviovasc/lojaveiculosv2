@@ -4,7 +4,7 @@ import {
   type DrizzleAuditSinkClient,
 } from "../infrastructure/db/audit/drizzleAuditSink.js";
 import { createDrizzleExternalBotDocumentPreparer } from "../infrastructure/db/crm/drizzleExternalBotDocumentPreparation.js";
-import { createDrizzleCrmExternalBotIntegrationRepository } from "../infrastructure/db/crm/drizzleCrmExternalBotIntegrationRepository.js";
+import { createDrizzleCrmExternalBotProfileRepository } from "../infrastructure/db/crm/drizzleCrmExternalBotProfileRepository.js";
 import { createRuntimeObjectStorage } from "../infrastructure/db/runtimeObjectStorage.js";
 import { openSealedCrmConnectionCredential } from "../infrastructure/crm/crmConnectionCredentialVault.js";
 import { createRuntimeCrmMessagingProviderGateway } from "../infrastructure/crm/crmMessagingProviderRouter.js";
@@ -33,15 +33,15 @@ async function main() {
       db,
       modelVersion: requireEnv("CRM_EXTERNAL_BOT_MODEL_VERSION"),
     });
-    const integrations = createDrizzleCrmExternalBotIntegrationRepository(db);
+    const profiles = createDrizzleCrmExternalBotProfileRepository(db);
     const resolveDelivery = async (
       event: ExternalBotEvent,
     ): Promise<ExternalBotDeliveryResolution> => {
-      const config =
-        await integrations.findExternalBotIntegrationDeliveryConfig({
-          storeId: event.storeId as never,
-          tenantId: event.tenantId as never,
-        });
+      const config = await profiles.findProfileDeliveryConfig({
+        connectionId: event.connectionId,
+        storeId: event.storeId as never,
+        tenantId: event.tenantId as never,
+      });
       if (!config?.enabled || !config.webhookUrl) {
         return {
           code: "integration_not_configured",

@@ -29,6 +29,7 @@ import {
   requireManager,
   toExternalBotConfigurationRead,
 } from "./crm.bot.controllerSupport.js";
+import { registerExternalBotProfileRoutes } from "./crm.profile.controller.js";
 
 export type RegisterExternalBotRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
@@ -73,6 +74,8 @@ export function registerExternalBotRoutes(
       return context.json(toExternalBotConfigurationRead(integration));
     }),
   );
+
+  registerExternalBotProfileRoutes(crmFeature, options);
 
   crmFeature.post("/bot/test", async (context) =>
     handleExternalBot(context, async () => {

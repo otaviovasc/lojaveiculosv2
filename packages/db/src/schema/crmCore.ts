@@ -6,6 +6,7 @@ export * from "./crmCore/enums.js";
 export * from "./crmCore/effects.js";
 export * from "./crmCore/execution.js";
 export * from "./crmCore/externalBot.js";
+export * from "./crmCore/externalBotProfiles.js";
 export * from "./crmCore/facts.js";
 export * from "./crmCore/intelligence.js";
 export * from "./crmCore/integrationEvents.js";

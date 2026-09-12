@@ -24,6 +24,7 @@ import {
 } from "./enums.js";
 import { scopedStoreForeignKey } from "./scoped.js";
 import { revisionCheck, revisionColumn } from "./revision.js";
+import { crmExternalBotProfiles } from "./externalBotProfiles.js";
 
 export const externalAccountAuthorizations = pgTable(
   "external_account_authorizations",
@@ -136,6 +137,7 @@ export const crmChannelConnections = pgTable(
     broker: credentialBroker("broker").notNull(),
     channel: messagingChannel("channel").notNull(),
     displayName: varchar("display_name", { length: 160 }).notNull(),
+    externalBotProfileId: uuid("external_bot_profile_id"),
     externalConnectionId: varchar("external_connection_id", { length: 191 }),
     externalInstanceId: varchar("external_instance_id", { length: 191 }),
     metadata: jsonb("metadata").notNull().default({}),
@@ -181,6 +183,15 @@ export const crmChannelConnections = pgTable(
         externalAccountAuthorizations.broker,
       ],
       name: "crm_channel_connections_semantic_authorization_fk",
+    }),
+    foreignKey({
+      columns: [table.tenantId, table.storeId, table.externalBotProfileId],
+      foreignColumns: [
+        crmExternalBotProfiles.tenantId,
+        crmExternalBotProfiles.storeId,
+        crmExternalBotProfiles.id,
+      ],
+      name: "crm_channel_connections_external_bot_profile_fk",
     }),
     uniqueIndex("crm_channel_connections_scope_id_unique").on(
       table.tenantId,

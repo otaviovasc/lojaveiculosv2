@@ -61,6 +61,20 @@ export const crmConversationRoutes = {
     createCrmEndpoint("/crm/whatsapp/catalog/products", baseUrl),
   botIntegration: (baseUrl?: string) =>
     createCrmEndpoint("/crm/bot/configuration", baseUrl),
+  botProfiles: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/bot/profiles", baseUrl),
+  botProfile: (profileId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/bot/profiles/${encodeURIComponent(profileId)}`,
+      baseUrl,
+    ),
+  botProfileAssignments: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/bot/profile-assignments", baseUrl),
+  botProfileAssignment: (connectionId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/bot/profile-assignments/${encodeURIComponent(connectionId)}`,
+      baseUrl,
+    ),
   // Keep the CrmRoutingService HTTP contract isolated here so route naming
   // never leaks into the Connections UI.
   routingPolicy: (baseUrl?: string) =>

@@ -1,5 +1,10 @@
 import type {
   CrmConnectionOverview,
+  CrmExternalBotProfile,
+  CrmExternalBotProfileAssignment,
+  CrmExternalBotProfileCreateInput,
+  CrmExternalBotProfileList,
+  CrmExternalBotProfilePatchInput,
   CrmExternalBotConfigurationPatchInput,
   CrmExternalBotConfigurationRead,
 } from "@lojaveiculosv2/shared";
@@ -178,6 +183,19 @@ export type CrmConversationApi = {
     input: CrmInterventionInput,
   ) => Promise<CrmConversationCycleCommandResult>;
   getBotIntegration: () => Promise<CrmExternalBotConfigurationRead>;
+  listBotProfiles: () => Promise<CrmExternalBotProfileList>;
+  createBotProfile: (
+    input: CrmExternalBotProfileCreateInput,
+  ) => Promise<CrmExternalBotProfile>;
+  updateBotProfile: (
+    profileId: string,
+    input: CrmExternalBotProfilePatchInput,
+  ) => Promise<CrmExternalBotProfile>;
+  listBotProfileAssignments: () => Promise<CrmExternalBotProfileAssignment[]>;
+  assignBotProfile: (
+    connectionId: string,
+    profileId: string | null,
+  ) => Promise<void>;
   getRoutingPolicy: () => Promise<CrmRoutingPolicy>;
   listConnections: () => Promise<CrmConnectionOverview>;
   listMessages: (

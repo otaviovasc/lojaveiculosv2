@@ -94,13 +94,17 @@ export type ExternalBotEventType =
 
 export type ExternalBotEventPayload = {
   channel: ExternalBotScope["channel"];
+  action?: ExternalBotActionName;
   classification?: string;
   connectionState?: string;
   contactRef?: string;
   direction?: "inbound" | "outbound";
+  expectedAttendanceRevision?: number;
+  expectedRevision?: number;
   humanAttendanceActive?: boolean;
   humanAttendanceState?: "WAITING_HUMAN" | "IN_HUMAN_SERVICE" | null;
   humanAttendanceStateVersion?: number | null;
+  idempotencyKey?: string;
   messageRef?: string;
   summary?: string;
   threadState?: string;

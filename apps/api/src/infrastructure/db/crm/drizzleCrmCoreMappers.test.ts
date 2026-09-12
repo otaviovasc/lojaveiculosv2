@@ -13,6 +13,7 @@ const baseRow: typeof crmChannelConnections.$inferSelect = {
   displayName: "Z-API",
   externalConnectionId: null,
   externalInstanceId: null,
+  externalBotProfileId: null,
   id: "00000000-0000-4000-8000-000000000001",
   metadata: {},
   phoneNumber: null,

@@ -15,6 +15,7 @@ import {
 } from "./crmScopedCache";
 import {
   BotIntegrationForm,
+  ExternalBotProfilesManager,
   type CrmExternalBotPageProps,
   PermissionNotice,
 } from "./CrmExternalBotPageParts";
@@ -211,21 +212,27 @@ export function CrmExternalBotPage({
                 Carregando configuracao segura.
               </div>
             ) : canManage ? (
-              <BotIntegrationForm
-                apiTokenDraft={apiTokenDraft}
-                enabled={enabled}
-                integration={integration}
-                isSaving={isSaving}
-                onApiTokenChange={setApiTokenDraft}
-                onClearApiToken={() => void clearApiToken()}
-                onClearSecret={() => void clearSecret()}
-                onEnabledChange={setEnabled}
-                onSave={() => void save()}
-                onSecretChange={setSecretDraft}
-                onWebhookUrlChange={setWebhookUrl}
-                secretDraft={secretDraft}
-                webhookUrl={webhookUrl}
-              />
+              <>
+                <ExternalBotProfilesManager api={api} canManage={canManage} />
+                <details className="crm-bot-legacy-details">
+                  <summary>Configuração legada do bot</summary>
+                  <BotIntegrationForm
+                    apiTokenDraft={apiTokenDraft}
+                    enabled={enabled}
+                    integration={integration}
+                    isSaving={isSaving}
+                    onApiTokenChange={setApiTokenDraft}
+                    onClearApiToken={() => void clearApiToken()}
+                    onClearSecret={() => void clearSecret()}
+                    onEnabledChange={setEnabled}
+                    onSave={() => void save()}
+                    onSecretChange={setSecretDraft}
+                    onWebhookUrlChange={setWebhookUrl}
+                    secretDraft={secretDraft}
+                    webhookUrl={webhookUrl}
+                  />
+                </details>
+              </>
             ) : (
               <PermissionNotice />
             )}

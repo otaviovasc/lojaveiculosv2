@@ -1,8 +1,14 @@
 import type { Context } from "hono";
 import {
   crmExternalBotConfigurationReadSchema,
+  crmExternalBotProfileAssignmentListSchema,
+  crmExternalBotProfileListSchema,
   type CrmExternalBotConfigurationRead,
 } from "@lojaveiculosv2/shared";
+import type {
+  CrmExternalBotProfile,
+  CrmExternalBotProfileConnectionAssignment,
+} from "../../../domains/crm/ports/crmExternalBotProfileRepository.js";
 import {
   createServiceContext,
   type ServiceContext,
@@ -58,6 +64,35 @@ export function toExternalBotConfigurationRead(
       webhookUrl: integration.webhookUrl,
     },
   });
+}
+
+export function toExternalBotProfileList(
+  profiles: readonly CrmExternalBotProfile[],
+) {
+  return crmExternalBotProfileListSchema.parse({
+    profiles: profiles.map((profile) => toExternalBotProfileRead(profile)),
+  });
+}
+
+export function toExternalBotProfileRead(profile: CrmExternalBotProfile) {
+  return {
+    apiTokenConfigured: profile.apiTokenConfigured,
+    createdAt: profile.createdAt?.toISOString() ?? null,
+    enabled: profile.enabled,
+    id: profile.id,
+    isDefault: profile.isDefault,
+    name: profile.name,
+    secretConfigured: profile.secretConfigured,
+    secretUpdatedAt: profile.secretUpdatedAt?.toISOString() ?? null,
+    updatedAt: profile.updatedAt?.toISOString() ?? null,
+    webhookUrl: profile.webhookUrl,
+  };
+}
+
+export function toExternalBotProfileAssignments(
+  assignments: readonly CrmExternalBotProfileConnectionAssignment[],
+) {
+  return crmExternalBotProfileAssignmentListSchema.parse({ assignments });
 }
 
 export function readProviderOperationId(record: unknown): string | null {

@@ -14,15 +14,27 @@ export async function runExternalBotEventWorkerOnce(input: {
   resolveDelivery?: ExternalBotDeliveryResolver;
   sender?: ExternalBotEventSender;
 }) {
-  if (!input.resolveDelivery && !input.eventSigningKey?.trim()) {
+  const signingKey = input.eventSigningKey?.trim();
+  if (input.resolveDelivery) {
+    return dispatchNextExternalBotEvent({
+      prepare: input.prepare,
+      now: input.now ?? new Date(),
+      outbox: input.outbox,
+      resolveDelivery: input.resolveDelivery,
+    });
+  }
+
+  if (!signingKey) {
     throw new Error("CRM external bot event signing key is required.");
+  }
+  if (!input.sender) {
+    throw new Error("CRM external bot event sender is required.");
   }
   return dispatchNextExternalBotEvent({
     prepare: input.prepare,
     now: input.now ?? new Date(),
     outbox: input.outbox,
-    ...(input.resolveDelivery
-      ? { resolveDelivery: input.resolveDelivery }
-      : { secret: input.eventSigningKey ?? "", sender: input.sender! }),
+    secret: signingKey,
+    sender: input.sender,
   });
 }

@@ -1,6 +1,6 @@
 # CRM V2 Bot Contract
 
-Last updated: 2026-07-13
+Last updated: 2026-09-11
 
 The V2 bot contract is implemented through:
 
@@ -10,7 +10,9 @@ The V2 bot contract is implemented through:
 
 Outbound webhook forwarding is active for configured integrations.
 
-- Bot action API authenticates with `X-Webhook-Secret`.
+- Bot action API authenticates with `Authorization: Bearer <apiToken>`.
+- `webhookSecret` signs outbound event deliveries with the `x-crm-bot-*`
+  headers; it is not accepted as the action API credential.
 - Secret values are write-only.
 - Bot actor creates a scoped `ServiceContext`.
 - Human takeover pauses regular `message` event forwarding.
@@ -66,3 +68,40 @@ not part of the bot contract.
 Do not migrate MiniBot or uaZapi legacy payload compatibility as the V2 bot
 contract. They remain behavior evidence only unless a later product decision
 adds an explicit compatibility owner and removal plan.
+
+## External bot reply grant (message.send_text)
+
+An inbound `message` event grants the bot a bounded, single-use
+`message.send_text` capability so it can reply within the originating
+conversation. Outbound `message` events and intervention-end events retain the
+existing `conversation.summarize` grant.
+
+To reconstruct the action request, the delivered event payload now carries the
+non-PII fields the bot needs alongside the scope already present on the event:
+
+- `action` — the granted action name (`message.send_text`).
+- `expectedRevision` — the conversation-cycle revision the grant is bound to.
+- `expectedAttendanceRevision` — the attendance revision the grant is bound to.
+- `idempotencyKey` — the idempotency key the bot must echo back.
+
+These are validated before delivery and never contain message text or personal
+data.
+
+### Digest normalization
+
+The action request digest binds scope, revisions, attendance, action, and
+idempotency. For `message.send_text` only, the dynamic reply `text` is excluded
+from the digest because the bot composes it after receiving the event; every
+other command keeps its exact payload so internal-action digests are unchanged.
+The text is still subject to command PII and operational-safety validation at
+execution time, and the grant remains single-use with a 90-second expiry.
+
+### Provider effect execution
+
+`message.send_text` effects are queued into
+`crm_external_bot_provider_effects` and processed by the
+`crm:bot:effects:process` worker, which calls the provider through the
+server-owned messaging gateway and records the canonical provider operation.
+The worker reports `provider_succeeded` only after the provider returns an
+official operation id; a failed or indeterminate provider result is recorded as
+retryable, dead-letter, or indeterminate, never as synthetic success.

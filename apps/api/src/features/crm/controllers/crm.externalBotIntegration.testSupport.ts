@@ -16,6 +16,7 @@ export function createRepositoryBoundExternalBotManager(
       if (!integration?.id) return null;
       return {
         integrationId: integration.id,
+        profileId: integration.id,
         storeId: integration.storeId,
         tenantId: integration.tenantId,
       };

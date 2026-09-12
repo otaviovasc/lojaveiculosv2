@@ -5,6 +5,9 @@ import {
   crmConversationCycleListResponseSchema,
   crmExternalBotActionAcceptedResultSchema,
   crmExternalBotConfigurationReadSchema,
+  crmExternalBotProfileAssignmentListSchema,
+  crmExternalBotProfileListSchema,
+  crmExternalBotProfileSchema,
   crmExternalBotTestResultSchema,
   crmMessageListResponseSchema,
   crmRoutingPolicyReadSchema,
@@ -222,6 +225,33 @@ export function createCrmConversationApi({
       getJson<unknown>(crmConversationRoutes.botIntegration(baseUrl)).then(
         (payload) => crmExternalBotConfigurationReadSchema.parse(payload),
       ),
+    listBotProfiles: () =>
+      getJson<unknown>(crmConversationRoutes.botProfiles(baseUrl)).then(
+        (payload) => crmExternalBotProfileListSchema.parse(payload),
+      ),
+    createBotProfile: (input) =>
+      postJson<unknown>(crmConversationRoutes.botProfiles(baseUrl), input).then(
+        (payload) => crmExternalBotProfileSchema.parse(payload),
+      ),
+    updateBotProfile: (profileId, input) =>
+      patchJson<unknown>(
+        crmConversationRoutes.botProfile(profileId, baseUrl),
+        input,
+      ).then((payload) => crmExternalBotProfileSchema.parse(payload)),
+    listBotProfileAssignments: () =>
+      getJson<unknown>(
+        crmConversationRoutes.botProfileAssignments(baseUrl),
+      ).then((payload) =>
+        crmExternalBotProfileAssignmentListSchema
+          .parse(payload)
+          .assignments.map((assignment) => assignment),
+      ),
+    assignBotProfile: async (connectionId, profileId) => {
+      await patchJson(
+        crmConversationRoutes.botProfileAssignment(connectionId, baseUrl),
+        { profileId },
+      );
+    },
     getRoutingPolicy: () =>
       getJson<unknown>(crmConversationRoutes.routingPolicy(baseUrl)).then(
         (payload) => crmRoutingPolicyReadSchema.parse(payload),

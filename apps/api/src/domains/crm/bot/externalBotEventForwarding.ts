@@ -11,6 +11,10 @@ import type {
   CrmConversationCycle,
 } from "../ports/crmConversationRepository.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
+import type {
+  ExternalBotActionName,
+  ExternalBotCommand,
+} from "./externalBotModels.js";
 
 export type CrmAttendanceChangeSource =
   "admin" | "ai_request" | "auto" | "bot" | "seller_whatsapp";
@@ -136,11 +140,7 @@ async function enqueueCanonicalEvent(
     await enqueueExternalBotEvent(
       scopedContext,
       {
-        allowedAction: "conversation.summarize",
-        authorizedCommand: {
-          action: "conversation.summarize",
-          payload: { summary: "Canonical CRM conversation event." },
-        },
+        ...eventGrantFor(type, payload.direction),
         channel: input.connection.channel,
         connectionId: input.connection.id,
         expectedAttendanceRevision:
@@ -167,4 +167,26 @@ async function enqueueCanonicalEvent(
     });
     if (throwOnFailure) throw error;
   }
+}
+
+function eventGrantFor(
+  type: "human_attendance_changed" | "message_received",
+  direction: unknown,
+): {
+  allowedAction: ExternalBotActionName;
+  authorizedCommand: ExternalBotCommand;
+} {
+  if (type === "message_received" && direction === "inbound") {
+    return {
+      allowedAction: "message.send_text",
+      authorizedCommand: { action: "message.send_text", payload: { text: "" } },
+    };
+  }
+  return {
+    allowedAction: "conversation.summarize",
+    authorizedCommand: {
+      action: "conversation.summarize",
+      payload: { summary: "Canonical CRM conversation event." },
+    },
+  };
 }

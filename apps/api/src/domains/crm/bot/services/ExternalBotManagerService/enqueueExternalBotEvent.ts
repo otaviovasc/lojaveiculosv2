@@ -38,7 +38,7 @@ export async function enqueueExternalBotEvent(
   ports: ExternalBotManagerPorts,
 ) {
   assertPermission(context, "crm.bot.events.publish");
-  if (!isSupportedInternalGrant(input.allowedAction)) {
+  if (!isSupportedEventGrant(input.allowedAction)) {
     throw botError(
       "CRM_BOT_ACTION_UNSUPPORTED",
       "No safe executor is installed for this bot action.",
@@ -151,6 +151,10 @@ export async function enqueueExternalBotEvent(
     occurredAt: now,
     payload: {
       ...input.payload,
+      action: input.allowedAction,
+      expectedAttendanceRevision: input.expectedAttendanceRevision,
+      expectedRevision: input.expectedRevision,
+      idempotencyKey: input.idempotencyKey,
       channel: scope.channel,
     } as ExternalBotEventPayload,
     type: input.type,
@@ -196,11 +200,12 @@ export async function enqueueExternalBotEvent(
   return event;
 }
 
-function isSupportedInternalGrant(action: string) {
+function isSupportedEventGrant(action: string) {
   return (
     action === "appointment.create" ||
     action === "conversation.summarize" ||
     action === "fact.record" ||
+    action === "message.send_text" ||
     action === "vehicle_interest.record"
   );
 }

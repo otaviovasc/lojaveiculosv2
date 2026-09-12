@@ -2,14 +2,18 @@ import { botError } from "./externalBotErrors.js";
 import type { ExternalBotEventPayload } from "./externalBotModels.js";
 
 const allowedEventFields = new Set<keyof ExternalBotEventPayload>([
+  "action",
   "channel",
   "classification",
   "connectionState",
   "contactRef",
   "direction",
+  "expectedAttendanceRevision",
+  "expectedRevision",
   "humanAttendanceActive",
   "humanAttendanceState",
   "humanAttendanceStateVersion",
+  "idempotencyKey",
   "messageRef",
   "summary",
   "threadState",

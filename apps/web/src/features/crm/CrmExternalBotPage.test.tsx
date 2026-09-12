@@ -31,6 +31,7 @@ describe("CrmExternalBotPage", () => {
     const api = createApi({ updateBotIntegration });
 
     renderPage(api);
+    await openLegacyBotForm();
 
     const urlInput = await screen.findByDisplayValue(
       "https://bot.old.test/webhook",
@@ -45,7 +46,9 @@ describe("CrmExternalBotPage", () => {
       target: { value: "novo-token-de-integracao-com-32-chars" },
     });
     fireEvent.click(screen.getByRole("checkbox", { name: /bot habilitado/i }));
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Salvar configurações" }),
+    );
 
     await waitFor(() =>
       expect(updateBotIntegration).toHaveBeenCalledWith({
@@ -64,6 +67,7 @@ describe("CrmExternalBotPage", () => {
   it("blocks saving a webhook secret shorter than 32 characters", async () => {
     const updateBotIntegration = vi.fn();
     renderPage(createApi({ updateBotIntegration }));
+    await openLegacyBotForm();
 
     fireEvent.change(
       await screen.findByPlaceholderText("Segredo configurado"),
@@ -71,7 +75,9 @@ describe("CrmExternalBotPage", () => {
         target: { value: "segredo-curto" },
       },
     );
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Salvar configurações" }),
+    );
 
     expect(
       await screen.findByText(
@@ -90,11 +96,14 @@ describe("CrmExternalBotPage", () => {
       updateBotIntegration,
     });
     renderPage(api);
+    await openLegacyBotForm();
 
     fireEvent.click(
       await screen.findByRole("checkbox", { name: /bot habilitado/i }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Salvar configurações" }),
+    );
 
     expect(
       await screen.findByText(
@@ -108,7 +117,11 @@ describe("CrmExternalBotPage", () => {
     const user = userEvent.setup();
     renderPage(createApi());
 
-    expect(await screen.findByText("Bot externo")).toBeVisible();
+    expect(
+      await screen.findByRole("heading", {
+        name: "Conexões de bots externos",
+      }),
+    ).toBeVisible();
     expect(
       screen.queryByLabelText("Documentacao operacional do bot"),
     ).not.toBeInTheDocument();
@@ -173,6 +186,10 @@ function renderPage(api: CrmConversationApi) {
   return render(<CrmExternalBotPage api={api} canManage canRead canRetry />);
 }
 
+async function openLegacyBotForm() {
+  fireEvent.click(await screen.findByText("Configuração legada do bot"));
+}
+
 function createApi(
   overrides: Partial<CrmConversationApi> = {},
 ): CrmConversationApi {
@@ -184,6 +201,7 @@ function createApi(
         webhookUrl: "https://bot.old.test/webhook",
       }),
     })),
+    listBotProfiles: vi.fn(async () => ({ profiles: [] })),
     listProviderEventIssues: vi.fn(async () => ({ events: [] })),
     updateBotIntegration: vi.fn(async () => ({
       configuration: createIntegration(),

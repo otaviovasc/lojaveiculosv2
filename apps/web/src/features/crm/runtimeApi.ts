@@ -208,6 +208,26 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).getBotIntegration(),
+    listBotProfiles: async () =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listBotProfiles(),
+    createBotProfile: async (input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).createBotProfile(input),
+    updateBotProfile: async (profileId, input) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).updateBotProfile(profileId, input),
+    listBotProfileAssignments: async () =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).listBotProfileAssignments(),
+    assignBotProfile: async (connectionId, profileId) =>
+      createCrmConversationApi(
+        await createProductCrmApiOptions(),
+      ).assignBotProfile(connectionId, profileId),
     getRoutingPolicy: async () =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

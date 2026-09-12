@@ -1,5 +1,15 @@
-import { lazy, Suspense, useState, type ReactNode } from "react";
-import type { CrmConnectionAllowance } from "@lojaveiculosv2/shared";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import type {
+  CrmConnectionAllowance,
+  CrmExternalBotProfile,
+} from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmConnectionSelfServiceHandlers } from "./CrmConnectionSelfServiceSetup";
 import type {
@@ -13,6 +23,7 @@ import {
 } from "./crmComposioOAuth";
 import { CrmChannelRoutingPanel } from "./CrmChannelRoutingPanel";
 import type { CrmConversationApi } from "./crmConversationApi";
+import { CrmSelect } from "./CrmFormControls";
 import { CrmChannelDirectory } from "./CrmChannelDirectory";
 import { CrmConnectionManageDialog } from "./CrmConnectionAdminDialog";
 
@@ -48,6 +59,11 @@ type ConnectionAdminProps = {
     CrmConversationApi,
     "getRoutingPolicy" | "updateRoutingPolicy"
   >;
+  botProfileApi?: Pick<
+    CrmConversationApi,
+    "assignBotProfile" | "listBotProfileAssignments" | "listBotProfiles"
+  >;
+  canManageBotProfiles?: boolean;
   canManageRouting?: boolean;
   selfService?: {
     availableSetups: readonly CrmAvailableSetup[];
@@ -69,6 +85,8 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
     onRefresh,
     onRoutingPolicyChange,
     routingApi,
+    botProfileApi,
+    canManageBotProfiles = false,
     canManageRouting = false,
     selfService,
   } = props;
@@ -80,6 +98,60 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
         (connection) => String(connection.id) === managedConnectionId,
       ) ?? null)
     : null;
+  const [botProfiles, setBotProfiles] = useState<CrmExternalBotProfile[]>([]);
+  const [botAssignments, setBotAssignments] = useState<
+    Record<string, string | null>
+  >({});
+  const [botProfileError, setBotProfileError] = useState<string | null>(null);
+  const [savingBotConnectionId, setSavingBotConnectionId] = useState<
+    string | null
+  >(null);
+
+  const loadBotAssignments = useCallback(async () => {
+    if (!botProfileApi) return;
+    try {
+      const [profileResult, assignmentResult] = await Promise.all([
+        botProfileApi.listBotProfiles(),
+        botProfileApi.listBotProfileAssignments(),
+      ]);
+      setBotProfiles(profileResult.profiles);
+      setBotAssignments(
+        Object.fromEntries(
+          assignmentResult.map((assignment) => [
+            assignment.connectionId,
+            assignment.profileId,
+          ]),
+        ),
+      );
+      setBotProfileError(null);
+    } catch {
+      setBotProfileError("Não foi possível carregar os perfis de bot.");
+    }
+  }, [botProfileApi]);
+
+  useEffect(() => {
+    void loadBotAssignments();
+  }, [loadBotAssignments]);
+
+  const assignBotProfile = async (
+    connectionId: string,
+    profileId: string | null,
+  ) => {
+    if (!botProfileApi || !canManageBotProfiles) return;
+    setSavingBotConnectionId(connectionId);
+    try {
+      await botProfileApi.assignBotProfile(connectionId, profileId);
+      setBotAssignments((current) => ({
+        ...current,
+        [connectionId]: profileId,
+      }));
+      setBotProfileError(null);
+    } catch {
+      setBotProfileError("Não foi possível salvar o perfil desta conexão.");
+    } finally {
+      setSavingBotConnectionId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -147,6 +219,72 @@ export function CrmConnectionAdmin(props: ConnectionAdminProps) {
             ? { onPolicyChange: onRoutingPolicyChange }
             : {})}
         />
+      ) : null}
+      {botProfileApi ? (
+        <section
+          aria-label="Perfis de bot por conexão"
+          className="crm-connection-bot-profiles"
+        >
+          <div className="crm-section-heading">
+            <div>
+              <strong>Bot externo por conexão</strong>
+              <p>Escolha qual perfil atende cada número conectado.</p>
+            </div>
+          </div>
+          {botProfileError ? (
+            <p className="crm-connection-error" role="alert">
+              {botProfileError}
+            </p>
+          ) : null}
+          {connections.length ? (
+            <div className="crm-connection-bot-profile-list">
+              {connections.map((connection) => {
+                const connectionId = String(connection.id);
+                return (
+                  <label
+                    className="crm-connection-bot-profile-row"
+                    key={connectionId}
+                  >
+                    <span>
+                      <strong>{connection.displayName}</strong>
+                      <small>
+                        {connection.phoneNumber ??
+                          connection.phone ??
+                          connection.channel ??
+                          "Conexão"}
+                      </small>
+                    </span>
+                    <CrmSelect
+                      aria-label={`Perfil de bot para ${connection.displayName}`}
+                      className="crm-bot-input"
+                      disabled={
+                        !canManageBotProfiles ||
+                        savingBotConnectionId === connectionId
+                      }
+                      onChange={(value) =>
+                        void assignBotProfile(connectionId, value || null)
+                      }
+                      options={[
+                        { label: "Sem bot externo", value: "" },
+                        ...botProfiles.map((profile) => ({
+                          disabled: !profile.enabled,
+                          label: `${profile.name}${profile.isDefault ? " (padrão)" : ""}${!profile.enabled ? " (inativo)" : ""}`,
+                          value: profile.id,
+                        })),
+                      ]}
+                      placeholder="Selecionar perfil"
+                      value={botAssignments[connectionId] ?? ""}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="crm-connection-empty">
+              Configure uma conexão antes de atribuir um bot.
+            </p>
+          )}
+        </section>
       ) : null}
     </section>
   );

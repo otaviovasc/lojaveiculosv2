@@ -179,3 +179,4 @@ export * from "./crmContracts.js";
 export * from "./crmHttpContracts.js";
 export * from "./crmRoutingContracts.js";
 export * from "./crmExternalBotHttpContracts.js";
+export * from "./crmExternalBotProfileHttpContracts.js";

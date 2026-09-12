@@ -2,8 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createTestCrmConversationCycle } from "../testSupportWhatsapp.js";
 import { createMemoryExternalBotManager } from "./testSupportExternalBotManager.js";
-import { enqueueCrmAttendanceExternalBotEvent } from "./externalBotEventForwarding.js";
+import {
+  enqueueCrmAttendanceExternalBotEvent,
+  enqueueCrmMessageExternalBotEvent,
+} from "./externalBotEventForwarding.js";
+import { canonicalExternalBotActionRequest } from "./externalBotCanonicalRequest.js";
+import { executeExternalBotAction } from "./services/ExternalBotManagerService/executeExternalBotAction.js";
+import { createExternalBotActionContext } from "./testSupportExternalBotAction.js";
 import type { CrmServicePorts } from "../services/CrmService/serviceSupport.js";
+import type { CrmMessage } from "../ports/crmConversationRepository.js";
+import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
 describe("external bot attendance notifications", () => {
   it("queues the AI pause and human acknowledgement without issuing action grants", async () => {
@@ -104,5 +112,131 @@ describe("external bot attendance notifications", () => {
     });
     expect(manager.events[2]?.event.grant).toBeTypeOf("string");
     expect(issueGrant).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("external bot inbound message reply grant", () => {
+  const connection = {
+    channel: "whatsapp",
+    id: "connection-1",
+    provider: "zapi",
+    storeId: "store-1",
+    tenantId: "tenant-1",
+  } as Parameters<typeof enqueueCrmMessageExternalBotEvent>[1]["connection"];
+
+  const createdAt = new Date("2026-08-10T14:00:00.000Z");
+
+  function inboundMessage(
+    direction: "INBOUND" | "OUTBOUND" = "INBOUND",
+  ): CrmMessage {
+    return {
+      channel: "WHATSAPP",
+      connectionId: "connection-1",
+      createdAt,
+      cycleId: "conversationCycle-1",
+      direction,
+      id: "message-1",
+      storeId: "store-1" as StoreId,
+      tenantId: "tenant-1" as TenantId,
+      type: "TEXT",
+    } as CrmMessage;
+  }
+
+  function forwardingPorts(
+    manager: ReturnType<typeof createMemoryExternalBotManager>,
+  ) {
+    return {
+      externalBotManager: manager.ports,
+      crmExternalBotIntegrationRepository: {
+        findExternalBotIntegration: async () => ({
+          enabled: true,
+          id: "integration-1",
+        }),
+      },
+    } as unknown as CrmServicePorts;
+  }
+
+  function forwardingContext() {
+    return createServiceContext({
+      actor: { id: "seller-1", kind: "user" },
+      permissions: ["crm.bot.events.publish"],
+      request: { requestId: "message-forward-test" },
+      storeId: "store-1",
+      tenantId: "tenant-1",
+    });
+  }
+
+  it("grants message.send_text for inbound messages and authorizes the reply end to end", async () => {
+    const manager = createMemoryExternalBotManager();
+    const cycle = createTestCrmConversationCycle({
+      humanAttendanceStateVersion: 2,
+      revision: 1,
+      status: "ACTIVE",
+      threadId: "thread-1",
+    });
+    await enqueueCrmMessageExternalBotEvent(
+      forwardingContext(),
+      { connection, conversationCycle: cycle, message: inboundMessage() },
+      forwardingPorts(manager),
+    );
+    expect(manager.events).toHaveLength(1);
+    const event = manager.events[0]!.event;
+    expect(event).toMatchObject({
+      actionClass: "effect",
+      payload: { action: "message.send_text", direction: "inbound" },
+      provider: "zapi",
+    });
+    expect(event.grant).toBeTypeOf("string");
+
+    const reply = {
+      capabilityGrant: event.grant!,
+      channel: event.channel,
+      command: {
+        action: "message.send_text" as const,
+        payload: { text: "Temos o veículo em estoque!" },
+      },
+      connectionId: event.connectionId,
+      expectedAttendanceRevision: event.payload.expectedAttendanceRevision!,
+      expectedRevision: event.payload.expectedRevision!,
+      idempotencyKey: event.payload.idempotencyKey!,
+      integrationId: event.integrationId,
+      modelVersion: event.modelVersion,
+      provider: event.provider,
+      storeId: event.storeId,
+      tenantId: event.tenantId,
+      threadId: event.threadId,
+    };
+    const requestDigest = manager.ports.digest.digest(
+      canonicalExternalBotActionRequest(reply),
+    );
+    const result = await executeExternalBotAction(
+      createExternalBotActionContext(),
+      { ...reply, requestDigest },
+      manager.ports,
+    );
+    expect(result.status).toBe("completed");
+  });
+
+  it("keeps conversation.summarize for outbound message events", async () => {
+    const manager = createMemoryExternalBotManager();
+    const cycle = createTestCrmConversationCycle({
+      humanAttendanceStateVersion: 2,
+      revision: 1,
+      status: "ACTIVE",
+      threadId: "thread-1",
+    });
+    await enqueueCrmMessageExternalBotEvent(
+      forwardingContext(),
+      {
+        connection,
+        conversationCycle: cycle,
+        message: inboundMessage("OUTBOUND"),
+      },
+      forwardingPorts(manager),
+    );
+    expect(manager.events[0]?.event.payload).toMatchObject({
+      action: "conversation.summarize",
+      direction: "outbound",
+    });
   });
 });

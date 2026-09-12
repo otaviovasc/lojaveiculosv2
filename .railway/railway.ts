@@ -329,6 +329,48 @@ export default defineRailway((context) => {
     },
   );
 
+  const crmExternalBotEffectsWorker = service(
+    "lojaveiculosv2-crm-external-bot-effects-worker",
+    {
+      source: appSource,
+      build: "pnpm --filter @lojaveiculosv2/api build",
+      deploy: {
+        cronSchedule: "* * * * *",
+        restartPolicyType: "NEVER",
+      },
+      env: {
+        APP_ENV: appEnvironment,
+        AUDIT_DATABASE_URL: auditDatabase.env.DATABASE_URL,
+        COMPOSIO_API_BASE_URL: api.env.COMPOSIO_API_BASE_URL,
+        COMPOSIO_API_KEY: api.env.COMPOSIO_API_KEY,
+        COMPOSIO_META_GRAPH_VERSION: api.env.COMPOSIO_META_GRAPH_VERSION,
+        COMPOSIO_REQUEST_TIMEOUT_MS: api.env.COMPOSIO_REQUEST_TIMEOUT_MS,
+        CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY:
+          api.env.CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY,
+        CRM_EXTERNAL_BOT_EFFECT_BATCH_SIZE: "25",
+        CRM_OLX_CHAT_ENABLED: api.env.CRM_OLX_CHAT_ENABLED,
+        CRM_ZAPI_API_BASE_URL: api.env.CRM_ZAPI_API_BASE_URL,
+        CRM_ZAPI_CLIENT_TOKEN: api.env.CRM_ZAPI_CLIENT_TOKEN,
+        DATABASE_URL: productDatabase.env.DATABASE_URL,
+        DB_CLOSE_TIMEOUT_SECONDS: "5",
+        DB_POOL_MAX: "1",
+        LOG_LEVEL: api.env.LOG_LEVEL,
+        NODE_ENV: "production",
+        RAILPACK_DEPLOY_APT_PACKAGES: "... ffmpeg",
+        R2_ACCESS_KEY_ID: api.env.R2_ACCESS_KEY_ID,
+        R2_BUCKET_NAME: api.env.R2_BUCKET_NAME,
+        R2_DOWNLOAD_URL_EXPIRES_SECONDS:
+          api.env.R2_DOWNLOAD_URL_EXPIRES_SECONDS,
+        R2_ENDPOINT: api.env.R2_ENDPOINT,
+        R2_PUBLIC_BASE_URL: api.env.R2_PUBLIC_BASE_URL,
+        R2_REGION: api.env.R2_REGION,
+        R2_SECRET_ACCESS_KEY: api.env.R2_SECRET_ACCESS_KEY,
+        R2_UPLOAD_URL_EXPIRES_SECONDS: api.env.R2_UPLOAD_URL_EXPIRES_SECONDS,
+      },
+      start: "pnpm --filter @lojaveiculosv2/api crm:bot:effects:process",
+    },
+  );
+
   return project("respectful-respect", {
     resources: [
       productDatabase,
@@ -341,6 +383,7 @@ export default defineRailway((context) => {
       crmRetentionWorker,
       crmPushWorker,
       crmExternalBotWorker,
+      crmExternalBotEffectsWorker,
     ],
   });
 });

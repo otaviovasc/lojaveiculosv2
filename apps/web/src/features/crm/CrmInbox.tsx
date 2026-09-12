@@ -271,7 +271,11 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
               >
                 <section className="crm-section">
                   <CrmConnectionAdmin
+                    botProfileApi={conversationApi}
                     canManageRouting={inbox.permissions.canRoutingDefaultManage}
+                    canManageBotProfiles={
+                      inbox.permissions.canIntegrationsManage
+                    }
                     connections={inbox.connections}
                     disabled={!inbox.permissions.canConnectionPair}
                     embedded

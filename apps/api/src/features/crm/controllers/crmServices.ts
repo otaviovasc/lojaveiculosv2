@@ -66,9 +66,12 @@ import {
   type GetCrmStatisticsInput,
   type GetCrmStatisticsResult,
 } from "../../../domains/crm/services/CrmStatisticsService/getCrmStatistics.js";
+import type { CrmExternalBotProfileServices } from "./crmExternalBotProfileServiceBindings.js";
+import { createCrmExternalBotProfileServiceBindings } from "./crmExternalBotProfileServiceBindings.js";
 export type { CreateCrmServicesOptions } from "./crmServices.types.js";
 export type CrmServices = CrmMessagingServices &
-  CrmSpecialDateServices & {
+  CrmSpecialDateServices &
+  CrmExternalBotProfileServices & {
     importLeads: (
       context: ServiceContext,
       input: ImportCrmLeadsInput,
@@ -203,6 +206,7 @@ export function createCrmServices(
     updateLead: (context, input) => updateCrmLead(context, input, ports),
     updateRoutingPolicy: (context, input) =>
       updateCrmRoutingPolicy(context, input, ports),
+    ...createCrmExternalBotProfileServiceBindings(ports),
     ...createCrmMessagingServiceBindings(ports),
     ...createCrmSpecialDateServiceBindings(ports),
   };

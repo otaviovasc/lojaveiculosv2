@@ -1,5 +1,6 @@
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createDrizzleCrmExternalBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmExternalBotIntegrationRepository.js";
+import { createDrizzleCrmExternalBotProfileRepository } from "../../../infrastructure/db/crm/drizzleCrmExternalBotProfileRepository.js";
 import { createDrizzleCrmAssigneeMembershipRepository } from "../../../infrastructure/db/crm/drizzleCrmAssigneeMembershipRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
 import { createDrizzleCrmConnectionMemberRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionMemberRepository.js";
@@ -28,6 +29,7 @@ import {
   CrmOlxWebhookSecurityConfigurationError,
 } from "../../../infrastructure/crm/olxWebhookSecurity.js";
 import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
+import { createMemoryCrmExternalBotProfileRepository } from "../adapters/memory/crmExternalBotProfileRepository.js";
 import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
 import { createMemoryCrmCanonicalInboundRepository } from "../adapters/memory/crmCanonicalInboundRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
@@ -72,6 +74,8 @@ export function resolveCrmPorts(
           createDrizzleCrmExternalBotIntegrationRepository(
             options.drizzleClient,
           ),
+        crmExternalBotProfileRepository:
+          createDrizzleCrmExternalBotProfileRepository(options.drizzleClient),
         crmAssigneeMembershipRepository:
           createDrizzleCrmAssigneeMembershipRepository(options.drizzleClient),
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
@@ -126,6 +130,8 @@ export function resolveCrmPorts(
         ...connectionSetupPorts,
         crmExternalBotIntegrationRepository:
           createMemoryCrmExternalBotIntegrationRepository(),
+        crmExternalBotProfileRepository:
+          createMemoryCrmExternalBotProfileRepository(),
         crmAssigneeMembershipRepository:
           createMemoryCrmAssigneeMembershipRepository(),
         crmCanonicalInboundRepository:
@@ -166,6 +172,10 @@ export function resolveCrmPorts(
           ...transactionPorts,
           crmExternalBotIntegrationRepository:
             createDrizzleCrmExternalBotIntegrationRepository(
+              tx as DrizzleCrmClient,
+            ),
+          crmExternalBotProfileRepository:
+            createDrizzleCrmExternalBotProfileRepository(
               tx as DrizzleCrmClient,
             ),
           crmAssigneeMembershipRepository:

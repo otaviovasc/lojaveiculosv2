@@ -11,6 +11,7 @@ import type { ExternalBotPolicy } from "../policies/externalBotPolicy.js";
 
 export type BotIdentity = {
   integrationId: string;
+  profileId: string;
   storeId: string;
   tenantId: string;
 };
