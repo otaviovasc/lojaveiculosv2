@@ -7,6 +7,7 @@ import type {
 } from "../ports/crmConversationRepository.js";
 
 export type HumanAttendanceStart = {
+  allowWaitingHumanRequeue?: boolean;
   interventionId?: string;
   kind: "start";
   reason: string;
@@ -71,7 +72,13 @@ export function humanAttendanceUpdate(
     conversationCycle.status === "HUMAN_TAKEOVER" &&
     conversationCycle.humanAttendanceState === "WAITING_HUMAN" &&
     command.state === "IN_HUMAN_SERVICE";
-  if (conversationCycle.humanAttendanceState && !acknowledgingWaitingHuman)
+  const queuingUnknownChannelHuman =
+    command.allowWaitingHumanRequeue && command.state === "WAITING_HUMAN";
+  if (
+    conversationCycle.humanAttendanceState &&
+    !acknowledgingWaitingHuman &&
+    !queuingUnknownChannelHuman
+  )
     return null;
 
   const interventionId =

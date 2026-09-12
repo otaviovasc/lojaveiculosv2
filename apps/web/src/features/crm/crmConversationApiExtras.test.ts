@@ -233,53 +233,6 @@ describe("CRM WhatsApp extras API", () => {
     });
   });
 
-  it("loads and updates the external bot integration through V2", async () => {
-    const fake = createFakeFetch([
-      {
-        configuration: externalBotConfiguration({
-          enabled: false,
-          secretConfigured: false,
-        }),
-      },
-      {
-        configuration: externalBotConfiguration({
-          enabled: true,
-          secretConfigured: true,
-        }),
-      },
-    ]);
-    const api = createCrmConversationApi({ fetch: fake.fetch });
-
-    await expect(api.getBotIntegration()).resolves.toMatchObject({
-      configuration: { enabled: false },
-    });
-    await expect(
-      api.updateBotIntegration({
-        enabled: true,
-        webhookSecret: "bot-secret",
-        webhookUrl: "https://bot.example.test/webhook",
-      }),
-    ).resolves.toMatchObject({
-      configuration: { enabled: true, secretConfigured: true },
-    });
-
-    expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/bot/configuration",
-      init: { method: "GET" },
-    });
-    expect(fake.calls[1]).toMatchObject({
-      input: "/api/v1/crm/bot/configuration",
-      init: {
-        body: JSON.stringify({
-          enabled: true,
-          webhookSecret: "bot-secret",
-          webhookUrl: "https://bot.example.test/webhook",
-        }),
-        method: "PATCH",
-      },
-    });
-  });
-
   it("loads and updates the typed CRM channel routing policy", async () => {
     const response = {
       channels: [

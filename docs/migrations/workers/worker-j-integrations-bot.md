@@ -12,7 +12,8 @@
 - The CRM Integracoes surface is now a real page for bot URL/secret config
   and existing ZAPI provider-event health. It no longer renders placeholder
   action cards.
-- Deferred to the next bot slice: outbound event forwarding, `X-Webhook-Secret`
+- Superseded by the V2 external bot profile contract. Outbound events now use
+  the assigned profile webhook URL and `x-crm-bot-*` HMAC headers.
   action authentication, action execution, and human-takeover send guards.
 - Focused verification passed:
   - `pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.integrations`

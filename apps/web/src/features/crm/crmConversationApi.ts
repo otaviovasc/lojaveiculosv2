@@ -4,7 +4,6 @@ import {
   crmConversationCycleCountsResponseSchema,
   crmConversationCycleListResponseSchema,
   crmExternalBotActionAcceptedResultSchema,
-  crmExternalBotConfigurationReadSchema,
   crmExternalBotProfileAssignmentListSchema,
   crmExternalBotProfileListSchema,
   crmExternalBotProfileSchema,
@@ -221,10 +220,6 @@ export function createCrmConversationApi({
         crmConversationRoutes.updateCycleAttendance(cycleId, baseUrl),
         input,
       ),
-    getBotIntegration: () =>
-      getJson<unknown>(crmConversationRoutes.botIntegration(baseUrl)).then(
-        (payload) => crmExternalBotConfigurationReadSchema.parse(payload),
-      ),
     listBotProfiles: () =>
       getJson<unknown>(crmConversationRoutes.botProfiles(baseUrl)).then(
         (payload) => crmExternalBotProfileListSchema.parse(payload),
@@ -432,11 +427,6 @@ export function createCrmConversationApi({
         ...(input.onStatus ? { onStatus: input.onStatus } : {}),
         postJson,
       }),
-    updateBotIntegration: (input) =>
-      patchJson<unknown>(
-        crmConversationRoutes.botIntegration(baseUrl),
-        input,
-      ).then((payload) => crmExternalBotConfigurationReadSchema.parse(payload)),
     updateRoutingPolicy: (input) =>
       patchJson<unknown>(
         crmConversationRoutes.routingPolicy(baseUrl),

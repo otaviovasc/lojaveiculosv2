@@ -14,7 +14,7 @@ import {
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import { createDrizzleCrmConnectionRepository } from "./drizzleCrmConnectionRepository.js";
 import { createDrizzleCrmConversationRepository } from "./drizzleCrmConversationRepository.js";
-import { createDrizzleCrmExternalBotIntegrationRepository } from "./drizzleCrmExternalBotIntegrationRepository.js";
+import { createDrizzleCrmExternalBotProfileRepository } from "./drizzleCrmExternalBotProfileRepository.js";
 import type { ExternalBotDb } from "./drizzleExternalBotShared.js";
 
 export function createDrizzleExternalBotDocumentPreparer(input: {
@@ -28,9 +28,7 @@ export function createDrizzleExternalBotDocumentPreparer(input: {
 }): ExternalBotEventPreparer {
   const messages = createDrizzleCrmConversationRepository(input.db);
   const connections = createDrizzleCrmConnectionRepository(input.db);
-  const integrations = createDrizzleCrmExternalBotIntegrationRepository(
-    input.db,
-  );
+  const profiles = createDrizzleCrmExternalBotProfileRepository(input.db);
   const scopeFor = (event: ExternalBotEvent) => ({
     storeId: event.storeId as StoreId,
     tenantId: event.tenantId as TenantId,
@@ -51,10 +49,11 @@ export function createDrizzleExternalBotDocumentPreparer(input: {
         gateway: input.gateway,
         fetcher: input.fetcher,
         authorize: async (current) => {
-          const integration = await integrations.findExternalBotIntegration(
-            scopeFor(current),
-          );
-          if (!integration?.enabled || integration.id !== current.integrationId)
+          const profile = await profiles.findProfileForConnection({
+            ...scopeFor(current),
+            connectionId: current.connectionId,
+          });
+          if (!profile?.enabled || profile.id !== current.integrationId)
             return false;
           const authorization =
             await input.manager.effectAuthorizer.inspect(current);

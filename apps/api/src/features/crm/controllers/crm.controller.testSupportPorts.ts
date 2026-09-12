@@ -1,4 +1,5 @@
 import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
+import { createMemoryCrmExternalBotProfileRepository } from "../adapters/memory/crmExternalBotProfileRepository.js";
 import { createMemoryCrmAssigneeMembershipRepository } from "../adapters/memory/crmAssigneeMembershipRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmConversationRepository } from "../adapters/memory/crmConversationRepository.js";
@@ -41,6 +42,9 @@ export function buildTestCrmServicePorts(
     crmExternalBotIntegrationRepository:
       options.crmExternalBotIntegrationRepository ??
       createMemoryCrmExternalBotIntegrationRepository(),
+    crmExternalBotProfileRepository:
+      options.crmExternalBotProfileRepository ??
+      createMemoryCrmExternalBotProfileRepository(),
     crmAssigneeMembershipRepository: assigneeMembershipRepository,
     ...(options.crmCanonicalInboundRepository
       ? {

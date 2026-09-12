@@ -41,7 +41,7 @@ describe("transitionConfirmedHumanOutboundAttendance", () => {
     );
   });
 
-  it("keeps IN_HUMAN_SERVICE for a device message when the conversation has an assignee", async () => {
+  it("queues an assigned conversation without changing its assignee", async () => {
     const cycle = createTestCrmConversationCycle({
       assignedUserId: "user-1" as never,
     });
@@ -62,10 +62,54 @@ describe("transitionConfirmedHumanOutboundAttendance", () => {
     expect(result.changed).toBe(true);
     expect(result.conversationCycle).toMatchObject({
       assignedUserId: "user-1",
-      humanAttendanceState: "IN_HUMAN_SERVICE",
-      humanHandlingStartedAt: providerTimestamp,
+      humanAttendanceState: "WAITING_HUMAN",
+      humanHandlingStartedAt: null,
       status: "HUMAN_TAKEOVER",
     });
+    expect(repository.transitionAttendance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nextState: "WAITING_HUMAN",
+        previousState: null,
+      }),
+    );
+  });
+
+  it("returns an active device-intervened conversation to the waiting queue", async () => {
+    const cycle = createTestCrmConversationCycle({
+      assignedUserId: "user-1" as never,
+      humanAttendanceChangedAt: new Date("2026-08-10T14:00:00.000Z"),
+      humanAttendanceState: "IN_HUMAN_SERVICE",
+      humanAttendanceStateVersion: 1,
+      humanHandlingStartedAt: new Date("2026-08-10T14:00:00.000Z"),
+      humanTakeoverAt: new Date("2026-08-10T14:00:00.000Z"),
+      interventionId: "intervention-1",
+      status: "HUMAN_TAKEOVER",
+    });
+    const repository = createFakeRepository(cycle);
+
+    const result = await transitionConfirmedHumanOutboundAttendance({
+      actorId: "provider-1",
+      actorKind: "provider",
+      conversationCycle: cycle,
+      interventionId: "intervention-1",
+      providerTimestamp,
+      reason: "human_channel_message",
+      repository,
+      senderOrigin: "human_channel",
+      senderType: "HUMAN",
+    });
+
+    expect(result.conversationCycle).toMatchObject({
+      assignedUserId: "user-1",
+      humanAttendanceState: "WAITING_HUMAN",
+      humanHandlingStartedAt: null,
+    });
+    expect(repository.transitionAttendance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nextState: "WAITING_HUMAN",
+        previousState: "IN_HUMAN_SERVICE",
+      }),
+    );
   });
 
   it("keeps IN_HUMAN_SERVICE for the CRM sender (auto-assign happens upstream)", async () => {

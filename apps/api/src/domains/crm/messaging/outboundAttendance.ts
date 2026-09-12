@@ -37,14 +37,13 @@ export async function transitionConfirmedHumanOutboundAttendance(input: {
       conversationCycle: input.conversationCycle,
     };
   }
-  // A message sent from the WhatsApp device cannot be tied to a CRM user, so
-  // an unassigned conversation only queues for a human instead of violating
-  // the human_active assigned_user requirement.
-  const state =
-    input.senderOrigin === "human_channel" &&
-    !input.conversationCycle.assignedUserId
-      ? ("WAITING_HUMAN" as const)
-      : ("IN_HUMAN_SERVICE" as const);
+  // A message sent from the WhatsApp device cannot be tied to a CRM user. It
+  // therefore returns the conversation to the waiting queue without changing
+  // any existing assignment.
+  const isUnknownChannelHuman = input.senderOrigin === "human_channel";
+  const state = isUnknownChannelHuman
+    ? ("WAITING_HUMAN" as const)
+    : ("IN_HUMAN_SERVICE" as const);
   return transitionHumanAttendance({
     actorId: input.actorId,
     actorKind: input.actorKind,
@@ -52,6 +51,7 @@ export async function transitionConfirmedHumanOutboundAttendance(input: {
       interventionId:
         input.conversationCycle.interventionId ?? input.interventionId,
       kind: "start",
+      allowWaitingHumanRequeue: isUnknownChannelHuman,
       reason: input.reason ?? "human_outbound_message",
       source: input.source ?? "admin",
       state,

@@ -189,7 +189,6 @@ idempotency through `provider_events`.
 | `COMPOSIO_INSTAGRAM_LOGIN_MODE`            | When Instagram self-service is enabled                                | local, staging, production | No     | Required server-owned contract selector: `facebook` for Facebook Login for Business with a linked Page, or `instagram` for Instagram Login. Missing or unknown values fail closed before OAuth because discovery and webhook subscription targets differ.                                                                                                                                                                      |
 | `CRM_META_WEBHOOK_VERIFY_TOKEN`            | When official enabled                                                 | local, staging, production | Yes    | Token used for Meta's GET webhook challenge at `/api/v1/crm/webhooks/meta`.                                                                                                                                                                                                                                                                                                                                                    |
 | `CRM_META_APP_SECRET`                      | When official enabled                                                 | local, staging, production | Yes    | Meta app secret used to verify the POST webhook `X-Hub-Signature-256` over the raw request body.                                                                                                                                                                                                                                                                                                                               |
-| `CRM_WEBHOOK_SECRET`                       | External bot client                                                   | customer bot runtime       | Yes    | Example environment variable used by the copyable TypeScript and Python client snippets for the connection-scoped `X-Webhook-Secret`. Configure it in the external bot deployment; the Loja API and web services do not read it.                                                                                                                                                                                               |
 | `CRM_EXTERNAL_BOT_EFFECT_BATCH_SIZE`       | No                                                                    | local, staging, production | No     | Maximum durable external-bot provider effects claimed per worker run. Defaults to `25` and is capped at `100`. Deployed as the `lojaveiculosv2-crm-external-bot-effects-worker` cron service.                                                                                                                                                                                                                                  |
 | `CRM_CONNECTION_CLEANUP_BATCH_SIZE`        | No                                                                    | local                      | No     | Maximum abandoned-connection and expired outbound-recovery rows handled by a manual cleanup run. Defaults to `100` and is capped at `500`; the deployed scheduled worker uses its own bounded batch.                                                                                                                                                                                                                           |
 | `CRM_RETENTION_TENANT_ID`                  | No                                                                    | local, staging, production | No     | Optional manual-run tenant filter. Deployed retention discovers all non-deleted stores from durable scope state; leave this unset for scheduled runs.                                                                                                                                                                                                                                                                          |
@@ -498,24 +497,22 @@ set `ASAAS_RUNTIME_IMPLEMENTATION=http` or
 - `CRM_EXTERNAL_BOT_EVENT_BATCH_SIZE`: optional maximum durable bot events
   claimed per worker run. Defaults to `25` and is capped at `200`.
 
-Delivery is configured per store in `integration_accounts` (provider
-`crm_external_bot`): the store-owned HTTPS `webhookUrl` receives events signed
-with the store's own webhook secret (sealed as `webhookSecretSealed` under the
-CRM connection credential vault, purpose `crm-bot.webhook-secret`). Signatures
-cover timestamp, nonce and SHA-256 body digest; receivers must enforce the
-replay window and consume a nonce once. Events whose store integration is
-missing, disabled, or cannot be unsealed are dead-lettered
-(`integration_not_configured`, `webhook_secret_missing`,
-`webhook_secret_unseal_failed`). The worker requires
+Delivery is configured per store-scoped bot profile: the assigned profile's
+HTTPS `webhookUrl` receives events signed with that profile's HMAC secret
+(sealed as `webhookSecretSealed` under the CRM connection credential vault,
+purpose `crm-bot.webhook-secret`). Signatures cover timestamp, nonce and
+SHA-256 body digest; receivers must enforce the replay window and consume a
+nonce once. Events whose profile assignment is missing, disabled, or cannot be
+unsealed are dead-lettered (`integration_not_configured`,
+`webhook_secret_missing`, `webhook_secret_unseal_failed`). The worker requires
 `CRM_CONNECTION_CREDENTIAL_ENCRYPTION_KEY` and is deployed as the
 `lojaveiculosv2-crm-external-bot-worker` cron service.
 
 Partial configuration does not enable bot actions. The runtime uses the
 canonical database grant/command/proposal/outbox records; missing relations fail
 closed rather than falling back to the legacy webhook dispatcher.
-Inbound bearer hashes are stored per scoped integration account in
-`externalBotApiBearerHash`; plaintext bearer values and global tenant/store
-bindings are not runtime variables.
+Inbound bearer hashes are stored per scoped bot profile; plaintext bearer values
+and global tenant/store bindings are not runtime variables.
 
 ### External bot provider effects
 

@@ -106,6 +106,7 @@ export type ExternalBotEventPayload = {
   humanAttendanceStateVersion?: number | null;
   idempotencyKey?: string;
   messageRef?: string;
+  messageText?: string;
   summary?: string;
   threadState?: string;
   vehicleRef?: string;

@@ -23,8 +23,9 @@ The runtime separates three independent concepts:
 The supported combinations implemented in the connection constraint are
 `whatsapp/meta_cloud/composio`, `instagram/meta_cloud/composio`,
 `whatsapp/zapi/direct`, and `olx_chat/olx/direct`. Composio is a credential
-broker, not a provider or channel. A store may configure at most one external
-bot integration; bot policy and actions remain separate from provider routing.
+broker, not a provider or channel. A store may configure multiple external bot
+profiles and assign them per connection; bot policy and actions remain separate
+from provider routing.
 
 ## Runtime Ownership
 
@@ -173,6 +174,11 @@ State transitions are server-owned:
 
 - An AI pause/request for human help sets `WAITING_HUMAN` and emits the
   intervention-start event. The CRM displays **Aguardando Humano**.
+- A human message sent directly from the WhatsApp app/device also sets
+  `WAITING_HUMAN`, even if the cycle was previously assigned or active. The
+  sender cannot be attributed to a CRM user, so the server returns the
+  conversation to the human queue without changing any existing assignment.
+  This is a confirmed human intervention, not a bot message.
 - A seller/agent's first provider-confirmed outbound message sets
   `IN_HUMAN_SERVICE` and emits the conversation update. Text, media, location,
   catalog, vehicle, document, audio, video, and other supported outbound
@@ -204,9 +210,9 @@ ordering; a reconnect must replay from the last event ID and then reconcile
 with `GET /crm/conversation-cycles` and
 `GET /crm/conversation-cycles/counts`.
 
-The bot integration forwards the same attendance fields in its
-`intervention_started`, `intervention_ended`, and conversation/message payloads;
-the action and event semantics are defined in the Bot Contract section below.
+The assigned bot profile receives scoped attendance fields and conversation
+message events; the action and event semantics are defined in the Bot Contract
+section below.
 All transitions are tenant/store scoped, require the existing CRM permission
 for the initiating action (`crm.attendances.manage` or `crm.messages.send`),
 and emit a sanitized audit event. Bot actions use the
@@ -459,33 +465,36 @@ picker, catalog picker, delete/cancel confirmation.
 
 ## Bot Contract
 
-The V2 bot config, action API, and outbound forwarding are active:
+The V2 bot profile, action API, and outbound forwarding are active:
 
-- `GET/PATCH /crm/whatsapp/integrations/bot`
-- `POST /crm/whatsapp/integrations/bot/actions`
+- `GET/POST /crm/bot/profiles`
+- `PATCH /crm/bot/profiles/:profileId`
+- `GET /crm/bot/profile-assignments`
+- `PATCH /crm/bot/profile-assignments/:connectionId`
+- `POST /crm/bot/actions`
 
-Authentication uses `X-Webhook-Secret`; the secret is write-only and never
+Bot actions authenticate with `Authorization: Bearer <apiToken>`. The separate
+write-only HMAC signing secret is used by V2 to sign outbound events to the
+assigned profile webhook URL; it is never accepted as an action credential or
 returned by API responses. The bot action route creates a bot-scoped
 `ServiceContext`, uses V2 UUIDs, checks permissions in services, audits
-mutations, and returns stable CRM WhatsApp bot error codes.
+mutations, and returns stable CRM bot error codes.
 
-Supported external bot events:
+Currently emitted external bot events:
 
-- `message`
-- `intervention_started`
-- `intervention_ended`
-- `connection_status_changed`
+- `message_received`
+- `human_attendance_changed`
 
-During `HUMAN_TAKEOVER`, regular `message` forwarding pauses and bot send
-actions are rejected with `CRM_WHATSAPP_BOT_ACTION_BLOCKED`. The bot can end
-takeover through `set_intervention` with `payload.enabled: false`.
+During `HUMAN_TAKEOVER`, regular message forwarding pauses and bot send actions
+are rejected with `CRM_BOT_POLICY_DENIED`. The bot cannot end a human
+intervention through the external action API.
 
-External bot media actions have a single canonical Repasses-style URL contract:
+Implemented external bot actions are the V2 actions documented in
+`docs/migrations/crm-v2-bot-contract.md`: `message.send_text`,
+`message.send_media`, `message.send_template`, `fact.record`,
+`vehicle_interest.record`, `appointment.create`, `opportunity.open`,
+`task.create`, `handoff.request`, and `conversation.summarize`.
 
-- `send_image`: `payload.imageUrl`
-- `send_audio`: `payload.audioUrl`
-- `send_document`: `payload.documentUrl`
-
-Do not accept or document base64 media for the external bot API. Base64 belongs
-only to the operator/CRM media upload endpoint. Do not migrate MiniBot or
-uaZapi legacy payload compatibility as the V2 bot contract.
+The previous single integration configuration is migration input only and is
+not a V2 runtime or frontend setup surface. Do not document the old
+`/crm/whatsapp/integrations/bot` routes as supported V2 endpoints.

@@ -1,6 +1,7 @@
 import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import type { CrmExternalBotIntegrationRepository } from "../../../domains/crm/ports/crmExternalBotIntegrationRepository.js";
+import type { CrmExternalBotProfileRepository } from "../../../domains/crm/ports/crmExternalBotProfileRepository.js";
 import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type {
@@ -32,6 +33,7 @@ export type CreateCrmTestAppOptions = {
   crmAudioNormalizer?: CrmServicePorts["crmAudioNormalizer"];
   composioChannelOnboardingProvider?: CrmServicePorts["composioChannelOnboardingProvider"];
   crmExternalBotIntegrationRepository?: CrmExternalBotIntegrationRepository;
+  crmExternalBotProfileRepository?: CrmExternalBotProfileRepository;
   crmCanonicalInboundRepository?: CrmServicePorts["crmCanonicalInboundRepository"];
   crmConnectionCredentialVault?: CrmConnectionCredentialVault;
   crmConnectionMemberRepository?: CrmServicePorts["crmConnectionMemberRepository"];

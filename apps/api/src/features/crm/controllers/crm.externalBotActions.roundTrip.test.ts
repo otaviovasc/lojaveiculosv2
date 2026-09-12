@@ -1,34 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { canonicalExternalBotActionRequest } from "../../../domains/crm/bot/externalBotCanonicalRequest.js";
 import type { ExternalBotActionName } from "../../../domains/crm/bot/externalBotModels.js";
-import { createMemoryCrmExternalBotIntegrationRepository } from "../adapters/memory/crmExternalBotIntegrationRepository.js";
+import { createMemoryCrmExternalBotProfileRepository } from "../adapters/memory/crmExternalBotProfileRepository.js";
 import { createTestApp, expectApiError } from "./crm.controller.testSupport.js";
-import { createRepositoryBoundExternalBotManager } from "./crm.externalBotIntegration.testSupport.js";
+import {
+  configureBot,
+  createRepositoryBoundExternalBotManager,
+} from "./crm.externalBotIntegration.testSupport.js";
 
 const apiToken = "bot-actions-api-token-with-32-characters";
 
 async function createBotApp() {
-  const repository = createMemoryCrmExternalBotIntegrationRepository();
+  const repository = createMemoryCrmExternalBotProfileRepository();
   const manager = createRepositoryBoundExternalBotManager(repository);
   const app = createTestApp({
-    crmExternalBotIntegrationRepository: repository,
+    crmExternalBotProfileRepository: repository,
     externalBotManager: manager.ports,
   });
-  const configure = await app.request("/api/v1/crm/bot/configuration", {
-    body: JSON.stringify({
-      apiToken,
-      enabled: true,
-      webhookSecret: "bot-webhook-secret-value-32-characters",
-      webhookUrl: "https://bot.example.test/webhook",
-    }),
-    method: "PATCH",
-  });
-  expect(configure.status).toBe(200);
-  const read = await app.request("/api/v1/crm/bot/configuration");
-  const { configuration } = (await read.json()) as {
-    configuration: { id: string };
-  };
-  return { app, configuration, manager };
+  const profile = await configureBot(app);
+  return { app, configuration: profile, manager };
 }
 
 async function signedActionRequest(
@@ -148,10 +138,14 @@ describe("CRM external bot actions round trip", () => {
 
   it("rejects requests after the API token is cleared", async () => {
     const { app, configuration, manager } = await createBotApp();
-    const cleared = await app.request("/api/v1/crm/bot/configuration", {
-      body: JSON.stringify({ apiToken: null }),
-      method: "PATCH",
-    });
+    const cleared = await app.request(
+      `/api/v1/crm/bot/profiles/${configuration.id}`,
+      {
+        body: JSON.stringify({ apiToken: null }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
     expect(cleared.status).toBe(200);
     const request = await signedActionRequest(manager, configuration.id);
 

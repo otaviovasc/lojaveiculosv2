@@ -52,8 +52,8 @@ describe("CRM conversation API routes", () => {
     expect(crmConversationRoutes.quickMessages()).toBe(
       "/api/v1/crm/quick-messages",
     );
-    expect(crmConversationRoutes.botIntegration()).toBe(
-      "/api/v1/crm/bot/configuration",
+    expect(crmConversationRoutes.botProfiles()).toBe(
+      "/api/v1/crm/bot/profiles",
     );
     expect(crmConversationRoutes.routingPolicy()).toBe(
       "/api/v1/crm/routing-policy",
