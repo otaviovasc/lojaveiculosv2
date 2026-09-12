@@ -9,7 +9,6 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
 import { CrmExternalBotPage } from "./CrmExternalBotPage";
 import type { CrmConversationApi } from "./crmConversationApi";
 
@@ -19,98 +18,65 @@ describe("CrmExternalBotPage", () => {
     vi.clearAllMocks();
   });
 
-  it("saves the external bot URL, write-only secret and API token", async () => {
-    const updateBotIntegration = vi.fn(async () => ({
-      configuration: createIntegration({
-        apiTokenConfigured: true,
-        enabled: true,
-        secretConfigured: true,
-        webhookUrl: "https://bot.example.test/webhook",
-      }),
-    }));
-    const api = createApi({ updateBotIntegration });
+  it("creates a bot profile with URL, action token and HMAC secret", async () => {
+    const createBotProfile = vi.fn(async () => createProfile());
+    const api = createApi({ createBotProfile });
 
     renderPage(api);
-    await openLegacyBotForm();
-
-    const urlInput = await screen.findByDisplayValue(
-      "https://bot.old.test/webhook",
-    );
-    fireEvent.change(urlInput, {
+    fireEvent.change(await screen.findByLabelText("Nome"), {
+      target: { value: "Bot WhatsApp" },
+    });
+    fireEvent.change(screen.getByLabelText(/Webhook URL/i), {
       target: { value: "https://bot.example.test/webhook" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Segredo configurado"), {
-      target: { value: "novo-segredo-com-mais-de-32-caracteres" },
+    fireEvent.change(screen.getByLabelText(/Novo token de ações/i), {
+      target: { value: "novo-token-de-acoes-com-32-caracteres" },
     });
-    fireEvent.change(screen.getByLabelText(/Novo token da API de acoes/i), {
-      target: { value: "novo-token-de-integracao-com-32-chars" },
+    fireEvent.change(screen.getByLabelText(/Novo segredo HMAC/i), {
+      target: { value: "novo-segredo-hmac-com-32-caracteres" },
     });
-    fireEvent.click(screen.getByRole("checkbox", { name: /bot habilitado/i }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Salvar configurações" }),
-    );
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
 
     await waitFor(() =>
-      expect(updateBotIntegration).toHaveBeenCalledWith({
-        apiToken: "novo-token-de-integracao-com-32-chars",
+      expect(createBotProfile).toHaveBeenCalledWith({
+        apiToken: "novo-token-de-acoes-com-32-caracteres",
         enabled: true,
-        webhookSecret: "novo-segredo-com-mais-de-32-caracteres",
+        name: "Bot WhatsApp",
+        webhookSecret: "novo-segredo-hmac-com-32-caracteres",
         webhookUrl: "https://bot.example.test/webhook",
       }),
     );
-    expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+  });
+
+  it("keeps profile secrets write-only after saving", async () => {
+    const createBotProfile = vi.fn(async () => createProfile());
+    renderPage(createApi({ createBotProfile }));
+    fireEvent.change(await screen.findByLabelText("Nome"), {
+      target: { value: "Bot HMAC" },
+    });
+    fireEvent.change(await screen.findByLabelText(/Novo segredo HMAC/i), {
+      target: { value: "novo-segredo-hmac-com-32-caracteres" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+    await waitFor(() => expect(createBotProfile).toHaveBeenCalled());
     expect(
-      screen.queryByDisplayValue("novo-token-de-integracao-com-32-chars"),
+      screen.queryByDisplayValue("novo-segredo-hmac-com-32-caracteres"),
     ).not.toBeInTheDocument();
   });
 
-  it("blocks saving a webhook secret shorter than 32 characters", async () => {
-    const updateBotIntegration = vi.fn();
-    renderPage(createApi({ updateBotIntegration }));
-    await openLegacyBotForm();
-
-    fireEvent.change(
-      await screen.findByPlaceholderText("Segredo configurado"),
-      {
-        target: { value: "segredo-curto" },
-      },
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Salvar configurações" }),
-    );
-
-    expect(
-      await screen.findByText(
-        "O segredo do webhook deve ter no mínimo 32 caracteres.",
-      ),
-    ).toBeVisible();
-    expect(updateBotIntegration).not.toHaveBeenCalled();
-  });
-
-  it("blocks enabling the bot without webhook URL and secret", async () => {
-    const updateBotIntegration = vi.fn();
-    const api = createApi({
-      getBotIntegration: vi.fn(async () => ({
-        configuration: createIntegration(),
-      })),
-      updateBotIntegration,
+  it("creates a disabled profile without enabling provider delivery", async () => {
+    const createBotProfile = vi.fn(async () => createProfile());
+    renderPage(createApi({ createBotProfile }));
+    fireEvent.change(await screen.findByLabelText("Nome"), {
+      target: { value: "Bot rascunho" },
     });
-    renderPage(api);
-    await openLegacyBotForm();
-
-    fireEvent.click(
-      await screen.findByRole("checkbox", { name: /bot habilitado/i }),
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Salvar configurações" }),
-    );
-
-    expect(
-      await screen.findByText(
-        "Para ativar o bot, informe a Webhook URL e o segredo (mínimo 32 caracteres) antes de salvar.",
+    fireEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+    await waitFor(() =>
+      expect(createBotProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false, name: "Bot rascunho" }),
       ),
-    ).toBeVisible();
-    expect(updateBotIntegration).not.toHaveBeenCalled();
+    );
   });
 
   it("separates reference content and keeps documentation closed", async () => {
@@ -173,7 +139,7 @@ describe("CrmExternalBotPage", () => {
         "Seu usuário não tem permissão para gerenciar integrações.",
       ),
     ).toBeVisible();
-    expect(api.getBotIntegration).not.toHaveBeenCalled();
+    expect(api.listBotProfiles).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("tab", { name: "Eventos" }));
     expect(
@@ -186,42 +152,28 @@ function renderPage(api: CrmConversationApi) {
   return render(<CrmExternalBotPage api={api} canManage canRead canRetry />);
 }
 
-async function openLegacyBotForm() {
-  fireEvent.click(await screen.findByText("Configuração legada do bot"));
-}
-
 function createApi(
   overrides: Partial<CrmConversationApi> = {},
 ): CrmConversationApi {
   return {
-    getBotIntegration: vi.fn(async () => ({
-      configuration: createIntegration({
-        enabled: false,
-        secretConfigured: true,
-        webhookUrl: "https://bot.old.test/webhook",
-      }),
-    })),
     listBotProfiles: vi.fn(async () => ({ profiles: [] })),
+    createBotProfile: vi.fn(async () => createProfile()),
     listProviderEventIssues: vi.fn(async () => ({ events: [] })),
-    updateBotIntegration: vi.fn(async () => ({
-      configuration: createIntegration(),
-    })),
     ...overrides,
   } as CrmConversationApi;
 }
 
-function createIntegration(
-  overrides: Partial<CrmExternalBotConfiguration> = {},
-): CrmExternalBotConfiguration {
+function createProfile() {
   return {
-    apiTokenConfigured: false,
-    createdAt: "2026-07-06T12:00:00.000Z",
+    apiTokenConfigured: true,
+    createdAt: "2026-09-12T12:00:00.000Z",
     enabled: false,
-    id: "integration_1",
+    id: "profile_1",
+    isDefault: false,
+    name: "Bot WhatsApp",
     secretConfigured: false,
     secretUpdatedAt: null,
-    updatedAt: "2026-07-06T12:00:00.000Z",
-    webhookUrl: null,
-    ...overrides,
+    updatedAt: "2026-09-12T12:00:00.000Z",
+    webhookUrl: "https://bot.example.test/webhook",
   };
 }

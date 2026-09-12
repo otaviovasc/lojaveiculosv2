@@ -34,8 +34,8 @@ describe("external bot attendance notifications", () => {
     });
     const ports = {
       externalBotManager: manager.ports,
-      crmExternalBotIntegrationRepository: {
-        findExternalBotIntegration: async () => ({
+      crmExternalBotProfileRepository: {
+        findProfileForConnection: async () => ({
           enabled: true,
           id: "integration-1",
         }),
@@ -147,8 +147,8 @@ describe("external bot inbound message reply grant", () => {
   ) {
     return {
       externalBotManager: manager.ports,
-      crmExternalBotIntegrationRepository: {
-        findExternalBotIntegration: async () => ({
+      crmExternalBotProfileRepository: {
+        findProfileForConnection: async () => ({
           enabled: true,
           id: "integration-1",
         }),

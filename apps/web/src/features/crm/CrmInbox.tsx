@@ -12,7 +12,6 @@ import {
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
 import {
   prefetchCrmScopedData,
-  CRM_EXTERNAL_BOT_CACHE_KEY,
   CRM_CAMPAIGNS_CACHE_KEY,
   CRM_VISITS_CACHE_KEY,
   crmScheduledMessagesCacheKey,
@@ -163,13 +162,6 @@ function StoreScopedCrmInbox({ api, productApi }: CrmInboxProps) {
               limit: 100,
               ...(connectionId ? { connectionId } : {}),
             }),
-        );
-      }
-      if (permissions.canIntegrationsManage) {
-        prefetchCrmScopedData(
-          conversationApi,
-          CRM_EXTERNAL_BOT_CACHE_KEY,
-          async () => (await conversationApi.getBotIntegration()).configuration,
         );
       }
       if (permissions.canVisitsRead) {

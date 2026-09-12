@@ -1,7 +1,6 @@
 import type { Context, Hono } from "hono";
 import {
   crmExternalBotActionAcceptedResultSchema,
-  crmExternalBotConfigurationPatchSchema,
   crmExternalBotProposalDecisionInputSchema,
   crmExternalBotProposalDecisionResultSchema,
   crmExternalBotTestInputSchema,
@@ -11,14 +10,12 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { botError } from "../../../domains/crm/bot/externalBotErrors.js";
 import type { ExternalBotManagerPorts } from "../../../domains/crm/bot/ports/externalBotPorts.js";
 import type { CrmServices } from "./crmServices.js";
-import type { UpdateExternalBotIntegrationInput } from "../../../domains/crm/services/CrmExternalBotService/externalBotIntegration.js";
 import { executeExternalBotAction } from "../../../domains/crm/bot/services/ExternalBotManagerService/executeExternalBotAction.js";
 import { decideExternalBotProposal } from "../../../domains/crm/bot/services/ExternalBotManagerService/decideExternalBotProposal.js";
 import { externalBotActionSchema } from "./crm.bot.schemas.js";
 import {
   assertExternalBotManage,
   assertExternalBotProposalDecide,
-  assertExternalBotRead,
 } from "./crm.messaging.controller.support.js";
 import {
   bearerCredential,
@@ -27,7 +24,6 @@ import {
   parseBody,
   readProviderOperationId,
   requireManager,
-  toExternalBotConfigurationRead,
 } from "./crm.bot.controllerSupport.js";
 import { registerExternalBotProfileRoutes } from "./crm.profile.controller.js";
 
@@ -42,39 +38,6 @@ export function registerExternalBotRoutes(
   crmFeature: Hono,
   options: RegisterExternalBotRoutesOptions,
 ) {
-  crmFeature.get("/bot/configuration", async (context) =>
-    handleExternalBot(context, async () => {
-      const serviceContext = await options.createContext(context);
-      assertExternalBotRead(serviceContext);
-      const integration =
-        await options.services.getExternalBotConfiguration(serviceContext);
-      return context.json(toExternalBotConfigurationRead(integration));
-    }),
-  );
-
-  crmFeature.patch("/bot/configuration", async (context) =>
-    handleExternalBot(context, async () => {
-      const input = await parseBody(
-        context,
-        crmExternalBotConfigurationPatchSchema,
-      );
-      const serviceContext = await options.createContext(context);
-      assertExternalBotManage(serviceContext);
-      const update: UpdateExternalBotIntegrationInput = {};
-      if (input.apiToken !== undefined) update.apiToken = input.apiToken;
-      if (input.enabled !== undefined) update.enabled = input.enabled;
-      if (input.webhookSecret !== undefined) {
-        update.webhookSecret = input.webhookSecret;
-      }
-      if (input.webhookUrl !== undefined) update.webhookUrl = input.webhookUrl;
-      const integration = await options.services.updateExternalBotConfiguration(
-        serviceContext,
-        update,
-      );
-      return context.json(toExternalBotConfigurationRead(integration));
-    }),
-  );
-
   registerExternalBotProfileRoutes(crmFeature, options);
 
   crmFeature.post("/bot/test", async (context) =>

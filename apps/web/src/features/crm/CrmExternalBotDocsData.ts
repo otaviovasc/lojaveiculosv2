@@ -89,7 +89,7 @@ export const importantFieldNotes = [
 export const interventionFlowNotes = [
   {
     description:
-      "Quando o atendimento humano comeca, V2 emite human_attendance_changed com payload.humanAttendanceState WAITING_HUMAN ou IN_HUMAN_SERVICE.",
+      "Quando a IA pede ajuda ou uma mensagem humana chega diretamente pelo app/dispositivo WhatsApp, V2 emite human_attendance_changed com WAITING_HUMAN. Como a origem nao identifica qual atendente interveio, a conversa aguarda atendimento; uma atribuicao existente permanece ate uma pessoa assumir ou liberar.",
     title: "Aguardando humano",
   },
   {
@@ -167,9 +167,15 @@ export const attendanceFieldRows = [
 
 export const attendanceTransitionRows = [
   {
-    event: "Atendimento humano solicitado ou iniciado pelo CRM",
+    event:
+      "IA pede ajuda ou mensagem humana chega pelo app/dispositivo WhatsApp",
     from: "null",
     to: "WAITING_HUMAN",
+  },
+  {
+    event: "Mensagem pelo app com conversa atribuida ou em atendimento",
+    from: "WAITING_HUMAN | IN_HUMAN_SERVICE | null",
+    to: "WAITING_HUMAN (mantem atribuicao existente)",
   },
   {
     event: "Atendente humano assume a conversa no CRM",

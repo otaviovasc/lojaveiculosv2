@@ -65,8 +65,11 @@ export function CrmExternalBotDocsTakeover() {
             <h4>Aguardando Humano</h4>
             <code>WAITING_HUMAN</code>
             <p>
-              A IA identificou dúvida complexa ou o cliente pediu atendente.
-              Gera alerta no CRM.
+              A IA identificou dúvida complexa, o cliente pediu atendente ou
+              alguém enviou uma mensagem diretamente pelo app do WhatsApp. Como
+              não é possível saber qual usuário interveio, a conversa aguarda
+              atendimento e gera alerta no CRM; uma atribuição existente
+              permanece.
             </p>
           </div>
 

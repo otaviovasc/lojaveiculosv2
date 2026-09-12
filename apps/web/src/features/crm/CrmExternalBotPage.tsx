@@ -1,20 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, Bot, Loader2, TriangleAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Bot, TriangleAlert } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
-import type { CrmExternalBotConfiguration } from "@lojaveiculosv2/shared";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmExternalBotDocs } from "./CrmExternalBotDocs";
 import { CrmProviderEventIssuesPanel } from "./CrmProviderEventIssuesPanel";
 import type { CrmExternalBotView } from "./crmExternalBotView";
 import type { CrmRoutingChannel, CrmRoutingPolicy } from "./crmRoutingTypes";
 import { CrmExternalBotPolicyOverview } from "./CrmExternalBotPolicyOverview";
 import {
-  peekCrmScopedCache,
-  CRM_EXTERNAL_BOT_CACHE_KEY,
-  writeCrmScopedCache,
-} from "./crmScopedCache";
-import {
-  BotIntegrationForm,
   ExternalBotProfilesManager,
   type CrmExternalBotPageProps,
   PermissionNotice,
@@ -34,157 +26,19 @@ export function CrmExternalBotPage({
 }: CrmExternalBotPageProps) {
   const [activeView, setActiveView] =
     useState<CrmExternalBotView>("configuration");
-  const [initialIntegration] = useState(() =>
-    peekCrmScopedCache<CrmExternalBotConfiguration>(
-      api,
-      CRM_EXTERNAL_BOT_CACHE_KEY,
-    ),
-  );
-  const [enabled, setEnabled] = useState(initialIntegration?.enabled ?? false);
-  const [error, setError] = useState<string | null>(null);
-  const [integration, setIntegration] =
-    useState<CrmExternalBotConfiguration | null>(initialIntegration ?? null);
-  const hasIntegrationDataRef = useRef(initialIntegration !== undefined);
-  const [isLoading, setIsLoading] = useState(initialIntegration === undefined);
-  const [isSaving, setIsSaving] = useState(false);
-  const [secretDraft, setSecretDraft] = useState("");
-  const [apiTokenDraft, setApiTokenDraft] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState(
-    initialIntegration?.webhookUrl ?? "",
-  );
   const [activeChannel, setActiveChannel] =
     useState<CrmRoutingChannel>("whatsapp");
   const [routingPolicy, setRoutingPolicy] = useState<CrmRoutingPolicy | null>(
     null,
   );
 
-  const applyIntegration = useCallback((next: CrmExternalBotConfiguration) => {
-    setEnabled(next.enabled);
-    setIntegration(next);
-    setWebhookUrl(next.webhookUrl ?? "");
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (!canManage) {
-      setIsLoading(false);
-      return;
-    }
-    if (!hasIntegrationDataRef.current) setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.getBotIntegration();
-      hasIntegrationDataRef.current = true;
-      writeCrmScopedCache(
-        api,
-        CRM_EXTERNAL_BOT_CACHE_KEY,
-        response.configuration,
-      );
-      applyIntegration(response.configuration);
-      if (typeof api.getRoutingPolicy === "function") {
-        try {
-          setRoutingPolicy(await api.getRoutingPolicy());
-        } catch {
-          setRoutingPolicy(null);
-        }
-      }
-    } catch (caught) {
-      setError(formatApiErrorDisplay(caught, "Nao foi possivel carregar bot."));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [api, applyIntegration, canManage]);
-
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const save = async () => {
-    if (!canManage || isSaving) return;
-    const trimmedUrl = webhookUrl.trim();
-    const trimmedSecret = secretDraft.trim();
-    const trimmedApiToken = apiTokenDraft.trim();
-    const willHaveSecret =
-      Boolean(trimmedSecret) || Boolean(integration?.secretConfigured);
-    if (trimmedUrl && !isValidPublicHttpsUrl(trimmedUrl)) {
-      setError(
-        "A Webhook URL deve usar HTTPS público (ex.: https://bot.exemplo.com/webhook), sem usuário e senha.",
-      );
-      return;
-    }
-    if (trimmedSecret && trimmedSecret.length < 32) {
-      setError("O segredo do webhook deve ter no mínimo 32 caracteres.");
-      return;
-    }
-    if (trimmedApiToken && trimmedApiToken.length < 32) {
-      setError("O token da API de ações deve ter no mínimo 32 caracteres.");
-      return;
-    }
-    if (enabled && (!trimmedUrl || !willHaveSecret)) {
-      setError(
-        "Para ativar o bot, informe a Webhook URL e o segredo (mínimo 32 caracteres) antes de salvar.",
-      );
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      const response = await api.updateBotIntegration({
-        enabled,
-        ...(trimmedSecret ? { webhookSecret: trimmedSecret } : {}),
-        ...(trimmedApiToken ? { apiToken: trimmedApiToken } : {}),
-        webhookUrl: trimmedUrl || null,
-      });
-      applyIntegration(response.configuration);
-      setSecretDraft("");
-      setApiTokenDraft("");
-    } catch (caught) {
-      setError(formatApiErrorDisplay(caught, "Nao foi possivel salvar bot."));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const clearSecret = async () => {
-    if (!canManage || isSaving) return;
-    setIsSaving(true);
-    setError(null);
-    try {
-      const response = await api.updateBotIntegration({
-        enabled: false,
-        webhookSecret: null,
-        webhookUrl: webhookUrl.trim() || null,
-      });
-      applyIntegration(response.configuration);
-      setSecretDraft("");
-    } catch (caught) {
-      setError(
-        formatApiErrorDisplay(caught, "Nao foi possivel remover segredo."),
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const clearApiToken = async () => {
-    if (!canManage || isSaving) return;
-    setIsSaving(true);
-    setError(null);
-    try {
-      const response = await api.updateBotIntegration({
-        apiToken: null,
-        enabled,
-        webhookUrl: webhookUrl.trim() || null,
-      });
-      applyIntegration(response.configuration);
-      setApiTokenDraft("");
-    } catch (caught) {
-      setError(
-        formatApiErrorDisplay(caught, "Nao foi possivel remover o token."),
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    if (!canManage || typeof api.getRoutingPolicy !== "function") return;
+    void api
+      .getRoutingPolicy()
+      .then(setRoutingPolicy)
+      .catch(() => setRoutingPolicy(null));
+  }, [api, canManage]);
 
   return (
     <section className="crm-section">
@@ -200,39 +54,14 @@ export function CrmExternalBotPage({
             value={activeView}
           />
           <span className="crm-integrations-nav-status">
-            {integration?.enabled ? "Bot ativo" : "Bot inativo"}
+            "Perfis por conexão"
           </span>
         </div>
 
         {activeView === "configuration" ? (
           <div aria-label="Configuracao do bot" role="tabpanel">
-            {isLoading ? (
-              <div className="crm-integrations-state" role="status">
-                <Loader2 aria-hidden="true" className="animate-spin" />
-                Carregando configuracao segura.
-              </div>
-            ) : canManage ? (
-              <>
-                <ExternalBotProfilesManager api={api} canManage={canManage} />
-                <details className="crm-bot-legacy-details">
-                  <summary>Configuração legada do bot</summary>
-                  <BotIntegrationForm
-                    apiTokenDraft={apiTokenDraft}
-                    enabled={enabled}
-                    integration={integration}
-                    isSaving={isSaving}
-                    onApiTokenChange={setApiTokenDraft}
-                    onClearApiToken={() => void clearApiToken()}
-                    onClearSecret={() => void clearSecret()}
-                    onEnabledChange={setEnabled}
-                    onSave={() => void save()}
-                    onSecretChange={setSecretDraft}
-                    onWebhookUrlChange={setWebhookUrl}
-                    secretDraft={secretDraft}
-                    webhookUrl={webhookUrl}
-                  />
-                </details>
-              </>
+            {canManage ? (
+              <ExternalBotProfilesManager api={api} canManage={canManage} />
             ) : (
               <PermissionNotice />
             )}
@@ -241,11 +70,6 @@ export function CrmExternalBotPage({
               onChannelChange={setActiveChannel}
               policy={routingPolicy}
             />
-            {error ? (
-              <p className="crm-integrations-error" role="alert">
-                {error}
-              </p>
-            ) : null}
           </div>
         ) : null}
 
@@ -271,13 +95,4 @@ export function CrmExternalBotPage({
       </div>
     </section>
   );
-}
-
-function isValidPublicHttpsUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password;
-  } catch {
-    return false;
-  }
 }

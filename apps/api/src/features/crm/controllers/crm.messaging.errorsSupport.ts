@@ -7,6 +7,10 @@ import {
   ExternalBotIntegrationIncompleteError,
   ExternalBotIntegrationValidationError,
 } from "../../../domains/crm/services/CrmExternalBotService/externalBotIntegration.js";
+import {
+  CrmExternalBotProfileIncompleteError,
+  CrmExternalBotProfileNotFoundError,
+} from "../../../domains/crm/errors/crmExternalBotProfileErrors.js";
 import { CrmQuickMessageError } from "../../../domains/crm/services/CrmMessagingService/crmQuickMessageServiceSupport.js";
 import { ProviderEventRetryError } from "../../../domains/crm/services/CrmMessagingService/providerEventIssues.js";
 import { WhatsappVehiclePartialSendError } from "../../../domains/crm/services/CrmWhatsappService/sendWhatsappVehicle.js";
@@ -77,6 +81,22 @@ export function handleCrmMessagingProviderError(
       error,
       message: error.message,
       status: 400,
+    });
+  }
+  if (error instanceof CrmExternalBotProfileIncompleteError) {
+    return jsonApiError(context, {
+      code: "CRM_EXTERNAL_BOT_PROFILE_INCOMPLETE",
+      error,
+      message: error.message,
+      status: 422,
+    });
+  }
+  if (error instanceof CrmExternalBotProfileNotFoundError) {
+    return jsonApiError(context, {
+      code: "CRM_EXTERNAL_BOT_PROFILE_NOT_FOUND",
+      error,
+      message: error.message,
+      status: 404,
     });
   }
   if (error instanceof WhatsappVehiclePartialSendError) {

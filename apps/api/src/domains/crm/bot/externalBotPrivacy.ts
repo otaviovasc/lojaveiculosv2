@@ -15,6 +15,7 @@ const allowedEventFields = new Set<keyof ExternalBotEventPayload>([
   "humanAttendanceStateVersion",
   "idempotencyKey",
   "messageRef",
+  "messageText",
   "summary",
   "threadState",
   "vehicleRef",

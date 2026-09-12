@@ -41,6 +41,9 @@ export async function enqueueCrmMessageExternalBotEvent(
       direction:
         input.message.direction === "OUTBOUND" ? "outbound" : "inbound",
       messageRef: input.message.id,
+      ...(input.message.direction === "INBOUND"
+        ? { messageText: input.message.content }
+        : {}),
     },
     "message_received",
     options.throwOnFailure ?? false,
@@ -96,16 +99,17 @@ async function enqueueCanonicalEvent(
   const manager = ports.externalBotManager;
   if (
     !manager ||
-    !ports.crmExternalBotIntegrationRepository ||
+    !ports.crmExternalBotProfileRepository ||
     !input.conversationCycle.threadId
   )
     return;
-  const integration =
-    await ports.crmExternalBotIntegrationRepository.findExternalBotIntegration({
+  const profile =
+    await ports.crmExternalBotProfileRepository.findProfileForConnection({
+      connectionId: input.connection.id,
       storeId: input.connection.storeId,
       tenantId: input.connection.tenantId,
     });
-  if (!integration?.enabled || !integration.id) return;
+  if (!profile?.enabled) return;
   const scopedContext = createServiceContext({
     actor: context.actor,
     audit: context.audit,
@@ -127,7 +131,7 @@ async function enqueueCanonicalEvent(
             input.conversationCycle.humanAttendanceStateVersion ?? 0,
           expectedRevision: input.conversationCycle.revision,
           idempotencyKey: `crm-bot-attendance:${input.conversationCycle.id}:${input.conversationCycle.humanAttendanceStateVersion ?? 0}`,
-          integrationId: integration.id,
+          integrationId: profile.id,
           modelVersion: manager.modelVersion,
           payload: { ...payload, channel: input.connection.channel },
           provider: input.connection.provider,
@@ -147,7 +151,7 @@ async function enqueueCanonicalEvent(
           input.conversationCycle.humanAttendanceStateVersion ?? 0,
         expectedRevision: input.conversationCycle.revision,
         idempotencyKey: `crm-bot-event:${type}:${input.conversationCycle.id}:${input.conversationCycle.revision}`,
-        integrationId: integration.id,
+        integrationId: profile.id,
         modelVersion: manager.modelVersion,
         payload,
         provider: input.connection.provider,

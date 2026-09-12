@@ -5,8 +5,6 @@ import type {
   CrmExternalBotProfileCreateInput,
   CrmExternalBotProfileList,
   CrmExternalBotProfilePatchInput,
-  CrmExternalBotConfigurationPatchInput,
-  CrmExternalBotConfigurationRead,
 } from "@lojaveiculosv2/shared";
 import type { ProductCrmAuth } from "./productCrmTypes";
 import type {
@@ -182,7 +180,6 @@ export type CrmConversationApi = {
     cycleId: CrmConversationCycleId,
     input: CrmInterventionInput,
   ) => Promise<CrmConversationCycleCommandResult>;
-  getBotIntegration: () => Promise<CrmExternalBotConfigurationRead>;
   listBotProfiles: () => Promise<CrmExternalBotProfileList>;
   createBotProfile: (
     input: CrmExternalBotProfileCreateInput,
@@ -274,9 +271,6 @@ export type CrmConversationApi = {
     onEvent: (event: CrmRealtimeEvent) => void;
     onStatus?: (status: CrmRealtimeStatus) => void;
   }) => () => void;
-  updateBotIntegration: (
-    input: CrmExternalBotConfigurationPatchInput,
-  ) => Promise<CrmExternalBotConfigurationRead>;
   updateRoutingPolicy: (
     input: UpdateCrmRoutingPolicyInput,
   ) => Promise<CrmRoutingPolicy>;

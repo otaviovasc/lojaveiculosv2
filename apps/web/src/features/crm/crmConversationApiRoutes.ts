@@ -59,8 +59,6 @@ export const crmConversationRoutes = {
     ),
   catalogProducts: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/catalog/products", baseUrl),
-  botIntegration: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/bot/configuration", baseUrl),
   botProfiles: (baseUrl?: string) =>
     createCrmEndpoint("/crm/bot/profiles", baseUrl),
   botProfile: (profileId: string, baseUrl?: string) =>

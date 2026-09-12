@@ -204,10 +204,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).updateCycleAttendance(cycleId, input),
-    getBotIntegration: async () =>
-      createCrmConversationApi(
-        await createProductCrmApiOptions(),
-      ).getBotIntegration(),
     listBotProfiles: async () =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),
@@ -240,10 +236,6 @@ export function createRuntimeCrmConversationApi(): CrmConversationApi {
       createCrmConversationApi(
         await createProductCrmApiOptions(),
       ).listConnections(),
-    updateBotIntegration: async (input) =>
-      createCrmConversationApi(
-        await createProductCrmApiOptions(),
-      ).updateBotIntegration(input),
     updateRoutingPolicy: async (input) =>
       createCrmConversationApi(
         await createProductCrmApiOptions(),

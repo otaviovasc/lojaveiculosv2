@@ -73,8 +73,9 @@ export const llmsText = `# Loja Veiculos API
 - Cancel unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/cancel
 - Expire unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/expire
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
-- CRM bot actions: POST /api/v1/crm/bot/actions (Authorization: Bearer token from the CRM external bot integration account; X-Webhook-Secret is not accepted)
-- CRM bot configuration: GET/PATCH /api/v1/crm/bot/configuration
+- CRM bot profiles: GET/POST /api/v1/crm/bot/profiles; PATCH /api/v1/crm/bot/profiles/{profileId}
+- CRM bot connection assignments: GET /api/v1/crm/bot/profile-assignments; PATCH /api/v1/crm/bot/profile-assignments/{connectionId}
+- CRM bot actions: POST /api/v1/crm/bot/actions (Authorization: Bearer token from the assigned bot profile; X-Webhook-Secret is not accepted)
 - CRM bot dry-run test: POST /api/v1/crm/bot/test (validates routing without performing any official provider operation)
 - CRM bot proposal decision: POST /api/v1/crm/bot/proposals/{proposalId}/decision
 ## Authentication
@@ -258,11 +259,13 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
 ## Current CRM bot endpoints
-- POST /api/v1/crm/bot/actions: executes one external bot command per call; Authorization: Bearer <integration account token> only (X-Webhook-Secret is not accepted); body is a strict envelope with tenantId, storeId, integrationId, connectionId, threadId, channel, provider, modelVersion, capabilityGrant, command {action, payload}, expectedRevision, expectedAttendanceRevision, idempotencyKey, and requestDigest (64-hex sha256 of the canonical JSON request with sorted keys and capabilityGrant excluded).
-- Bot events are delivered to the configured webhook URL as outbox events of type message_received, thread_state_changed, connection_state_changed, or human_attendance_changed, each carrying grant, grantExpiresAt, authorizedRequestDigest, and the revisions needed to call back; grants authorize a single action and expire after 90 seconds.
-- Supported actions and payloads: message.send_text {text}; message.send_media {mediaType, mediaUrl, caption?}; message.send_template {templateName, language:"pt_BR", variables}; fact.record {classification, summary}; vehicle_interest.record {vehicleRef, interestLevel}; appointment.create {startsAt, summary?}; opportunity.open {summary}; task.create {title, dueAt?}; handoff.request {reason}; conversation.summarize {summary}.
+- Bot profiles are store-scoped. Each profile has its own webhook URL, bearer/action token, and HMAC signing secret. A profile can be assigned to one or more channel connections.
+- GET /api/v1/crm/bot/profiles, POST /api/v1/crm/bot/profiles, and PATCH /api/v1/crm/bot/profiles/{profileId} manage profiles; GET /api/v1/crm/bot/profile-assignments and PATCH /api/v1/crm/bot/profile-assignments/{connectionId} manage connection assignments.
+- POST /api/v1/crm/bot/actions executes one external bot command per call; Authorization: Bearer <profile action token> only (X-Webhook-Secret is not accepted). The HMAC secret signs outbound event deliveries and is never an action credential.
+- Bot events are currently delivered to the assigned profile webhook URL as outbox events of type message_received or human_attendance_changed. Events carry a single-use grant, grantExpiresAt, authorizedRequestDigest, scope, revisions, and messageText when an inbound message is available; grants expire after 90 seconds.
+- Supported V2 actions and payloads: message.send_text {text}; message.send_media {mediaType, mediaUrl, caption?}; message.send_template {templateName, language:"pt_BR", variables}; fact.record {classification, summary}; vehicle_interest.record {vehicleRef, interestLevel}; appointment.create {startsAt, summary?}; opportunity.open {summary}; task.create {title, dueAt?}; handoff.request {reason}; conversation.summarize {summary}. V1-only actions such as tags, session reads/updates, notes, scheduling, visits, financing, and connection checks are not currently implemented in V2.
 - Policy modes are auto, proposal, and disabled per action; proposals are decided via POST /api/v1/crm/bot/proposals/{proposalId}/decision; POST /api/v1/crm/bot/test is a dry-run that never performs official operations.
-- During human attendance (humanAttendanceState WAITING_HUMAN or IN_HUMAN_SERVICE) bot effects are denied server-side with CRM_BOT_POLICY_DENIED; bots learn the state from human_attendance_changed events and cannot force or end interventions.
+- During human attendance (humanAttendanceState WAITING_HUMAN or IN_HUMAN_SERVICE) bot effects are denied server-side with CRM_BOT_POLICY_DENIED; bots learn the state from human_attendance_changed events and cannot force or end interventions. WAITING_HUMAN also covers confirmed messages sent directly from the WhatsApp app/device: the sender is not attributable to a CRM user, so the conversation waits for human handling while any existing assignment is preserved.
 - Error codes: CRM_BOT_UNAUTHORIZED (401), CRM_BOT_GRANT_INVALID (403), CRM_BOT_GRANT_REUSED (409), CRM_BOT_POLICY_DENIED (403), CRM_BOT_IDEMPOTENCY_CONFLICT (409), CRM_BOT_UNAVAILABLE (503); generic request validation returns 400.
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with filterable audit events, safe diagnostic metadata, request/source context, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; supports limit, actorId, action, category, correlationId, criticality, entityId, entityType, outcome, providerName, requestId, severity, from, and to; requires audit.read.
